@@ -1,0 +1,101 @@
+<style lang="less">
+  page {
+    background: #444;
+  }
+  .cardCtn {
+    width: 100%;
+    height: 100vh;
+    padding: 30rpx 60rpx 0 60rpx;
+    canvas {
+      width: 100%;
+      height: 80vh;
+    }
+    .showbtn {
+      width: 100%;
+      margin-top: 30rpx;
+      color: #fff;
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="cardCtn f fc fv">
+    <canvas canvas-id="firstCanvas"></canvas>
+    <view class="showbtn f fv fc fc-h" @tap="saveQrcode" wx:if="{{author==false}}">
+      <text class="f70 dzicon icon-xiazaix" />
+      <text class='f24 mt20'>下载到手机</text>
+    </view>
+    <button open-type="openSetting" wx:if="{{author}}" class="showbtn f fv fc fc-h">
+                      <text class="f70 dzicon icon-xiazaix"/>
+                      <text class='f24 mt20'>下载到手机</text>
+                    </button>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js";
+  import {
+    core,
+    tools
+  } from "@/lib/core.js";
+  export default class cardCenter extends wepy.page {
+    config = {
+      navigationBarTitleText: "名片码",
+      navigationBarBackgroundColor: "#444",
+      navigationBarTextStyle: "white"
+    };
+    data = {
+      author: false
+    }
+    methods = {
+      // 保存画布的图片
+      async saveQrcode() {
+        wx.canvasToTempFilePath({
+          x: 0,
+          y: 0,
+          canvasId: 'firstCanvas',
+          quality: 1,
+          success: data => {
+            wx.saveImageToPhotosAlbum({
+              filePath: data.tempFilePath,
+              success: res => {
+                this.author = false
+                this.$apply()
+                tools.wxShowToast("图片保存成功")
+              },
+              fail: async res => {
+                if (res.errMsg == 'saveImageToPhotosAlbum:fail auth deny') {
+                  this.author = true
+                  this.$apply()
+                }
+              }
+            })
+          }
+        })
+      },
+    }
+    onLoad(options, data) {
+      let vm = _get(data.preload, "vm", "")
+      core.GetEmployeeQrcode(vm, this)
+    }
+    onShow() {
+        wx.getSetting({
+          success: (res) => {
+            if (Object.keys(res.authSetting).length) {
+              if (res.authSetting['scope.writePhotosAlbum']) {
+                this.author = false
+              }
+              if (res.authSetting['scope.writePhotosAlbum'] == false) {
+                this.author = true
+              }
+            } else {
+              this.author = false
+            }
+            this.$apply()
+          }
+        })
+    }
+  }
+</script>

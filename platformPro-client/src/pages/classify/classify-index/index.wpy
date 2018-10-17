@@ -1,0 +1,211 @@
+<style lang="less">
+    .classify-wrap {
+        .search-wrap {
+            height: 80rpx;
+            .search {
+                width: 690rpx;
+                height: 60rpx;
+                background-color: #eee;
+                border-radius: 30rpx;
+                color: #999;
+            }
+        }
+        .swiper-wrap {
+            padding-top: 20rpx;
+        }
+        .infolist-wrap {
+            .info-label {
+                .active {
+                    color: #3FD682; // font-weight: bold;
+                    border-bottom: 5rpx solid #3FD682;
+                    padding-bottom: 10rpx;
+                }
+            }
+        }
+        .posts-btn {
+            width: 112rpx;
+            height: 112rpx;
+            line-height: 112rpx;
+            text-align: center;
+            border-radius: 50%;
+            color: #fff;
+            background-color: #3FD883;
+            box-shadow: 0 0 10rpx 4rpx rgba(63, 216, 131, 0.42);
+            position: fixed;
+            right: 30rpx;
+            bottom: 30rpx;
+        }
+    }
+</style>
+<template leng="wxml">
+    <view class="classify-wrap">
+        <view class="search-wrap f fc fc-h bg-w w-full">
+            <view class="search f fc fc-h" @tap="jumpSearch()">
+                <view class="dzicon icon-sousuo f22"></view>
+                <view class="ml10 f26">搜索您要的社群动态消息</view>
+            </view>
+        </view>
+        <!-- 轮播图 -->
+        <view class="swiper-wrap bg-w">
+            <comSwiper :source.sync="swiperImg" @clickItem.user="jumpClassifySingle"></comSwiper>
+        </view>
+        <!-- 帖子列表 -->
+        <view id="infoList" class="infolist-wrap mt20 {{isFixed==='fixed'?'pt100':''}}">
+            <comTab :list.sync="infoNav" :position.sync="isFixed" onClickAfter="selectInfoLabel" lineColor="#3FD481" activeColor="#111" mode="textTrace"></comTab>
+            <repeat>
+                <comInfoItem :infoList.sync="infoList" :labelIndex.sync="infoLabel.type"></comInfoItem>
+            </repeat>
+            <comLoading :showBottom.sync="showBottom" wx:if="{{isShowBottom}}" />
+        </view>
+        <!-- 发帖 -->
+        <view class="posts-btn" @tap="jumpEditorial()">发帖</view>
+        <comWait :isShow.sync="showWait" />
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import addr from "@/lib/addr";
+    import com_swiper from "@/components/com_swiper2";
+    import com_tab from "@/components/com_tab";
+    import com_infoItem from "@/components/com_infoItem";
+    import com_wait from "@/components/com_wait";
+    import com_loading from "@/components/com_loading";
+    export default class Classify extends wepy.page {
+        config = {
+            navigationBarTitleText: "分类信息",
+            enablePullDownRefresh: true,
+        };
+        components = {
+            comSwiper: com_swiper,
+            comTab: com_tab,
+            comInfoItem: com_infoItem,
+            comWait: com_wait,
+            comLoading: com_loading,
+        };
+        data = {
+            isFixed: "static",
+            swiperImg: [],
+            pageItemNum: 10,
+            //ReviewSetting:0,
+            infoNav: [{
+                    title: "最新发布",
+                    state: 0
+                },
+                {
+                    title: "距离最近",
+                    state: 1
+                },
+            ],
+            infoLabel: {
+                type: 0,
+                label: ["最新发布", "距离最近"],
+                list: [],
+                pageIndex: 1,
+                pageSize: 10,
+            },
+            infoList: [],
+            isOnReach: false,
+            isLoading: true,
+            showBottom: true, //判断提示内容是转圈或底线
+            isShowBottom: false, //判断是否显示底部组件
+            showWait: true,
+        };
+        methods = {
+            jumpSearch() {
+                tools.goNewPage("../classify-search/index");
+            },
+            jumpEditorial() {
+                tools.goNewPage("../classify-select/index?source=信息发布");
+            },
+            jumpClassifySingle(pageIndex, index) {
+                console.log(pageIndex, index);
+                let title = this.swiperImg[pageIndex][index].Name;
+                let classifyId = this.swiperImg[pageIndex][index].Id;
+                let toMore = pageIndex == 1 && index == 9 ? true : false;
+                let url = this.swiperImg.length > 2 && toMore ? "../classify-select/index?source=全部分类" : "../classify-single/index?title=" + title + "&id=" + classifyId;
+                tools.goNewPage(url);
+            }
+        };
+        async selectInfoLabel(state) {
+            this.infoLabel.type = state;
+            this.infoLabel.pageIndex = 1;
+            this.isOnReach = false,
+                await this.GetInfoList();
+            this.$apply();
+        }
+        events = {};
+        onLoad() {};
+        onReady() {
+            this.$invoke("comTab", "init");
+        }
+        async onShow() {
+            await this.GetMsgTypeList();
+            await this.GetInfoList();
+            this.infoList.forEach(function(item, index) {
+                item.isComment = false;
+                item.showBtn = false;
+            })
+        }
+        async onPageScroll() {
+            let nodeRes = await core.selectNode("#infoList");
+            //console.log(nodeRes[0].top)
+            this.isFixed = nodeRes[0].top < 0 ? 'fixed' : 'static';
+            this.$apply();
+        }
+        //获取分类轮播图
+        GetMsgTypeList() {
+            let app = wepy.$instance;
+            http.get(addr.GetMsgTypeList, {
+                appId: app.globalData.appid,
+                pageSize: 1000,
+            }).then(data => {
+                if (data.isok) {
+                    this.swiperImg = core.resetMsgTypeList(data.dataObj.list, this.pageItemNum);
+                    this.$apply();
+                    this.$invoke("comSwiper", "devideData")
+                } else {
+                    tools.showModal(data.Msg);
+                }
+            })
+        }
+        //获取帖子列表
+        async GetInfoList() {
+            this.showWait = true;
+            this.$apply();
+            wx.showNavigationBarLoading();
+            let data = await core.GetMsgList(this.infoLabel);
+            tools.handleResult(data, (res) => {
+                let dataList = res.list;
+                let pageIndex = this.infoLabel.pageIndex;
+                for (let i = 0, l = dataList.length; i < l; i++) {
+                    dataList[i].DzBtnText = dataList[i].IsDzed ? "取消" : "赞";
+                };
+                this.isLoading = (dataList.length == 0 && pageIndex > 1) ? false : true;
+                this.isShowBottom = (dataList.length == 0 && pageIndex > 1) ? true : false;
+                this.infoList = this.isOnReach ? this.infoList.concat(dataList) : dataList;
+                this.showWait = false;
+                this.$apply();
+                wx.hideNavigationBarLoading();
+            })
+        }
+        //下拉刷新
+        onPullDownRefresh() {
+            this.infoLabel.pageIndex = 1;
+            this.isOnReach = false;
+            this.GetMsgTypeList();
+            this.GetInfoList();
+            wx.stopPullDownRefresh();
+        }
+        //上拉触底
+        onReachBottom() {
+            this.infoLabel.pageIndex++;
+            this.isOnReach = true;
+            this.isLoading ? this.GetInfoList() : '';
+        }
+    }
+</script>

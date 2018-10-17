@@ -1,0 +1,151 @@
+<style lang="less">
+  .vas-mask {
+    position: fixed;
+    top: 10vh;
+    left: 8%;
+    z-index: 7;
+    .vas-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100%;
+      background-color: #000;
+      opacity: 0.6;
+      z-index: 7;
+    }
+    .vas-cancle {
+      position: fixed;
+      top: 30rpx;
+      left: 45%;
+      z-index: 8;
+      font-size: 70rpx;
+      color: #fff;
+    }
+    .canvas {
+      position: fixed;
+      top: 10vh;
+      left: 6%;
+      z-index: 8;
+      width: 95%;
+      height: 75vh;
+    }
+    .vas-btn {
+      font-size: 26rpx;
+      text-align: center;
+      color: #fff;
+      .dzicon {
+        font-size: 60rpx;
+        width: 96rpx;
+        height: 96rpx;
+        text-align: center;
+        line-height: 96rpx;
+        border-radius: 50%;
+        margin-top: 20rpx;
+      }
+      text {
+        margin-top: 10rpx;
+      }
+    }
+    .vas-share {
+      color: #fff;
+      background: #FF9E40;
+    }
+    .vas-save {
+      color: #fff;
+      background: #FF6B6B;
+    }
+    .vas-friend {
+      background: #FFD040;
+      color: #fff;
+    }
+    .vas-bottom {
+      position: fixed;
+      width: 100%;
+      padding: 0 80rpx;
+      z-index: 8;
+      bottom: 2vh;
+      left: 0;
+    }
+  }
+</style>
+<template>
+  <view class='vas-mask'>
+    <view class='vas-bg' @tap="hidemask" ></view>
+    <view class="dzicon icon-zhuanyebaniconkuozhan_Close vas-cancle" @tap="hidemask"></view>
+    <canvas class='canvas' canvas-id="firstCanvas" ></canvas>
+    <view class="vas-bottom f fc fj">
+      <view class='vas-btn f fv fc' @tap="saveQrcode(0,{{vm}})">
+        <view class="dzicon icon-Choice_xuanze  vas-save" />
+        <text>保存图片</text>
+      </view>
+      <view class='vas-btn f fv fc' @tap="saveQrcode(1,{{vm}})">
+        <view class="dzicon icon-Circleoffriends_pengyou vas-friend" />
+        <text>发朋友圈</text>
+      </view>
+      <view class='vas-btn f fv fc'>
+        <button class='dzicon icon-Forward_fenxiang vas-share' open-type="share" />
+        <text>分享给朋友</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools
+  } from "../lib/core.js";
+  import _get from "@/lib/lodash.get.js"
+  export default class com_canvas extends wepy.component {
+    config = {
+      usingComponents: {}
+    }
+    components = {};
+    props = {};
+    data = {}
+    methods = {
+      hidemask() {
+        this.$emit("hideCanvas")
+        this.$parent.showCanvas = false
+        this.$apply()
+      },
+      
+      // 保存画布的图片
+      async saveQrcode(index, vm) {
+        let record = _get(vm, "record")
+        wx.canvasToTempFilePath({
+          x: 0,
+          y: 0,
+          width: wx.getSystemInfoSync().windowWidth * 0.87,
+          height: wx.getSystemInfoSync().windowHeight * 0.8,
+          destWidth: 650,
+          destHeight: 880,
+          canvasId: 'firstCanvas',
+          success: data => {
+            wx.saveImageToPhotosAlbum({
+              filePath: data.tempFilePath,
+              success: async res => {
+                if (Number(index) == 0) {
+                  await tools.loading("图片保存成功",'success')
+                }
+                if (Number(index) == 1) {
+                  await tools.showModal("保存已保存成功！您可以用该图片去分享朋友圈哦",false)
+                }
+                if (record) {
+                  await core.updateRecordId(record)
+                }
+              },
+              fail: async res => {
+                if (res.errMsg == 'saveImageToPhotosAlbum:fail auth deny') {
+                 await tools.showModal("授权后才可使用,请点击右上角‘关于小程序’进行相关设置",false)
+                }
+              }
+            })
+          }
+        })
+      },
+    };
+  }
+</script>

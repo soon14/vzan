@@ -1,0 +1,451 @@
+<style lang="less">
+  .c-gv {
+    width: 100%;
+    .c-gv-main {
+      width: 100%;
+      padding-left: 30rpx;
+      margin-bottom: 25rpx;
+      background-color: #fff;
+      .c-gv-main-top {
+        width: 100%;
+        height: 110rpx;
+        padding-right: 30rpx;
+        border-bottom: 1px solid #eee;
+        >image {
+          width: 70rpx;
+          height: 70rpx;
+          margin-right: 50rpx;
+          border-radius: 5rpx;
+        }
+      }
+      .c-gv-main-more {
+        width: 100%;
+        padding: 30rpx 0;
+        border-bottom: 1px solid #eee;
+        >textarea {
+          width: 100%;
+          height: 140rpx;
+          margin-bottom: 30rpx;
+        }
+        .c-gv-main-uploadImg {
+          width: 170rpx;
+          height: 170rpx;
+        }
+        .c-gv-main-close {
+          font-size: 40rpx;
+          position: absolute;
+          top: -20rpx;
+          right: -10rpx;
+          opacity: 0.8;
+          z-index: 1;
+        }
+        .c-gv-main-upload {
+          width: 170rpx;
+          height: 170rpx;
+          border: 2px dotted #d0d0d0;
+          >text {
+            color: #d9d8d9;
+          }
+        }
+      }
+      .c-gv-main-hidename {
+        width: 100%;
+        padding: 30rpx 0;
+        .dzicon {
+          font-size: 40rpx;
+          margin-right: 30rpx;
+        }
+      }
+    }
+    .c-gv-star {
+      width: 100%;
+      margin-top: 25rpx;
+      background-color: #fff;
+      padding: 30rpx;
+      .c-gv-star-main {
+        width: 100%;
+        margin-top: 30rpx;
+        >view {
+          margin-bottom: 30rpx;
+        }
+      }
+    }
+    .c-gv-btn {
+      width: 100%;
+      height: 100rpx;
+      text-align: center;
+      line-height: 100rpx;
+      font-size: 30rpx;
+      margin-top: 80rpx;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+    }
+    .c-gv-mask {
+      width: 100%;
+      .c-gv-bg {
+        width: 100%;
+        height: 100vh;
+        background: #000000;
+        opacity: 0.4;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 3;
+      }
+      .c-gv-mask-main {
+        position: fixed;
+        top: 200rpx;
+        left: 50%;
+        margin-left: -260rpx;
+        width: 520rpx;
+        height: 480rpx;
+        background: #fff;
+        z-index: 4;
+        .dzicon {
+          font-size: 140rpx;
+          opacity: 0.3;
+          margin-top: 10rpx;
+        }
+        .v-mbtn {
+          width: 260rpx;
+          height: 68rpx;
+          text-align: center;
+          line-height: 68rpx;
+          margin-top: 60rpx;
+        }
+      }
+      .c-gv-mask-close {
+        font-size: 95rpx;
+        color: #fff;
+        position: fixed;
+        bottom: 350rpx;
+        z-index: 4;
+        left: 50%;
+        margin-left: -45rpx;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="{{currentSkin}}">
+    <view class="c-gv">
+      <repeat for="{{vm.list}}" index="parentIndex">
+        <view class="c-gv-main">
+          <view class="c-gv-main-top f fc">
+            <image src="{{item.GoodsImg}}" />
+            <repeat for="{{vm.emijo}}" item="emItem">
+              <view class="f fc {{item.Praise==emItem.state?'skin_txt':'c123'}}" style="margin-right:40rpx;" @tap="changeValue({{emItem.state}},{{parentIndex}})">
+                <text class="{{emItem.icon}} f40" />
+                <text class="ml20">{{emItem.txt}}</text>
+              </view>
+            </repeat>
+          </view>
+          <view class="c-gv-main-more">
+            <textarea placeholder="您的评价会让商家做的更好~" placeholder-style="color:#d9d8d9" @input="changeMess({{parentIndex}})" value="{{item.Comment}}" />
+            <view class="w-100 f fw">
+              <repeat for="{{item.imgUrl}}" index="i" item="imgItem">
+                <view class="rel" style="margin:0 20rpx 20rpx 0">
+                  <image class="c-gv-main-uploadImg" mode="aspectFill" src="{{imgItem}}" @tap="preView({{vm.img}},{{index}})" />
+                  <text class="c-gv-main-close dzicon icon-guanbi1" @tap="deleImg({{parentIndex}},{{i}})" />
+                </view>
+              </repeat>
+              <view class="c-gv-main-upload f fv fc fc-h" @tap="changeImg({{parentIndex}})">
+                <text class="dzicon icon-zhaoxiangji f40" />
+                <text class="f24 mt10" wx:if="{{item.imgUrl.length==0}}">添加图片</text>
+                <text class="f24" wx:else>{{item.imgUrl.length}}/8</text>
+              </view>
+            </view>
+          </view>
+          <view class="c-gv-main-hidename f fc">
+            <text class="dzicon icon-Choice_xuanze {{item.Anonymous?'skin_txt':'c123'}}" @tap="changeAnon({{parentIndex}})" />
+            <text class="f26">匿名</text>
+          </view>
+        </view>
+      </repeat>
+      <view class="c-gv-star">
+        <view>评分</view>
+        <view class="c-gv-star-main f fv">
+          <repeat for="{{vm.starLst}}" index="sParentIndex">
+            <view class="f fc">
+              <text style="margin-right:30rpx;">{{item.title}}</text>
+              <repeat for="{{item.list}}" item="star" index="starIndex">
+                <text class="{{star.icon}} f40 mr20 {{star.sel?'skin_txt':'c123'}}" @tap="changeStar({{item}},{{sParentIndex}},{{starIndex}})" />
+              </repeat>
+              <text style="margin-left:30rpx;color:#666">{{item.name||''}}</text>
+            </view>
+          </repeat>
+        </view>
+      </view>
+      <view style="height:100rpx" />
+      <view class="c-gv-btn skin_bg" @tap="postValue">发布</view>
+      <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}" />
+      <!-- 弹窗 -->
+      <view class="c-gv-mask f fc-h" wx:if="{{vm.showMask}}">
+        <view class="c-gv-bg" />
+        <view class="c-gv-mask-main f fv fc">
+          <view class="dzicon icon-Choice_xuanze skin_txt" />
+          <view class="f fv fc mt30">
+            <text class="f36 t-b">感谢您的评价</text>
+            <text class="c666 mt20">我们会努力做的更好</text>
+          </view>
+          <view class="v-mbtn skin_br" @tap="pathGo">查看我的评价</view>
+        </view>
+        <view class="dzicon icon-zhuanyebaniconkuozhan_Close c-gv-mask-close" @tap="hideMask" />
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+  } from "@/lib/core";
+  import _get from "@/lib/lodash.get.js"
+  export default class goodValue extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      },
+      navigationBarTitleText: "发表评价"
+    };
+    data = {
+      vm: {
+        emijo: [{
+            icon: 'dzicon icon-haoping',
+            txt: "好评",
+            state: 2
+          },
+          {
+            icon: 'dzicon icon-zhongping',
+            txt: "中评",
+            state: 1
+          },
+          {
+            icon: 'dzicon icon-chaping',
+            txt: "差评",
+            state: 0
+          }
+        ],
+        showMask: false,
+      },
+      currentSkin: {},
+      toast: {},
+    };
+    methods = {
+      pathGo() {
+        tools.goRedirecto("/pages/good/goodValueLst?type=user")
+      },
+      hideMask() {
+        this.vm.showMask = false
+        tools.goBack(1)
+        this.$apply()
+      },
+      //评价
+      changeValue(state, index) {
+        this.vm.list[index].Praise = state
+        this.$apply()
+      },
+      //评论留言
+      changeMess(index, e) {
+        this.vm.list[index].Comment = e.detail.value
+        this.$apply()
+      },
+      //选择图片
+      async changeImg(index) {
+        let tap = this.vm.list[index].imgUrl.length
+        if (tap >= 8) {
+          tools.showModal("最多只能上传8张", false)
+          return
+        }
+        let imgs = await tools.chooseImg()
+        let tempImg = imgs.tempFilePaths;
+        if (tempImg.length + tap > 8) {
+          tools.showModal("最多只能上传8张", false)
+          return
+        }
+        await this.uploadService(tempImg, index)
+      },
+      //删除
+      deleImg(parentIndex, index) {
+        this.vm.list[parentIndex].imgUrl.splice(index, 1)
+        this.$apply()
+      },
+      //匿名
+      changeAnon(index) {
+        this.vm.list[index].Anonymous = !this.vm.list[index].Anonymous
+        this.$apply()
+      },
+      //选择星星
+      changeStar(vm, currentIndex, index) {
+        let tmp = vm.list
+        let tmp_array = []
+        for (let j = 0, len = tmp.length; j < len; j++) {
+          tmp[j].sel = false;
+          tmp[j].icon = "dzicon icon-xingxingweidianji";
+        }
+        for (let i = 0; i < index + 1; i++) {
+          tmp[i].sel = true;
+          tmp[i].icon = 'dzicon icon-xingxingdianjihou';
+          tmp_array.push(tmp[i])
+        }
+        this.vm.starLst[currentIndex].list = tmp
+        this.$apply()
+        this.showStarRang(tmp_array.length, currentIndex)
+      },
+      postValue() {
+        let vm = this.vm
+        for (let i = 0, len = vm.list.length; i < len; i++) {
+          if (vm.list[i].DescriptiveScore == 0) {
+            tools.ShowToast("请对描述做出评价", this)
+            return;
+          }
+          if (vm.list[i].LogisticsScore == 0) {
+            tools.ShowToast("请对物流做出评价", this)
+            return;
+          }
+          if (vm.list[i].ServiceScore == 0) {
+            tools.ShowToast("请对服务做出评价", this)
+            return;
+          }
+          if (vm.list[i].Anonymous) {
+            vm.list[i].Anonymous = 1
+          } else {
+            vm.list[i].Anonymous = 0
+          }
+          if (vm.list[i].imgUrl.length) {
+            vm.list[i].HeadImgUrl = vm.list[i].imgUrl.join(',')
+          }
+        }
+        let tmp = {
+          orderid: vm.orderId,
+          goodsType: vm.goodsType,
+          list: vm.list
+        }
+        core.postValue(tmp,this)
+      },
+    }
+    async onLoad(options, data) {
+      await tools.setPageSkin(this);
+      this.proLoad(_get(data.preload, "vm"))
+    }
+    /**
+     * @param {Anonymous是否匿名}
+     * @param {Comment评论}
+     * @param {GoodsId商品id}
+     * @param {GoodsName商品名称}
+     * @param {Praise好评}
+     * @param {LogisticsScore物流评分}
+     * @param {ServiceScore服务评分}
+     * @param {DescriptiveScore描述评分}
+     * @param {GoodsPrice商品价格，单位分}
+     * @param {GoodsImg商品图片}
+     * @param {GoodsSpecification商品规格}
+     * @param {HeadImgUrl评论图片路径，以，隔开}
+     */
+    proLoad(vm) {
+      let array = []
+      for (let i = 0, len = vm.list.length; i < len; i++) {
+        let img = _get(vm.list[i], "SpecImg", "") || vm.list[i].goodsMsg.img
+        array.push({
+          Praise: 2,
+          Comment: "",
+          Anonymous: false,
+          GoodsId: _get(vm.list[i], 'FoodGoodsId', 0),
+          GoodsName: _get(vm.list[i], 'GoodName', ''),
+          GoodsPrice: _get(vm.list[i], "Price"),
+          GoodsImg: img,
+          GoodsSpecification: _get(vm.list[i], "SpecInfo", ""),
+          imgUrl: [],
+          ServiceScore: 0,
+          LogisticsScore: 0,
+          DescriptiveScore: 0,
+        })
+      }
+      this.vm.list = array
+      this.vm.orderId = vm.orderid
+      this.vm.goodsType = vm.goodType
+      this.$apply()
+      this.showStar()
+    }
+    showStar() {
+      let array = []
+      let array_i = []
+      for (let i = 0; i < 5; i++) {
+        array_i.push({
+          icon: 'dzicon icon-xingxingweidianji',
+          sel: false,
+        })
+      }
+      for (let j = 0; j < 3; j++) {
+        let title = ""
+        if (j == 0) {
+          title = '描述相符'
+        } else if (j == 1) {
+          title = '物流服务'
+        } else {
+          title = '服务态度'
+        }
+        array.push({
+          title,
+          list: array_i,
+        })
+      }
+      this.vm.starLst = array
+      this.$apply()
+    }
+    showStarRang(length, currentIndex) {
+      let name = ""
+      switch (length) {
+        case 1:
+          name = "非常差"
+          break;
+        case 2:
+          name = "差"
+          break;
+        case 3:
+          name = "一般"
+          break;
+        case 4:
+          name = "好"
+          break;
+        case 5:
+          name = "非常好"
+          break;
+      }
+      for (let i = 0, len = this.vm.list.length; i < len; i++) {
+        switch (currentIndex) {
+          case 0:
+            this.vm.list[i].DescriptiveScore = length;
+            break;
+          case 1:
+            this.vm.list[i].LogisticsScore = length;
+            break;
+          case 2:
+            this.vm.list[i].ServiceScore = length;
+            break;
+        }
+      }
+      this.vm.starLst[currentIndex].name = name
+      this.$apply()
+    }
+    async uploadService(tempImg, index) {
+      let array = []
+      for (let i = 0, len = tempImg.length; i < len; i++) {
+        let _g = await tools.uploadImg(tempImg, i)
+        if (_g.errMsg.includes('uploadFile:ok')) {
+          let _v = JSON.parse(_g.data)
+          array.push(_v.msg)
+        } else {
+          tools.showModal("上传失败", false)
+        }
+      }
+      this.vm.list[index].imgUrl = [...this.vm.list[index].imgUrl, ...array]
+      this.$apply()
+    }
+  }
+</script>

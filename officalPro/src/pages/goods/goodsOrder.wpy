@@ -1,0 +1,215 @@
+<style lang="less">
+    page {
+        background: #f6f6f6;
+    }
+    .order {
+        width: 100%;
+        border-top: 1px solid #eee;
+        .header {
+            width: 100%;
+            min-height: 149rpx;
+            background: #fff;
+            padding: 30rpx;
+            >image {
+                position: absolute;
+                width: 100%;
+                bottom: 0;
+                left: 0;
+            }
+            .add-mode {
+                color: #ff3838;
+                font-weight: normal;
+            }
+        }
+        .wrap-order {
+            width: 100%;
+            padding-top: 30rpx;
+            background: #fff;
+            margin-top: 24rpx;
+            .wrap-mess {
+                padding: 30rpx;
+                width: 100%;
+                border-top: 1px solid #eee;
+                margin-top: 30rpx;
+                >input {
+                    font-size: 26rpx;
+                    text-align: right;
+                    margin-left: 30rpx;
+                }
+            }
+        }
+        .footer {
+            width: 100%;
+            padding: 30rpx;
+            margin-top: 24rpx;
+            background: #fff;
+        }
+        .footer-btn {
+            width: 100%;
+            padding: 0 30rpx;
+            margin-top: 60rpx;
+            .pay-button {
+                width: 100%;
+                height: 90rpx;
+                line-height: 90rpx;
+                text-align: center;
+                background: #09BB07;
+                color: #fff;
+                font-size: 30rpx;
+                display: inline-block;
+                border-radius: 5rpx;
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='order'>
+        <view class='header f fc rel' @tap="chooseAdd">
+            <view class='f30 t-b f1' wx:if="{{vm.address.mode==-1}}">请选择收货地址</view>
+            <view class='f fv f1' wx:if="{{vm.address.mode!=-1}}">
+                <view class='f fc f34 c333 t-b'>
+                    <text>{{vm.address.name}}</text>
+                    <text class='ml20'>{{vm.address.phone}}</text>
+                    <text class='add-mode f26 ml20'>[{{vm.address.mode==1?'快递':'自取'}}]</text>
+                </view>
+                <view class='f fc mt20'>
+                    <text class='dzicon icon-dizhi c1a12' />
+                    <text class='c666 ml20 line line1'>{{vm.address.address}}</text>
+                </view>
+            </view>
+            <view class='dzicon icon-zhuanyebaniconkuozhan_Distribu2 f50' />
+            <image mode='widthFix' src='http://j.vzan.cc/dz/content/images/Enterprisepro/order-logo.png' />
+        </view>
+        <view class='wrap-order'>
+            <repeat>
+                <comGoodlst :vm.sync="vm" />
+            </repeat>
+            <view class='wrap-mess f fc'>
+                <text class='f26 c333'>店铺备注</text>
+                <input maxlength='100' class='f1' placeholder='选填，给商家留言' placeholder-style='color:#d9d8d9' @input="setMess" />
+            </view>
+        </view>
+        <view class='footer'>
+            <view class='f fc fj c333'>
+                <text class='f26'>商品金额</text>
+                <text class='f30 t-b'>￥{{vm.totalPrice}}</text>
+            </view>
+            <view class='f fc fj mt30'>
+                <text class='f26 c333'>运费</text>
+                <text class='f30 t-b cff3'>+ {{vm.feePrice}}</text>
+            </view>
+        </view>
+        <view class='w-100 f34 f fc f-end mt30' style='padding-right:30rpx'>实付款<text class='t-b cff3'>￥{{vm.buyPrice}}</text></view>
+        <view class='footer-btn'>
+            <form report-submit="true" @submit='payRequest'>
+                <button formType="submit" class='pay-button'>微信支付</button>
+            </form>
+        </view>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_goodLst from "@/components/com_goodItem";
+    import {
+        core,
+        tools,
+        pay
+    } from "@/lib/core.js";
+    export default class goodsOrder extends wepy.page {
+        config = {
+            navigationBarTitleText: "确认订单",
+            navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            }
+        };
+        components = {
+            comGoodlst: com_goodLst
+        };
+        data = {
+            vm: {},
+            toast: {}
+        };
+        methods = {
+            //商家留言
+            setMess(e) {
+                this.vm.mess = e.detail.value
+                this.$apply()
+            },
+            //前往选择地址
+            chooseAdd() {
+                tools.goNewPage("./goodsPeraddr?cartid=" + this.vm.cartid)
+            },
+            //支付
+            payRequest(e) {
+                let _v = this.vm
+                core.formId(e.detail.formId)
+                if (_v.address.mode == -1) {
+                    tools.ShowToast("请选择配送方式", this)
+                    return;
+                }
+                let _pay = {
+                    paytype: 1,
+                    jsondata: {
+                        AccepterName: _v.address.name,
+                        AccepterTelePhone: _v.address.phone,
+                        Message: _v.mess,
+                        BuyMode: 1,
+                        GetWay: _v.address.mode,
+                        Address: _v.address.address,
+                        WxAddresJson: {
+                            provinceName: _v.address.province,
+                            cityName: _v.address.city
+                        },
+                        CartIds: _v.cartid + ""
+                    },
+                    price: Number(_v.buyPrice).mul(100)
+                }
+                _pay.jsondata.WxAddresJson = JSON.stringify(_pay.jsondata.WxAddresJson)
+                pay.AddPayOrder(_pay)
+            }
+        }
+        onLoad(options, data) {
+            this.paraData = _get(data.preload, "vm", '')
+            this.$apply()
+        }
+        onShow() {
+            this.orederInfo()
+        }
+        async orederInfo() {
+            let app = wepy.$instance
+            let _v = this.paraData
+            let address = _get(app.globalData, "address", "")
+            if (address) {
+                if (address.province && address.city) {
+                    let _feePara = {
+                        province: address.province,
+                        city: address.city,
+                        ids: _v.cartid
+                    }
+                    let fee = await core.GetFreightFee(_feePara)
+                    let feePrice = parseFloat(fee.dataObj.deliueryResult.Fee.div(100)).toFixed(2)
+                    _v.buyPrice = parseFloat(Number(_v.totalPrice).add(Number(feePrice))).toFixed(2)
+                    _v.feePrice = feePrice
+                } else {
+                    _v.buyPrice = _v.totalPrice
+                }
+            } else {
+                address = {
+                    mode: -1
+                }
+                _v.buyPrice = _v.totalPrice
+                _v.feePrice = "0.00"
+            }
+            _v.address = address
+            this.vm = _v
+            this.$apply()
+        }
+    }
+</script>

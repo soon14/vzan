@@ -1,0 +1,165 @@
+<style lang="less">
+    .c-good {
+        margin-bottom: 20rpx;
+        background-color: #fff;
+        .c-good-main {
+            width: 100%;
+            padding-left: 30rpx;
+            .c-good-detail-main {
+                width: 100%;
+                padding: 30rpx 30rpx 30rpx 0;
+                border-bottom: 1px solid #eee;
+                >image {
+                    width: 220rpx;
+                    height: 220rpx;
+                    margin-right: 30rpx;
+                    flex-shrink: 0;
+                    border-radius: 5rpx;
+                }
+                .c-good-detail-content {
+                    height: 220rpx;
+                }
+            }
+            .c-good-detail-main:last-child {
+                border-bottom: none;
+            }
+            .c-good-big-main {
+                width: 100%;
+                padding: 30rpx 30rpx 0 0;
+                >image {
+                    width: 100%;
+                    border-radius: 5rpx;
+                }
+            }
+            .c-good-big-main:last-child {
+                padding-bottom: 30rpx;
+            }
+        }
+        .c-good-main-small {
+            width: 100%;
+            padding: 0 30rpx;
+            margin-top: 30rpx;
+            .c-good-small-main {
+                width: 340rpx;
+                padding-bottom: 30rpx;
+                >image {
+                    width: 340rpx;
+                    height: 340rpx;
+                    border-radius: 5rpx;
+                }
+            }
+        }
+        .c-good-main-scroll {
+            padding: 30rpx;
+            .c-good-scroll-main {
+                margin-right: 10rpx;
+                >image {
+                    width: 300rpx;
+                    height: 300rpx;
+                    border-radius: 5rpx;
+                }
+            }
+        }
+    }
+</style>
+<template>
+    <view class="c-good">
+        <view class='component-title f fc fc-h' wx:if='{{currentCom.title}}'><text class='component-title-left dzicon icon-_xiegan skin_txt' />{{currentCom.title}}<text class='component-title-right dzicon icon-_xiegan skin_txt' /></view>
+        <!-- 详情模式 -->
+        <view class="c-good-main" wx:if="{{currentCom.goodShowType=='normal'}}">
+            <repeat for="{{vm}}" item="good_item">
+                <view class="c-good-detail-main f" @tap="goNav({{good_item}},{{currentCom}})">
+                    <image src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                    <view class="c-good-detail-content f f1 fv fj">
+                        <view>
+                            <view class="line line2" style="margin-bottom:10rpx;">{{good_item.name}}</view>
+                            <comlabel :vm.sync="good_item.plabelstr_array" wx:if="{{good_item.plabelstr_array.length}}" />
+                        </view>
+                        <view>
+                            <view class="f fc">
+                                <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                                <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+                            </view>
+                            <view class="w-100 f fj fc" wx:if="{{currentCom.btnType}}">
+                                <text class='f22 c123'>{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</text>
+                                <text class="dzicon icon-gouwuche c123 f36" wx:if="{{currentCom.btnType=='buy'}}" />
+                                <text class="dzicon icon-yuyue c123 f36" wx:if="{{currentCom.btnType=='yuyue'}}" />
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <!-- 大图 -->
+        <view class="c-good-main" wx:if="{{currentCom.goodShowType=='big'}}">
+            <repeat for="{{vm}}" item="good_item">
+                <view class="c-good-big-main" @tap="goNav({{good_item}},{{currentCom}})">
+                    <image mode="widthFix" src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                    <view class="line line1 mt20">{{good_item.name}}</view>
+                    <comlabel :vm.sync="good_item.plabelstr_array" class="mt20" wx:if="{{good_item.plabelstr_array.length}}" />
+                    <view class="f fc" style="margin-top:30rpx;">
+                        <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                        <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+                    </view>
+                    <view class="w-100 f fj fc" wx:if="{{currentCom.btnType}}">
+                        <text class='f22 c123'>{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</text>
+                        <text class="dzicon icon-gouwuche c123 f36" wx:if="{{currentCom.btnType=='buy'}}" />
+                        <text class="dzicon icon-yuyue c123 f36" wx:if="{{currentCom.btnType=='yuyue'}}"  />
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <!-- 小图 -->
+        <view class="c-good-main-small f fw fj" wx:if="{{currentCom.goodShowType=='small'}}">
+            <repeat for="{{vm}}" item="good_item">
+                <view class="c-good-small-main" @tap="goNav({{good_item}},{{currentCom}})">
+                    <image src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                    <view class="line line1 mt10">{{good_item.name}}</view>
+                    <view class="f fc" style="margin-top:20rpx;">
+                        <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                        <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+                    </view>
+                    <view class='f22 c123 mt10' wx:if="{{currentCom.btnType}}">{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</view>
+                </view>
+            </repeat>
+        </view>
+        <!-- 滚动 -->
+        <view class="c-good-main-scroll" wx:if="{{currentCom.goodShowType=='scroll'}}">
+            <scroll-view scroll-x>
+                <view class="f">
+                    <repeat for="{{vm}}" item="good_item">
+                        <view class="c-good-scroll-main" @tap="goNav({{good_item}},{{currentCom}})">
+                            <image src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                            <view class="line line1 mt10">{{good_item.name}}</view>
+                            <view class="f fc" style="margin-top:20rpx;">
+                                <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                                <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+                            </view>
+                            <view class='f22 c123 mt10' wx:if="{{currentCom.btnType}}">{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</view>
+                        </view>
+                    </repeat>
+                </view>
+            </scroll-view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        tools
+    } from "@/lib/core.js";
+    import com_label from "@/components/com_goodLabel";
+    export default class com_goodLst extends wepy.component {
+        components = {
+            comlabel: com_label,
+        };
+        data = {}
+        methods = {
+            goNav(item, current) {
+                tools.pathGood(item.id, current.btnType, current.isShowPrice)
+            },
+            
+        }
+    }
+</script>

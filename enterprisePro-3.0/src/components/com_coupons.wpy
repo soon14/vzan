@@ -1,0 +1,237 @@
+<style lang="less">
+    .coup {
+        height: 78rpx;
+        line-height: 78rpx;
+        background-color: #fff;
+        padding-right: 20rpx;
+        .coup-title {
+            height: 100%;
+            padding-left: 20rpx;
+            position: relative;
+        }
+        .coup-title::before {
+            content: " ";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 6rpx;
+            height: 28rpx;
+            background-color: red;
+            -webkit-transform: translate(0, -50%);
+            transform: translate(0, -50%);
+        }
+        .mycoupons {
+            font-weight: normal;
+        }
+    }
+    .cp-swiper {
+        width: 100%;
+        padding-bottom: 5rpx;
+        padding: 20rpx 0;
+        background-color: #fff;
+        .cp-swiper-item1 {
+            width: 500rpx;
+            height: 190rpx;
+            background-image: url("http://j.vzan.cc/miniapp/img/enterprise/coupons-style1.png?v1");
+            background-size: cover;
+            margin-left: 22rpx;
+            .cp-content1 {
+                width: 100%;
+                height: 142rpx;
+                color: #fff;
+            }
+            .price1 {
+                width: 148rpx;
+            }
+            .condition1 {
+                width: 212rpx;
+                padding-left: 20rpx;
+            }
+            .btn-get1 {
+                width: 140rpx;
+            }
+            .cp-date {
+                width: 100%;
+                height: 48rpx;
+                line-height: 48rpx;
+                padding-left: 16rpx;
+                border: 1px solid #ddd;
+                border-top: none;
+                border-radius: 0 0 8rpx 8rpx;
+            }
+        }
+        .cp-swiper-item2 {
+            width: 500rpx;
+            height: 190rpx;
+            background-image: url("http://j.vzan.cc/miniapp/img/enterprise/coupons-style2.png");
+            background-size: cover;
+            margin-left: 22rpx;
+            .cp-content2 {
+                width: 320rpx;
+                height: 100%;
+                color: #fff;
+            }
+            .condition2 {
+                width: 100%;
+                padding-left: 20rpx;
+            }
+            .price2 {
+                padding-bottom: 20rpx;
+                font-size: 30rpx;
+                font-weight: bold;
+            }
+            .btn-get2 {
+                width: 180rpx;
+            }
+        }
+        .get {
+            display: inline-block;
+            color: red;
+            background-color: #fff;
+            border-radius: 20rpx;
+            padding: 2rpx 10rpx;
+        }
+        .cp-swiper-item3 {
+            width: 500rpx;
+            height: 190rpx;
+            background-image: url("http://j.vzan.cc/miniapp/img/enterprise/coupons-style3.png");
+            background-size: cover;
+            margin-left: 22rpx;
+            .cp-content3 {
+                width: 330rpx;
+                height: 100%;
+                color: #e94462;
+            }
+            .price3 {
+                min-width: 140rpx;
+                margin: 0 10rpx;
+            }
+            .btn-get3 {
+                width: 170rpx;
+            }
+            .get3-box {
+                background-color: #e94462;
+                padding: 10rpx;
+                width: 100rpx;
+                height: 100rpx;
+                text-align: center;
+                border-radius: 50%;
+            }
+        }
+    }
+</style>
+<template>
+    <repeat>
+        <view class="coup fw f fj">
+            <text class="coup-title">{{currentCom.title}}</text>
+            <text class="c999 mycoupons" @tap="goMyCoupons">我的优惠券<text class="dzicon icon-arrow-right"></text></text>
+        </view>
+        <scroll-view class="cp-swiper " scroll-x>
+            <!-- 样式1 -->
+            <view class='f' wx:if="{{currentCom.couponsShowType=='one'}}">
+                <repeat for="{{currentCom.items}}">
+                    <view class="cp-swiper-item1">
+                        <view class="cp-content1 f cfff">
+                            <view class="price1 f fc fc-h">
+                                <!-- 优惠金额 -->
+                                <text wx:if="{{item.CouponWay==0}}">￥<text class="f70">{{item.Money}}</text></text>
+                                <!-- 优惠折扣 -->
+                                <text wx:if="{{item.CouponWay==1}}"><text class="f70">{{item.Money}}</text>折</text>
+                            </view>
+                            <view class="condition1 f fv fc-h">
+                                <text class="f26">{{item.CouponName}}</text>
+                                <text wx:if="{{item.LimitMoney=='0'}}" class="f24">无门槛使用</text>
+                                <text wx:if="{{item.LimitMoney>'0'}}" class="f24">满{{item.LimitMoney}}元使用</text>
+                            </view>
+                            <view class="btn-get1 f fc fc-h">
+                                <text class="get" @tap='getCoupon({{item.id}})'>领取</text>
+                            </view>
+                        </view>
+                        <view class="cp-date w-100">
+                            <block wx:if="{{item.ValType==0}}">
+                                <text class="c666 f24">{{item.StartUseTime}} - {{item.EndUseTime}}</text>
+                            </block>
+                            <block wx:elif="{{item.ValType==1}}">
+                                <text class="c666 f24">领券次日开始{{item.ValDay}}天内有效</text>
+                            </block>
+                            <block wx:elif="{{item.ValType==2}}">
+                                <text class="c666 f24">领券当日开始{{item.ValDay}}天内有效</text>
+                            </block>
+                        </view>
+                    </view>
+                </repeat>
+            </view>
+            <!-- 样式2 -->
+            <view class="f" wx:if="{{currentCom.couponsShowType=='two'}}">
+                <repeat for="{{currentCom.items}}">
+                    <view class="cp-swiper-item2 f">
+                        <view class="cp-content2 f cfff">
+                            <view class="condition2 f fv fc-h">
+                                <text class="price2" wx:if="{{item.CouponWay==0}}"><text>{{item.Money}}</text>元{{item.CouponName}}</text>
+                                <text class="price2" wx:if="{{item.CouponWay==1}}"><text>{{item.Money}}</text>折{{item.CouponName}}</text>
+                                <text wx:if="{{item.LimitMoney=='0'}}">无门槛使用</text>
+                                <text wx:if="{{item.LimitMoney>'0'}}">满{{item.LimitMoney}}元使用</text>
+                                <block wx:if="{{item.ValType==0}}">
+                                    <text class="f24">{{item.StartUseTime}} - {{item.EndUseTime}}</text>
+                                </block>
+                                <block wx:elif="{{item.ValType==1}}">
+                                    <text class="f24">领券次日开始{{item.ValDay}}天内有效</text>
+                                </block>
+                                <block wx:elif="{{item.ValType==2}}">
+                                    <text class="f24">领券当日开始{{item.ValDay}}天内有效</text>
+                                </block>
+                            </view>
+                        </view>
+                        <view class="btn-get2 f fc fc-h">
+                            <text class="get" @tap='getCoupon({{item.id}})'>领取</text>
+                        </view>
+                    </view>
+                </repeat>
+            </view>
+            <!-- 样式3 -->
+            <view class="f" wx:if="{{currentCom.couponsShowType=='three'}}">
+                <repeat for="{{currentCom.items}}">
+                    <view class="cp-swiper-item3 f">
+                        <view class="cp-content3 f">
+                            <view class="price3 f fc fc-h">
+                                <!-- 优惠金额 -->
+                                <text wx:if="{{item.CouponWay==0}}">￥<text class="f60">{{item.Money}}</text></text>
+                                <!-- 优惠折扣 -->
+                                <text wx:if="{{item.CouponWay==1}}"><text class="f60">{{item.Money}}</text>折</text>
+                            </view>
+                            <view class="f fv fc-h">
+                                <text class="f26">{{item.CouponName}}</text>
+                                <text class="f22" wx:if="{{item.LimitMoney=='0'}}">无门槛使用</text>
+                                <text class="f22" wx:if="{{item.LimitMoney>'0'}}">满{{item.LimitMoney}}元使用</text>
+                            </view>
+                        </view>
+                        <view class="btn-get3 f fv fc-h">
+                            <view class="get3-box f fv fc-h" @tap='getCoupon({{item.id}})'>
+                                <text class="cfff">立即</text>
+                                <text class="cfff">领取</text>
+                            </view>
+                        </view>
+                    </view>
+                </repeat>
+            </view>
+        </scroll-view>
+    </repeat>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,tools
+    } from "../lib/core.js";
+    export default class com_coupons extends wepy.component {
+        methods = {
+            async getCoupon(id) {
+                let coupInfo = await core.getCoupon(id)
+                tools.showModal(coupInfo.msg,false)
+            },
+            goMyCoupons(){
+                tools.goNewPage("/pages/discount/couponLst")
+            }
+
+        }
+    }
+</script>

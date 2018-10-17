@@ -1,0 +1,210 @@
+<!--pages/index/index.wxml-->
+<!-- header -->
+<view class="header">
+  <view class="line1" wx:if="{{TablesNo==-999}}">
+    <image src="../../image/a12.png" style="height:29rpx;width:24rpx"></image>
+    <text class="line1txt" bindtap="chooseLocation">{{addressInfo}}</text>
+    <image src="../../image/a13.png" style="width:22rpx;height:11rpx"></image>
+    <view class="inline1">
+      <image src="../../image/a14.png" style="height:25rpx;width:26rpx;margin:0 21rpx 0 20rpx"></image>
+      <input placeholder="搜索商品名称" placeholder-class="input" style="font-size:32rpx" bindchange="searchGood" value="{{inputvalue}}" />
+    </view>
+  </view>
+  <view class="inline12" style="width:100%" wx:if="{{TablesNo!=-999}}">
+    <image src="../../image/a14.png" style="height:25rpx;width:26rpx;margin:0 21rpx 0 20rpx"></image>
+    <input placeholder="搜索商品名称" placeholder-class="input" style="font-size:32rpx" bindchange="searchGood" value="{{inputvalue}}" />
+  </view>
+  <view class="line2" bindtap="navtostoreInfo">
+    <image src="{{logoimg}}" style="width:160rpx;height:160rpx;flex-shrink: 0;margin-right:22rpx;" mode="aspectFill"></image>
+    <view class="line2right">
+      <text style="font-family:PingFang-SC-Bold;font-size:32rpx;">{{food.FoodsName}}</text>
+      <view style="display:flex;align-items:center;justify-content: space-between;">
+        <!-- <view class="itemcondition" wx:if="{{TablesNo!=-999}}">{{food.openState==0?'休息中':'营业中'}}</view> -->
+        <view class="itemcondition" style="width:170rpx;" wx:if="{{TablesNo==-999 && msg==''}}">不在配送范围内</view>
+        <view class="itemcondition" wx:if="{{TakeOut==0&& msg=='配送范围内'&&shopType==1&&food.openState==0}}">休息中</view>
+        <view class="itemcondition" wx:if="{{TakeOut==0 && msg=='配送范围内'&&shopType==1&&food.openState==1}}">休息中</view>
+        <view class="itemcondition" wx:if="{{TakeOut==1 && msg=='配送范围内'&&shopType==1&&food.openState==0}}">休息中</view>
+        <view class="itemcondition" wx:if="{{TakeOut==1 && msg=='配送范围内'&&shopType==1&&food.openState==1}}">营业中</view>
+
+        <view class="itemcondition" wx:if="{{TheShop==0 &&shopType==0&&food.openState==0}}">休息中</view>
+        <view class="itemcondition" wx:if="{{TheShop==0 &&shopType==0&&food.openState==1}}">休息中</view>
+        <view class="itemcondition" wx:if="{{TheShop==1 &&shopType==0&&food.openState==0}}">休息中</view>
+        <view class="itemcondition" wx:if="{{TheShop==1 &&shopType==0&&food.openState>0}}">营业中</view>
+        <view class="itemcondition" style="width:170rpx;" wx:if="{{food.openState==1 && msg=='配送范围外'}}">不在配送范围内</view>
+        <view style="font-size:28rpx;" hidden="{{TablesNo!=-999}}">起送价:{{food.OutSideStr}}</view>
+      </view>
+      <view style="display:flex;justify-content: space-between; align-items:{{isallNotice?'unset':'center'}}" catchtap='showallNotice'>
+        <view style="display:flex;align-items:{{isallNotice?'unset':'center'}};">
+          <text style="font-size:26rpx;flex-shrink:0" wx:if="{{food.Notice!=''}}">公告：</text>
+          <text class='running' style="min-height:{{isallNotice?'200':'unset'}}rpx;">{{food.Notice}}</text>
+        </view>
+        <image src="../../image/a15.png" style="width:19rpx;height:11rpx;"></image>
+      </view>
+    </view>
+  </view>
+</view>
+<!-- body -->
+<view class="body">
+  <view class="body_left">
+    <scroll-view scroll-y style="height:60.4vh;">
+      <block wx:for="{{goodsTypeList}}">
+        <view class="bodyleftscview0" bindtap="changeChoose0" id="{{item.Id}}" style="color:{{item.Id==choose0?'#121212':'#666'}};background-color:{{item.Id==choose0?'white':'#f7f7f7'}}">
+          <view class="bodyleftscview">
+            <view style="line-height:{{item.Name.length>6?'42':'80'}}rpx;">{{item.Name}}</view>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+  <view class="body_right">
+    <scroll-view scroll-y style=" height:70.4vh;">
+      <!-- <view class="righttxt1">热销</view> -->
+      <block wx:for="{{goodslist}}" wx:for-item="this">
+        <view class="bodyrightscview">
+          <!-- <block wx:for="{{this.good}}"> -->
+          <image src="{{this.good.ImgUrl}}" mode="aspectFill" style="height:150rpx;width:150rpx;margin-right:20rpx;  flex-shrink: 0"></image>
+          <view class="bodyrigthinline">
+            <text style="font-family:PingFang-SC-Bold;font-size:28rpx;">{{this.good.GoodsName}}</text>
+            <view style="display:flex;flex-wrap: wrap">
+              <block wx:for="{{this.labels}}">
+                <view class="bodyrightsort">{{item}}</view>
+              </block>
+            </view>
+            <view class="bodyrightline3">
+              <view style="display:flex;align-items:center">
+                <text style="font-size:20rpx;color:#ff535f">￥</text>
+                <text style="font-size:28rpx;color:#ff535f">{{this.good.PriceStr}}</text>
+              </view>
+              <view class="bodyrightline4">
+                <image src="../../image/a16.png" style="height:47rpx;width:47rpx;" bindtap="RchooseInfo" id="{{index}}" data-id="{{this.good.Id}}" hidden="{{this.good.carCount==0}}"></image>
+                <text style="font-size:28rpx;margin:0 12rpx ;">{{this.good.carCount}}</text>
+                <!-- 外卖 shopType 购买方式(0点餐/1外卖) -->
+                <image src="../../image/a17_1.png" wx:if="{{msg==''&&TablesNo==-999&&shopType==1}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="Localless"></image>
+                <image src="../../image/a17_1.png" wx:if="{{msg=='配送范围外'&&TablesNo==-999&&shopType==1}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="Outdistance"></image>
+                <image src="../../image/a17_1.png" wx:if="{{msg=='配送范围内'&&food.openState==1&&TakeOut==0&&TablesNo==-999&&shopType==1}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="resting"></image>
+                <image src="../../image/a17_1.png" wx:if="{{msg=='配送范围内'&&food.openState==0&&TakeOut==1&&TablesNo==-999&&shopType==1}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="resting"></image>
+                <image src="../../image/a17_1.png" wx:if="{{msg=='配送范围内'&&food.openState==0&&TakeOut==0&&TablesNo==-999&&shopType==1}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="resting"></image>
+                <image src="../../image/a17.png" wx:if="{{msg=='配送范围内'&&food.openState==1&&TakeOut==1&&TablesNo==-999&&shopType==1&&this.good.Stock>0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="chooseInfo"></image>
+                <image src="../../image/a17_1.png" wx:if="{{msg=='配送范围内'&&food.openState==1&&TakeOut==1&&TablesNo==-999&&shopType==1&&!this.good.Stock>0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="Stockless"></image>
+                <!-- 堂食 shopType 购买方式(0点餐/1外卖) -->
+                <image src="../../image/a17_1.png" wx:if="{{food.openState==1&&TheShop==0&&TablesNo!=-999&&shopType==0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="resting"></image>
+                <image src="../../image/a17_1.png" wx:if="{{food.openState==0&&TheShop==1&&TablesNo!=-999&&shopType==0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="resting"></image>
+                <image src="../../image/a17_1.png" wx:if="{{food.openState==0&&TheShop==0&&TablesNo!=-999&&shopType==0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="resting"></image>
+                <image src="../../image/a17.png" wx:if="{{food.openState==1&&TheShop==1&&TablesNo!=-999&&shopType==0&&this.good.Stock>0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="chooseInfo"></image>
+                <image src="../../image/a17_1.png" wx:if="{{food.openState==1&&TheShop==1&&TablesNo!=-999&&shopType==0&&!this.good.Stock>0}}" style="height:47rpx;width:47rpx;" id="{{index}}" data-id="{{this.good.Id}}" bindtap="Stockless"></image>
+              </view>
+            </view>
+          </view>
+          <!-- </block> -->
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+</view>
+<!-- 购物车按钮 -->
+<view class="btn" catchtap="setCondition" hidden='{{condition}}'>
+  <image src="../../image/a18.png" style="width:44rpx;height:44rpx;" mode="aspectFill"></image>
+</view>
+<!-- 购物车数量 -->
+<view class="btnnums" hidden='{{condition}}'>{{shopCartlength}}</view>
+<!-- 背景模糊 -->
+<view class="bg" wx:if="{{condition1}}"></view>
+<view class="bg" wx:if="{{condition}}" bindtap="setCondition2"></view>
+<!-- 选择商品规格显隐 -->
+<view class="choosegoodinfo" wx:if="{{condition1}}">
+  <view class="body_right">
+    <view class="bodyrightscview" style="border-color:white;padding:unset;margin:unset">
+      <image src="{{goodslist[chooseNums].good.ImgUrl}}" mode="aspectFill" style="height:150rpx;width:150rpx;margin-right:20rpx;  flex-shrink: 0"></image>
+      <view class="bodyrigthinline">
+        <text style="font-family:PingFang-SC-Bold;font-size:28rpx;">{{goodslist[chooseNums].good.GoodsName}}</text>
+        <view style="display:flex;flex-wrap: wrap">
+          <block wx:for="{{goodslist[chooseNums].labels}}">
+            <view class="bodyrightsort">{{item}}</view>
+          </block>
+        </view>
+        <view class="bodyrightline3">
+          <view style="display:flex;align-items:center">
+            <text style="font-size:20rpx;color:#ff535f">￥</text>
+            <!-- <text style="font-size:28rpx;color:#ff535f">{{goodslist[chooseNums].good.OriginalPrice}}</text> -->
+            <text style="font-size:28rpx;color:#ff535f">{{singleprice}}</text>
+          </view>
+          <view class="bodyrightline4">
+            <image src="../../image/a16.png" style="height:47rpx;width:47rpx;" bindtap="RaddNums" id="{{index}}" data-id="{{goodslist[chooseNums].Id}}"></image>
+            <text style="font-size:28rpx;margin:0 12rpx ;">{{goodslist[chooseNums].good.carCount}}</text>
+            <image src="../../image/a17.png" style="height:47rpx;width:47rpx;" bindtap="addNums" id="{{index}}" data-id="{{goodslist[chooseNums].Id}}"></image>
+          </view>
+        </view>
+      </view>
+      <!-- </block> -->
+    </view>
+    <!-- </block> -->
+  </view>
+  <scroll-view scroll-y style="height:410rpx;margin-top:30rpx;">
+    <block wx:for="{{goodslist[chooseNums].attrList[0].Value}}" wx:for-item="this" wx:for-index="pindex">
+      <text style="font-size:28rpx">{{this.AttrName}}</text>
+      <view class="choosetxt">
+        <!-- <block wx:for="{{this.SpecList}}" wx:for-index="pindex"> -->
+        <!-- <view class="choosetxtitem" id="{{item.Id}}" data-pid="{{pindex}}" bindtap="setChoose">{{item.SpecName}}</view>  -->
+        <!-- 第一项规格 -->
+        <block wx:if="{{pindex==0}}">
+          <block wx:for="{{this.SpecList}}">
+            <text class="{{groupindex1==item.Id?'choosetxtitem':'choosetxtitem1'}}" bindtap="setChoose" data-pid="{{pindex}}" id="{{item.Id}}">{{item.SpecName}}</text>
+          </block>
+        </block>
+        <!-- 第二项规格 -->
+        <block wx:elif="{{pindex==1}}">
+          <block wx:for="{{this.SpecList}}">
+            <text class="{{groupindex2==item.Id?'choosetxtitem':'choosetxtitem1'}}" bindtap="setChoose" data-pid="{{pindex}}" id="{{item.Id}}">{{item.SpecName}}</text>
+          </block>
+        </block>
+        <!-- 第三项规格 -->
+        <block wx:elif="{{pindex==2}}">
+          <block wx:for="{{this.SpecList}}">
+            <text class="{{groupindex3==item.Id?'choosetxtitem':'choosetxtitem1'}}" bindtap="setChoose" data-pid="{{pindex}}" id="{{item.Id}}">{{item.SpecName}}</text>
+          </block>
+        </block>
+        <!-- 规格end！ -->
+        <!-- </block> -->
+      </view>
+    </block>
+  </scroll-view>
+  <view class="item4btn" bindtap="setStorageCar">确定</view>
+</view>
+<!-- 取消按钮 -->
+<image src="../../image/a19.png" class="canclebtn" wx:if="{{condition1}}" bindtap="setCondition1"></image>
+<!-- 购物车显隐 -->
+<view class="bottomshopcar" wx:if="{{condition}}">
+  <!-- 购物车标题 -->
+  <view class="bottomtitle">
+    <text style="font-family:PingFang-SC-Bold;font-size:32rpx;">购物车</text>
+    <view style="display:flex;align-items:center" bindtap="clearItem5">
+      <image src="../../image/a23.png" style="width:22rpx;height:22rpx;"></image>
+      <text style="font-size:24rpx;color:#999;margin-left:12rpx;">清空</text>
+    </view>
+  </view>
+  <scroll-view scroll-y class="bottomscrollview">
+    <block wx:for="{{item5}}">
+      <view class="bottomitem">
+        <view class="bottomitemleft">
+          <text style="font-size:28rpx;display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 1; overflow: hidden;">{{item.name}}</text>
+          <text style="font-size:24rpx;color:#ccc">{{item.size}}</text>
+        </view>
+        <view class="bottomitemright">
+          <text style="color:#ff535f;font-size:20rpx">￥</text>
+          <text style="color:#ff535f;font-size:32rpx;">{{item.price}}</text>
+          <image src="../../image/a16.png" style="height:47rpx;width:47rpx;margin-left:50rpx" id="{{index}}" bindtap="RaddShopcarSingleNums"></image>
+          <text style="font-size:28rpx;margin:0 12rpx ;">{{item.nums}}</text>
+          <image src="../../image/a17.png" style="height:47rpx;width:47rpx;" id="{{index}}" bindtap="addShopcarSingleNums"></image>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+</view>
+<view class="shopcarbtn" wx:if="{{condition}}">
+  <view class="shopcarleft">
+    <text style="font-size:34rpx;margin-right:14rpx;">需支付</text>
+    <text style="font-size:20rpx;color:#ff535f">￥</text>
+    <text style="font-size:38rpx;color:#ff535f">{{allprice}}</text>
+  </view>
+  <view class="update" bindtap="update">提交订单</view>
+</view>

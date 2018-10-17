@@ -1,0 +1,267 @@
+<style lang="less">
+.my-order {
+  padding-top: 100rpx;
+  .null-data {
+    margin-top: 175rpx;
+    .null-pto {
+      height: 263rpx;
+      width: 300rpx;
+      margin-left: 52rpx;
+    }
+  }
+  .mt24 {
+    margin-top: 24rpx;
+  }
+
+  .list-item {
+    width: 749rpx;
+    min-height: 489rpx;
+    .top {
+      height: 82rpx;
+      line-height: 82rpx;
+    }
+    .bottom {
+      height: 175rpx;
+    }
+    .btn-base {
+      width: 150rpx;
+      height: 60rpx;
+      border-radius: 30rpx;
+      line-height: 60rpx;
+      text-align: center;
+    }
+  } 
+  .item { 
+    height: 230rpx;
+    border-bottom: 1px solid #eee;  
+    .right-part {
+      height: 170rpx;
+      width: 490rpx;
+    }
+    .ae {  
+      align-items: flex-end; 
+    }
+  } 
+}
+</style>
+<template> 
+  <view class="my-order {{currentSkin}}">
+    <comTab :activeIndex.sync="tabIndex" :list.sync="tabList" position="fixed" scroll activeColor="#31b96e " lineColor="#31b96e " onClickAfter="updateState"></comTab>
+    <view class="null-data f fv fc w-100 f26 c333" wx:if="{{orderList.length == 0}}">
+           <image class="null-pto" src="http://j.vzan.cc/miniapp/img/platformPro/order_null.png"></image>
+           <view class="mt30 tc w-100">暂无订单</view>
+           <view class="mt20 c666 tc w-100">赶快去下单吧</view>
+    </view>
+    <view class="order-list mt24" wx:else>
+      <view class="list-item mt25 bg-w pl30" wx:for="{{orderList}}" wx:key="{{index}}">
+        <!-- 头部 -->
+        <view class="top pr30 f fj bbeee">
+          <!-- 日期 -->
+          <text class="c11 f26">{{item.AddTimeStr}}</text>
+          <!-- 状态 -->
+          <text class="skin_txt f26">{{item.StateStr}}</text>
+        </view>
+        <!-- 商品列表 -->
+        <view class="list">
+          <view class="item f fc" wx:for="{{item.CartList}}" wx:key="{{index}}" wx:for-item="goods" @tap="goGoodsDetail({{goods.GoodsId}})">
+            <image class="good-img-size fs mr30" src="{{goods.SpecImg}}"></image>
+            <view class="right-part f fv fj">
+              <view class="f fv">
+                <view class="f26 c333 ellipsis">{{goods.GoodsName}}</view>
+                <view class="f24 c666 mt8 ">{{goods.SpecInfo}}</view>
+              </view>
+              <view class="f fj ae c333">
+                <view>
+                  <text class="f30 t-b mr10">￥{{goods.PriceStr}}</text>
+                  <text class="f24 t-del c666" wx:if="{{goods.PriceStr != goods.OriginalPriceStr}}">￥{{goods.OriginalPriceStr}}</text>
+                </view>
+                <text class="f26 lh1">x{{goods.Count}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <!-- 订单下半部分 -->
+        <view class="bottom">
+          <view class="h45 f fc fe f26 c333 pr30 mt30 mb30 ellipsis">
+            <text>来自</text>
+            <text>{{item.StoreName}}</text>
+            <text class="mr10">，共{{item.QtyCount}}件</text>
+            <text>{{item.State > 0 ? '已付款：' : '需付款：'}}</text>
+            <text class="skin_txt">￥{{item.BuyPriceStr}}</text>
+          </view>
+          <view class="f fe">
+            <!-- <button wx:if="{{0}}" class="btn-base borderD9D8D9 c333 mr30 f24">申请售后</button>
+            <button wx:if="{{0}}" class="btn-base borderD9D8D9 c333 mr30 f24">查看物流</button> -->
+            <block  wx:if="{{item.State == 0}}">
+               <button class="btn-base borderD9D8D9 c333 mr30 f24" @tap="deleteOrder({{item.Id}})">删除订单</button>
+               <button class="btn-base cfff skin_bg mr30 f24" @tap="goPay({{item.Id}})">去付款</button>
+            </block>
+            <button wx:if="{{item.State > -2}}" class="btn-base cfff skin_bg mr30 f24" @tap="goOrder({{item.Id}})">查看详情</button>
+            <button wx:if="{{item.State == 3}}" class="btn-base cfff skin_bg mr30 f24" @tap="gotGoods({{item.Id}})">确认收货</button>
+            <!-- <button wx:if="{{0}}"class="btn-base cfff skin_bg mr30 f24">查看详情</button>
+            <button wx:if="{{0}}"class="btn-base cfff skin_bg mr30 f24">确认收货</button> -->
+          </view>
+        </view>
+      </view>
+    </view>
+    <comLoading :showLoading.sync="loadMore"  :showBottom.sync="loadAll" />
+    <comWait wx:if="{{isWait}}" />
+    <comGoTop :scale.sync="scale" />
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { http, tools, core } from "@/lib/core";
+import com_wait from "@/components/com_wait";
+import com_tab from "@/components/com_tab";
+import com_loading from "@/components/com_loading";
+import com_goTop from "@/components/com_goTop";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的订单",
+    enablePullDownRefresh: true
+  };
+  components = {
+    comTab: com_tab,
+    comLoading: com_loading,
+    comWait: com_wait,
+    comGoTop: com_goTop
+  };
+
+  data = {
+    currentSkin: 'skin_green3',
+    isWait: false,
+    tabList: [
+      {
+        title: '全部订单',
+        state: -999
+      },
+      {
+        title: "待付款",
+        state: 0
+      },
+      {
+        title: "待发货",
+        state: 1
+      },
+      {
+        title: "待收货",
+        state: 3
+      },
+      {
+        title: "已完成",
+        state: 4
+      },
+      {
+        title: "待自取",
+        state: 2
+      },
+      {
+        title: "已取消",
+        state: -1
+      }
+    ],
+    loadMore: false,
+    loadAll: false,
+    currentState: -999,
+    pageIndex: 1,
+    orderList: [], //订单列表
+    count: 0,
+    processor: null, //合并列表处理器
+    tabIndex: 0, //全都订单活跃索引
+    scale: 0 //图标动画
+  };
+
+  onReady() {
+    this.$invoke("comTab", "init");
+  }
+
+  methods = {
+    goPay(id) {
+      tools.goNewPage("./goodOlt?orderid=" + id);
+    },
+    async deleteOrder(id) {
+      await core.cancleOrder(id);
+    },
+    goOrder(id) {
+      tools.goNewPage("./goodOlt?orderid=" + id);
+    },
+    goGoodsDetail(pid) {
+      tools.goNewPage("../../selected/goods-details/index?pid=" + pid);
+    },
+    async gotGoods(id) {
+      await core.confirmOrder(id);
+    }
+  };
+
+  async onPullDownRefresh() {
+    wx.showNavigationBarLoading();
+    this.resetListData();
+    await this.getOrderListC();
+    wx.hideNavigationBarLoading();
+    wx.stopPullDownRefresh();
+    this.$apply();
+  }
+
+  onPageScroll(option) {
+    var scrollTop = option.scrollTop;
+      if (scrollTop >= 50) {
+        var scaleNum = (scrollTop - 50) / 200;
+        this.scale = scaleNum < 1 ? scaleNum : 1;
+      } else {
+        this.scale = 0;
+      }
+      this.$apply();
+  }
+
+  async onShow() {
+    this.isWait = true;
+    this.resetListData();
+    await this.getOrderListC();
+    this.isWait = false;
+    this.$apply();
+  }
+
+  onLoad(query) {
+    this.currentState = query.currentState || this.currentState;
+    this.tabIndex = query.tabIndex || 0;
+  }
+
+  async getOrderListC() {
+    var result = await core.getOrderList(this.currentState, this.pageIndex, 8);
+    tools.handleResult(result, res => {
+      this.count = res.count;
+      if (this.processor === null) {
+        this.processor = tools.loadMoreData(this, 8);
+      }
+      this.processor.concat_("orderList", res.list);
+    });
+  }
+
+  resetListData() {
+    this.loadMore = false;
+    this.loadAll = false;
+    this.pageIndex = 1;
+    this.orderList = [];
+    return this;
+  }
+
+  handleScroll() {
+    tools.onPageScroll()
+    return this
+  }
+
+  onReachBottom() {
+    this.processor.handleReachBottom("count", this.getOrderListC);
+  }
+
+  async updateState(state) {
+    this.isWait = true;
+    this.currentState = state;
+    this.resetListData().handleScroll();
+    await this.getOrderListC();
+    this.isWait = false;
+    this.$apply();
+  }
+}
+</script>

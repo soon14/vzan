@@ -1,0 +1,79 @@
+<!--pages/restaurant/restaurant-invoice/index.wxml-->
+<view class="flexC invoice-content" wx:if="{{this_show_type==0}}">
+    <!-- 不要发票 -->
+    <view class="invoice-item">
+        <label class="flex" bindtap="select_fapiao_bind" data-id="0">
+            <radio class="mr5"></radio>
+            <text>不要发票</text>
+        </label>
+    </view>
+    <view class="sub">
+        <!-- 没有发票抬头信息 -->
+        <view class="noInvoiceMsg" wx:if="{{this_fapiao_data==null}}">
+            <view class="tc">
+                <view class="noInvoice-ico green">
+                    <text class="iconfont icon-yulan"></text>
+                </view>
+                <view>没有发票抬头</view>
+                <view class="f10">点击下方按钮新增</view>
+            </view>
+        </view>
+        <!-- 发票信息 -->
+        <view>
+            <view class="mt10 mb5 ml15">发票信息</view>
+            <block wx:for="{{this_fapiao_data}}">
+                <view class="invoice-item gridXb flex">
+                    <label class="sub flex" bindtap="select_fapiao_bind" data-id="{{item.id}}" data-title="{{item.fapiao_title}}" data-daima="{{item.fapiao_daima}}">
+                        <radio name="fapiao_id" class="mr5"></radio>
+                        <view class="sub mr10">
+                            <view class="lineText">
+                                <text class="invoice-tag green mr5">{{item.fapiao_leixing==1?'单位':'个人'}}</text>
+                                <text>{{item.fapiao_title}}</text>
+                            </view>
+                            <view class="grey f12">{{item.fapiao_daima}}</view>
+                        </view>
+                    </label>
+                    <view class="bianji">
+                        <text class="iconfont icon-write grey" bindtap="fapiao_edit_bind" id="{{item.id}}"></text>
+                    </view>
+                </view>
+            </block>
+        </view>
+    </view>
+    <view bindtap="fapiao_add_bind">
+        <button class="green addInvoiceMsg f16">+ 新增发票信息</button>
+    </view>
+</view>
+
+<form bindsubmit="fapiao_formSubmit" report-submit="true">
+    <view wx:if="{{this_show_type==1}}">
+        <view class="flex invoice-item gridXb mt10">
+            <view>类型</view>
+            <view class="sub ml10">
+                <text bindtap="chang_fapiao_leixing_bind" class="title-tag {{this_fapiao_leixing==1?'green':'grey'}}">单位</text>
+                <text bindtap="chang_fapiao_leixing_bind" class="title-tag {{this_fapiao_leixing==2?'green':'grey'}}">个人</text>
+            </view>
+        </view>
+        <view class="flex invoice-item gridXb">
+            <view>抬头</view>
+            <view class="sub ml10">
+                <input name="fapiao_title" placeholder="请填写准确的抬头名称" value="{{this_fapiao_info?this_fapiao_info.fapiao_title:''}}"></input>
+            </view>
+        </view>
+        <view class="flex invoice-item gridXb" wx:if="{{this_fapiao_leixing==1}}">
+            <view>税号</view>
+            <view class="sub ml10">
+                <input name="fapiao_daima" placeholder="请填写「税号」或「社会信用代码」" value="{{this_fapiao_info?this_fapiao_info.fapiao_daima:''}}"></input>
+            </view>
+        </view>
+        <view class="mt5 ml15 f12 grey" wx:if="{{this_fapiao_leixing==1}}">可咨询公司财务部门获得「税号」或「社会信用代码」</view>
+
+        <view class="flex btn-box">
+            <button class="sub f16" type="warn" bindtap="quxiao_add_bind">取消</button>
+            <block wx:if="{{this_edit_type == 'edit'}}">
+                <button class="sub f16" type="warn" bindtap="delete_fapiao_bind">删除</button>
+            </block>
+            <button class="sub f16" type="primary" formType="submit">保存</button>
+        </view>
+    </view>
+</form>

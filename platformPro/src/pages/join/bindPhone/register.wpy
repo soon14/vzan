@@ -1,0 +1,215 @@
+<style lang="less">
+  .bindPhone-register {
+    .b-line {
+      bottom: 0rpx;
+      left: 0;
+      transform: translateX(-100%);
+      transition: transform 0.35s ease-in-out;
+      width: 100%;
+      height: 4rpx;
+    }
+    .form-group {
+      overflow: hidden;
+    }
+  }
+</style>
+<template leng="wxml">
+  <view class="bindPhone-register container-v-bgw">
+    <view class="mt30 f fv fc">
+      <!-- 默认 --> 
+      <image class="hw140 borderR50 default-avator tc cfff f26" src="{{userInfo.avatarUrl}}">
+      </image>
+      <!-- <image class="hw140 borderR50">
+            </image> -->
+      <view class="mt15 f30 c333 tc">
+        {{userInfo.nickName}} 
+      </view>
+    </view>
+    <view class="form mt30">
+      <view class="form-group rel f fj heg100 f30">
+        <input class="wp70 input hl100 pl20" placeholder="手机号码" @input="handlePhoneInput" @focus="handleFocus(0)" @blur="handleBlur(0)"
+        />
+        <text class="ib tc hl100 pr30 color-light-green" @tap="getCode">{{codeStatus}}</text>
+        <view class="b-line abs bg-green" style="{{isFocusList[0] ? 'transform:translateX(0);' : ''}}"></view>
+      </view>
+      <view class="form-group f fj heg100 f30 rel">
+        <input class="wp70 input hl100 pl20" @input="handleCodeInput" @focus="handleFocus(1)" @blur="handleBlur(1)" placeholder="短信验证码"
+        />
+        <view class="b-line abs bg-green" style="{{isFocusList[1] ? 'transform:translateX(0);' : ''}}"></view>
+      </view>
+    </view>
+    <button class="btn-big color-light-green blg f30 cfff mt70" @tap="toRegister">立即注册</button>
+    <button class="btn-big f30 mt30  bg-green btn-border-none cfff" open-type="getPhoneNumber" bindgetphonenumber="bingPhoneByWechat">微信授权登录</button>
+    <view class="lh18 f30 tc c666 mt60" @tap="back">暂不注册</view>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import bingPhoneMixin from "@/mixins/bingPhoneMixin";
+  import {
+    tools,
+    core,
+    http
+  } from "@/lib/core";
+  import Validator from "@/lib/wxValidator";
+  import addr from "@/lib/addr";
+  const app = wepy.$instance;
+  export default class Register extends wepy.page {
+    config = {
+      navigationBarBackgroundColor: "#fff",
+      navigationBarTitleText: "注册会员",
+      enablePullDownRefresh: false
+    };
+
+    mixins = [bingPhoneMixin];
+
+    data = {
+      userInfo: {},
+      validator: null
+    };
+
+    methods = {
+      back() {
+        tools.goBack();
+      },
+      async toRegister() {
+        var vm = this;
+        var userInfo = await core.getUserInfo();
+        var form = {
+          phone: this.phone,
+          code: this.code
+        };
+        var validator = new Validator(
+          form, {
+            phone: "required|phone",
+            code: "required"
+          }, {
+            "required.phone": "请输入手机号码",
+            "required.code": "请输入验证码",
+            "phone.phone": "请输入正确的手机号码格式"
+          }
+        );
+
+        if (!validator.validate()) {
+          var errs = validator.getErrorAll();
+          var errsKeys = Object.keys(errs);
+
+          //显示首个错误
+          tools.showModalCancle(errs[errsKeys[0]][0]);
+          return;
+        }
+
+        wx.showLoading({
+          title: '提交中',
+          mask: true
+        })
+
+        http
+          .post(addr.Submitauth, {
+            tel: form.phone,
+            openId: userInfo.OpenId,
+            authCode: form.code,
+            sessionkey: userInfo.loginSessionKey
+          })
+          .then(res => {
+            if (!res.isok) {
+              wx.hideLoading()
+              tools.showModalCancle(res.Msg);
+            } else {
+              //创建名片卡
+              vm.createCard(userInfo).then(async res => {
+                if (!res.isok) {
+                  wx.hideLoading()
+                  tools.showModalCancle(res.Msg);
+                } else {
+                  wx.hideLoading()
+                  this.createCardSuccess()
+                }
+              });
+            }
+          });
+      }
+    };
+
+    async bingPhoneByWechat(e) {
+      var vm = this;
+      var info = e.detail;
+      
+      if (!info.iv) {
+        var news = ''
+        if (info.errMsg.match(/getPhoneNumber:fail/)) {
+          news = '该小程序属于个人类型或未通过微信认证，不支持微信授权登录'
+        } else {
+          news = '请先授权'
+        }
+        wx.showToast({
+          icon: 'none',
+          title: news
+        })
+        return
+      }
+      var code = await core.login();
+      var userInfo = await core.getUserInfo();
+
+      wx.showLoading({
+        title: '注册中',
+        mask: true
+      })
+
+      http
+        .post(addr.CheckUserLoginNoappsr, {
+          code: code,
+          iv: info.iv,
+          data: info.encryptedData,
+          signature: userInfo.Id,
+          appid: app.globalData.appid,
+          appsr: "",
+          needappsr: 0,
+          storeId: 0,
+          isphonedata: 1
+        })
+        .then(res => {
+          if (!res.result) {
+            wx.hideLoading()
+            tools.showModalCancle(res.msg);
+          } else {
+            //创建名片卡
+            vm.createCard(userInfo).then(async res => {
+              if (!res.errcode == -1) {
+                wx.hideLoading()
+                tools.showModalCancle(res.msg);
+              } else {
+                wx.hideLoading()
+                this.createCardSuccess()
+              }
+            });
+          }
+        });
+    }
+
+    async createCardSuccess() {
+      await tools.showModalCancle("注册成功");
+      wx.switchTab({
+        url: "../join-index/index"
+      });
+    }
+
+    async createCard(userInfo) {
+      var aid = await core.getAid();
+      return http.post(addr.AddMyCard, {
+        type: 0,
+        userid: userInfo.Id,
+        myuserid: userInfo.Id,
+        sessionkey: userInfo.loginSessionKey,
+        imgurl: this.userInfo.avatarUrl,
+        name: this.userInfo.nickName,
+        aid
+      });
+    }
+
+    onLoad() {
+      this.userInfo = app.globalData.userInfo;
+      console.log(this.userInfo);
+    }
+  }
+</script>

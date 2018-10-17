@@ -1,0 +1,570 @@
+<style lang="less">
+  view {
+    box-sizing: border-box;
+  }
+  page {
+    background-color: #f7faf8;
+  }
+  .h110 {
+    height: 110rpx;
+  }
+  .w110 { 
+    width: 110rpx;
+  }
+  .msg-details { 
+    padding: 30rpx;
+    .userpic-msg {
+      .userpic {
+        &>image {
+          width: 80rpx;
+          height: 80rpx;
+          border-radius: 50%;
+          margin-right: 30rpx;
+        }
+      }
+    }
+  }
+  .writeComment {
+    width: 104rpx;
+    height: 104rpx;
+    color: #fff;
+    border-radius: 50%;
+    background-color: #3FD481;
+    position: fixed;
+    right: 30rpx;
+    bottom: 200rpx;
+    box-shadow:0 0 8rpx 2rpx rgba(63,212,129,1);
+  }
+  .comments-wrap {
+    .title {
+      padding: 20rpx;
+      padding-left: 30rpx;
+    }
+    .content {
+      .item {
+        padding: 20rpx 0;
+        border-bottom: 1px solid #eee;
+        &>.header {
+          .image {
+            width: 50rpx;
+            height: 50rpx;
+            background-color: #eee;
+            border-radius: 50%;
+            overflow: hidden;
+          }
+        }
+        &>.content {
+          padding: 20rpx 0;
+          
+        }
+      }
+      .dzitem {
+        padding: 30rpx 0;
+        border-bottom: 1px solid #eee;
+        .image {
+          width: 70rpx;
+          height: 70rpx;
+          background-color: #eee;
+          border-radius: 50%;
+          margin-right: 14rpx;
+          overflow: hidden;
+        }
+      }
+    }
+    &>.content :last-child {
+      border: none;
+    }
+  }
+  .bottom-btn {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+  }
+  .masking {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 3;
+    .pop-up {
+      bottom: 0;
+      left: 0;
+      background-color: #f7faf8;
+      .title {
+        .cancel-btn {
+          right: 30rpx;
+          top: 50%;
+          -webkit-transform: translate(0, -50%);
+          transform: translate(0, -50%);
+        }
+      }
+      .report-List {
+        box-shadow: 0 6rpx 6rpx #f5f5f5;
+        .report-item {
+          border-top: 1rpx solid #f5f5f5;
+          .no-choose {
+            width: 50rpx;
+            height: 50rpx;
+            border: 1rpx solid #b2b2b2;
+            border-radius: 50%;
+            margin: 0 auto;
+          }
+        }
+      }
+    }
+  }
+  .comment-mask {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    
+    .mask {
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      transition: all 1s ease;
+    }
+    .input-box {
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      padding: 18rpx 30rpx;
+      &>input {
+        width: 100%;
+        height: 60rpx;
+        background-color: #eee;
+        border-radius: 30rpx;
+        padding: 0 40rpx;
+      }
+    }
+  }
+  .noscroll {
+    height: 100vh;
+    overflow: hidden;
+  }
+</style>
+ 
+<template>
+  <view class="{{showCommentsMask?'noscroll':''}}">
+    <view class="msg-details bg-w ">
+      <!-- 用户信息 -->
+      <view class="userpic-msg f fc">
+        <!-- 用户头像 -->
+        <view class="userpic">
+          <image src="{{details.userHeaderImg}}" />
+        </view>
+        <view class="w-full h-full h100 f fv fc-h">
+          <view class="f fc">
+            <text class="f1 f28">{{details.userName}}</text>
+            <text class="f22 cb2" style="95rpx;">{{details.showTimeStr}}</text>
+          </view>
+          <view class="f fc mt10">
+            <view class="f fc w-full" @tap="opentLocation">
+              <view class="dzicon icon-dingwei c-9ba9cd f24"></view>
+              <text class="f22 c-9ba9cd line line1 ml5" style="width:90%;">{{details.location}}</text>
+            </view>
+            <text class="f22 cb2 f1" style="width:162rpx;text-align:right;" wx:if="{{details.distanceStr!=null}}">{{details.distanceStr}}</text>
+          </view>
+        </view>
+      </view>
+      <!-- 详细内容 -->
+      <view class="content mt20">
+        <view class="text"><text class="c-9ba9cd" wx:if="{{details.msgTypeName!=null}}">#{{details.msgTypeName}}# </text><text>{{details.msgDetail}}</text></view>
+        <view class="tc mt20">
+          <repeat for="{{details.imgList}}" key="index" wx:if="{{index<6}}">
+            <image src="{{item}}" mode="aspectFill" @tap="openImg({{index}})" />
+          </repeat>
+        </view>
+      </view>
+      <!-- 底部浏览信息 -->
+      <view class="f fc fj cb2 mt40">
+        <view class="f fc">
+          <view class="ml30 f20 f fc">
+            <view class="dzicon icon-liulanliang c-c6c8cc f26"></view>
+            <text class="ml5">{{details.ViewCount}}</text>
+          </view>
+          <button class="clear-btn-none ml30 f20 f fc" data-name="dz" open-type="getUserInfo" @getuserinfo="checkLogin" wx:if="{{userInfo.nickName==null&&userInfo.avatarUrl==null}}">
+                                        <view class="dzicon icon-aixin {{details.isDzed?'c-ff5d5e':'c-c6c8cc'}} f24"></view>
+                                        <text class="ml5 cb2">{{details.DzCount}}</text>
+                                      </button>
+          <view class="ml30 f20 f fc" @tap="like" wx:else>
+            <view class="dzicon icon-aixin {{details.isDzed?'c-ff5d5e':'c-c6c8cc'}} f24"></view>
+            <text class="ml5">{{details.DzCount}}</text>
+          </view>
+        </view>
+        <view class="f fc">
+          <view class="f20">{{details.ReviewState}}</view>
+          <button class="clear-btn-none cb2" data-name="opentReport" open-type="getUserInfo" @getuserinfo="checkLogin" wx:if="{{userInfo.nickName==null&&userInfo.avatarUrl==null}}">
+                                              <view class="ml30 f20 f fc">
+                                                <view class="dzicon icon-jinggao c-c6c8cc f26"></view><text class="ml5">举报</text></view>
+                                      </button>
+          <view @tap="toggleReport" wx:else>
+            <view class="ml30 f20 f fc">
+              <view class="dzicon icon-jinggao c-c6c8cc f26"></view><text class="ml5">举报</text></view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- 评论列表 -->
+    <view class="comments-wrap mt20 bg-w">
+      <view class="title t-b">评论</view>
+      <view class="content ml30">
+        <view class="c666 tc pt80 hl300" wx:if="{{details.Comments==''}}">留下你的评论吧</view>
+        <repeat for="{{details.Comments}}" item="commentsItem" index="commentsIndex" key="commentsIndex">
+          <view class="item">
+            <view class="header f fc">
+              <image wx:if="{{commentsItem.HeaderImg}}" src="{{commentsItem.HeaderImg}}" class="image" mode="aspectFill"></image>
+              <view class="ml20 c666 f22" wx:if="{{commentsItem.NickName!=null}}">{{commentsItem.NickName}}</view>
+            </view>
+            <view class="content">
+              <text style="line-height: 1.2;">{{commentsItem.CommentDetail}}</text>
+            </view>
+            <view class="c666 f20">{{commentsItem.ShowTimeStr}}</view>
+          </view>
+        </repeat>
+      </view>
+    </view>
+    <!-- 留白 -->
+    <view class="h200"></view>
+    <!-- 底部按键 -->
+    <view class="bottom-btn f fc w-full h100 bg-w">
+      <view class="f1 f fc h-full cb2" style="border-top:1rpx solid #f5f5f5;">
+        <view class="f1 f fv fc fc-h h-full f24" @tap="gotoHome">
+          <view class="dzicon icon-home4 c-c6c8cc f40"></view>
+          <text>首页</text>
+        </view>
+        <button class="clear-btn-none f1 f fv fc fc-h h-full f24" style="margin:0;line-height:normal;" data-name="collect" open-type="getUserInfo" @getuserinfo="checkLogin" wx:if="{{userInfo.nickName==null&&userInfo.avatarUrl==null}}">
+                                      <view class="dzicon icon-shoucang {{details.isFavorited?'c-34c658':'c-c6c8cc'}}  f38"></view>
+                                      <text class="cb2">收藏</text>
+                                    </button>
+        <view class="f1 f fv fc fc-h h-full f24" @tap="collect" wx:else>
+          <view class="dzicon icon-shoucang {{details.isFavorited?'c-34c658':'c-c6c8cc'}}  f38"></view>
+          <text>收藏</text>
+        </view>
+        <view class=" f1 f fv fc fc-h h-full" wx:if="{{details.Review==1||details.Review==-1}}" @tap="stopShare">
+          <view class="dzicon icon-zhuanfa3 c-c6c8cc f38 "></view>
+          <view class="cb2 f24 ">分享</view>
+        </view>
+        <button class="clear-btn-none  f1 f fv fc fc-h h-full " plain="true" open-type="share" style="margin:0;line-height:normal;" wx:else> 
+                                    <view class="dzicon icon-zhuanfa3 c-c6c8cc f38 " ></view>
+                                    <view class="cb2 f24 " >分享</view>
+                                  </button>
+      </view>
+      <view class="f1 f fc fc-h h-full bg34c658 cfff f30 t-b" @tap="phoneCall">联系Ta</view>
+    </view>
+    <!-- 举报弹窗 -->
+    <view class="masking w-full h-full rel" wx:if="{{showReport}}">
+      <view class="pop-up abs w-100">
+        <view class="bg-w title h100">
+          <view class="cb2 f fc fc-h rel h-full">
+            <text>请选择举报原因</text>
+            <icon class="cancel-btn abs" type="cancel" data-name="cancel" color="#b2b2b2" size="25" @tap.stop="toggleReport" />
+          </view>
+        </view>
+        <view class="report-List">
+          <block wx:for="{{report}}">
+            <view class="report-item h110  f fc bg-w" @tap.stop="selectReportItem({{index}})">
+              <view class="w110 tc" wx:if="{{!item.switch}}">
+                <view class="no-choose"></view>
+              </view>
+              <icon class="w110 tc" type="success" color="#34c658" size="26" wx:if="{{item.switch}}" />
+              <view class="f30">{{item.name}}</view>
+            </view>
+          </block>
+        </view>
+        <view class="submit-btn  f fc fc-h h100 c-34c658 bg-w f32 mt10 t-b" @tap.stop="submitReport">确认提交</view>
+      </view>
+    </view>
+    <!-- 写评论 -->
+    <view class="writeComment f fv fc fc-h" @tap="toggleComment">
+      <view class="dzicon icon-tianxie"></view>
+      <view class="f20 mt5">写评论</view>
+    </view>
+    <!-- 评论弹窗 -->
+    <view class="comment-mask" wx:if="{{showCommentsMask}}">
+      <view class="mask" @tap="toggleComment"></view>
+      <view class="input-box hl100 bg-w f fc fc-h">
+        <input type="text" confirm-type="send" placeholder="写评论" placeholder-style="color:#a1a2a3" focus cursor-spacing="8" @confirm="addComments">
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http
+  } from "../lib/core";
+  import addr from "../lib/addr";
+  export default class classifyDetails extends wepy.page {
+    config = {
+      navigationBarTitleText: "信息详情"
+    };
+    data = {
+      showReport: false,
+      msgId: "",
+      details: {},
+      userInfo: {},
+      report: [{
+          name: "低俗色情",
+          switch: false
+        },
+        {
+          name: "广告骚扰",
+          switch: false
+        },
+        {
+          name: "敏感话题 (政治宗教、违法言论)",
+          switch: false
+        },
+        {
+          name: "诱导分享",
+          switch: false
+        },
+        {
+          name: "虚假诈骗",
+          switch: false
+        },
+        {
+          name: "违禁内容 (暴力恐怖、令人不适、违禁品)",
+          switch: false
+        },
+        {
+          name: "其他",
+          switch: false
+        }
+      ],
+      selectedReport: [],
+      showCommentsMask: false,
+    };
+    methods = {
+      gotoHome: function() {
+        wx.reLaunch({
+          url: "index"
+        });
+      },
+      openImg(index) {
+        var currentIndex = this.details.imgList[index];
+        var imgList = this.details.imgList.slice(0,6);
+        core.preViewShow(currentIndex, imgList);
+      },
+      opentLocation() {
+        var lat = parseFloat(this.details.lat);
+        var lng = parseFloat(this.details.lng);
+        wx.openLocation({
+          latitude: lat,
+          longitude: lng,
+          scale: 28
+        });
+      },
+      selectReportItem(index) {
+        this.report[index].switch = !this.report[index].switch;
+        if (this.report[index].switch == true) {
+          this.selectedReport.push(this.report[index].name);
+        } else {
+          var reportIndex = this.selectedReport.indexOf(this.report[index].name);
+          this.selectedReport.splice(reportIndex, 1);
+        }
+      },
+      async toggleReport() {
+        if (!this.details.isReported) {
+          this.showReport = !this.showReport;
+          if (this.showReport == false) {
+            for (var i = 0; i < this.report.length; i++) {
+              this.report[i].switch = false;
+            }
+            this.selectedReport = [];
+          }
+          this.$apply();
+        } else {
+          core.showToast("您已举报过该信息", "none", 1200);
+        }
+      },
+      async checkLogin(e) {
+        let user = e.detail;
+        let name = e.currentTarget.dataset.name;
+        if (user.errMsg === "getUserInfo:ok") {
+          // await core.userImpower(user);
+          //this.getMeInfo();
+          this.userInfo = await core.userImpower(user);
+          //this.userInfo = await core.getUserInfo();
+          this.$apply();
+          if (name === "opentReport") {
+            this.toggleReport();
+          } else if (name === "collect") {
+            this.collect();
+          } else if (name === "dz") {
+            this.like();
+          }
+        }
+      },
+      async submitReport() {
+        var that = this;
+        var app = wepy.$instance;
+        var user = await core.getUserInfo();
+        if (this.selectedReport.length > 0) {
+          var reportStr = this.selectedReport.join("，");
+          http
+            .post(addr.AddReportMsg, {
+              appId: app.globalData.appid,
+              userId: user.userid,
+              msgId: this.details.Id,
+              reportReason: reportStr
+            })
+            .then(data => {
+              if (data.isok) {
+                that.showReport = false;
+                that.selectedReport = [];
+                that.details.isReported = true;
+                for (var i = 0; i < that.report.length; i++) {
+                  that.report[i].switch = false;
+                }
+                that.$apply();
+                core.showToast("举报成功", "success", 1200);
+              } else {
+                core.showToast(data.Msg, "loading", 1200);
+              }
+            });
+        } else {
+          core.showToast("请选择举报内容", "none", 1200);
+        }
+      },
+      async collect() {
+        var app = wepy.$instance;
+        if (!this.details.isFavorited) {
+          var collect = await core.addMsgViewFavoriteShare(
+            app.globalData.appid,
+            this.msgId,
+            1,
+            this.userInfo.userid
+          );
+          //console.log(collect);
+          if (collect.isok) {
+            this.details.isFavorited = true;
+            this.$apply();
+            core.showToast("收藏成功", "success", 1200);
+          } else {
+            core.showModal(collect.Msg);
+          }
+        } else {
+          core.showToast("已收藏过该信息", "none", 1200);
+        }
+      },
+      async like() {
+        var app = wepy.$instance;
+        if (!this.details.isDzed) {
+          this.details.DzCount++;
+          this.details.isDzed = true;
+          this.$apply();
+          var like = await core.addMsgViewFavoriteShare(
+            app.globalData.appid,
+            this.msgId,
+            3,
+            this.userInfo.userid
+          );
+        } else {
+          core.showToast("您已点过赞", "none", 1000);
+        }
+      },
+      phoneCall(index) {
+        var phoneNum = this.details.phone;
+        wx.makePhoneCall({
+          phoneNumber: phoneNum
+        });
+      },
+      stopShare() {
+        let review = this.details.Review;
+        if (review == 1) {
+          core.showModal("该信息审核中，暂不能转发");
+        } else if (review == -1) {
+          core.showModal("该信息审核不通过，不能转发");
+        }
+      },
+      toggleComment() {
+        this.showCommentsMask = !this.showCommentsMask;
+      },
+      async addComments(e) {
+        console.log(e.detail.value);
+        core.loading();
+        let infoId = this.details.Id;
+        let commentText = e.detail.value;
+        let param = {
+          Id: infoId,
+          commentDetail: commentText,
+        }
+        let data = await core.AddComment(param);
+        if (data.isok) {
+          wx.hideLoading();
+          this.showCommentsMask = false;
+          console.log(data);
+          this.details.Comments = data.dataObj.comments;
+          this.$apply();
+        } else {
+          core.showModal(data.Msg);
+        }
+      }
+    };
+    events = {};
+    async onLoad(option) {
+      console.log("onload");
+      wx.hideShareMenu();
+      this.userInfo = await core.getUserInfo();
+      var app = wepy.$instance;
+      this.msgId = option.msgId;
+      this.$apply();
+      await this.getDetails(this.msgId);
+      await core.addMsgViewFavoriteShare(
+        app.globalData.appid,
+        this.msgId,
+        0,
+        this.userInfo.userid
+      );
+    }
+    async onShow() {
+      console.log("onshow");
+    }
+    //获取详情
+    async getDetails(msgId) {
+      core.loading();
+      var app = wepy.$instance;
+      var user = await core.getUserInfo();
+      var userid = user.userid ? user.userid : 0;
+      http
+        .post(addr.GetMsgDetail, {
+          appId: app.globalData.appid,
+          userId: userid,
+          msgId: msgId
+        })
+        .then(data => {
+          wx.hideLoading();
+          if (data.isok) {
+            this.details = data.dataObj.msg;
+            this.$apply();
+          } else {
+            core.showModal(data.Msg);
+          }
+        });
+    }
+    //分享
+    onShareAppMessage() {
+      var title = this.details.msgDetail;
+      var app = wepy.$instance;
+      var that = this;
+      return {
+        title: title,
+        path: "/pages/classifyDetails?msgId=" + this.msgId,
+        success: function(res) {
+          core.addMsgViewFavoriteShare(app.globalData.appid, that.msgId, 2);
+          core.showToast("分享成功", "success", 1000);
+        }
+      };
+    }
+  }
+</script>
+
+
+

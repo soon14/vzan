@@ -1,0 +1,456 @@
+<style>
+page {
+  background-color: #f1f1f1;
+  -webkit-tap-highlight-color: transparent;
+}
+.u-list {
+  padding-top: 20rpx;
+}
+.u-item {
+  background-color: #fff;
+  padding: 20rpx;
+
+  border-bottom: 1rpx solid #ededed;
+}
+.u-img {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 6rpx;
+  background-color: #999; 
+}
+.u-name {
+  font-size: 30rpx;
+  font-weight: bold;
+}
+.u-action {
+  background-color: #2f4058;
+  position: absolute;
+  padding: 10rpx 20rpx;
+  white-space: nowrap;
+  color: #fff;
+  right: 50rpx;
+  top: -5rpx;
+  border-radius: 6rpx;
+}
+.u-action > view:first-child {
+  border: 0;
+}
+.u-action > view {
+  border-left: 1px solid #acb3bc;
+  padding: 0 20rpx;
+}
+.level-item {
+  height: 100rpx;
+  line-height: 100rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #ededed;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+}
+
+.pop-body .userimg {
+  width: 130rpx;
+  height: 130rpx;
+  border-radius: 6rpx;
+  background-color: #ccc;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -70rpx;
+  box-shadow: 0 0 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.level-edit__picker {
+  background-color: #f5f5f5;
+  height: 100rpx;
+  border-radius: 6rpx;
+  padding: 0 20rpx;
+}
+
+.storemoney-tip {
+  border-top: 1rpx solid #f2f2f2;
+  padding-top: 20rpx;
+  line-height: 1.5;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view>
+    <view class="topbg">
+      <view class="f search">
+        <view class="f fc search-input f1">
+          <view class="dzicon icon-sousuo"></view>
+          <input type="text" class="f1" placeholder="输入用户名或手机号码" bindconfirm="searchUser"></input>
+        </view>
+      </view>
+      <view class="tab-type f fc mt20">
+        <view class="f1" wx:for="{{tabList}}">
+          <text class="{{item.id==currentTab?'sel':''}}" @tap="changeTab({{item.id}})">{{item.id=="user"?levelname:item.name}}</text>
+        </view>
+      </view>
+    </view>
+    <view>
+      <view class="u-list" hidden="{{currentTab!=='user'}}">
+
+        <block wx:for="{{vm.list}}" wx:for-index="index1">
+          <view class="f u-item" wx:for="{{item}}" wx:key="Id" wx:for-item="useritem" wx:for-index="index2">
+            <image class="u-img" src="{{useritem.headimgurl}}" mode="aspectFill"></image>
+            <view class="f f1 fv fsa ml20">
+              <view class="f fj">
+                <view class="c333 u-name f1">{{useritem.username}}</view>
+                <view class="c666 f1">{{useritem.levelInfo.name}}</view>
+                <view clas="f1">
+                  <text class="c666">储值余额：</text>
+                  <text class="c333">￥{{useritem.AccountMoneystr}}</text>
+                </view>
+              </view>
+              <view class="f fj mt20">
+                <view class="c333">{{useritem.TelePhone||""}}</view>
+                <view class="rel">
+                  <view class="ico44 ico-gear" @tap.stop="userSet({{index1}},{{index2}})"></view>
+                  <view class="u-action f fc fc-h" hidden="{{!useritem.act?'hidden':''}}">
+                    <view @tap.stop="showStoreMoneyEdit()">
+                      <view class="ico30 ico-money"></view>充值</view>
+                    <view @tap.stop="showLevelEdit()">
+                      <view class="ico30 ico-crown"></view>升级会员</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </block>
+        <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore>
+      </view>
+      <view class="level-list mt20" hidden="{{currentTab!=='level'}}">
+        <view class='f level-item' @tap="clickLevel({{0}},'全部会员')">
+          <view class='f1'>全部用户</view>
+          <view class="dzicon icon-jiantou"></view>
+        </view>
+        <view class='f level-item' wx:for="{{vmlevel.list}}" @tap="clickLevel({{item.Id}},{{item.name}})">
+          <view class='f1'>{{item.name}}</view>
+          <view class="dzicon icon-jiantou"></view>
+        </view>
+        <!-- <wxc-loadmore is-end="{{!vmlevel.ispost&&vmlevel.loadall}}" icon="{{true}}"></wxc-loadmore> -->
+      </view>
+
+      <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+      <!--修改会员等级-->
+      <view class="pop-mask" hidden="{{!levelEditShow}}">
+        <view class="pop-body rel level-edit">
+          <image src="{{vm.list[index1][index2].headimgurl}}" class="userimg"></image>
+          <view class="tc">{{vm.list[index1][index2].username}}</view>
+          <view class="pop-body__wrap">
+            <picker bindchange="pickLevel" range-key="name" value="{{chooseLevel}}" range="{{vmlevel.list}}">
+              <view class="f level-edit__picker fc">
+                <view class="f1">会员级别：</view>
+                <view>
+                  {{vmlevel.list[chooseLevel].name}}
+                </view>
+                <view class="dzicon icon-jiantou"></view>
+              </view>
+            </picker>
+            <view class="pop-body__bottom f fc-h">
+              <view class="btn btn-cancel" @tap="hideLevelEdit">取消</view>
+              <view class="btn btn-ok" @tap="saveLevel">确认修改</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <!--修改储值-->
+      <view class="pop-mask" wx:if="{{storeMoneyEditShow}}">
+        <view class="pop-body rel storemoney-edit">
+          <image src="{{vm.list[index1][index2].headimgurl}}" class="userimg"></image>
+          <view class="tc">{{vm.list[index1][index2].username}}</view>
+          <view class="pop-body__wrap">
+            <view>
+              <view class="f fc">
+                <view class="c666 f30">当前余额：</view>
+                <view class="f1 c666 f30">￥{{vm.list[index1][index2].AccountMoneystr}}</view>
+              </view>
+              <view class="f fc mt60">
+                <view class="c333 f60">￥</view>
+                <view class="f1 c333 f60"><input type="text" class="f60" style="height:70rpx;" bindinput="inputStoreMoney" confirm-type="完成" value="{{storeMoneyInput}}" focus="{{true}}"></input>
+                </view>
+              </view>
+              <!-- <view class="f24 c999 storemoney-tip">
+                输入负数则会在当前余额基础上减少输入的金额,否则为增加
+              </view> -->
+            </view>
+            <view class="pop-body__bottom f fc-h">
+              <view class="btn btn-cancel" @tap="hideStoreMoneyEdit">取消</view>
+              <view class="btn btn-ok" @tap="saveStoreMoney">确定</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="h45"></view>
+    </view>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import baseMixin from "../mixins/base";
+import { core, vm } from "../lib/core";
+// import
+//第一步： 引入组件文件
+
+export default class user extends wepy.page {
+  config = {
+    navigationBarTitleText: "",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    vm: JSON.parse(JSON.stringify(vm)),
+    vmlevel: JSON.parse(JSON.stringify(vm)),
+    levelid: 0,
+    levelname: "全部用户",
+    tabList: [
+      { name: "全部用户", id: "user" },
+      { name: "会员级别", id: "level" }
+    ],
+    currentTab: "user",
+    searchValue: "",
+    index1: -1,
+    index2: -1,
+    chooseLevel: 0,
+    levelEditShow: false,
+    storeMoneyEditShow: false,
+    storeMoneyInput: "" //输入的金额
+  };
+  computed = {};
+  methods = {
+    changeTab(id) {
+      this.currentTab = id;
+    },
+    async clickLevel(id, name) {
+      this.levelid = id;
+      this.vm = JSON.parse(JSON.stringify(vm));
+      this.currentTab = "user";
+      this.levelname = name;
+      this.searchValue = "";
+      this.$apply();
+      await this.loadMore();
+    },
+    async searchUser(e) {
+      this.vm = JSON.parse(JSON.stringify(vm));
+      this.searchValue = e.detail.value;
+      //this.$apply();
+      await this.loadMore();
+    },
+    userSet(i1, i2) {
+      i1 = i1.toString();
+      i2 = i2.toString();
+      console.log(i1, i2);
+      var key = "";
+      if (this.index1 != -1 && this.index2 != -1) {
+        if (this.index1 == i1 && this.index2 == i2) {
+        } else {
+          key = "vm.list[" + this.index1 + "][" + this.index2 + "].act";
+          this.setData({
+            [key]: false
+          });
+        }
+      }
+
+      this.data.vm.list[i1][i2].act = !this.data.vm.list[i1][i2].act;
+      key = "vm.list[" + i1 + "][" + i2 + "].act";
+      this.setData({
+        [key]: this.data.vm.list[i1][i2].act
+      });
+      this.index1 = i1;
+      this.index2 = i2;
+    },
+    showLevelEdit() {
+      var selUser = this.vm.list[this.index1][this.index2];
+      this.chooseLevel = this.vmlevel.list.findIndex(
+        p => p.Id == selUser.levelid
+      );
+      this.levelEditShow = true;
+    },
+    hideLevelEdit() {
+      this.levelEditShow = false;
+    },
+    async pickLevel(e) {
+      this.chooseLevel = e.detail.value;
+    },
+    async saveLevel() {
+      var that = this;
+      if (this.chooseLevel == -1) return;
+      if (this.index1 == -1 || this.index2 == -1) return;
+      let levelInfo = this.vmlevel.list[this.chooseLevel];
+      var selUser = this.vm.list[this.index1][this.index2];
+      let result = await core.EditViplevel(selUser.Id, levelInfo.Id);
+
+      if (result) {
+        if (result.isok) {
+          that.levelEditShow = false;
+          var key1 =
+            "vm.list[" + this.index1 + "][" + this.index2 + "].levelid";
+          var key2 =
+            "vm.list[" + this.index1 + "][" + this.index2 + "].levelInfo.name";
+          that.setData({
+            [key1]: levelInfo.Id,
+            [key2]: levelInfo.name
+          });
+        }
+        that.ShowToast(result.Msg);
+      }
+      that.$apply();
+    },
+    showStoreMoneyEdit() {
+      this.storeMoneyEditShow = true;
+    },
+    hideStoreMoneyEdit() {
+      this.storeMoneyEditShow = false;
+    },
+    inputStoreMoney(e) {
+      this.storeMoneyInput = e.detail.value;
+    },
+    async saveStoreMoney() {
+      if (this.index1 == -1 || this.index2 == -1) {
+        that.ShowToast("请选择要设置的用户");
+        return;
+      }
+      var selUser = this.vm.list[this.index1][this.index2];
+
+      var that = this;
+      if (!/^-?\d{1,7}(\.[\d]{1,2})?$/gi.test(this.storeMoneyInput)) {
+        that.ShowToast("只能输入最多7位整数和2位小数");
+        return;
+      }
+      wx.showModal({
+        title: "提示",
+        content: "确定修改吗？",
+        success: function(res) {
+          if (res.confirm) {
+            core
+              .ChangeSaveMoney(selUser.uid, that.storeMoneyInput * 100)
+              .then(function(result) {
+                if (result) {
+                  if (result.isok) {
+                    let key =
+                      "vm.list[" +
+                      that.index1 +
+                      "][" +
+                      that.index2 +
+                      "].AccountMoney";
+                    let key2 =
+                      "vm.list[" +
+                      that.index1 +
+                      "][" +
+                      that.index2 +
+                      "].AccountMoneystr";
+                    that.storeMoneyInput = "";
+                    that.storeMoneyEditShow = false;
+
+                    that.setData({
+                      [key]: result.dataObj.AccountMoney,
+                      [key2]: result.dataObj.AccountMoneystr
+                    });
+                    //that.vm.list[that.index1][that.index2].AccountMoney=result.dataObj.AccountMoney;
+                    //that.vm.list[that.index1][that.index2].AccountMoneystr=result.dataObj.AccountMoneystr;
+                    that.$apply();
+                  }
+                  that.ShowToast(result.Msg);
+                }
+              });
+          } else if (res.cancel) {
+          }
+        }
+      });
+    }
+  };
+  events = {};
+  async onLoad() {
+    await this.loadLevel();
+  }
+  async onShow() {
+    await this.loadMore();
+  }
+  //上拉加载更多
+  async onReachBottom() {
+    await this.loadMore();
+  }
+  async loadMore() {
+    var that = this;
+
+    if (that.vm.ispost || that.vm.loadall) return;
+
+    wx.showLoading({
+      title: "加载中..."
+    });
+    //wx.showNavigationBarLoading();
+    let result = await core.GetVipList(
+      that.vm.pageindex,
+      that.vm.pagesize,
+      that.searchValue,
+      that.levelid
+    );
+    if (result) {
+      if (result.isok) {
+        that.vm.ispost = false;
+        let key = "vm.list[" + that.vm.pageindex + "]";
+        if (Object.prototype.toString.call(result.dataObj) != "[object Array]")
+          return;
+        if (result.dataObj.length >= that.vm.pagesize) {
+          that.vm.pageindex += 1;
+        } else {
+          that.vm.loadall = true;
+        }
+        that.setData({
+          [key]: result.dataObj,
+          "vm.pageindex": that.vm.pageindex,
+          "vm.loadall": that.vm.loadall
+        });
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+    wx.hideLoading();
+    //wx.hideNavigationBarLoading();
+  }
+  async loadLevel() {
+    var that = this;
+
+    if (that.vmlevel.ispost || that.vmlevel.loadall) return;
+    //wx.showNavigationBarLoading();
+    let result = await core.GetVipLevel();
+    if (result) {
+      if (result.isok) {
+        that.vmlevel.ispost = false;
+        that.vmlevel.loadall = true;
+        that.vmlevel.list = result.dataObj;
+        that.$apply();
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+    //wx.hideNavigationBarLoading();
+  }
+  //下拉刷新
+  async onPullDownRefresh() {
+    this.vm = JSON.parse(JSON.stringify(vm));
+    await this.loadMore();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+}
+</script>

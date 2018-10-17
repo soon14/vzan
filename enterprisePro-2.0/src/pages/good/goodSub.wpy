@@ -1,0 +1,352 @@
+<style lang="less">
+  .c-subform {
+    width: 100%;
+    .c-subform-main {
+      width: 100%;
+      background: #fff;
+      padding: 0 30rpx;
+      .c-subform-input {
+        width: 100%;
+        height: 120rpx;
+        line-height: 120rpx;
+        border-bottom: 1px solid #eee;
+        input {
+          text-align: right;
+          font-size: 34rpx;
+          height: 120rpx;
+          line-height: 120rpx;
+        }
+      }
+      .c-subform-title {
+        font-size: 34rpx;
+        width: 140rpx;
+      }
+    }
+    .c-subform-btn {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100rpx;
+      font-size: 30rpx;
+      line-height: 100rpx;
+      background: #FAFAFA;
+      .c-subform-sub {
+        height: 100rpx;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class='{{currentSkin}}'>
+    <view class="c-subform">
+      <image class="w-100" mode='widthFix' src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180919/38596ffcebbb4922a33bbaa50af41c1c.png" />
+      <form @submit="showMask" report-submit="true">
+        <view class="c-subform-main">
+          <!-- 姓名 -->
+          <view class="c-subform-input f" wx:if="{{vm.state.showname}}">
+            <text class="c-subform-title">姓名</text>
+            <input class="f1" placeholder="填写你的姓名" placeholder-class="cd9" name="姓名" />
+          </view>
+          <!-- 性别 -->
+          <view class="c-subform-input f" wx:if="{{vm.state.showsex}}">
+            <text class="c-subform-title">性别</text>
+            <picker class='f1' @change="sexChange" value="{{vm.subInfo.index}}" range="{{vm.subInfo.sex}}">
+              <input class='f1' disabled type='text' value='{{vm.subInfo.sex[vm.subInfo.index]}}' name="性别" />
+            </picker>
+          </view>
+          <!-- 年龄 -->
+          <view class="c-subform-input f" wx:if="{{vm.state.showage}}">
+            <text class="c-subform-title">年龄</text>
+            <input class="f1" placeholder="填写年龄" placeholder-class="cd9" name="年龄" />
+          </view>
+          <!-- 手机号码  -->
+          <view class="c-subform-input f" wx:if="{{vm.state.showphone}}">
+            <text class="c-subform-title">号码</text>
+            <input class='f1' type='number' maxlength='11' placeholder='填写你的号码' placeholder-class='cd9' name="手机号码" />
+          </view>
+          <!-- 三联 勾选->地址-->
+          <view class="c-subform-input f" wx:if="{{vm.state.showmap==false&&vm.state.showdress}}">
+            <text class="c-subform-title">城市</text>
+            <view class="f f1 fc">
+              <picker class='f1' mode="region" @change="addrChange">
+                <input class='f1' disabled type='text' value='{{vm.subInfo.region}}' placeholder='请选择地址' placeholder-class="cd9" name="地址" />
+              </picker>
+              <text class="dzicon icon-xiala-copy-right  ml20" />
+            </view>
+          </view>
+          <!-- 地图选位置 勾选->地址并精确-->
+          <view class='c-subform-input f' wx:if="{{vm.state.showmap}}">
+            <text class="c-subform-title">城市</text>
+            <view class="f f1 fc" @tap='chooseLocation'>
+              <input class='f1' disabled type='text' value='{{vm.subInfo.region}}' placeholder='请选择地址' placeholder-class="cd9" name="地址" />
+              <text class="dzicon icon-xiala-copy-right  ml20" />
+            </view>
+          </view>
+          <!-- 详细地址 -->
+          <view class="c-subform-input f" wx:if="{{vm.state.showdress}}">
+            <input class="f1" type='text' maxlength='16' placeholder='街道信息等' placeholder-class="cd9" name="详细地址" />
+          </view>
+          <!-- 时间选择 -->
+          <view class='c-subform-input f' @tap='showData(1)' wx:if="{{vm.state.showtime}}">
+            <text class="c-subform-title">预约时间</text>
+            <view class="f f1 fc">
+              <input class='f1' placeholder='选择时间' placeholder-class="cd9" type='text' disabled value="{{vm.pickTime[1]}}" name="预约时间" />
+              <text class="dzicon icon-xiala-copy-right  ml20" />
+            </view>
+            <repeat>
+              <comPicker @closeData.user="closeData" wx:if="{{vm.showPicker[1]}}" :vm.sync="vm.time" :formIndex="1" name="备注" />
+            </repeat>
+          </view>
+          <!-- 备注 -->
+          <view class='c-subform-input f' wx:if="{{vm.state.showremark}}">
+            <text class="c-subform-title">备注</text>
+            <input class='f1' placeholder="买家备注(字数不超过100)" maxlength='100' placeholder-class='cd9' />
+          </view>
+        </view>
+        <view style="height:110rpx" />
+        <view class="c-subform-btn f">
+          <text class="c-subform-sub f1" style="margin-left:30rpx" wx:if="{{vm.state.openpay}}">预约费 ￥{{vm.price}}</text>
+          <button class="c-subform-sub skin_bg f fc fc-h f34" style="width:{{vm.state.openpay?'230rpx':'100%'}}" formType="submit">立即预约</button>
+        </view>
+      </form>
+      <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}" />
+      <repeat wx:if="{{vm.payMask}}">
+        <comPay :vm.sync="vm" @selChange.user="selChange" @hideMask.user="hideMask" @payMoney.user="payMoney" />
+      </repeat>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js";
+  import com_payMask from "@/components/com_payMask";
+  import com_pickerTime from "@/components/com_pickerTime";
+  import {
+    timeTools
+  } from "@/lib/utils.js";
+  import {
+    core,
+    tools
+  } from "../../lib/core";
+  // import
+  //第一步： 引入组件文件
+  export default class goodSub extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      },
+      navigationBarTitleText: "预约",
+    };
+    //第二步：声明组件
+    components = {
+      comPay: com_payMask,
+      comPicker: com_pickerTime,
+    };
+    data = {
+      vm: {},
+      toast: {},
+      currentSkin: {},
+    }
+    methods = {
+      //支付方式
+      selChange(index) {
+        this.vm.selIndex = Number(index)
+        this.$apply()
+      },
+      showMask(e) {
+        
+        let tm = e.detail.value
+        if (tm['姓名'] === '') {
+          tools.ShowToast("请填写姓名", this);
+          return;
+        }
+        if (tm['年龄'] === '') {
+          tools.ShowToast("请填写年龄", this);
+          return;
+        }
+        if (Number(tm['年龄']) === 0) {
+          tools.ShowToast("年龄不能为0", this);
+          return;
+        }
+        if (tm['手机号码'] === '') {
+          tools.ShowToast("请填写手机号", this);
+          return;
+        }
+        if (tm['地址'] === '') {
+          tools.ShowToast("请选择地址", this);
+          return;
+        }
+        if (tm['预约时间'] === '') {
+          tools.ShowToast("请选择预约时间", this);
+          return;
+        }
+        core.formId(e.detail.formId)
+        this.tm = tm
+        this.vm.payMask = true
+        this.$apply()
+      },
+      hideMask() {
+        this.vm.payMask = false
+        this.$apply()
+      },
+      // 性别选择
+      sexChange(e) {
+        this.vm.subInfo.region = e.detail.value;
+        this.vm.subInfo.index = Number(e.detail.value);
+        this.$apply()
+      },
+      // 三联地址选择
+      addrChange(e) {
+        this.vm.subInfo.region = e.detail.value;
+        this.$apply()
+      },
+      //选择位置位置
+      chooseLocation(e) {
+        let that = this
+        wx.chooseLocation({
+          success: res => {
+            that.vm.subInfo.region = res.address;
+            that.$apply()
+          }
+        });
+      },
+      // 时间选择
+      showData(formIndex) {
+        this.vm.showPicker[formIndex] = true;
+        this.timeConfig();
+        this.$apply()
+      },
+      closeData(date, formIndex, tmp) {
+        tmp = tmp.split("/")
+        let time = this.timeSub(this.vm.state, tmp)
+        if (time == false) {
+          return;
+        }
+        if (date && date.includes('请选择时间')) {
+          date = ""
+        }
+        this.vm.pickTime[formIndex] = date
+        this.vm.showPicker[formIndex] = false;
+        this.$apply()
+      },
+      payMoney(e) {
+        let vm = this.vm
+        let formVm = {
+          datajson: JSON.stringify(this.tm),
+          remark: JSON.stringify({
+            goods: {
+              name: vm.goodInfo.name,
+              id: vm.goodInfo.id,
+              SpecInfo: vm.goodInfo.specInfo,
+              attrSpacStr: vm.goodInfo.attrSpacStr,
+              SpecImg: vm.goodInfo.specImg
+            }
+          }),
+          formId: 0,
+          buyMode: vm.selIndex,
+        };
+        core.submitForm(formVm,this);
+      }
+    }
+    async onLoad(options, data) {
+      await tools.setPageSkin(this);
+      this.subGood(data)
+    }
+    /**
+     * @param {openpay false未开启预约付费 ，true开启预约付费}
+     * @param {paytype 0是使用固定费用 1是使用付费产品百分比}
+     * @param {paycount 0付费金额 1付费产品百分比}
+     */
+    async subGood(data) {
+      let app = wepy.$instance
+      let valueMoney = await core.valueMoney();
+      let vm = {
+        subInfo: {
+          index: 0,
+          sex: ["男", "女"],
+          region: "",
+        },
+        pickTime: [],
+        selIndex: 0,
+        payMask: false,
+        showPicker: [],
+        state: await core.getSub(),
+        goodInfo: _get(data.preload, "tmp", ""),
+        valuemoney: valueMoney.saveMoneySetUser.AccountMoneyStr,
+      }
+      vm.state.openpay = _get(vm.state, 'openpay', false)
+      if (vm.state.openpay) {
+        vm.price = this.priceCom(vm.state, vm.goodInfo.price)
+      }
+      this.vm = vm
+      this.$apply()
+    }
+    // 获取当前时间
+    timeConfig() {
+      this.vm.time = timeTools.formTimeSpan();
+      this.$apply();
+    }
+    //价钱计算
+    priceCom(tmp, valPrice) {
+      let price = 0
+      if (tmp.paytype == 0) {
+        price = tmp.paycount
+      } else {
+        price = Number(valPrice).mul(Number(tmp.paycount).div(100))
+      }
+      return price
+    }
+    /**
+     * @method timeSub 提前预约时间处理
+     * @param {date 当前系统时间}
+     * @param {pickDate选择的日期}
+     * @param {pickTime选择的日期转化为时间戳毫秒数}
+     * @param {subTime后台设定预约时间转化为时间戳毫秒数}
+     * @param {differTime相差的时间戳}
+     */
+    timeSub(tm, tmp) {
+      const date = new Date()
+      const pickDate = new Date(tmp[0] + "/" + tmp[1] + "/" + tmp[2])
+      let [pickTime, subTime, differTime] = [0, 0, 0]
+      switch (tm.timetype) {
+        case '小时':
+          pickTime = new Date(pickDate.getTime() + tmp[3] * 60 * 60 * 1000 + tmp[4] * 60 * 1000)
+          subTime = new Date(date.getTime() + tm.timecount * 60 * 60 * 1000)
+          differTime = (subTime.getTime() - pickTime.getTime()) / 24 / 60 / 60 / 1000;
+          if (differTime > 0) {
+            tools.ShowToast("请提前" + tm.timecount + "小时预约", this);
+            return false;
+          } else {
+            return true
+          }
+          break;
+        case "天":
+          pickTime = pickDate
+          subTime = new Date(date.getTime() + tm.timecount * 24 * 60 * 60 * 1000)
+          differTime = (subTime.getTime() - pickTime.getTime()) / 24 / 60 / 60 / 1000;
+          if (differTime > 0) {
+            tools.ShowToast("请提前" + tm.timecount + "天预约", this);
+            return false;
+          } else {
+            return true
+          }
+          break;
+        case "分钟":
+          pickTime = new Date(pickDate.getTime() + tmp[3] * 60 * 60 * 1000 + tmp[4] * 60 * 1000)
+          subTime = new Date(date.getTime() + tm.timecount * 60 * 1000)
+          differTime = (subTime.getTime() - pickTime.getTime()) / 24 / 60 / 60 / 1000;
+          if (differTime > 0) {
+            tools.ShowToast("请提前" + tm.timecount + "分钟预约", this);
+            return false;
+          } else {
+            return true
+          }
+          break;
+      }
+    }
+  }
+</script>

@@ -1,0 +1,307 @@
+<style>
+.top-bg {
+  background-color: #fe536f;
+  height: 410rpx;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+}
+.dashboard {
+  z-index: 2;
+}
+.dashboard-total {
+  color: #fff;
+  text-align: center;
+  height: 350rpx;
+  overflow: hidden;
+}
+.totalmoney-title {
+}
+.dashboard-menu__wrap {
+  padding: 0 30rpx;
+}
+.dashboard-menu {
+  height: 200rpx;
+  background-color: #fff;
+  text-align: center;
+  border-radius: 8rpx;
+  color: #666;
+}
+.dashboard-menu .ico60 {
+  width: 60rpx;
+  height: 60rpx;
+  display: block;
+  margin: 0 auto;
+  margin-bottom: 20rpx;
+}
+.dashboard-data__title {
+  height: 100rpx;
+  line-height: 100rpx;
+  font-size: 37rpx;
+  font-weight: bolder;
+  color: #333;
+  border-bottom: 1rpx solid #f2f2f2;
+}
+.dashboard-data {
+  margin-top: 40rpx;
+}
+.dashboard-data swiper {
+  height: 420rpx;
+}
+
+.dashboard-data__item {
+  width: 660rpx !important;
+}
+
+.dashboard-data__item .bg-w {
+  border-radius: 8rpx;
+}
+
+.h320 {
+  height: 320rpx;
+}
+.dashboard-data .f1 {
+  font-size: 28rpx;
+  color: #666666;
+  box-sizing: border-box;
+  padding-top: 40rpx;
+}
+.dashboard-data .f1 .font-din {
+  color: #fe536f;
+  font-size: 40rpx;
+}
+.dashboard-data__dot {
+  width: 50rpx;
+  height: 2rpx;
+  background-color: #f4afbb;
+  margin-right: 20rpx;
+}
+.dashboard-data__dot:last-child {
+  margin-right: 0;
+}
+.dashboard-data__dot.on {
+  background-color: #fe536f;
+}
+.dashboard-data__indicator {
+  margin-top: 20rpx;
+}
+.ico-dot__red {
+  position: absolute;
+  right: -3rpx;
+  top: -3rpx;
+  z-index: 3;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="rel">
+    <view class="top-bg"></view>
+    <view class="rel dashboard">
+
+      <view class="dashboard-total f fv fsa">
+        <view class="totalmoney">
+          <view class="f30 totalmoney-title">
+            总收益(元)
+          </view>
+          <view class="f100 font-din totalmoney-value">
+            {{totalItem.priceSum}}
+          </view>
+        </view>
+        <view class="f fc-h ">
+          <view class="f1">
+            <view class="f30">总订单(个)</view>
+            <view class="f40 font-din">{{totalItem.orderSum}}</view>
+          </view>
+          <view class="f1">
+            <view class="f30">总用户(个)</view>
+            <view class="f40 font-din">{{totalItem.userCount}}</view>
+          </view>
+        </view>
+
+      </view>
+      <view class="dashboard-menu__wrap">
+        <view class="f fc fc-h dashboard-menu">
+          <navigator class="f1" url="store" hover-class="none">
+            <view class="ico60 ico-store"></view>
+            店铺切换
+          </navigator>
+          <navigator class="f1" url="hexiao" hover-class="none">
+            <view class="ico60 ico-scan"></view>
+            线下核销
+          </navigator>
+          <navigator class="f1" url="message" hover-class="none">
+            <view class="ico60 ico-bell rel">
+              <view class="ico26 ico-dot__red" wx:if="{{msgcount>0}}"></view>
+            </view>
+            消息通知
+          </navigator>
+        </view>
+      </view>
+      <view class="dashboard-data">
+        <swiper next-margin="30rpx" previous-margin="30rpx" current="{{currentRecord}}" circular="{{true}}" duration="250" bindchange="changeRecord">
+          <swiper-item wx:for="{{record}}">
+            <view class="dashboard-data__item">
+              <view class="bg-w tc">
+                <view class="dashboard-data__title">
+                  {{item.name}}
+                </view>
+                <view class="h320">
+                  <view class="f">
+                    <view class="f1">
+                      <view class="font-din">{{item.orderSum}}</view>
+                      订单数
+                    </view>
+                    <view class="f1">
+                      <view class="font-din">{{item.priceSum}}</view>
+                      成交额
+                    </view>
+                    <view class="f1">
+                      <view class="font-din">{{item.uv}}</view>
+                      <text wx:if="{{index=='day'}}">昨日浏览量</text>
+                      <text wx:elif="{{index=='week'}}">上周浏览量</text>
+                      <text wx:elif="{{index=='month'}}">上月浏览量</text>
+                    </view>
+                  </view>
+                  <view class="f">
+                    <view class="f1">
+                      <view class="font-din">{{item.PayOrderCount}}</view>
+                      支付订单数
+                    </view>
+                    <view class="f1">
+                      <view class="font-din">{{item.waitDealCount}}</view>
+                      待处理订单
+                    </view>
+                    <view class="f1">
+                      <view class="font-din">{{item.payUserCount}}</view>
+                      支付买家数
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </swiper-item>
+
+        </swiper>
+
+        <view class="f fc-h dashboard-data__indicator">
+          <view class="dashboard-data__dot {{index==currentRecord?'on':''}}" wx:for="{{3}}"></view>
+        </view>
+      </view>
+
+    </view>
+
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core } from "../lib/core";
+// import
+//第一步： 引入组件文件
+var recordItem = {
+  orderSum: 0, //订单数,
+  PayOrderCount: 0, //支付订单数,
+  waitDealCount: 0, //等待处理订单数,
+  payUserCount: 0, //付款用户数,
+  priceSum: 0, //交易额
+  uv: 0 //浏览量
+};
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "工作台",
+    enablePullDownRefresh: true,
+
+    // 引入min组件
+    usingComponents: {}
+  };
+  //第二步：声明组件
+  components = {};
+  //mixins = [Enterprise];
+
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    currentRecord: 0,
+    totalItem: {
+      priceSum: 0,
+      orderSum: 0,
+      userCount: 0
+    },
+    record: {
+      day: Object.assign({ name: "今日数据" }, recordItem),
+      week: Object.assign({ name: "近一周数据" }, recordItem),
+      month: Object.assign({ name: "近一月数据" }, recordItem)
+    },
+    msgcount: 0
+  };
+  computed = {};
+  methods = {
+    ShowToast(msg) {
+      let that = this;
+      that.$toast.show = true;
+      that.$toast.msg = msg;
+      setTimeout(() => {
+        that.$toast.show = false;
+        that.$apply();
+      }, 1000);
+    },
+    changeRecord: function(e) {
+      this.currentRecord = e.detail.current;
+    }
+  };
+  async getPageData() {
+    wx.showNavigationBarLoading();
+    let that = this;
+    let totalItem = await core.index();
+    if (totalItem && totalItem.isok) {
+      that.totalItem = totalItem.dataObj;
+      that.$apply();
+    }
+    let record = await core.indexRecord();
+    if (record && record.isok) {
+      Object.assign(that.record.day, record.dataObj.day);
+      Object.assign(that.record.week, record.dataObj.week);
+      Object.assign(that.record.month, record.dataObj.month);
+      that.$apply();
+    }
+
+    let msgresult = await core.GetMessageCount();
+    if (msgresult) {
+      if (msgresult.isok) {
+        that.msgcount =
+          msgresult.dataObj.orderCount + msgresult.dataObj.subscribeCount;
+        that.$apply();
+      }
+    }
+
+    wx.hideNavigationBarLoading();
+  }
+  events = {};
+  async onLoad() {}
+  async onShow() {
+    let currentStore = wx.getStorageSync("currentStore") || "";
+    console.log(currentStore);
+    if (!currentStore) {
+      console.log("没有选择店铺，跳转到store");
+      wx.reLaunch({
+        url: "/pages/store"
+      });
+      return;
+    }
+
+    await this.getPageData();
+  }
+
+  async onPullDownRefresh() {
+    await this.getPageData();
+    wx.stopPullDownRefresh();
+  }
+}
+</script>

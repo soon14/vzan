@@ -1,0 +1,116 @@
+<!-- 订单状态 -->
+<view class='{{currentSkin}}'>
+
+
+  <view class='order_status'>
+    <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/cancle.png'></image>
+    <text>{{postdata.stateRemark}}</text>
+    <text wx:if="{{postdata.stateRemark=='待付款'}}" class='bottom_btn shop_sel' bindtap='gotopay'>去付款</text>
+
+
+  </view>
+
+  <!-- 收货人 地址 -->
+  <view class='order_information'>
+    <view class='order_person'>
+      <text>收货人：{{postdata.goodOrder.AccepterName}}</text>
+      <text>{{postdata.goodOrder.AccepterTelePhone}}</text>
+    </view>
+    <view class='order_address'>
+      <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/location3.png' style='flex-shrink:0'></image>
+      <text>{{postdata.goodOrder.Address}}</text>
+    </view>
+  </view>
+
+
+  <!-- 产品详情 -->
+  <view class='order_list'>
+
+    <block wx:for="{{postdata.goodOrderDtl}}">
+      <view class='order_item'>
+        <image mode='aspectFill' src='{{item.goodImgUrl}}'></image>
+        <view class='order_content'>
+          <text class='order_content_1'>{{item.goodname}}</text>
+          <text style='font-size:26rpx;color:#ccc' wx:if="{{item.orderDtl.SpecInfo!='undefined'}}">{{item.orderDtl.SpecInfo}}</text>
+          <view class='order_down'>
+            <view class='order_price'>
+              <text>￥</text>
+              <text>{{item.orderDtl.originalPriceStr}}</text>
+              <!--显示原价-->
+            </view>
+            <text class='order_item_num'> x {{item.orderDtl.Count}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <!-- 价钱总计 -->
+    <view class='price_total'>
+      <text>共{{postdata.goodOrder.QtyCount}}件，商品金额：￥{{postdata.goodOrder.OnlyGoodsMoney}}</text>
+      <text>运费：￥{{postdata.freightPrice}}</text>
+      <text wx:if="{{postdata.goodOrder.ReducedPriceStr>0}}">优惠金额：- ￥{{postdata.goodOrder.ReducedPriceStr}}</text>
+      <view class='price_true'>
+        <text>实付款：</text>
+        <text>￥{{postdata.goodOrder.BuyPriceStr}}</text>
+      </view>
+    </view>
+
+    <!-- 订单信息 -->
+    <view class='order_info'>
+      <view class='order_left'>
+        <text>订单编号：{{postdata.goodOrder.OrderNum}}</text>
+        <view style='display:flex;'>
+          <text>下单时间：{{postdata.goodOrder.CreateDateStr}}</text>
+        </view>
+      </view>
+      <view class='order_right' bindtap='copy'>复制订单</view>
+    </view>
+
+    <view class='order_info'>
+      <view class='order_left'>
+
+        <view wx:if="{{postdata.goodOrder.BuyMode==1}}">支付方式：微信支付</view>
+        <view wx:else="{{postdata.goodOrder.BuyMode==2}}">支付方式：储值支付</view>
+        <view style='display:flex;'>
+          <view>支付时间：</view>
+          <text wx:if="{{postdata.goodOrder.State!=0&&postdata.goodOrder.State!=-1}}">{{postdata.goodOrder.PayDateStr}}</text>
+        </view>
+        <view wx:if="{{postdata.goodOrder.Message!=null}}">买家留言：{{postdata.goodOrder.Message}}</view>
+        <view style='display:flex;' wx:if="{{postdata.goodOrder.GetWay!=0}}">
+          <view>发货时间：</view>
+          <text wx:if="{{postdata.goodOrder.DistributeDateStr!='0001-01-01 00:00:00'}}">{{postdata.goodOrder.DistributeDateStr}}</text>
+        </view>
+        <view class='flex-row aic mtop30'>
+          <view>收货方式：{{postdata.goodOrder.GetWay==0?'到店自取':'商家配送'}}</view>
+          <text wx:if="{{postdata.orderFriRemark!=null}}">（{{postdata.orderFriRemark}}）</text>
+        </view>
+        <view style='display:flex;'>
+          <view>成交时间：</view>
+          <text wx:if="{{postdata.goodOrder.AcceptDateStr!='0001-01-01 00:00:00'}}">{{postdata.goodOrder.AcceptDateStr}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+
+  <!-- 联系商家 -->
+  <view class='h100-l'></view>
+  <view class='w100 h100-l center cfff f34 p-fbot shop_sel ' bindtap='homeGoto'>返回首页</view>
+  <template is="smoney" data="{{smoney}}" />
+
+
+  <view style='text-align:center;' wx:if="{{postdata.stateRemark=='待自取'}}&&hxqrcode">
+    <image src="{{hxqrcode}}" style='width:320rpx;height:320rpx;margin:0 auto;'></image>
+  </view>
+
+</view>
+
+
+
+
+
+<template name="smoney">
+  <view class='bg' wx:if="{{smoney}}" style='z-index:0'></view>
+  <image src='/image/a35.png' class='cancel-smoney' bindtap='cancelsmoney'></image>
+  <image src='http://j.vzan.cc/miniapp/img/lijianjin/smoneybg1.png' style='width:570rpx' class='reduce-money' mode='widthFix' wx:if="{{smoney}}"></image>
+  <text class='smoney-txt' wx:if="{{smoney}}" bindtap='getreducemoney'>開</text>
+</template>

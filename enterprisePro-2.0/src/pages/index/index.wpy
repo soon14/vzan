@@ -1,0 +1,360 @@
+<style lang="less">
+  .page-none {
+    height: 90vh;
+    overflow: hidden;
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="{{currentSkin}} {{showCanvas?'page-none':''}}">
+    <official-account />
+    <repeat for="{{currentPage.coms}}" key="index" index="index" item="item">
+      <comMusic :currentCom.sync="item" wx:if="{{item.type=='bgaudio'}}" :pageIndex.sync="currentPageIndex" />
+      <ad unit-id='{{item.unitid}}' wx:if="{{item.type=='ad'}}" />
+      <comMap :currentCom.sync="item" wx:if="{{item.type=='map'}}" />
+      <comVideo :currentCom.sync="item" wx:if="{{item.type=='video'}}" />
+      <comSpace :currentCom.sync="item" wx:if="{{item.type=='spacing'}}" />
+      <comSearch :currentCom.sync="item" wx:if="{{item.type=='search'}}" />
+      <comImgnav :currentCom.sync="item" wx:if="{{item.type=='imgnav'}}" />
+      <comMagic :currentCom.sync="item" wx:if="{{item.type=='magicCube'}}" />
+      <comImg :currentCom.sync="item" wx:if="{{item.type=='img'&&item.imgurl}}" />
+      <comSlider :currentCom.sync="item" wx:if="{{item.type=='slider'&&item.items[0].img}}" />
+      <comCoupons :currentCom.sync="item" wx:if="{{item.type=='coupons'&&item.items.length}}" />
+      <comContact :currentCom.sync="item" wx:if="{{item.type=='contactShopkeeper'&&item.pageShow}}" />
+      <comForm :currentCom.sync="item" :toast="toast" @ShowToast.user="ShowToast" wx:if="{{item.type=='form'}}" />
+      <comBottomnav :currentCom.sync="item" :vm.sync="vm_com_bottom" :pageIndex.sync="currentPageIndex" wx:if="{{item.type=='bottomnav'}}" />
+      <comNews :currentCom.sync="item" :vm.sync="vm_com_news[currentPageIndex+'_'+index]" wx:if="{{item.type=='news'}}" />
+      <comGood :currentCom.sync="item" :vm.sync="vm_com_good[currentPageIndex+'_'+index].list" wx:if="{{item.type=='good'}}" />
+      <comRichtxt :currentCom.sync="vm_com_rich[currentPageIndex+'_'+index]" wx:if="{{item.type=='richtxt'&&item.content}}" />
+      <comGroup :currentCom.sync="item" :vm.sync="vm_com_group[currentPageIndex+'_'+index].list" wx:if="{{item.type=='joingroup'}}" />
+      <comGroup2 :currentCom.sync="item" :vm.sync="vm_com_group2[currentPageIndex+'_'+index].list" wx:if="{{item.type=='entjoingroup'&&item.items.length}}" />
+      <comLive :currentCom.sync="item" :pageIndex.sync="currentPageIndex" :comIndex.sync="index" :vm.sync="vm_com_live" wx:if="{{item.type=='live'}}" />
+      <comClassify :currentCom.sync="item" :vm.sync="vm_com_classify" wx:if="{{item.type=='goodlist'&&item.GoodCatNavStyle=='6'}}" :false.sync="false" />
+      <comBargain :currentCom.sync="item" :user.sync="vm_com_user" :false.sync="false" :vm.sync="vm_com_bargain[currentPageIndex+'_'+index]" wx:if="{{item.type=='cutprice'}}" />
+      <comNewsLst :currentCom.sync="item" :vm.sync="vm_com_newlst" wx:if="{{item.type=='newslist'}}" :false.sync="false" @newsSel.user='newsSel' :newsIndex.sync="newsIndex" @setInput.user="setInput" />
+      <comGoodList :currentCom.sync="item" :pageIndex.sync="currentPageIndex" :comIndex.sync="index" :vm.sync="vm_com_goodLst" wx:if="{{item.type=='goodlist'&&item.GoodCatNavStyle!='6'}}" :false.sync="false" @goodSearch.user='goodSearch' />
+      <comiaoSha :currentCom.sync="item" :pageIndex.sync="currentPageIndex" :comIndex.sync="index" :toast="toast" @ShowToast.user="ShowToast" :vm.sync="vm_com_miaosha[currentPageIndex+'_'+index]" :false.sync="false" wx:if="{{item.type=='flashdeal'&&vm_com_miaosha[currentPageIndex+'_'+index].show}}"
+      />
+    </repeat>
+    <repeat>
+      <comIcon :vm="vm_com_icon" @showCanvas.user="showCanvas" @showIcon.user="showIcon" />
+    </repeat>
+    <!-- 底部水印 -->
+    <repeat>
+      <comLogo :vm.sync="vm_com_logo" wx:if="{{vm_com_logo&&currentPage.coms[0].type!='goodlist'&&currentPage.coms[1].type!='goodlist'&&currentPage.coms[0].type!='newslist'&&currentPage.coms[1].type!='newslist'}}" />
+      <comCouponsFloat :couponsFloat.sync="vm_com_coupList" wx:if="{{coupHidden}}" @closeMask.user="closeCoupMask" @getCoup.user="getIndexCoup" />
+      <comSigninFloat wx:if="{{signinRules.State==1&&showsigninFloat}}" @closeMask.user="closeSignin" @signin.user="clickSingin" :comSigninRules.sync="signinRules" :comUserSignIn.sync="userSignin" />
+    </repeat>
+    <comVas hidden="{{!showCanvas?'hidden':''}}" @hideCanvas.user="hideCanvas" />
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    <view style="height:100rpx"></view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+  } from "../../lib/core";
+  // import
+  //第一步： 引入组件文件
+  import _get from "@/lib/lodash.get.js"
+  import com_img from "@/components/com_img";
+  import com_map from "@/components/com_map";
+  import com_form from "@/components/com_form";
+  import com_good from "@/components/com_good";
+  import com_news from "@/components/com_news";
+  import com_icon from "@/components/com_icon";
+  import com_logo from "@/components/com_logo";
+  import com_live from "@/components/com_live";
+  import com_video from "@/components/com_video";
+  import com_imgnav from "@/components/com_imgnav";
+  import com_slider from "@/components/com_slider";
+  import com_search from "@/components/com_search";
+  import com_canvas from "@/components/com_canvas";
+  import com_bargain from "@/components/com_bargain";
+  import com_coupons from "@/components/com_coupons";
+  import com_contact from "@/components/com_contact";
+  import com_spacing from "@/components/com_spacing";
+  import com_richtxt from "@/components/com_richtxt";
+  import com_newsLst from "@/components/com_newsLst";
+  import com_miaoSha from "@/components/com_miaoSha";
+  import com_goodList from "@/components/com_goodList";
+  import com_magicImg from "@/components/com_magicImg";
+  import com_joingroup from "@/components/com_joingroup";
+  import com_bottomnav from "@/components/com_bottomnav";
+  import com_joingroup2 from "@/components/com_joingroup2";
+  import com_goodClass from "@/components/com_goodClassify";
+  import com_signinFloat from "@/components/com_signinFloat";
+  import com_couponsFloat from "@/components/com_couponsFloat";
+  import com_music from "@/components/com_music";
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "",
+      enablePullDownRefresh: true,
+      // 引入min组件
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+        "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+      }
+    };
+    //第二步：声明组件
+    components = {
+      comMusic: com_music,
+      comMap: com_map,
+      comImg: com_img,
+      comLogo: com_logo,
+      comGood: com_good,
+      comForm: com_form,
+      comLive: com_live,
+      comNews: com_news,
+      comIcon: com_icon,
+      comVas: com_canvas,
+      comVideo: com_video,
+      comSlider: com_slider,
+      comImgnav: com_imgnav,
+      comSearch: com_search,
+      comSpace: com_spacing,
+      comMagic: com_magicImg,
+      comiaoSha: com_miaoSha,
+      comRichtxt: com_richtxt,
+      comBargain: com_bargain,
+      comGroup: com_joingroup,
+      comContact: com_contact,
+      comCoupons: com_coupons,
+      comGoodList: com_goodList,
+      comGroup2: com_joingroup2,
+      comClassify: com_goodClass,
+      comBottomnav: com_bottomnav,
+      comCouponsFloat: com_couponsFloat,
+      comSigninFloat: com_signinFloat,
+      comNewsLst: com_newsLst,
+    };
+    data = {
+      currentPageIndex: 0,
+      currentPage: {}, //页面总数据
+      currentSkin: {}, //主题色
+      vm_com_user: {}, //用户信息
+      vm_com_news: {}, //新闻组件
+      vm_com_live: {},
+      vm_com_good: {}, //产品组件
+      vm_com_logo: {}, //水印
+      vm_com_icon: {}, //图标
+      vm_com_rich: {}, //富文本
+      vm_com_group: {}, //团购
+      vm_com_group2: {}, //拼团
+      vm_com_status: {},
+      vm_com_miaosha: {}, //秒杀组件
+      vm_com_bargain: {}, //砍价组件
+      vm_com_classify: {},
+      vm_com_coupList: [],
+      vm_com_bottom: {},
+      vm_com_goodLst: {
+        pageindex: 1,
+        pagesize: 10,
+        list: [],
+        typeid: [],
+        goodCat: [],
+        goodCatArray: [],
+        pricesort: "",
+        exttypes: "",
+        search: "",
+        alltypeid: "",
+        isFirstType: '',
+        ispost: false,
+        loadall: false,
+        showMore: false,
+        showgoodAll: false,
+        saleCountSort: "",
+      },
+      vm_com_newlst: {
+        ispost: false,
+        loadall: false,
+        list: [],
+        pageindex: 1,
+        pagesize: 10,
+        ids: "",
+        search: "",
+      },
+      toast: {
+        show: false,
+        msg: ""
+      },
+      // 积分
+      signinRules: {},
+      userSignin: {},
+      singinDate: ["第1天", "第2天", "第3天", "第4天", "第5天", "第6天", "第7天"],
+      showsigninFloat: false,
+      showCanvas: false,
+      homeStatus: false,
+      coupHidden: false,
+      newsIndex: 0
+    };
+    methods = {
+      // 积分优惠卷
+      closeCoupMask() {
+        this.coupHidden = false;
+        if (this.signinRules.ShowPage == 0) {
+          this.showsigninFloat = false;
+        } else {
+          this.showsigninFloat = true;
+          core.showSignin(this)
+        }
+      },
+      closeSignin() {
+        this.showsigninFloat = false;
+      },
+      clickSingin() {
+        core.playCard(this);
+      },
+      async getIndexCoup(id, i) {
+        let vm = this.vm_com_coupList
+        if (!vm[i].isGet) {
+          let coupInfo = await core.getCoupon(id);
+          if (coupInfo.isok) {
+            this.vm_com_coupList[i].isGet = true;
+            this.vm_com_coupList[i].coupBtnText = "去查看";
+          }
+          tools.showModal(coupInfo.msg, false);
+        } else {
+          tools.goNewPage("/pages/discount/couponLst")
+          this.coupHidden = false;
+        }
+        this.$apply();
+      },
+      wxParseImgTap(e) {
+        let src = e.currentTarget.dataset.src;
+        tools.preViewShow(src)
+      },
+      ShowToast(msg) {
+        tools.ShowToast(msg, this)
+      },
+      //弹出分享
+      showCanvas() {
+        this.showCanvas = true;
+      },
+      //隐藏
+      hideCanvas() {
+        this.showCanvas = false;
+      },
+      //资讯列表组件
+      newsSel(id, type) {
+        let vm = this.vm_com_newlst;
+        this.newsIndex = type === 'all' ? 0 : id;
+        vm = tools.resetArray(vm);
+        vm.ids = id;
+        core.getNewsLst(vm, this);
+        this.vm_com_newlst = vm
+        this.$apply()
+      },
+      //产品列表搜素
+      goodSearch(e) {
+        this.vm_com_goodLst.search = e.detail.value
+        this.$apply()
+      },
+      //内容资讯列表搜素
+      setInput(e) {
+        this.vm_com_newlst.search = e.detail.value
+        this.$apply()
+      },
+      //图标显示、
+      showIcon() {
+        this.vm_com_icon.showState = !this.vm_com_icon.showState
+        this.$apply()
+      },
+    };
+    async onLoad(options) {
+      tools.showLoading()
+      await core.renderPage(this, Number(_get(options, "currentPageIndex", 0)));
+      Promise.all([core.connectSocket(), core.addQrCodeScanRecord(_get(options, "scene", ""))])
+    }
+    onShow() {
+      Object.assign(this)
+      let getApp = wepy.$instance.globalData
+      this.vm_com_status = {}
+      getApp.goodCat.length ? core.renderPage(this, Number(this.currentPageIndex)) : ""
+    }
+    onPageScroll(e) {
+      let temp = this.currentPage.coms.find(f => f.type == 'bgaudio')
+      if (temp) {
+        if (e.scrollTop == 0) {
+          this.currentPage.coms[this.currentPageIndex].scrollShow = false
+        } else {
+          this.currentPage.coms[this.currentPageIndex].scrollShow = true
+        }
+      }
+      this.vm_com_icon.backUp = e.scrollTop == 0 ? false : true;
+      this.vm_com_icon.showState = false
+      this.$apply()
+    }
+    onUnload() {
+      let getApp = wepy.$instance.globalData
+      clearInterval(this.barCount);
+      clearInterval(this.miaoShaCutDown);
+      let _current = getCurrentPages()[getCurrentPages().length - 2]
+      if (_current) {
+        Object.assign([
+          getApp.pages = '',
+          this.showCanvas = false,
+          this.vm_com_status = {},
+          this.currentPage.coms = [],
+        ])
+        core.renderPage(this, Number(_current.data.currentPageIndex));
+        this.currentPageIndex = _current.data.currentPageIndex
+        this.$apply()
+      }
+    }
+    onHide() {
+      this.showCanvas = false;
+    }
+    onReachBottom() {
+      let _goodLst = this.currentPage.coms.find(f => f.type == 'goodlist' && f.GoodCatNavStyle != '6');
+      let _newsLst = this.currentPage.coms.find(f => f.type == 'newslist');
+      _goodLst ? core.getGoodsListRequest(this.vm_com_goodLst, _goodLst, this) : "";
+      _newsLst ? core.getNewsLst(this.vm_com_newlst, this) : "";
+    }
+    async onPullDownRefresh() {
+      if (this.showCanvas) {
+        wx.stopPullDownRefresh();
+        return;
+      }
+      let getApp = wepy.$instance.globalData
+      clearInterval(this.barCount);
+      clearInterval(this.miaoShaCutDown)
+      wx.showNavigationBarLoading();
+      wx.clearStorageSync()
+      this.vm_com_newlst = tools.resetArray(this.vm_com_newlst)
+      Object.assign([
+        getApp.aid = "",
+        getApp.logo = "",
+        getApp.pages = "",
+        getApp.vipInfo = "",
+        getApp.storeConfig = "",
+        this.newsIndex = 0,
+        this.vm_com_user = {},
+        this.vm_com_status = {},
+        this.vm_com_goodLst.typeid = [],
+      ]);
+      await core.renderPage(this, Number(this.currentPageIndex));
+      core.logoSwitch(this)
+      wx.hideNavigationBarLoading();
+      wx.stopPullDownRefresh();
+    }
+    onShareAppMessage() {
+      let getApp = wepy.$instance.globalData;
+      let img = this.showCanvas ? getApp.adImg : '';
+      let title = this.showCanvas ? getApp.adTitle : '';
+      return {
+        title: title,
+        path: "/pages/index/index?currentPageIndex=" + this.currentPageIndex,
+        imageUrl: img,
+        success: res => {
+          tools.loading("转发成功", 'success');
+        }
+      };
+    }
+  }
+</script>

@@ -1,0 +1,141 @@
+<style lang="less">
+    .bg-F7D54E {
+        background-color: #F7D54E;
+    }
+    .bg-FF9364 {
+        background-color: #FF9364;
+    }
+    .bg-red {
+        background: rgba(255, 104, 100, 1);
+    }
+    .shop-list {
+        .shop-item {
+            &:first-child{
+                padding-top:38rpx;
+            };
+            &:last-child {
+                margin-bottom: 0px;
+            }
+            padding: 18rpx 30rpx 14rpx 30rpx;
+            .avator {
+                width: 96rpx;
+                height: 96rpx;
+                background: rgba(217, 216, 217, 1);
+                border-radius: 10px;
+            }
+            .detail {
+                width: 563rpx;
+                .img-icon {
+                    position: relative;
+                    width: 32rpx;
+                    height: 32rpx;
+                    border-radius: 50%;
+                    margin-right: 15rpx;
+                    margin-bottom: 4rpx;
+                    .myicon {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                    } 
+                }
+                .line {
+                    height: 2rpx;
+                    background-color: #eee;
+                    margin: 10rpx 0;
+                }
+                .label {
+                    padding: 2rpx 14rpx;
+                    color: #ff6f30;
+                    background-color: #fee4db;
+                    border-radius: 13rpx;
+                }
+            }
+        }
+    }
+</style>
+<template lang="wxml">
+    <view class="shop-list">
+        <repeat for="{{shopList}}" item="shop" key="index">
+            <view class="shop-item bg-w f fj mb20" @tap="jumpShopDetail({{index}})">
+                <image class="avator" src="{{shop.StoreImgs}}" mode="aspectFill"></image>
+                <view class="detail f fv">
+                    <view class="ellipsis f fc">
+                        <view class="img-icon  bg-red" wx:if="{{shop.top}}">
+                            <view class="dzicon icon-zhuanyebaniconkuozhan_newprod myicon cfff " style="font-size:16rpx"></view>
+                        </view>
+                        <view class="img-icon  bg-F7D54E">
+                            <view class="dzicon icon-zhuanyebaniconkuozhan_Member myicon cfff " style="font-size:18rpx"></view>
+                        </view>
+                        <text class="f26 c333 ib">{{shop.Name}}</text>
+                    </view>
+                    <view class="mt2">
+                        <repeat>
+                            <comEvaluate />
+                        </repeat>
+                    </view>
+                    <view class="f f20 fj c666 mt2">
+                        <text>{{shop.StorePV}}浏览</text> <text>{{shop.Distance}}</text>
+                    </view>
+                    <view class="line"></view>
+                    <view class="f fj fc f20 c666 mt5">
+                        <view class="f fc lh18">
+                            <view class="img-icon bg-FF9364">
+                                <text class="dzicon icon-zhuanyebaniconkuozhan_youhuiquan myicon cfff" style="font-size:18rpx"></text>
+                            </view>
+                            <text>{{shop.couponSum}}元</text>
+                        </view>
+                        <text class="label">{{shop.couponCount}}张卷</text>
+                    </view>
+                    <view class="f f22 fj fc c666 mt5">
+                        <view class="lh18 ellipsis wp65">{{shop.dynamic}}</view>
+                        <view class="wp35 f fe fc">
+                            <text class="mr2">{{shop.dynamicCount}}条信息</text>
+                            <text class="dzicon icon-jiantou f34 pt5"></text>
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </repeat>
+        
+    </view> 
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+   import com_evaluate from "@/components/com_evaluate";
+    export default class ShopItem extends wepy.component {
+        components = {
+            comEvaluate: com_evaluate,
+           // comLoading: com_loading,
+        };
+        props = {
+            shopList: {
+                type: Array,
+                default: [],
+            }
+        };
+        data = {
+            scroe_: 3.8, //评分
+            // showBottom_: true,
+        };
+        methods = {
+            jumpShopDetail(i) {
+                let title = this.shopList[i].Name;
+                let cardId = this.shopList[i].MyCardId;
+                tools.goNewPage("../shop-detail/index?title=" + title + "&MyCardId=" + cardId);
+            }
+        }
+        onLoad() {
+            var vm = this
+            setTimeout(() => {
+                vm.$invoke('comEvaluate', 'setScore', 4.5)
+            }, 300);
+        }
+    }
+</script>
+

@@ -1,0 +1,329 @@
+<style lang="less">
+    .info-item {
+        padding: 30rpx 28rpx;
+        .userpic {
+            text-align: center;
+            margin-right: 30rpx;
+            &>image {
+                width: 80rpx;
+                height: 80rpx;
+                border-radius: 50%;
+            } 
+        } 
+        .info-content {
+            .title {
+                padding-bottom: 5rpx;
+                .user-info {
+                    .name {
+                        &>image {
+                            width: 30rpx;
+                            height: 37rpx; 
+                            vertical-align: middle;
+                            margin-left: 20rpx;
+                        }
+                    }
+                }
+                .contact {
+                    .contact-btn {
+                        padding: 8rpx 16rpx;
+                        color: #6ad585;
+                        border: 1px solid #6ad585;
+                        border-radius: 6rpx;
+                    }
+                }
+            }
+            .img {
+                .img-sm {
+                    width: 180rpx;
+                    height: 180rpx;
+                    margin: 0 6rpx;
+                    margin-bottom: 12rpx;
+                }
+                .img-xl {
+                    width: 272rpx;
+                    height: 272rpx;
+                    margin: 0 6rpx;
+                    margin-bottom: 12rpx;
+                }
+            }
+            .bottom {
+                .location {
+                    .addr {
+                        width: 78%;
+                    }
+                    .distance {
+                        width: 22%;
+                        text-align: right;
+                    }
+                }
+            }
+            .comments-wrap {
+                .comments-list {
+                    .comments-item {
+                        line-height: 1.2em;
+                        margin-top: 8rpx;
+                    }
+                }
+                .textarea-box {
+                    .input-area {
+                        width: 100%;
+                        height: 50rpx;
+                        background-color: #f6f6f6; // padding: 13rpx 30rpx; 
+                        padding: 0 30rpx;
+                    }
+                }
+            }
+        }
+    }
+</style>
+
+<template lang="wxml">
+    <!-- 帖子 -->
+    <view class="info-item f bg-w mt10">
+        <!-- 用户头像 -->
+        <view class="userpic">
+            <image src="{{info.userHeaderImg}}" mode="aspectFill" />
+        </view>
+        <!-- 用户信息-->
+        <view class="info-content w-100">
+            <!-- 发布者名 -->
+            <view class="title f fc fj">
+                <view class="user-info f fv">
+                    <view class="name f fc">
+                        <text class="f30 line line1" style="max-width:360rpx;" wx:if="{{info.userName!=null}}">{{info.userName}}</text>
+                        <image src="http://j.vzan.cc/miniapp/img/MiniCity/icon-top.png" wx:if="{{!info.isExpired}}" />
+                    </view>
+                    <text class="f22 c-c6c8cc">{{info.showTimeStr}}</text>
+                </view>
+                <view wx:if="{{isMyPublish}}" class="contact" @tap="deleteMsg()">
+                    <text class="contact-btn f22">删除</text>
+                </view>
+                <view wx:if="{{!isMyPublish}}" class="contact" @tap.stop="phoneCall()">
+                    <text class="contact-btn f22">联系Ta</text>
+                </view>
+            </view>
+            <!-- 文字内容 -->
+            <view @tap="gotoDetails()">
+                <view class="text mt20 f30">
+                    <view class="line line4">
+                        <text class="c-9ba9cd" wx:if="{{info.msgTypeName!=null}}" @tap.stop="gotoCurrentClassify()">#{{info.msgTypeName}}# </text><text>{{info.msgDetail}}</text>
+                    </view>
+                </view>
+                <!-- 图片内容 -->
+                <view class="img f fw mt30">
+                    <repeat for="{{info.imgList}}" item="imgUrl" index="imgIndex" wx:if="{{imgIndex<6}}">
+                        <view class="img-sm" wx:if="{{info.imgList.length>=3}}">
+                            <image src="{{imgUrl}}" class="w-full h-full" mode="aspectFill" data-type="info" @tap.stop="previewInfoImg({{imgIndex}})" />
+                        </view>
+                        <view class="img-xl" wx:if="{{info.imgList.length<3}}">
+                            <image src="{{imgUrl}}" class="w-full h-full" mode="aspectFill" data-type="info" @tap.stop="previewInfoImg({{imgIndex}})" />
+                        </view>
+                    </repeat>
+                </view>
+            </view>
+            <!-- 底部地址和其他 -->
+            <view class="bottom">
+                <view class="location f fc fj mt20">
+                    <view class="addr f fc w-full">
+                        <view class="dzicon icon-dingwei c-9ba9cd f24"></view>
+                        <text class="f22 c-9ba9cd line line1 ml5 pr20" @tap.stop="opentLocation()">{{info.location}}</text>
+                    </view>
+                    <text class="distance f22 cb2" wx:if="{{info.distanceStr!=null}}">{{info.distanceStr}}</text>
+                </view>
+                <view class=" f fc fj mt20 cb2">
+                    <view class="f22">{{info.ReviewState}}</view>
+                    <view class="f fc">
+                        <view class="ml30 f20 f fc">
+                            <view class="dzicon icon-liulanliang c-c6c8cc f26"></view><text class="ml5">{{info.ViewCount}}</text>
+                        </view>
+                        <button class="clear-btn-none ml30 f20 f fc" data-name="dz" open-type="getUserInfo" @getuserinfo="checkLogin" wx:if="{{comUser.nickName==null&&comUser.avatarUrl==null}}">
+                                                                            <view class="dzicon icon-aixin {{info.isDzed?'c-ff5d5e':'c-c6c8cc'}} f24"></view>
+                                                                            <text class="ml5 cb2">{{info.DzCount}}</text>
+                                                                        </button>
+                        <view class="ml30 f20 f fc" @tap.stop="like" wx:else>
+                            <view class="dzicon icon-aixin {{info.isDzed?'c-ff5d5e':'c-c6c8cc'}} f24"></view>
+                            <text class="ml5">{{info.DzCount}}</text>
+                        </view>
+                        <view class="ml30 f20 f fc" wx:if="{{info.Review==1||info.Review==-1}}" @tap="stopShare({{comIndex}})">
+                            <view class="dzicon icon-zhuanfa3 c-c6c8cc f26"></view><text class="ml5 cb2">{{info.ShareCount}}</text></view>
+                        <button class="clear-btn-none ml30 f20 l1 f fc" data-id="{{info.Id}}" data-index="{{comIndex}}" plain="true" open-type="share" wx:else><view class="dzicon icon-zhuanfa3 c-c6c8cc f26"></view><text class="ml5 cb2">{{info.ShareCount}}</text></button>
+                    </view>
+                </view>
+            </view>
+            <!-- 评论 -->
+            <view class="comments-wrap" wx:if="{{!isMyPublish}}">
+                <view class="comments-list mt16">
+                    <repeat for="{{info.Comments}}" index="commentsIndex" item="comment" key="commentsIndex" wx:if="{{commentsIndex<3}}">
+                        <view class="comments-item f24">
+                            <text class="t-b">{{comment.NickName}}：</text>
+                            <text>{{comment.CommentDetail}}</text>
+                        </view>
+                    </repeat>
+                </view>
+                <view class="c666 f24 mt10" @tap.stop="gotoDetails" wx:if="{{info.Comments.length>3}}">全部评论{{info.Comments.length}}条</view>
+                <view class="textarea-box mt30">
+                    <input class="input-area f24 " value="{{commentsText}}" cursor-spacing="6" confirm-type="send" placeholder="添加评论" placeholder-style="color:#D9D8D9;" @confirm="getInputText"></input>
+                </view>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy';
+    import addr from "@/lib/addr";
+    import {
+        core,
+        http
+    } from "@/lib/core";
+    export default class com_infoItem extends wepy.component {
+        components = {};
+        data = {};
+        props = {
+            info: {
+                type: Array,
+                default: [],
+                twoWay: true,
+            },
+            comUser: {},
+            type: {}, //判断我的发布或我的收藏
+            isClassify: {}, //在分类列表页，则点击分类标签不跳转
+            isMyPublish: {}, //在我的发布或收藏页，则显示删除按钮
+            comIndex: {
+                type: Number,
+                default: 0,
+            },
+        };
+        data = {
+            commentsText: "",
+        }
+        methods = {
+            async deleteMsg() {
+                core.loading();
+                var app = wepy.$instance;
+                var user = await core.getUserInfo();
+                var id = "";
+                var that = this;
+                if (this.type == 0) {
+                    id = this.info.Id;
+                } else if (this.type == 1) {
+                    id = this.info.FavoriteId;
+                }
+                http
+                    .post(addr.DelMyFavoriteOrMyMsg, {
+                        appId: app.globalData.appid,
+                        Id: id,
+                        userId: user.userid,
+                        delType: this.type
+                    })
+                    .then(data => {
+                        if (data.isok) {
+                            this.$parent.list.splice(this.comIndex, 1);
+                            core.showToast(data.Msg, "success", 1000);
+                            this.$parent.$apply();
+                        } else {
+                            core.showModal(data.Msg);
+                        }
+                    });
+            },
+            phoneCall() {
+                let phoneNum = this.info.phone;
+                wx.makePhoneCall({
+                    phoneNumber: phoneNum
+                });
+            },
+            gotoDetails() {
+                var msgId = this.info.Id;
+                wx.navigateTo({
+                    url: "classifyDetails?msgId=" + msgId
+                });
+            },
+            gotoCurrentClassify() {
+                if (!this.isClassify) {
+                    var classifyName = this.info.msgTypeName;
+                    var typeId = this.info.msgTypeId;
+                    wx.navigateTo({
+                        url: "classifyList?title=" + classifyName + "&typeId=" + typeId
+                    });
+                }
+            },
+            previewInfoImg(imgIndex) {
+                var current = this.info.imgList[imgIndex];
+                var imgList = this.info.imgList.slice(0,6);
+                core.preViewShow(current, imgList);
+            },
+            opentLocation() {
+                var lat = parseFloat(this.info.lat);
+                var lng = parseFloat(this.info.lng);
+                wx.openLocation({
+                    latitude: lat,
+                    longitude: lng,
+                    scale: 28
+                });
+            },
+            async checkLogin(e) {
+                let user = e.detail;
+                let name = e.currentTarget.dataset.name;
+                if (user.errMsg === "getUserInfo:ok") {
+                    // await core.userImpower(user);
+                    //this.getMeInfo();
+                    this.userInfo = await core.userImpower(user);
+                    this.$apply();
+                    this.like();
+                }
+            },
+            async like() {
+                let user = await core.getUserInfo();
+                let app = wepy.$instance;
+                let msgId = this.info.Id;
+                if (!this.info.isDzed) {
+                    this.info.DzCount++;
+                    this.info.isDzed = true;
+                    this.$apply();
+                    let like = await core.addMsgViewFavoriteShare(
+                        app.globalData.appid,
+                        msgId,
+                        3,
+                        user.userid
+                    );
+                } else {
+                    core.showToast("您已点过赞", "none", 1000);
+                }
+            },
+            stopShare(i) {
+                let review = this.info.Review;
+                if (review == 1) {
+                    core.showModal("该信息审核中，暂不能转发");
+                } else if (review == -1) {
+                    core.showModal("该信息审核不通过，不能转发");
+                }
+            },
+            getInputText(e) {
+                this.commentsText = e.detail.value;
+                var infoId = this.info.Id;
+                var param = {
+                    Id: infoId,
+                    commentDetail: this.commentsText,
+                }
+                this.sendComments(param);
+            }
+        };
+        //发送评论
+        async sendComments(param) {
+            core.loading();
+            var data = await core.AddComment(param);
+            if (data.isok) {
+                wx.hideLoading();
+                this.commentsText = "";
+                this.info.Comments = data.dataObj.comments;
+                this.$apply();
+            } else {
+                core.showModal(data.Msg);
+            }
+        }
+        onLoad() {}
+        events = {};
+        // Other properties
+    }
+</script>
+

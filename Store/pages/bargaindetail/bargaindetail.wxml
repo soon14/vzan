@@ -1,0 +1,248 @@
+<!--pages/bargaindetail/bargaindetail.wxml-->
+<wxs src="bargaindetail.wxs" module="a" />
+<!-- 客服按钮 -->
+<button class='positionbtn' open-type='contact' style='bottom:441rpx;'>
+  <image src='/image/a28.png' class='kefuicon'></image>
+</button>
+<!-- 电话按钮 -->
+<view class='positionbtn' style='bottom:321rpx;' bindtap='makephonecall'>
+  <image src='/image/a29.png' style='width:48rpx;height:52rpx;'></image>
+</view>
+<!-- 返回主页按钮 -->
+<view class='positionbtn' style='bottom:202rpx;' bindtap='siwchtoIndex'>
+  <image src='/image/a30.png' style='width:48rpx;height:52rpx;'></image>
+</view>
+<!-- 底部按钮 -->
+<view class='bottom_btn'>
+  <view class='bottom_btnleft' bindtap='navtoMycutprice'>
+    <image src='/image/a27.png' style='width:34rpx;height:40rpx;'></image>
+    <text>砍价单</text>
+  </view>
+  <!-- 帮好友砍价成功弹窗 -->
+  <view class='bg' wx:if="{{condition0&&isFriend!=0}}"></view>
+  <image src='/image/a35.png' class='condition0cancel' wx:if="{{condition0&&isFriend!=0}}" bindtap='cancelBargain'></image>
+  <view class='bargainsuccess' wx:if="{{condition0&&isFriend!=0}}">
+    <image src='/image/a34.png' style='width:500rpx;height:320rpx;'></image>
+    <view style='height:170rpx;padding: 0 80rpx;text-align:center'>
+      <text>恭喜你帮{{BargainedUserName}}砍掉了</text>
+      <text style='color:#ffaa56'>￥{{cutprice}}</text>
+    </view>
+    <view style='background-color:#ffac58;border-radius:4rpx;color:white;line-height:80rpx;width:460rpx;margin-left:20rpx;text-align:center' bindtap='bargainMyself0'>我也要玩</view>
+  </view>
+  <!-- 自砍成功弹窗 -->
+  <view class='bg' wx:if="{{condition1&&isFriend==0}}"></view>
+  <image src='/image/a35.png' class='condition0cancel' wx:if="{{condition1&&isFriend==0}}" bindtap='changeCondition_2'></image>
+  <view class='bargainsuccess' wx:if="{{condition1&&isFriend==0}}">
+    <image src='/image/a34.png' style='width:500rpx;height:320rpx;'></image>
+    <view style='line-height:170rpx;padding: 0 80rpx;text-align:center'>
+      <text>恭喜你砍掉了</text>
+      <text style='color:#ffaa56'>￥{{cutprice}}</text>
+    </view>
+    <view style='background-color:#ffac58;border-radius:4rpx;color:white;line-height:80rpx;width:460rpx;margin-left:20rpx;text-align:center' bindtap='inviteBargain1' id="{{obj.Id}}">请好友帮砍一刀</view>
+  </view>
+  <!-- 请好友帮砍 -->
+  <view class='invitebargain' wx:if="{{condition2&&isFriend==0}}">
+    <view class='bg'></view>
+    <image src='/image/a35.png' class='condition0cancel' style='top:30rpx;right:50rpx;left:unset' bindtap='cancelMyselfBargain'></image>
+    <canvas class='canvas' canvas-id="firstCanvas"></canvas>
+    <!-- 保存图片按钮 -->
+    <view class='onepositionbtnicon' style='left: 13%;' bindtap='canvasToTempFilePath' id="0">
+      <view class='positionbtnicon' style='background-color: white;margin-left:4rpx'>
+        <image src='/image/a39.png' style='width:50rpx;height:50rpx;' mode='aspectFill'></image>
+      </view>
+      <text>保存图片</text>
+    </view>
+    <!-- 发朋友圈 -->
+    <view class='onepositionbtnicon' style='left: 43%;' bindtap='canvasToTempFilePath' id="1">
+      <view class='positionbtnicon' style='background-color: white;margin-left:4rpx'>
+        <image src='/image/a40.png' style='width:50rpx;height:50rpx;' mode='aspectFill'></image>
+      </view>
+      <text>发朋友圈</text>
+    </view>
+    <!-- 分享给朋友 -->
+    <view class='onepositionbtnicon' style='left:73%;'>
+      <button class='positionbtnicon' style="background-color: white;margin-left:16rpx;" open-type="share">
+        <image src='/image/a41.png' style='width:50rpx;height:50rpx;' mode='widthFix'></image>
+      </button>
+      <text>分享给朋友</text>
+    </view>
+  </view>
+  <!-- 帮砍按钮 -->
+  <view class='bottom_btn1' bindtap='beginBargain' wx:if="{{isFriend==1&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0&&condition0_1==0}}">帮ta砍一刀</view>
+  <view class='bottom_btn1' bindtap='bargainMyself0' wx:if='{{condition0_1==1&&isFriend!=0}}'>我也要玩</view>
+  <!-- 开始中的 -->
+  <!-- <view class='bottom_btn1' wx:if="{{isFriend==0&&obj.BargainRecordUserList.length==0&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0}}" bindtap='bargainMyself'>开始砍价</view> -->
+
+  <view wx:if="{{isFriend==0&&obj.BargainRecordUserList.length==0&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0}}" class='bottom_btn1'>
+    <button open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" class='btn bottom_btn1'  wx:if="{{clientTel=='未绑定'}}">
+      开始砍价
+    </button>
+    <view wx:else bindtap='bargainMyself'>
+      开始砍价
+    </view>
+  </view>
+
+  <view class='bottom_btn1' style="background-color:#ccc;color:white" wx:if="{{a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum==0}}" bindtap='bargainSoldout'>该商品已售罄</view>
+  <!-- 结束得 -->
+  <view class='bottom_btn1' style="background-color:#ccc;color:white" wx:if="{{a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==true&&obj.RemainNum!=0}}" bindtap='bargainTimeout'>活动已结束</view>
+  <view class='bottom_btn1' style="background-color:#ccc;color:white" wx:if="{{a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==true&&obj.RemainNum==0}}" bindtap='bargainSoldout'>该商品已售罄</view>
+  <!-- 未开始得 -->
+  <view class='bottom_btn1' style="background-color:#ccc;color:white" wx:if="{{a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==false}}" bindtap='bargainTimeunout'>活动未开始</view>
+  <!-- 直接购买按钮 -->
+
+  <!-- 提交模拟formId -->
+  <!-- 弹窗未显示时 -->
+  <form bindsubmit="buybynowPrice" report-submit="true" style='background-color: #fb6745;' wx:if="{{isFriend==0&&obj.BargainRecordUserList.length!=0&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0&&condition2==false}}"
+    id="{{obj.Id}}" class='bottom_btn2'>
+    <!-- 真正购买 -->
+    <button formType="submit" class='cfff w1005 h100 flex-columnc' style='background-color:#fb6745' wx:if="{{clientTel!='未绑定'}}">
+      <view class='flex-rowc'>
+        <text class='t20'>￥</text>
+        <text class='t32'>{{singleprice}}</text>
+      </view>
+      <text class='t24 mtop10'>直接购买</text>
+    </button>
+    <!-- 提交手机号码 -->
+    <button open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" class='cfff w1005 h100 flex-columnc' style='background-color:#fb6745' wx:if="{{clientTel=='未绑定'}}">
+      <view class='flex-rowc'>
+        <text class='t20'>￥</text>
+        <text class='t32'>{{singleprice}}</text>
+      </view>
+      <text class='t24 mtop10'>直接购买</text>
+    </button>
+  </form>
+  <!-- 弹窗显示时 -->
+  <view class='bottom_btn2' style='background-color: #fb6745;' wx:if="{{isFriend==0&&obj.BargainRecordUserList.length!=0&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0&&condition2==true}}" bindtap="buybynowPrice"
+    id="{{obj.Id}}">
+    <view style='display:flex;align-items:center;justify-content: center;'>
+      <text style='font-size:20rpx'>￥</text>
+      <text style='font-size:32rpx;'>{{singleprice}}</text>
+    </view>
+    <text style='font-size:24rpx;'>直接购买</text>
+  </view>
+  <!-- 自砍一刀 短条按钮-->
+  <view class='bottom_btn2' style='background-color: #ffa454;font-size:28rpx;' bindtap='bargainMyself' wx:if="{{isFriend==0&&obj.BargainRecordUserList.length!=0&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0}}">自砍一刀</view>
+  <view class='bottom_btn2' style='background-color: #ffb554;font-size:28rpx;' wx:if="{{isFriend==0&&obj.BargainRecordUserList.length!=0&&a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0}}" bindtap='inviteBargain'
+    catchtouchmove='a' id="{{obj.Id}}">请好友帮砍</view>
+</view>
+<view class='header'>
+  <image mode='widthFix' style="width:100%" src='{{obj.ImgUrl}}'></image>
+  <text style='font-size: 32rpx;padding:39rpx 30rpx;'>{{obj.BName}}</text>
+  <view class='header_content'>
+    <!-- 最低价 -->
+    <view class='header_left'>
+      <text style='font-size:28rpx;line-height:38rpx;margin-right:14rpx;'>最低价:</text>
+      <view class='header_one'>
+        <view style='display:flex;align-items:center;line-height:38rpx;'>
+          <text style='color:#f20033;font-size:22rpx'>￥</text>
+          <text style='color:#f20033;font-size:38rpx;'>{{obj.FloorPriceStr}}</text>
+        </view>
+        <view style='display:flex;line-height:38rpx;position: relative'>
+          <text style='font-size:22rpx;color:#999'>￥</text>
+          <text style='font-size:28rpx;color:#999'>{{obj.OriginalPriceStr}}</text>
+          <view class='line'></view>
+        </view>
+      </view>
+    </view>
+    <!-- 距离结束 -->
+    <view class='header_left'>
+      <text style='font-size:28rpx;line-height:42rpx;margin-right:14rpx;' wx:if="{{a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==false}}">距离开始:</text>
+      <text style='font-size:28rpx;line-height:42rpx;margin-right:14rpx;' wx:if="{{a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0}}">距离结束:</text>
+      <text style='font-size:28rpx;line-height:42rpx;margin-right:14rpx;' wx:if="{{a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum==0}}">活动结束:</text>
+      <!-- <text style='font-size:28rpx;line-height:42rpx;margin-right:14rpx;' wx:if="{{a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false&&obj.RemainNum!=0}}">活动结束:</text> -->
+      <text style='font-size:28rpx;line-height:42rpx;margin-right:14rpx;' wx:if="{{a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==true}}">活动结束:</text>
+      <view class='header_one'>
+        <view style='display:flex;align-items:center;line-height:38rpx;'>
+          <text style='background-color:#ffb049;font-size:26rpx;padding:4rpx;color:white' wx:if="{{a.toTime(obj,nowTime).isbegin==true&&a.toTime(obj,nowTime).isend==false||a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==false}}">{{a.toTime(obj,nowTime).time}}</text>
+          <text style='background-color:#ffb049;font-size:26rpx;padding:4rpx;color:white' wx:if="{{a.toTime(obj,nowTime).isbegin==false&&a.toTime(obj,nowTime).isend==true}}">00:00:00</text>
+
+          <!-- <text style='background-color:#ffb049;font-size:26rpx;padding:4rpx;color:white' wx:if="{{obj.IsEnd==0||obj.IsEnd==2}}">{{a.toTime(obj,nowTime).time}}</text>
+          <text style='background-color:#ffb049;font-size:26rpx;padding:4rpx;color:white' wx:if="{{obj.IsEnd==1}}">00:00:00</text> -->
+        </view>
+        <view style='display:flex;line-height:38rpx;'>
+          <text style='font-size:24rpx;color:#999'>剩余{{obj.RemainNum}}份</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+<view class='bargininfo' wx:if="{{isFriend==0&&obj.BargainRecordUserList.length!=0}}">
+  <image src='/image/a36.png' mode='widthFix' class='bargininfoimg'></image>
+  <!-- 用户名字头像 -->
+  <view class='bargininfoline1'>
+    <image src='{{avatarUrl}}' style='height:88rpx;width:88rpx;border-radius:44rpx;'></image>
+    <text style="margin:0 12rpx;">{{username}}</text>
+    <text style='color:#999'>的当前砍价情况</text>
+  </view>
+  <!-- 圆圈进度条 -->
+  <view class="wrap">
+    <!-- 左圆圈 -->
+    <canvas class="cir" style="width:262rpx; height:262rpx;" canvas-id="canvasArc" hidden='{{condition2||condition1||scrollTop<40}}'>
+      <view class='wrap_postion'>
+        <text style='font-size:42rpx;color:#333'>{{singleprice}}</text>
+        <text style='font-size:24rpx;color:#999'>当前价格</text>
+        <text style='font-size:24rpx;color:#999'>(元)</text>
+      </view>
+    </canvas>
+    <!-- 右圆圈 -->
+    <view class='cir_right'>
+      <text style='font-size:48rpx;color:#333'>{{obj.BargainRecordUserList.length}}</text>
+      <text style='font-size:24rpx;color:#999'>支持人数</text>
+    </view>
+  </view>
+  <!-- 砍价动态 -->
+  <view class='bargininfobottom'>
+    <image src='/image/a37.png' style='width:54rpx;height:60rpx;'></image>
+    <view style='font-size:24rpx;' class='bargininfotxt'>
+      <text wx:if="{{obj.BargainRecordUserList[0].BargainUserName!=username}}">{{obj.BargainRecordUserList[0].BargainUserName}}帮你砍了一刀掉了￥{{obj.BargainRecordUserList[0].AmountStr}}</text>
+      <text wx:if="{{obj.BargainRecordUserList[1].BargainUserName!=username&&obj.BargainRecordUserList.length>1}}">{{obj.BargainRecordUserList[1].BargainUserName}}帮你砍了一刀掉了￥{{obj.BargainRecordUserList[1].AmountStr}}</text>
+      <text wx:if="{{obj.BargainRecordUserList[0].BargainUserName==username}}">你自己砍了一刀掉了￥{{obj.BargainRecordUserList[0].AmountStr}}</text>
+      <text wx:if="{{obj.BargainRecordUserList[1].BargainUserName==username&&obj.BargainRecordUserList.length>1}}">你自己砍了一刀掉了￥{{obj.BargainRecordUserList[1].AmountStr}}</text>
+    </view>
+  </view>
+</view>
+<!-- 砍价描述 砍价排行 标题 -->
+<view class="{{scrollTop>380&&BargainUserList.length==0?'body_topic1':'body_topic'}}" wx:if="{{BargainUserList.length==0}}">
+  <text class="{{choose==0?'body_choose1':'body_choose0'}}" bindtap='changeChoose' id="0">砍价描述</text>
+  <text class="{{choose==1?'body_choose1':'body_choose0'}}" bindtap='changeChoose' id="1">砍价排行</text>
+</view>
+<view class="{{scrollTop>673&&BargainUserList.length!=0?'body_topic1':'body_topic'}}" wx:if="{{BargainUserList.length!=0}}">
+  <text class="{{choose==0?'body_choose1':'body_choose0'}}" bindtap='changeChoose' id="0">砍价描述</text>
+  <text class="{{choose==1?'body_choose1':'body_choose0'}}" bindtap='changeChoose' id="1">砍价排行</text>
+</view>
+<!-- 砍价描述 -->
+<view style='background-color:white' wx:if="{{choose==0}}">
+  <view style='padding:0 20rpx;'>
+    <rich-text nodes="{{obj.Description}}" bindtap="tap"></rich-text>
+  </view>
+  <block wx:for="{{DescImgList}}">
+    <image src='{{item.filepath}}' mode="widthFix" style='width:100%;' id="{{index}}" bindtap="previewImageAPI"></image>
+  </block>
+  <video src="{{item.VideoPath}}" controls class="VideoPath" objectFit='fill' hidden="{{item.VideoPath.length!=0}}"></video>
+</view>
+<!-- 砍价排行 -->
+<view style='display:flex;line-height:40rpx;font-size:24rpx;color:#999;' wx:if="{{choose==1&&BargainUserList.length!=0}}">
+  <text style='margin-left:46rpx;'>排名</text>
+  <text style='margin-left:100rpx;'>用户</text>
+  <text style='margin-left:353rpx;'>现价</text>
+</view>
+<view class='body_bargaininfo' wx:if="{{choose==1}}">
+  <block wx:for="{{BargainUserList}}">
+    <view class="body_bargin1" style='display:flex;  margin: 0 21rpx 0 30rpx; border-bottom: 1rpx solid #f7f7f7;height:137rpx;'>
+      <image src='/image/a31.png' style='margin-left:10rpx;width:50rpx;height:50rpx;' wx:if="{{index+1==1}}" mode='aspectFit'></image>
+      <image src='/image/a32.png' style='margin-left:10rpx;width:50rpx;height:50rpx;' wx:if="{{index+1==2}}" mode='aspectFit'></image>
+      <image src='/image/a33.png' style='margin-left:10rpx;width:50rpx;height:50rpx;' wx:if="{{index+1==3}}" mode='aspectFit'></image>
+      <text style='margin-left:10rpx;font-size:24rpx;color:#1a1a1a;width:50rpx;text-align:center' hidden='{{index+1==1||index+1==2||index+1==3}}'>{{index+1}}</text>
+      <image src='{{item.ShopLogoUrl}}' style='margin-left:76rpx;height:88rpx;width:88rpx;border-radius:44rpx;flex-shrink:0'></image>
+      <text style='font-size:28rpx;margin-left:16rpx;display:-webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 1;overflow: hidden;width:200rpx;'>{{item.Name}}</text>
+      <view class='body_bargin2'>
+        <view style='display:flex'>
+          <text style='font-size:24rpx;color:#ff2b58'>￥</text>
+          <text style='font-size:24rpx;color:#ff2b58'>{{item.CurrentPriceStr}}</text>
+        </view>
+        <text wx:if="{{item.State>0&&item.State!=5}}" style='font-size:20rpx;color:#ffb554'>(已付款)</text>
+      </view>
+    </view>
+  </block>
+</view>
+<view style='height:127rpx;'></view>

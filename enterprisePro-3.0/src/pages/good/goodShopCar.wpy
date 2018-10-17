@@ -1,0 +1,533 @@
+<style lang="less">
+  .shopCar_mask {
+    width: 100vh;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .close {
+    width: 100%;
+    height: 100vh;
+  }
+  .shop-head {
+    width: 100%;
+    height: 80rpx;
+    background: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 0 20rpx;
+    border-bottom: 1px solid #eee;
+    .del {
+      width: 100rpx;
+      height: 40rpx;
+      border-radius: 20rpx;
+    }
+    .deln {
+      border: 1px solid #666;
+      color: #666;
+    }
+  }
+  .shop-wrap {
+    width: 100%;
+    padding: 0 20rpx;
+    background: #fff;
+    margin-top: 20rpx;
+    .shop-box {
+      width: 100%;
+      .shop-base {
+        padding: 30rpx 0;
+        margin-left: 30rpx;
+        border-bottom: 1px solid #f0f0f0;
+        >image {
+          width: 180rpx;
+          height: 180rpx;
+          margin-right: 30rpx;
+          flex-shrink: 0;
+        }
+        .shop-spec {
+          font-size: 20rpx;
+          color: #999;
+          >text:first-child {
+            max-width: 358rpx;
+            padding: 0 10rpx;
+          }
+          >text:last-child {
+            padding: 0 10rpx;
+          }
+          >text {
+            height: 36rpx;
+            line-height: 36rpx;
+            background: #FAFAFA;
+          }
+        }
+        .shop-price {
+          width: 100%;
+          .shop-play {
+            height: 40rpx;
+            >input {
+              width: 53rpx;
+              height: 40rpx;
+              text-align: center;
+              font-size: 24rpx;
+              color: #999;
+              min-height: 0;
+            }
+            >text {
+              width: 40rpx;
+              height: 40rpx;
+              background: #F7F5F5;
+              font-size: 20rpx;
+              color: #ccc;
+              text-align: center;
+              line-height: 40rpx;
+            }
+          }
+        }
+      }
+      .shop-base:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+  .shop-footer {
+    width: 100%;
+    height: 100rpx;
+    background: #fff;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    border-top: 1px solid #eee;
+    .shop-info {
+      font-size: 30rpx;
+      color: #333;
+      height: 100rpx;
+    }
+    .shop-pay {
+      width: 300rpx;
+      height: 100rpx;
+      text-align: center;
+      line-height: 100rpx;
+      font-size: 34rpx;
+      font-weight: bold;
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="{{currentSkin}} {{maskStatus=='show'?'shopCar_mask':''}}">
+    <view class="shop-head f fc">
+      <view class="f fc f1">
+        <text class="dzicon icon-zhifuchenggong f40 skin_txt" wx:if="{{vm.allStatus}}" @tap="changeAll" />
+        <text class="dzicon icon-kongxinyuan f40 ccc" wx:else @tap="changeAll" />
+        <text class="f30 ml20">全选</text>
+      </view>
+      <view class="del f24 f fc fc-h {{vm.itemStatus?'skin-br':'deln'}}" @tap="delShop">删除</view>
+    </view>
+    <view style="height:80rpx;" />
+    <view class="shop-wrap">
+      <repeat for="{{vm.list}}" index="parentindex" wx:if="{{vm.length!=0}}">
+        <view class="shop-box f fc">
+          <text class="dzicon icon-zhifuchenggong f40 skin_txt" wx:if="{{item.goodsMsg.sel}}" @tap.stop="changeItem({{parentindex}})" />
+          <text class="dzicon icon-kongxinyuan f40 ccc" wx:else @tap.stop="changeItem({{parentindex}})" />
+          <view class="shop-base f1 f">
+            <image src='{{item.SpecImg||item.goodsMsg.img}}' @tap="showImg({{item.SpecImg||item.goodsMsg.img}})" />
+            <view class="w-100 f fv fj">
+              <text class='line line1'>{{item.goodsMsg.name}}</text>
+              <view class="shop-spec f fc" wx:if="{{item.SpecInfo!=''}}" @tap="showMask({{parentindex}})">
+                <text class='line line1'>{{item.SpecInfo}}</text>
+                <text class="dzicon icon-xiajiantou_downarrow" />
+              </view>
+              <view class="shop-price f">
+                <wxc-price icon="sub" class="f30 skin_txt t-b f1">{{item.priceStr}}</wxc-price>
+                <view class="shop-play f">
+                  <text class="dzicon icon-jianhao" @tap="less({{parentindex}})" />
+                  <input value="{{item.Count}}" class='f fc' @input="setValue({{parentindex}})" type="number" />
+                  <text class="dzicon icon-jiahao1" @tap="add({{parentindex}})" />
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <view style="height:100rpx" />
+    <view class="shop-footer f">
+      <view class="shop-info f1 f f-end fc">
+        <text>合计：</text>
+        <wxc-price>{{vm.total}}</wxc-price>
+      </view>
+      <form report-submit="true" @submit="navOrder">
+        <button class="shop-pay skin_bg ml20" formType="submit">去结算({{vm.num}})</button>
+      </form>
+    </view>
+    <!-- 购物车弹窗 -->
+    <repeat>
+      <wxc-mask status="{{maskStatus}}" locked="true" class="w-100">
+        <view class="shopCar_mask">
+          <view class="close" @tap.stop="hideMask"></view>
+          <comShop :disable="disable" :currentCom="vm_sp" @hideMask.user="hideMask" @changeSpec.user="changeSpec" @add.user="add" @less.user="less" @goShop.user="goShop" />
+        </view>
+      </wxc-mask>
+    </repeat>
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    <wxc-abnor type="CART" wx:if="{{vm.list.length==0}}" bind:abnortap="onAbnorTap"></wxc-abnor>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import com_shopCar from "../../components/com_shopCar";
+  import {
+    core,
+    tools,
+    pro
+  } from "../../lib/core";
+  import _get from "../../lib/lodash.get.js"
+  // import
+  //第一步： 引入组件文件
+  export default class shopCar extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+        "wxc-mask": "../../packages/@minui/wxc-mask/dist/index",
+        "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+      },
+      navigationBarTitleText: "购物车"
+    };
+    //第二步：声明组件
+    components = {
+      comShop: com_shopCar
+    };
+    //mixins = [Enterprise];
+    data = {
+      vm: {
+        itemStatus: false,
+        allStatus: false,
+        list: [],
+        num: 0,
+        total: "0.00",
+        allOldPrice: 0,
+      },
+      vm_sp: {},
+      currentSkin: {},
+      toast: {},
+      maskStatus: "hide",
+      disable: true,
+    };
+    computed = {};
+    methods = {
+      /**
+       * @param {页面操作}
+       */
+      showImg(img) {
+        tools.preViewShow(img)
+      },
+      onAbnorTap() {
+        tools.goBack(1)
+      },
+      // 单个选择
+      changeItem(index) {
+        let vm = this.vm
+        vm.list[index].goodsMsg.sel = !vm.list[index].goodsMsg.sel;
+        let num = 0
+        if (vm.list[index].goodsMsg.sel) {
+          vm.num++;
+          vm.itemStatus = true
+        } else {
+          vm.num--;
+          vm.itemStatus = false
+        }
+        vm.num == vm.list.length ? vm.allStatus = true : vm.allStatus = false
+        this.vm = vm
+        this.$apply()
+        this.totalFunct()
+      },
+      //全选
+      changeAll() {
+        let vm = this.vm
+        vm.allStatus = !vm.allStatus;
+        for (let i = 0, len = vm.list.length; i < len; i++) {
+          vm.list[i].goodsMsg.sel = vm.allStatus;
+          vm.allStatus ? vm.num = i + 1 : vm.num = 0;
+          vm.itemStatus = vm.allStatus ? true : false;
+        }
+        this.vm = vm
+        this.$apply()
+        this.totalFunct()
+      },
+      //+
+      add(index) {
+        let vm_array = []
+        let vm = this.vm.list[index];
+        let count = this.maskStatus == 'show' ? this.vm_sp.totalCount : vm.Count
+        let temp = vm.goodsMsg.GASDetailList.find(f => f.id == vm.SpecIds);
+        if (vm.goodsMsg.stockLimit) {
+          // 有规格
+          if (temp) {
+            if (count >= temp.stock) {
+              tools.ShowToast("库存不足", this);
+            } else {
+              count++;
+            }
+          } else {
+            //无规格
+            if (count > vm.goodsMsg.stock) {
+              tools.ShowToast("库存不足", this);
+            } else {
+              count++;
+            }
+          }
+        } else {
+          count++;
+        }
+        if (this.maskStatus == 'show') {
+          this.vm_sp.totalCount = count
+        } else {
+          this.vm.list[index].Count = count
+        }
+        this.$apply()
+        this.totalFunct()
+        vm_array.push(this.vm.list[index])
+        this.updateCar(vm_array, 0, 'opera')
+      },
+      less(index) {
+        let vm_array = []
+        let vm = this.vm.list[index];
+        if (vm.Count <= 1) {
+          tools.ShowToast("亲,不要再减啦", this);
+        } else {
+          vm.Count--;
+        }
+        if (this.maskStatus == 'show') {
+          this.vm_sp.totalCount = vm.Count
+        } else {
+          this.vm.list[index] = vm
+        }
+        this.$apply()
+        this.totalFunct()
+        vm_array.push(this.vm.list[index])
+        this.updateCar(vm_array, 0, 'opera')
+      },
+      setValue(index, e) {
+        let value = Number(e.detail.value);
+        let vm = this.vm.list[index];
+        let temp = vm.goodsMsg.GASDetailList.find(f => f.id == vm.SpecIds);
+        if (value != 0) {
+          if (vm.goodsMsg.stockLimit) {
+            // 有规格
+            if (temp) {
+              value > temp.stock ? vm.Count = 1 : vm.Count = value;
+            } else {
+              //无规格
+              value > vm.goodsMsg.stock ? vm.Count = 1 : vm.Count = value;
+            }
+          } else {
+            vm.Count = value;
+          }
+        } else {
+          vm.Count = 1;
+        }
+        this.vm.list[index] = vm
+        this.$apply()
+        this.totalFunct()
+      },
+      /**
+       * @param {购物车操作}
+       */
+      showMask(index) {
+        this.shopMask(index)
+      },
+      hideMask() {
+        this.maskStatus = "hide";
+        this.$apply()
+      },
+      async changeSpec(p, c) {
+        this.vm_sp = await pro.choosePro(this.vm_sp, p, c, "good");
+        this.$apply()
+      },
+      goShop() {
+        let vm_array = []
+        let vm = this.vm
+        let vm_sp = this.vm_sp
+        if (vm_sp.stockLimit) {
+          if (vm_sp.stock == 0) {
+            tools.ShowToast("库存不足", this);
+            return
+          }
+        }
+        vm.list[vm_sp.pageIndex].SpecIds = vm_sp.specId
+        vm.list[vm_sp.pageIndex].SpecInfo = vm_sp.specInfo;
+        vm.list[vm_sp.pageIndex].goodsMsg.priceStr = vm_sp.danMaiPrice
+        vm.list[vm_sp.pageIndex].Count = vm_sp.totalCount
+        vm.list[vm_sp.pageIndex].SpecImg = vm_sp.selImg
+        this.maskStatus = "hide";
+        this.vm = vm
+        this.$apply()
+        vm_array.push(vm.list[vm_sp.pageIndex])
+        this.updateCar(vm_array, 0)
+      },
+      // 前往订单页
+      async navOrder(e) {
+        let _g = this.vm
+        let carid = []
+        let list = []
+        let goodsid = []
+        let vm_array = []
+        core.formId(e.detail.formId)
+        for (let i = 0, len = _g.list.length; i < len; i++) {
+          if (_g.list[i].goodsMsg.sel) {
+            if (_g.list[i].goodsMsg.tag == 0) {
+              let tip = await tools.showModal(_g.list[i].goodsMsg.name + "商品已下架，是否删除该商品")
+              if (tip.confirm) {
+                vm_array.push(_g.list[i])
+                this.updateCar(vm_array, -1)
+              }
+              return;
+            }
+            if (_g.list[i].SpecificationState == -1) {
+              await tools.showModal(_g.list[i].goodsMsg.name + "商品规格已修改，请重新选择", false)
+              this.shopMask(i)
+              this.$apply()
+              return;
+            }
+            if (_g.list[i].goodsMsg.stockLimit && _g.list[i].goodsMsg.stock == 0) {
+              tools.ShowToast(_g.list[i].goodsMsg.name + "商品库存不足请重新选择", this)
+              this.shopMask(i)
+              this.$apply()
+              return;
+            }
+            carid.push(_g.list[i].Id)
+            goodsid.push(_g.list[i].goodsMsg.id)
+            list.push({
+              type: 'good',
+              ImgUrl: _g.list[i].SpecImg || _g.list[i].goodsMsg.img,
+              oldPrice: _g.list[i].originalPriceStr,
+              SpecInfo: _g.list[i].SpecInfo,
+              Introduction: _g.list[i].goodsMsg.name,
+              discount: _g.list[i].discount,
+              discountPrice: _g.list[i].priceStr,
+              goodid: _g.list[i].goodsMsg.id,
+              Count: _g.list[i].Count,
+            })
+          }
+        }
+        if (list.length == 0) {
+          tools.ShowToast("请选择商品", this)
+          return;
+        } else {
+          let _pro = {
+            list,
+            cartid: carid.join(","),
+            goodid: goodsid.join(","),
+            totalPrice: _g.total,
+            totalCount: _g.num,
+            originalPrice: _g.allOldPrice
+          }
+          this.$preload('vm_order', _pro);
+          this.$redirect("./goodOrder?type=good")
+        }
+      },
+      //删除
+      async delShop() {
+        let lst = []
+        let item = []
+        let vm = this.vm
+        if (vm.itemStatus == false) {
+          return;
+        }
+        for (let i = 0, len = vm.list.length; i < len; i++) {
+          if (vm.list[i].goodsMsg.sel) {
+            item = vm.list[i]
+            lst.push(item)
+          }
+        }
+        let tip = await tools.showModal("确认删除吗？")
+        if (tip.confirm) {
+          await this.updateCar(lst, -1)
+          core.shopCarList(this);
+        }
+      },
+    };
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      tools.showLoading()
+      core.shopCarList(this);
+      wx.hideLoading()
+    }
+    //计算总价
+    totalFunct() {
+      let goodsList = this.vm.list
+      let total = 0;
+      let allOldPrice = 0;
+      for (let i = 0, len = goodsList.length; i < len; i++) {
+        if (goodsList[i].goodsMsg.sel) {
+          total += (goodsList[i].Price / 100) * goodsList[i].Count
+          allOldPrice += (goodsList[i].originalPrice / 100) * goodsList[i].Count
+        }
+      }
+      this.vm.total = parseFloat(total).toFixed(2)
+      this.vm.allOldPrice = parseFloat(allOldPrice).toFixed(2)
+      this.$apply()
+    }
+    //更新
+    async updateCar(vm, fun, type) {
+      let goodsCarModel = []
+      for (let i = 0, len = vm.length; i < len; i++) {
+        goodsCarModel.push({
+          Id: vm[i].Id,
+          SpecIds: vm[i].SpecIds,
+          SpecInfo: vm[i].SpecInfo,
+          Count: vm[i].Count, //数量
+          priceStr: vm[i].priceStr,
+          originalPriceStr: vm[i].originalPriceStr,
+          SpecImg: vm[i].SpecImg
+        })
+      }
+      let _g = {
+        date: fun,
+        model: goodsCarModel,
+      };
+      await core.update(_g)
+      let _v = this.vm
+      if (type == 'opera') {
+        return;
+      }
+      await core.shopCarList(this)
+      _v.itemStatus = false
+      _v.allStatus = false
+      _v.num = 0
+      _v.total = "0.00"
+      _v.allOldPrice = "0.00"
+      this.vm = _v
+      this.$apply()
+    }
+    shopMask(index) {
+      let vm = this.vm.list[index]
+      let vm_sp = this.vm_sp
+      vm_sp = vm.goodsMsg;
+      vm_sp.display = "shop";
+      vm_sp.pageIndex = index;
+      vm_sp.danMaiPrice = vm.priceStr
+      vm_sp.yuanJiaPrice = parseFloat(vm.originalPrice).toFixed(2);
+      vm_sp.totalCount = vm.Count;
+      vm_sp.specInfo = vm.SpecInfo
+      vm_sp.selImg = vm.SpecImg || vm.goodsMsg.img
+      vm_sp.type = 'goodShop'
+      let id = vm.SpecIds.split("_")
+      for (let i = 0, len = vm_sp.pickspecification.length; i < len; i++) {
+        for (let j = 0, senLen = vm_sp.pickspecification[i].items.length; j < senLen; j++) {
+          if (vm_sp.pickspecification[i].items[j].id == Number(id[i])) {
+            vm_sp.pickspecification[i].items[j].sel = true
+          } else {
+            vm_sp.pickspecification[i].items[j].sel = false
+          }
+        }
+      }
+      this.vm_sp = vm_sp
+      this.maskStatus = "show";
+      this.$apply()
+    }
+  }
+</script>

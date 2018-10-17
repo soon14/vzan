@@ -1,0 +1,114 @@
+<style lang="less">
+.com-evaluate {
+  display: inline-block;
+  width: 100%;
+  .list {
+    flex-wrap: nowrap;
+    .item {
+      margin-right: 5rpx;
+      &:last-child {
+        margin-right: 10rpx;
+      }
+    }
+  }
+  .active {
+    color: #ffbe33; 
+  }
+  .default {
+    color: #ccc;
+  }
+}
+</style>
+<template>
+  <view class="com-evaluate f">
+    <view class="list f ib">
+        <view class="item ib active" wx:for="{{starList}}" wx:key="{{index}}">
+            <text class="dzicon icon-five-star" wx:if="{{item.isFull}}"></text>
+            <text class="dzicon icon-bankexing" wx:if="{{item.isHalf}}"></text>
+            <text class="dzicon icon-icon-test" wx:if="{{item.isNull}}"></text>
+        </view>
+    </view>
+    <view class="f24 ib active">{{scoreFix}}</view>
+  </view>
+</template>
+<script> 
+import wepy from "wepy";
+export default class Com_evaluate extends wepy.component {
+  props = {
+    score: {
+      type: [Number, String],
+      default: 0
+    },
+    starCount: {
+      type: Number,
+      default: 5
+    }
+  };
+
+  data = {
+    starList: [],
+    scoreFix: 0
+  };
+
+  methods = {
+    setScore(v) {
+      this.score = v
+      this.mappingStar()
+    }
+  };
+
+  mappingStar() {
+      this.scoreFix = this.score.toString().length > 1
+        ? this.score
+        : this.score + ".0";
+      var score = this.score;
+      var len = this.starCount;
+
+      var fullStar = {
+        isNull: false,
+        isHalf: false,
+        isFull: true
+      };
+
+      var halfStar = {
+        isNull: false,
+        isHalf: true,
+        isFull: false
+      };
+
+      var nullStar = {
+        isNull: true,
+        isHalf: false,
+        isFull: false
+      };
+
+      for (var i = 0; i < len; i++) {
+        var item = i + 1;
+        if (item <= score) {
+          var diff = score - item;
+          this.handleRender(diff, fullStar, halfStar);
+        } else {
+          this.setDefault(nullStar);
+        }
+      }
+      //修复长度
+      this.starList = this.starList.slice(0, len);
+      //console.log(this.starList);
+    }
+
+  handleRender(val, fs, hs) {
+    if (val >= 1 || val == 0) {
+      //加1
+      this.starList.push(fs);
+    } else {
+      //加1.5
+      this.starList.push(fs, hs);
+    }
+  }
+
+  setDefault(ns) {
+    this.starList.push(ns);
+  }
+}
+</script>
+

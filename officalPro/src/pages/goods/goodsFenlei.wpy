@@ -1,0 +1,171 @@
+<style lang="less">
+    page {
+        background: #f6f6f6;
+    }
+    .fenLei {
+        width: 100%;
+        .search {
+            z-index: 2;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            padding: 0 30rpx;
+            background: #fff;
+            >input {
+                width: 100%;
+                height: 80rpx;
+                text-align: center;
+                background: #eee;
+                padding: 0 10rpx;
+            }
+        }
+        .left-scroll {
+            width: 162rpx;
+            position: fixed;
+            top: 100rpx;
+            left: 0;
+            z-index: 2;
+            height: 100vh; 
+            .left {
+                width: 162rpx;
+                >text {
+                    width: 100%;
+                    height: 128rpx;
+                    text-align: center;
+                    line-height: 128rpx;
+                    background: #fff;
+                    font-size: 30rpx;
+                }
+                .selNav {
+                    background: #f6f6f6;
+                    color: #333;
+                    font-weight: bold;
+                }
+                .selNav-none {
+                    background: #fff;
+                    color: #999;
+                }
+            }
+        }
+        .right {
+            margin-left: 30rpx;
+            .title {
+                color: #333;
+                padding: 30rpx 0;
+            }
+            .lst {
+                width: 100%;
+                background: #fff;
+                padding-top: 20rpx;
+                .lst-item {
+                    width: 33.3%;
+                    margin-bottom: 20rpx;
+                    >image {
+                        width: 146rpx;
+                        height: 146rpx;
+                        background-image: url('http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png');
+                        background-size: cover;
+                    }
+                }
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='fenLei' wx:if="{{vm.firstType.length||vm.secondType.length}}">
+        <view class='search'>
+            <input placeholder='请输入关键字' disabled placeholder-style='color:#a1a2a3;font-size:26rpx' @tap="goSearch"/>
+        </view>
+        <view style='height:100rpx;' />
+        <scroll-view scroll-y class='left-scroll' wx:if="{{vm.firstType.length}}">
+            <view class='left f fv'>
+                <text class="{{leftSelIndex==-1?'selNav':'selNav-none'}}" @tap="selNav(2,0,-1)">全部</text>
+                <repeat for='{{vm.firstType}}'>
+                    <text class="{{leftSelIndex==item.Id?'selNav':'selNav-none'}}" @tap="selNav(3,{{item.Id}},{{index}})">{{item.Name}}</text>
+                </repeat>
+            </view>
+        </scroll-view>
+        <view class='f fc'>
+            <view style='width:162rpx;flex-shrink:0' wx:if="{{vm.firstType.length}}" />
+            <scroll-view scroll-y>
+                <view class='right f1' style="margin-right:30rpx" wx:if="{{vm.secondType.length}}">
+                    <view class='title f fc fj'>
+                        <text>{{leftSelName}}</text>
+                        <text class='f24 c666 f fc' @tap='showMore({{leftSelIndex}})'>查看更多<text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f30"/></text>
+                    </view>
+                    <view class='lst f fw'>
+                        <repeat for='{{vm.secondType}}'>
+                            <view class='lst-item f fv fc' @tap="selSecond({{item.Id}})">
+                                <image mode='aspecFill' src="{{item.MaterialPath}}" />
+                                <text class='f26 c333 mt20'>{{item.Name}}</text>
+                            </view>
+                        </repeat>
+                    </view>
+                </view>
+                <view wx:if="{{vm.secondType.length==0}}" class='f fc fc-h' style='width:100%;height:80vh;color:#d9d9d9;'>没有任何数据哦~</view>
+            </scroll-view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class goodsFenlei extends wepy.page {
+        config = {
+            navigationBarTitleText: "分类",
+             navigationBarBackgroundColor: "#fff",
+        };
+        data = {
+            leftSelIndex: -1,
+            leftSelName: '全部',
+            vm: {}
+        };
+        methods = {
+            //搜索
+            goSearch(){
+                tools.goNewPage("./goodsSearch")
+            },
+
+            selNav(isFirstType, id, index) {
+                core.GetGoodsCategory(isFirstType, id, this)
+                if (index == -1) {
+                    this.leftSelName = '全部'
+                    this.leftSelIndex = -1
+                } else {
+                    this.leftSelIndex = id;
+                    this.leftSelName = this.vm.firstType[index].Name
+                }
+                this.$apply();
+            },
+            selSecond(id) {
+                let app = wepy.$instance
+                app.globalData.goodsid = id
+                app.globalData.goodsMore = false
+                tools.goBack(1)
+            },
+            showMore(id) {
+                let app = wepy.$instance
+                if (Number(id) == -1) {
+                    app.globalData.goodsid = -1
+                } else {
+                    app.globalData.goodsid = id
+                }
+                app.globalData.goodsMore = true
+                tools.goBack(1)
+            }
+        };
+        onLoad() {
+            core.GetGoodsCategoryLevel(this);
+        }
+    }
+</script>

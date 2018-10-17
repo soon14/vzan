@@ -1,0 +1,110 @@
+<template>
+  <view class="com-noticebar" style="color:{{color || '#f60'}};background-color:{{bgcolor || '#fff7cc'}}">
+    <view id="com-noticebar-content-wrap" style="height: 18px; overflow: hidden; position: relative;">
+      <view animation="{{ animationData }}" id="com-noticebar-content" style="position: absolute; white-space: nowrap;">
+        {{ text }}
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+export default class Com_noticebar extends wepy.component {
+  props = {
+    //显示的文本
+    text: {
+      type: [String],
+      default: ""
+    },
+    //背景颜色
+    bgcolor: {
+      type: [String],
+      default: ""
+    },
+    //字体颜色
+    color: {
+      type: [String],
+      default: ""
+    }
+  };
+
+  data = {
+    animationData: null,
+    animation: null,
+    resetAnimation: null
+  };
+
+  methods = {
+    //需在父级渲染好页面后调用 
+    async init() {
+      var componentWidth = await this.getRectWidth(
+        '#com-noticebar-content'
+      );
+      var componentWrapWidth = await this.getRectWidth(
+        '#com-noticebar-content-wrap'
+      );
+      //假如内容宽度比父级宽度大 则进行动画
+      if (componentWidth > componentWrapWidth) {
+        var mstime = componentWidth / 40 * 1000;
+        this.animation = wepy.createAnimation({
+          duration: mstime,
+          timeFunction: "linear"
+        });
+        this.resetAnimation = wepy.createAnimation({
+          duration: 0,
+          timeFunction: "linear"
+        });
+        //开始动画
+        this.startScrollLoop(componentWrapWidth, mstime);
+      }
+    }
+  };
+
+  getRectWidth(id) {
+    //boundingClientRect(callback)这个恶心东西的回调函数属于异步，采取promise方案
+    return new Promise(resolve => {
+      var query = wx.createSelectorQuery();
+      var nodeRef = query.select(id);
+      nodeRef
+        .boundingClientRect(rect => {
+          if (!rect || !rect.width) {
+            return;
+          }
+          resolve(rect.width);
+        })
+        .exec();
+    });
+  }
+
+  startScrollLoop(parentWidth, mstime) {
+    var resetAnimationDataContainer = this.resetAnimation
+      .translateX(parentWidth)
+      .step();
+
+    //启动重置动画
+    this.animationData = resetAnimationDataContainer.export();
+    this.$apply();
+    var animationDataContainer = this.animation
+      .translateX(-mstime * 40 / 1000)
+      .step();
+
+    //异步开启动画
+    setTimeout(() => {
+      this.animationData = animationDataContainer.export();
+      this.$apply();
+    }, 100);
+
+    setTimeout(() => {
+      this.startScrollLoop(parentWidth, mstime); //重复动画
+    }, mstime + 100);
+  }
+}
+</script>
+<style>
+.com-noticebar {
+  width: 100%;
+  padding: 9px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+</style>

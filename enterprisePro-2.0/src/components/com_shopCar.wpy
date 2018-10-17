@@ -1,0 +1,173 @@
+<style lang="less">
+  .c-shop {
+    max-height: 60vh;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 5;
+    background: #fff;
+    .c-item {
+      position: relative;
+      height: 150rpx;
+      .img {
+        width: 200rpx;
+        height: 200rpx;
+        position: absolute;
+        top: -48rpx;
+        left: 22rpx;
+        border-radius: 6rpx;
+      }
+      .c-price {
+        height: 150rpx;
+        color: #666;
+        padding-left: 243rpx;
+      }
+    }
+    .p-price {
+      color: #ff4422;
+    }
+    .c-sel {
+      padding-top: 30rpx;
+      margin: 0 20rpx;
+    }
+    .c-name {
+      margin-bottom: 30rpx;
+      font-size: 28rpx;
+      color: #333;
+    }
+    .c-pic {
+      margin: 30rpx 0;
+      border-bottom: 1px solid #f5f5f5;
+      .c-val {
+        margin-right: 30rpx;
+        padding: 20rpx;
+        font-size: 24rpx;
+        margin-bottom: 20rpx;
+        border-radius: 6rpx;
+      }
+    }
+    .shop-btn {
+      width: 100%;
+      height: 100rpx;
+      line-height: 100rpx;
+      text-align: center;
+      font-size: 34rpx;
+    }
+    .btn-no {
+      color: #111;
+      background-color: #f3f3f3;
+    }
+    .count {
+      width: 76rpx;
+      height: 76rpx;
+      line-height: 76rpx;
+      background-color: #f3f3f3;
+      text-align: center;
+    }
+  }
+  .c-shop-bg {
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+</style>
+<template>
+  <view>
+    <view class="c-shop-bg" @tap="hideMask"/>
+    <view class="c-shop">
+      <view class="c-item">
+        <image src="{{currentCom.selImg}}" mode="aspectFill" class='img' @tap="preview({{currentCom.selImg}})" />
+        <view class="c-price f fv fj">
+          <view class="f fc mt10">
+            <repeat wx:if="{{currentCom.type=='good'}}">
+              <text class="p-price f32">￥{{currentCom.danMaiPrice}}</text>
+              <text wx:if="{{currentCom.yuanJiaPrice!=0}}" class="f26 ml10 line-thor rel">￥{{currentCom.yuanJiaPrice}}</text>
+            </repeat>
+            <repeat wx:if="{{currentCom.type=='goodShop'}}">
+              <text class="p-price f32">{{currentCom.danMaiPrice}}</text>
+            </repeat>
+            <repeat wx:if="{{currentCom.type=='group'}}">
+              <text class="p-price f32" wx:if='{{currentCom.isgroup==0}}'>￥{{currentCom.danMaiPrice}}</text>
+              <text class="p-price f32" wx:if='{{currentCom.isgroup==1}}'>￥{{currentCom.groupPrice}}</text>
+              <text wx:if="{{currentCom.discount!=100}}" class="f26 ml10 line-thor rel">￥{{currentCom.yuanJiaPrice}}</text>
+            </repeat>
+          </view>
+          <text wx:if="{{currentCom.stockLimit&&currentCom.btn!='yuyue'}}" class='f26 ccc'>库存{{currentCom.stock}}件</text>
+          <text wx:if="{{currentCom.pickspecification.length!=0&&currentCom.specInfo!=''}}" class='f26 ccc'>{{currentCom.specInfo}}</text>
+        </view>
+      </view>
+      <!-- 各项属性值 -->
+      <view class="c-sel f fv">
+        <scroll-view scroll-y class='w-100' style='max-height:400rpx'>
+          <repeat for="{{currentCom.pickspecification}}" item="this" index="parentindex" wx:if="{{pickspecification.length!=0}}">
+            <text class='line line1 c-name'>{{this.name}}</text>
+            <view class="c-pic f fw" style="border-bottom:{{currentCom.btn!='yuyue'?'border-bottom:1px solid #f5f5f5':'none'}}">
+              <repeat for="{{this.items}}" index="childindex">
+                <text class="c-val {{item.sel?'skin_bg':'btn-no'}}" data-p="{{parentindex}}" data-c="{{childindex}}" @tap="changeSpec">{{item.name}}</text>
+              </repeat>
+            </view>
+          </repeat>
+          <!-- 数量 -->
+          <view class="mh20 f fc fj" wx:if="{{currentCom.btn!='yuyue'}}">
+            <text class="f30">数量</text>
+            <view class="f fc f40">
+              <view class="count" @tap="less({{currentCom.pageIndex}})">-</view>
+              <input type='number' value="{{currentCom.totalCount}}" @input="setNum" style="font-size:28rpx;" class="count" disabled="{{disable}}" maxlength='6' />
+              <view class="count" @tap="add({{currentCom.pageIndex}})">+</view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+      <!-- 确定按钮 -->
+      <form @submit="addShop" report-submit="true">
+        <button class="shop-btn skin_bg" formType="submit">确定</button>
+      </form>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools
+  } from "../lib/core.js";
+  export default class com_shopCar extends wepy.component {
+    config = {
+      usingComponents: {
+        "text": "../../packages/@minui/text/dist/index"
+      }
+    };
+    methods = {
+      preview(img) {
+        tools.preViewShow(img);
+      },
+      hideMask() {
+        this.$emit("hideMask");
+      },
+      setNum(e) {
+        this.$emit("setNum", e);
+      },
+      // 选择事件
+      changeSpec(e) {
+        let ds = e.currentTarget.dataset;
+        let [p, c] = [ds.p, ds.c];
+        this.$emit("changeSpec", p, c);
+      },
+      add(index) {
+        this.$emit("add", index);
+      },
+      less(index) {
+        this.$emit("less", index);
+      },
+      addShop(e) {
+        this.$emit("goShop", e);
+      }
+    };
+  }
+</script>

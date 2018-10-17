@@ -1,0 +1,112 @@
+<style lang="less">
+.com-scroll-container {
+  .com-scroll {
+    height: 92vh;
+    width: 35%;
+    position: fixed;
+    left: 0;
+    top: 8vh;
+    background-color: #f0f2f5;
+  }
+  .scroll-list {
+    background-color: #f0f2f5;
+  }
+  .scroll-item {
+    width: 100%;
+    min-height: 88rpx;
+    padding: 10rpx 20rpx;
+  }
+  .active {
+    background-color: #fff;
+    // border-left: 3px solid #FF6F30;
+  }
+  .left-line {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background-color: #3FD481;
+    width: 3px;
+  } 
+  .right-content {
+    margin-top: 8vh;
+    margin-left: 35%;
+    height: 92vh;
+  }
+  .top-bar {
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee; 
+    height: 8vh;
+    background: #fff;
+    position: fixed;
+    width: 100%;
+    top: 0;
+  }
+}
+</style>
+<template>
+  <view class="com-scroll-container">
+      <view class="top-bar pl20 f fc c666">{{title}}</view>
+      <scroll-view scroll-y class="com-scroll">
+          <view class="scroll-list">
+              <view wx:for="{{source}}" wx:key="{{index}}" class="scroll-item rel f fc pl20 c333 {{index == activeIndex ? 'active' : ''}}" @tap="inputData({{item.Children}}, {{index}})">
+                  {{item.Name}}
+                  <view class="left-line abs" wx:if="{{index == activeIndex}}"></view>
+              </view>
+          </view>
+      </scroll-view>
+      <view class="right-content bg-w">
+           <view class="scroll-list bg-w">
+              <view wx:for="{{currentList}}" wx:key="{{index}}" class="scroll-item f fc pl20 c333" @tap="select({{item.Name}}, {{item.Id}})">
+                  {{item.Name}}
+              </view>
+          </view>
+      </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+export default class Com_scroll extends wepy.component {
+  props = {
+    activeIndex: {
+      type: Number,
+      default: 0
+    },
+    source: {
+      type: Array,
+      default: []
+    },
+    onSelectAfter: {
+        type: Function,
+        default: null
+    },
+    title: {
+      type: String,
+      default: ''
+    }
+  };
+
+  data = {
+    currentList: []
+  };
+
+  methods = {
+    inputData(list, currIndex) {
+      this.activeIndex = currIndex
+      this.currentList = list;
+    },
+    select(msg, id) {
+      var parent = this.$parent || null
+      typeof this.onSelectAfter === 'function' && this.onSelectAfter.call(parent, msg, id)
+    },
+    init(src) {
+      var index = this.activeIndex
+      this.source = src
+      console.log(this.source)
+      this.currentList = src[index].Children
+      this.$apply()
+     }
+  };
+
+}
+</script>
+

@@ -1,0 +1,196 @@
+<style lang="less">
+.msg {
+  margin-top: 20rpx;
+  background-color: #fff;
+}
+.msg-top {
+  padding: 20rpx;
+}
+.msg-userphoto {
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 6rpx;
+  background-color: #ccc;
+}
+.msg-info {
+  border-top: 1rpx solid #f2f2f2;
+  border-bottom: 1rpx solid #f2f2f2;
+}
+.msg-detail {
+  padding-top: 50rpx;
+  line-height: 52rpx;
+}
+.w150 {
+  width: 170rpx;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view>
+    <block wx:for="{{vm.list}}" wx:for-index="index1">
+      <!--普通订单，拼团消息-->
+      <view class='msg' wx:for="{{item}}" wx:for-item="msgitem" wx:if="{{type==4}}">
+        <view class="msg-top f fc">
+          <image class="msg-userphoto" src="{{msgitem.userInfo.headimgurl}}" mode="aspectFill"></image>
+          <view class="ml20 f30 c333">{{msgitem.userInfo.username}}</view>
+          <view class="ml20 f30 c666">{{msgitem.userInfo.levelName}}</view>
+        </view>
+        <view class="msg-info p20">
+          <view class="f36 c333 t-b">下单通知</view>
+          <view class="f24 c999 mt20">{{msgitem.orderInfo.PayDateStr}}</view>
+          <view class="msg-detail">
+            <view class="f" wx:for="{{msgitem.Content}}">
+              <view class="w150 c999">{{index}}：</view>
+              <view class="c333 f1">{{item}}</view>
+            </view>
+          </view>
+        </view>
+        <view class="f p20 c333" @tap="readMsg({{msgitem.Title}},{{msgitem.orderInfo.OrderType}})">
+          <view class="f1 f30 ">查看订单</view>
+          <view class="dzicon icon-jiantou"></view>
+        </view>
+      </view>
+      <!--预约消息-->
+      <view class='msg' wx:for="{{item}}" wx:for-item="msgitem" wx:if="{{type==3}}">
+        <view class="msg-top f fc">
+          <image class="msg-userphoto" src="{{msgitem.userInfo.headimgurl}}" mode="aspectFill"></image>
+          <view class="ml20 f30 c333">{{msgitem.userInfo.username}}</view>
+          <view class="ml20 f30 c666">{{msgitem.userInfo.levelName}}</view>
+        </view>
+        <view class="msg-info p20">
+          <view class="f36 c333 t-b">预约通知</view>
+          <view class="f24 c999 mt20">{{msgitem.formInfo.showtime}}</view>
+          <view class="msg-detail">
+            <view class="f" wx:for="{{msgitem.Content}}">
+              <view class="w150 c999">{{index}}：</view>
+              <view class="c333 f1">{{item}}</view>
+            </view>
+          </view>
+        </view>
+        <view class="f p20 c333" @tap="readMsg({{msgitem.Title}},3)">
+          <view class="f1 f30 ">查看预约</view>
+          <view class="dzicon icon-jiantou"></view>
+        </view>
+      </view>
+    </block>
+
+    <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import baseMixin from "../mixins/base";
+// import
+//第一步： 引入组件文件
+
+export default class message_list extends wepy.page {
+  config = {
+    navigationBarTitleText: "消息通知",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    vm: JSON.parse(JSON.stringify(vm)),
+    type: ""
+  };
+  computed = {};
+  methods = {
+    async readMsg(orderid, OrderType) {
+      let that = this;
+      if (that.type == 4) {
+        if (OrderType == 3) {
+          OrderType = 2;
+        }
+      }
+      let result = await core.ReadMessage(this.type, orderid);
+      if (result) {
+        if (result.isok) {
+          let q = { orderType: OrderType, dateType: 0, state: -999 };
+          wx.redirectTo({
+            url: "/pages/order_list?q=" + JSON.stringify(q)
+          });
+        } else {
+          that.ShowToast(result.Msg);
+        }
+      }
+    }
+  };
+  events = {};
+  async onLoad(options) {
+    this.type = options.type;
+  }
+  async onShow() {
+    await this.loadMore();
+  }
+  //上拉加载更多
+  async onReachBottom() {
+    await this.loadMore();
+  }
+  async loadMore() {
+    var that = this;
+
+    if (that.vm.ispost || that.vm.loadall) return;
+    //wx.showNavigationBarLoading();
+    let result = await core.GetMessageList(
+      that.type,
+      that.vm.pageindex,
+      that.vm.pagesize
+    );
+    if (result) {
+      if (result.isok) {
+        that.vm.ispost = false;
+        let key = "vm.list[" + that.vm.pageindex + "]";
+        if (result.dataObj.length >= that.vm.pagesize) {
+          that.vm.pageindex += 1;
+        } else {
+          that.vm.loadall = true;
+        }
+
+        if (result.dataObj) {
+          result.dataObj.forEach(p => {
+            if (p.Content) {
+              if (
+                Object.prototype.toString.call(p.Content) == "[object String]"
+              ) {
+                p.Content = JSON.parse(p.Content);
+              }
+            }
+          });
+        }
+
+        that.setData({
+          [key]: result.dataObj,
+          "vm.pageindex": that.vm.pageindex,
+          "vm.loadall": that.vm.loadall
+        });
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+    //wx.hideNavigationBarLoading();
+  }
+  //下拉刷新
+  async onPullDownRefresh() {
+    await this.reload();
+  }
+  async reload() {
+    this.vm = JSON.parse(JSON.stringify(vm));
+    await this.loadMore();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+}
+</script>

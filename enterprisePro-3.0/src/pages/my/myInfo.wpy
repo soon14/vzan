@@ -1,0 +1,500 @@
+<style lang="less">
+    .my {
+        .m-value {
+            height: 130rpx;
+            padding: 36rpx 0;
+            background: #fff;
+            border-top: 1px solid #f7f7f7;
+            margin: 24rpx 22rpx 0 22rpx;
+            border-radius: 10rpx;
+            view:first-child {
+                border-right: 1px solid #f7f7f7;
+            }
+        }
+        .m-valSc {
+            width: 100%;
+            height: 420rpx;
+            background: #fff;
+            margin-top: 20rpx;
+            padding-top: 20rpx;
+            scroll-view {
+                padding: 45rpx 20rpx 0 10rpx;
+            }
+            .m-price {
+                width: 280rpx;
+                height: 160rpx;
+                margin-left: 10rpx;
+                padding: 20rpx;
+                background-image: url("http://j.vzan.cc/miniapp/img/myicon.png");
+                background-repeat: no-repeat;
+                background-size: cover;
+                text:last-child {
+                    width: 280rpx;
+                }
+            }
+            .m-pmore {
+                width: 280rpx;
+                height: 160rpx;
+                text-align: center;
+                line-height: 160rpx;
+                border: 1px dotted #dfdeda;
+            }
+            .m-valbtn {
+                width: 95%;
+                height: 80rpx;
+                text-align: center;
+                line-height: 80rpx;
+                margin: 40rpx auto;
+                margin-bottom: 0;
+                border-radius: 8rpx;
+            }
+            .icon-Choice_xuanze {
+                position: absolute;
+                top: 0;
+                right: 10rpx;
+                font-size: 40rpx;
+            }
+        }
+        .m-tab {
+            width: 100%;
+            height: 68rpx;
+            line-height: 68rpx;
+            background: #fff;
+            margin-top: 20rpx;
+            padding: 0 20rpx;
+            border-bottom: 1px solid #f7f7f7;
+        }
+        .m-lst {
+            width: 100%;
+            height: 140rpx;
+            background: #fff;
+            .m-item {
+                background: -webkit-linear-gradient(top, #696464, #413f3c);
+                -webkit-background-clip: text;
+                color: transparent;
+            }
+        }
+        .m-plug {
+            width: 100%;
+            margin-top: 20rpx;
+            background: #fff;
+            .m-plugitem {
+                width: 33.3%;
+                text-align: center;
+                padding: 30rpx 0;
+                border-bottom: 1px solid #f7f7f7;
+            }
+        }
+        /* 会员卡 new */
+        .x-user {
+            height: 260rpx;
+            display: flex;
+            justify-content: center;
+            padding-top: 30rpx;
+            overflow: hidden;
+        }
+        .x-show-none {
+            display: flex;
+            flex-direction: column;
+            width: 672rpx;
+            height: 232rpx;
+            border-top-left-radius: 20rpx;
+            border-top-right-radius: 20rpx;
+            overflow: hidden;
+        }
+        .x-userLogo {
+            height: 100rpx;
+            width: 100rpx;
+            border-radius: 50rpx;
+            background-color: white;
+            text-align: center;
+            line-height: 100rpx;
+            color: #eee;
+        }
+        .x-getWxCard {
+            width: 230rpx;
+            height: 70rpx;
+            border-radius: 35rpx;
+            display: flex;
+            line-height: 70rpx;
+            background-color: white;
+            justify-content: center;
+        }
+        .x-show-header {
+            display: flex;
+        }
+        .p30 {
+            padding: 30rpx;
+        }
+        .check-vipinfo {
+            width: 188rpx;
+            height: 48rpx;
+            text-align: center;
+            line-height: 48rpx;
+            border-radius: 24rpx;
+            display: flex;
+            color: white;
+            font-size: 22rpx;
+            border: 1px solid white;
+            justify-content: center;
+        }
+        .vipBg-icon {
+            background-image: url("http://j.vzan.cc/miniapp/img/enterprise/membercardbg.png");
+            background-size: 286rpx 218rpx;
+            background-repeat: no-repeat;
+            background-position: 110% -80%;
+        }
+    }
+    .pageHide {
+        height: 100vh;
+        overflow: hidden;
+    }
+    .record-num {
+        position: absolute;
+        top: 0;
+        right: 40rpx;
+        width: 33rpx;
+        height: 33rpx;
+        border-radius: 50%;
+        font-size: 20rpx;
+        line-height: 33rpx;
+        text-align: center;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="my {{currentSkin}} {{showVip?'pageHide':''}}">
+        <!-- 会员卡 new -->
+        <view class="btn-submit__normal x-user">
+            <!-- 未注册 -->
+            <view class="x-show-none fsa fc" style='background-color:#666' wx:if="{{!vm.user.isgetPhone&&vm.user.TelePhone.length!=11&&vm.user.tel.length!=11}}">
+                <button class="btn-none x-userLogo dzicon icon-mine_wode f90" open-type="getUserInfo" @getuserinfo="loginTap" wx:if="{{vm.user.newUser}}"></button>
+                <image src='{{vm.user.avatarUrl}}' class="x-userLogo" wx:else/>
+                <button class="btn-none x-getWxCard" open-type='getPhoneNumber' bindgetphonenumber='getPhoneNumber'>
+                                                                                                            <text class="dzicon icon-huangguan"></text>
+                                                                                                            <text class="f24 ml10">{{vm.model.pricestr>0?'绑定手机号码':'注册会员'}}</text>
+                                                                                                        </button>
+            </view>
+            <!-- 已注册 -->
+            <view class="x-show-none vipBg-icon" style='background-color:{{vm.model.levelInfo.bgcolor}}' wx:if="{{vm.user.isgetPhone||vm.user.TelePhone.length==11||vm.user.tel.length==11}}">
+                <view class="f p30 fc">
+                    <button class="btn-none x-userLogo dzicon icon-mine_wode f90" open-type="getUserInfo" @getuserinfo="loginTap" wx:if="{{vm.user.newUser}}"></button>
+                    <image src='{{vm.user.avatarUrl}}' class="x-userLogo" wx:else/>
+                    <view class="f fv fj cfff ml20">
+                        <text class="t-b f34">{{vm.model.levelInfo.name}}</text>
+                        <view class="f fc" wx:if="{{vm.user.newUser}}">
+                            <text class="mr10">同步微信头像和昵称</text>
+                            <button class="btn-none dzicon icon-tongbu cfff" open-type="getUserInfo" @getuserinfo="loginTap"></button>
+                        </view>
+                        <text class="f26" wx:else>{{vm.user.nickName}} </text>
+                    </view>
+                </view>
+                <view class="f fc-h">
+                    <view class="check-vipinfo f22 mr20" @tap='getWxCard' wx:if="{{vm.wxCard}}">放入卡包</view>
+                    <view class='check-vipinfo' @tap='showVipFunc'>查看会员权益
+                        <text class="dzicon icon-jiantou cfff f30"></text>
+                    </view>
+                </view>
+            </view>
+        </view>
+        <!-- 储值余额 -->
+        <view class='m-value f'>
+            <view class='f1 f fv fc-h fc' @tap="goStore">
+                <text class='f50 skin_txt t-b'>{{vm.model.valueMoney}}</text>
+                <text class='c999 f26'>储值余额</text>
+            </view>
+            <view class='f1 f fv fc-h fc'>
+                <text class='f50 skin_txt t-b'>{{vm.model.pricestr}}</text>
+                <text class='c999 f26'>累计消费</text>
+            </view>
+        </view>
+        <!-- 储值充值 -->
+        <view class="m-valSc" wx:if="{{vm.plst.length&&vm.openvip&&vm.switch.SaveMoney}}">
+            <view class="f fc pw20">
+                <text class="f30 f1">储值有礼</text>
+                <view class="f26 c999 f fc" @tap="navHistory">查看账单记录
+                    <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f32" />
+                </view>
+            </view>
+            <scroll-view scroll-x>
+                <view class="f">
+                    <repeat for="{{vm.plst}}" wx:if="{{index<7}}">
+                        <view class="m-price f fv rel" @tap="selPrice({{index}})">
+                            <text class="dzicon icon-Choice_xuanze skin_txt" wx:if="{{item.sel}}" />
+                            <text class="f50 f">{{item.JoinMoneyStr}}<text class='f30'>元</text></text>
+                            <text class="f22 c666 mt20">{{item.SetName}}</text>
+                        </view>
+                    </repeat>
+                    <view wx:if="{{vm.plst.length>7}}" class="m-price f fc c999" style="background-image:none;border:1px dotted #dedede" @tap="goSave">
+                        <text style="width:260rpx;text-align:center">查看更多
+                                                                                                                    <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f32" style="width:0" /></text>
+                    </view>
+                </view>
+            </scroll-view>
+            <view class="m-valbtn skin-br" @tap="recharge">立即储值</view>
+        </view>
+        <!-- 订单 -->
+        <view class="m-tab f fc">
+            <text class="f30 f1">我的订单</text>
+            <view class="f26 c999 f fc" @tap="checkOlt">查看所有订单
+                <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f32" />
+            </view>
+        </view>
+        <view class="m-lst f fc">
+            <view class="f fv fc f1 rel" @tap="navOlt(0)">
+                <text class="dzicon icon-daifukuan1 f50 m-item" />
+                <text class="f26 c333">待付款</text>
+                <text class="record-num skin_bg" wx:if="{{vm.count.waitPayRecord!=0}}">{{vm.count.waitPayRecord}}</text>
+            </view>
+            <view class="f fv fc f1 rel" @tap="navOlt(1)">
+                <text class="dzicon icon-daifahuo1 f50 m-item" />
+                <text class="f26 c333">待发货</text>
+                <text class="record-num skin_bg" wx:if="{{vm.count.waitSendRecord!=0}}">{{vm.count.waitSendRecord}}</text>
+            </view>
+            <view class="f fv fc f1 rel" @tap="navOlt(2)">
+                <text class="dzicon icon-daishouhuo1 f50" />
+                <text class="f26 c333">待收货</text>
+                <text class="record-num skin_bg" wx:if="{{vm.count.waitReceiveRecord!=0}}">{{vm.count.waitReceiveRecord}}</text>
+            </view>
+            <view class="f fv fc f1 rel" @tap="navOlt(3)">
+                <text class="dzicon icon-yiwancheng1 f50 m-item" />
+                <text class="f26 c333">售后</text>
+                <text class="record-num skin_bg" wx:if="{{vm.count.afterSale!=0}}">{{vm.count.afterSale}}</text>
+            </view>
+        </view>
+        <!-- 功能列表 -->
+        <view class="m-plug f fw fc">
+            <repeat for="{{vm.switch.list}}">
+                <view class="m-plugitem f fv fc" @tap="nav({{item.url}})">
+                    <text class="{{item.icon}} f50" style="background: -webkit-linear-gradient(top, {{item.c1}}, {{item.c2}});-webkit-background-clip: text;color: transparent;" />
+                    <text class="f26 c333 mt10">{{item.title}}</text>
+                </view>
+            </repeat>
+            <view class="m-plugitem f fv fc" @tap="clearStorage">
+                <text class="dzicon icon-qinglihuancun f50" style="background: -webkit-linear-gradient(top, #94D972, #6AD9B4);-webkit-background-clip: text;color: transparent;" />
+                <text class="f26 c333 mt10">清理缓存</text>
+            </view>
+        </view>
+        <view class="w-100 f fc-h ccc" style='margin:30rpx 0;'>v1.6.1</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        pay
+    } from "../../lib/core";
+    import _get from "../../lib/lodash.get.js"
+    export default class myInfo extends wepy.page {
+        config = {
+            navigationBarTitleText: "我的",
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+            },
+            enablePullDownRefresh: true
+        };
+        components = {};
+        data = {
+            vm: {},
+            currentSkin: {}
+        };
+        computed = {};
+        methods = {
+            async getPhoneNumber(e) {
+                var that = this;
+                var _e = e.detail;
+                var vm;
+                if (_e.encryptedData && _e.iv) {
+                    wx.login({
+                        success: async function(res) {
+                            vm = {
+                                iv: _e.iv,
+                                code: res.code,
+                                data: _e.encryptedData,
+                                sign: that.vm.user.userid,
+                                phone: 1
+                            };
+                            let result = await core.loginUserInfo(vm);
+                            if (result) {
+                                that.vm.user.TelePhone = result.purePhoneNumber
+                                that.vm.user.isgetPhone = true
+                                that.vm.wxCard = true;
+                                that.$apply();
+                            } else {
+                                tools.showModal("服务器繁忙，请重新尝试", false);
+                            }
+                        }
+                    });
+                } else {
+                    //拒绝授权
+                    tools.goNewPage("/pages/my/bindPhone");
+                }
+            },
+            navHistory() {
+                tools.goNewPage("/pages/my/mysavePrice?type=history");
+            },
+            selPrice(index) {
+                let _p = this.vm.plst[index];
+                let _g = this.vm.plst;
+                _g.forEach(function(obj, i) {
+                    obj.Id != _p.Id ? (obj.sel = false) : (obj.sel = !obj.sel);
+                });
+                this.vm.plst = _g;
+                this.$apply();
+            },
+            // 充值
+            async recharge() {
+                let app = wepy.$instance;
+                let _find = this.vm.plst.find(f => f.sel == true);
+                if (_find) {
+                    wx.showNavigationBarLoading();
+                    let vm = await core.addSavePrice(_find.Id);
+                    if (vm.isok) {
+                        let newparam = {
+                            orderid: vm.orderid,
+                            type: 1
+                        };
+                        let wxPay = await pay.PayOrder(newparam);
+                        if (wxPay != "" && wxPay.errMsg.includes("requestPayment:ok")) {
+                            tools.showModal("支付成功", false);
+                            for (let i = 0, len = this.vm.plst.length; i < len; i++) {
+                                this.vm.plst[i].sel = false;
+                            }
+                            app.globalData.myUser = this.vm;
+                            app.globalData.vipInfo = ''
+                            let vipinfo = await core.getVipInfo();
+                            this.vm.model.valueMoney = vipinfo.valueMoney;
+                            this.$apply();
+                        } else {
+                            tools.loading("取消支付");
+                        }
+                        wx.hideNavigationBarLoading();
+                    }
+                } else {
+                    tools.loading('请选择充值金额')
+                }
+            },
+            async loginTap(e) {
+                let _g = e.detail;
+                if (_g.errMsg.includes("getUserInfo:fail auth deny")) {
+                    return;
+                }
+                let code = await core.login();
+                let vm = {
+                    code,
+                    phone: 0,
+                    iv: _g.iv,
+                    data: _g.encryptedData,
+                    sign: _g.signature
+                };
+                this.vm.user = await core.loginUserInfo(vm);
+                this.$apply();
+            },
+            async clearStorage() {
+                wx.clearStorageSync();
+                await tools.loading("清理成功", 'success');
+            },
+            showVipFunc() {
+                tools.goNewPage("./myVipInfo")
+            },
+            checkOlt() {
+                tools.goNewPage("/pages/good/goodList");
+            },
+            navOlt(id) {
+                tools.goNewPage("/pages/good/goodList?state=" + id);
+            },
+            nav(url) {
+                tools.goNewPage(url);
+            },
+            //储值支付
+            goStore() {
+                tools.goNewPage("/pages/my/storeValue");
+            },
+            // // 领取会员卡
+            async getWxCard() {
+                let that = this;
+                let _g = await core.getCardSign();
+                let cardext = {
+                    signature: _g.obj.signature,
+                    timestamp: _g.obj.timestamp
+                };
+                cardext = JSON.stringify(cardext);
+                wx.addCard({
+                    cardList: [{
+                        cardId: _g.obj.cardId,
+                        cardExt: cardext
+                    }],
+                    success: async function(res) {
+                        await core.saveWxCard(res.cardList[0].code, that);
+                    }
+                });
+            },
+            goSave() {
+                tools.goNewPage("/pages/my/mysavePrice?type=save");
+            }
+        };
+        onShow() {
+            this.myInfo();
+            if (wx.getStorageSync('isbindPhone')) {
+                wx.startPullDownRefresh()
+            }
+        }
+        async onPullDownRefresh() {
+            let app = wepy.$instance.globalData;
+            Object.assign([
+                app.aid = '',
+                app.pages = "",
+                app.myUser = "",
+                app.vipInfo = "",
+                app.userInfo = "",
+                app.storeConfig = ""
+            ]);
+            wx.clearStorageSync();
+            wx.showNavigationBarLoading();
+            await this.myInfo();
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+        async myInfo() {
+            tools.showLoading();
+            await tools.setPageSkin(this);
+            let app = wepy.$instance;
+            let vm = _get(app.globalData, 'myUser', '');
+            let count = await core.GetOrderRecordCount()
+            if (vm) {
+                vm.count = count
+                this.vm = vm;
+                this.$apply();
+                wx.hideLoading();
+            } else {
+                let switchInfo = _get(app.globalData, 'switchInfo', '')
+                if (switchInfo == '') {
+                    switchInfo = await core.appSwitch();
+                }
+                let user = _get(app.globalData, 'userInfo');
+                let storeConfig = await core.getStoreConfig();
+                if (user) {
+                    let _price = await core.getPrice();
+                    this.vm = {
+                        count: count,
+                        user: user,
+                        plst: _price,
+                        switch: switchInfo,
+                        model: _get(app.globalData, 'vipInfo'),
+                        openvip: storeConfig.storeInfo.funJoinModel.canSaveMoneyFunction
+                    };
+                    wx.hideLoading();
+                    this.$apply();
+                    app.globalData.myUser = this.vm;
+                    core.updateWxCard(this);
+                }
+            }
+        }
+    }
+</script>

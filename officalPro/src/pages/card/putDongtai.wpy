@@ -1,0 +1,168 @@
+<style lang="less">
+    page {
+        background: #f6f6f6;
+    }
+    .dong {
+        width: 100%;
+        .header {
+            width: 100%;
+            background: #fff;
+            padding: 30rpx;
+            >textarea {
+                width: 100%;
+                height: 208rpx;
+                font-size: 30rpx;
+            }
+            .uploadImg {
+                width: 190rpx;
+                height: 190rpx;
+                border: 1px dotted #d9d8d9;
+                border-radius: 5rpx;
+                text-align: center;
+                line-height: 190rpx;
+                flex-shrink: 0;
+                margin-top: 20rpx;
+                >text {
+                    font-size: 40rpx;
+                    color: #d0d0d0;
+                }
+            }
+            .showImg {
+                width: 190rpx;
+                height: 190rpx;
+                margin-top: 20rpx;
+                margin-right: 30rpx;
+                >image:first-child {
+                    width: 190rpx;
+                    height: 190rpx;
+                    border-radius: 5rpx;
+                }
+                >image:last-child {
+                    width: 60rpx;
+                    height: 60rpx;
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    font-size: 40rpx;
+                    color: #a1a2a3;
+                }
+            }
+        }
+        .wrap-btn {
+            width: 100%;
+            padding: 0 30rpx;
+            margin-top: 60rpx;
+            >text {
+                width: 100%;
+                height: 90rpx;
+                line-height: 90rpx;
+                text-align: center;
+                background: #444;
+                color: #fff;
+                font-size: 30rpx;
+                font-weight: bold;
+                display: inline-block;
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='dong'>
+        <view class='header f fv'>
+            <textarea maxlength='-1' placeholder='分享我的动态~' placeholder-style='color:#d9d8d9' @input="setText" />
+            <view class='f'>
+                <view class='f1 f fw'>
+                    <repeat for='{{vm.imglst}}'>
+                        <view class='showImg rel'>
+                            <image src='{{item}}' />
+                            <image src="http://j.vzan.cc/miniapp/img/MiniCity/icon_img_close.png" @tap="deleImg({{index}})" />
+                        </view>
+                    </repeat>
+                    <view class='uploadImg' @tap="chooseUserImg" wx:if="{{vm.imglst.length!=9}}">
+                        <text class='dzicon icon-zhaoxiangji' />
+                    </view>
+                </view>
+            </view>
+        </view>
+        <view class='wrap-btn'>
+            <text @tap="putMethods">确认发布</text>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_dongTai from "@/components/com_dongTai";
+    import {
+        tools,
+        core
+    } from "@/lib/core.js"
+    export default class putDongtai extends wepy.page {
+        config = {
+            navigationBarTitleText: "发布动态",
+            enablePullDownRefresh: true,
+             navigationBarBackgroundColor: "#fff",
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm: {
+                imglst: [],
+                mess: ""
+            },
+            img_array: []
+        };
+        methods = {
+            async chooseUserImg() {
+                let vm = this.vm
+                if (vm.imglst.length >= 9) {
+                    debugger;
+                    tools.showModal('最多上传9张', false)
+                    return;
+                }
+                let count = 9 - vm.imglst.length
+                let _i = await tools.chooseImage(count)
+                if (_i.errMsg == 'chooseImage:ok') {
+                    if (_i.tempFilePaths.length + vm.imglst.length > 9) {
+                        tools.showModal('最多上传9张', false)
+                        return;
+                    }
+                    for (let i = 0, len = _i.tempFilePaths.length; i < len; i++) {
+                        let _upload = await tools.upLoadimg(_i.tempFilePaths, i)
+                        if (_upload.errMsg == 'uploadFile:ok') {
+                            let _v = JSON.parse(_upload.data)
+                            this.img_array.push(_v.msg)
+                        } else {
+                            tools.showModal("上传失败", false)
+                        }
+                    }
+                    this.vm.imglst = this.img_array
+                    this.$apply()
+                }
+            },
+            deleImg(index) {
+                this.vm.imglst.splice(index, 1)
+                this.$apply()
+            },
+            setText(e) {
+                this.vm.mess = e.detail.value
+                this.$apply()
+            },
+            putMethods() {
+                let imglst=''
+                let vm = this.vm
+                let mess = _get(vm, "mess", "")
+                if (mess == '' && vm.imglst.length == 0) {
+                    return;
+                }
+                if (vm.imglst.length) {
+                    imglst = vm.imglst.join(',')
+                }
+                core.PostMsg(mess,imglst)
+            }
+        }
+    }
+</script>

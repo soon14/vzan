@@ -1,0 +1,170 @@
+<style lang="less">
+  @import "css/base.wxss";
+  @import "fonts/dzicon.wxss";
+  @import "css/skin.less";
+  @import "lib/wxParse/wxParse.wxss";
+</style>
+ 
+<script> 
+  var aldstat = require("./utils/san.js");
+  import wepy from "wepy";
+  import Promise from "promise-polyfill";
+  import "wepy-async-function";
+  import {
+    core,
+    tools,
+    http
+  } from "./lib/core";
+  import addr from "@/lib/addr";
+  export default class extends wepy.app {
+    config = { 
+      pages: [
+        "pages/home/home-index/index",
+        "pages/home/home-search/index",
+        "pages/home/home-select/index",
+        "pages/home/location/index",
+        "pages/home/shop-list/index",
+        "pages/home/shop-detail/index",
+        "pages/home/shop-detail/shopImages", 
+        "pages/home/shop-detail/shoppingMall",
+        "pages/classify/classify-index/index",
+        "pages/classify/classify-search/index",
+        "pages/classify/classify-single/index",
+        "pages/classify/classify-details/index",
+        "pages/classify/classify-select/index",
+        "pages/classify/classify-publish/index",
+        "pages/connected/connected-index/index",
+        "pages/connected/connected-filter/index",
+        "pages/connected/connected-detail/index",
+        "pages/connected/private-letter/index",
+        "pages/selected/selected-index/index",
+        "pages/selected/goods-details/index",
+        "pages/selected/goods-details/allEvaluate",
+        "pages/selected/goods-search/index",
+        "pages/shoppingCarts/shoppingCarts-confirmOrder/index",
+        "pages/shoppingCarts/updateAddress/index",
+        "pages/shoppingCarts/my-order/index",
+        "pages/shoppingCarts/my-order/goodOlt",
+        "pages/shoppingCarts/my-order/my-address",
+        "pages/join/join-index/index",
+        "pages/join/my/myCard",
+        "pages/join/my/myCardAct",
+        "pages/join/my/updateCard",
+        "pages/join/my/business",
+        "pages/join/bindPhone/changePhone",
+        "pages/join/bindPhone/register",
+        "pages/join/edit-shop/index",
+        "pages/join/edit-shop-web/index",
+        "pages/join/my-shop/index",
+        "pages/join/my-activity/index",
+        "pages/join/favorite-activity/index",
+        "pages/join/show-shop-category/index",
+        "pages/join/my-follow/index",
+        "pages/join/my-comment/index",
+        "pages/join/data-radar/index",
+        "pages/join/favorite-shop/index",
+        "pages/join/my-coupon/index"
+      ],
+      window: {
+        backgroundTextStyle: "light",
+        backgroundColor: "#f7f7f7",
+        navigationBarBackgroundColor: "#fff",
+        navigationBarTitleText: "",
+        navigationBarTextStyle: "black",
+      },
+      tabBar: {
+        selectedColor: "#3FD481",
+        list: [{
+            pagePath: "pages/home/home-index/index",
+            iconPath: "img/home.png",
+            selectedIconPath: "img/home-on.png",
+            text: "首页"
+          },
+          {
+            pagePath: "pages/connected/connected-index/index",
+            iconPath: "img/connected.png",
+            selectedIconPath: "img/connected-on.png",
+            text: "人脉圈"
+          },
+          {
+            pagePath: "pages/classify/classify-index/index",
+            iconPath: "img/classify.png",
+            selectedIconPath: "img/classify-on.png",
+            text: "分类信息"
+          },
+          {
+            pagePath: "pages/selected/selected-index/index",
+            iconPath: "img/selected.png",
+            selectedIconPath: "img/selected-on.png",
+            text: "优选商城"
+          },
+          {
+            pagePath: "pages/join/join-index/index",
+            iconPath: "img/me.png",
+            selectedIconPath: "img/me-on.png",
+            text: "我的"
+          }
+        ]
+      }
+    };
+    globalData = {
+      ws: false, //websocket链接
+      msgQueue: [],
+      unreadmsg: {},
+      unreadmsgcount: 0,
+      unReadMsgInfo: {},
+      hasNewMsg: false,
+      appid: 0,
+      userInfo: {}, //需要授权才能看到的用户信息
+      location: {
+        lat: "",
+        lng: "",
+      },
+      cityParam: {},
+      curCity: {},
+    };
+    constructor() {
+      super();
+      this.use("promisify");
+    }
+    onLaunch() {
+      var vm = this;
+      var exconfig = wx.getExtConfigSync();
+      if (exconfig) {
+        this.globalData.appid = exconfig.appid;
+      } else {
+        wx.showModal({
+          title: "提示",
+          content: "小程序未绑定公众号，不能使用！",
+          showCancel: false
+        });
+        return;
+      }
+    }
+    async onShow() {
+      console.log("app onShow");
+      await core.getUserInfo();
+      await tools.getSystem();
+      // im begin
+      try {
+        await core.connectSocket();
+      } catch (ex) {
+        console.log(ex);
+      }
+      // let app = this.globalData;
+      // if (!app.location.lng) {
+      //   let data = await tools.getLocation();
+      //   app.location.lat = data.latitude;
+      //   app.location.lng = data.longitude;
+      // }
+      // let data = await tools.getLocation();
+      // this.globalData.location.lat = data.latitude;
+      // this.globalData.location.lng = data.longitude;
+      // console.log("app"+this.globalData.location);
+    }
+    // 退出小程序停止播放
+    onHide() {
+      // wx.stopBackgroundAudio()
+    }
+  }
+</script>

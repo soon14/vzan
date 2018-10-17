@@ -1,0 +1,308 @@
+<style lang="less">
+.connected-filter {
+  .header-bar {
+    z-index: 20;
+  }
+  .search-bar {
+    padding: 30rpx 28rpx 30rpx 30rpx;
+    .search-input {
+      height: 60rpx;
+      line-height: 60rpx;
+      padding-left: 40rpx;
+      background-color: rgba(238, 238, 238, 1);
+      border-radius: 30px;
+      width: 611rpx;
+    }
+    .btn {
+      height: 60rpx;
+      line-height: 60rpx;
+    }
+  }
+  .tab-type {
+    height: 90rpx;
+  }  
+
+  .content-wrap {
+    .scroll-left { 
+      width: 38%;
+      height: 82.6vh;
+    }
+    .scroll-right {
+      width: 62%;
+      height: 82.6vh;
+    }
+    .scroll-item {
+      width: 100%;
+      padding: 0 30rpx; 
+      min-height: 84rpx;
+    }
+    .active-bg {
+      background-color: #f6f6f6;
+    }
+  }
+  .search-item {
+    width: 100%;
+    padding-left: 30rpx;
+    min-height: 84rpx;
+    border-bottom: 1px solid #eee;
+  }
+  .content-search {
+    padding-top: 230rpx;
+    top: 0;
+    width: 100%;
+    background-color: #fff;
+    height: 100%;
+    z-index: 10;
+    //   opacity: 0;
+    transform: translateX(-100%);
+    transition: transform 0.35s ease-in-out;
+  }
+  .fade {
+    // opacity: 1;
+    transform: translateX(0%);
+  }
+  .icon {
+    height: 26rpx;
+    width: 26rpx;
+    margin-bottom: 3rpx;
+    margin-left: 6rpx;
+    transform: rotate(140deg);
+    transition: transform 0.35s ease-in-out;
+  }
+  .color-red {
+    color: #e82117;
+  }
+}
+</style>
+<template leng="wxml">
+  <view class="connected-filter">
+      <view class="header-bar rel">
+        <view class="search-bar f fc bg-w">
+            <input 
+                placeholder-class="tc"
+                class="search-input f26" 
+                confirm-type="search" 
+                type="text" 
+                placeholder="请输入关键字" 
+                @input="handleInput" 
+                @confirm="toggleSearch" 
+                @focus="showSearch"
+            />
+            <view class="btn ml20 c333 f26" @tap="hideSearch">
+                {{isShowSearch ? '取消' : '搜索'}}
+            </view>
+        </view>
+        <view class="tab-type f c999 f30 bg-w t-b">
+            <view class="fg1 f fc jc {{typeIndex == 0 ? 'c11' : ''}}" @tap="switchTab(0)">行业人脉</view>
+            <view class="fg1 f fc jc {{typeIndex == 1 ? 'c11' : ''}}" @tap="switchTab(1)">地区人脉</view>
+        </view>
+      </view>
+      <view class="content-wrap c333 f26 cl">
+          <scroll-view scroll-y class="scroll-left fl bg-w">
+              <view class="scroll-item f fc {{index == activeIndex ? 'active-bg color-light-green' : ''}}" 
+                wx:for="{{preData}}" 
+                wx:key="{{index}}" 
+                @tap="injectData({{index}})"
+              >
+                {{item.Name}}
+              </view>
+          </scroll-view>
+          <scroll-view scroll-y class="scroll-right fr ">
+              <view class="scroll-item f fc {{index == 0 ? 'color-light-green' : ''}}" 
+                wx:for="{{nextData}}" 
+                wx:key="{{index}}" 
+                @tap="selectItem({{item}})"
+              >
+                {{item.Name}}
+              </view>
+          </scroll-view>
+      </view>
+      <view class="content-search abs {{isShowSearch ? 'fade' : ''}}">
+        <view class=" f fc lh15 f24 pl30 mb20 c666">
+            搜索范围：
+            <text class="color-red">{{typeIndex == 0 ? '行业人脉' : '地区人脉'}}</text>
+            <text 
+                class="color-red f fc jc icon dzicon icon-zhuanyebaniconkuozhan_shouhuodizhi" 
+                style="{{typeIndex != 0 ? 'transform: rotate(245deg);' : ''}}">
+            </text>
+        </view>
+        <view class="search-item f fc bg-w c666" wx:if="{{matchList != null && matchList.length == 0}}">
+            抱歉，搜索不到您的内容
+        </view>
+        <view class="search-item f fc bg-w c11" 
+          wx:if="{{matchList != null && matchList.length > 0}}"
+          wx:key="{{index}}" 
+          wx:for="{{matchList}}"
+          @tap="selectItem({{item}})"
+        >
+          {{item.Name}}
+        </view>
+      </view>
+      <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import com_wait from "@/components/com_wait";
+import { core, tools } from "@/lib/core";
+export default class connectedFilter extends wepy.page {
+  config = {
+    navigationBarTitleText: "筛选"
+  };
+
+  components = {
+    comWait: com_wait
+  };
+  data = {
+    isWait: false,
+    typeIndex: 0,
+    isShowSearch: false,
+    preData: [],
+    activeIndex: 0,
+    nextData: [],
+    typeData: [
+      {
+        name: "行业",
+        Children: [
+          {
+            name: "计算机/网络",
+            Children: ["前端工程师", "圣诞节发货", "阿萨德饭"]
+          },
+          {
+            name: "计算机/网络",
+            Children: ["前端工程师", "阿打算"]
+          },
+          {
+            name: "计算机/网络",
+            Children: ["前端工程师", "前端工程师", "阿打算"]
+          }
+        ]
+      },
+      {
+        name: "地区",
+        Children: [
+          {
+            name: "广东省",
+            Children: ["广州市", "江门市", "台山市"]
+          },
+          {
+            name: "河南省",
+            Children: ["衡阳市", "井冈山"]
+          },
+          {
+            name: "广西省",
+            Children: ["普宁市", "桂林市", "螺丝市"]
+          }
+        ]
+      }
+    ],
+    matchList: null,
+    isFirstInject: true
+  };
+
+  methods = {
+    async switchTab(index) {
+      if (index == 0) {
+        this.initData(index);
+      } else {
+        if (!this.isFirstInject) {
+          this.initData(index);
+          return;
+        }
+
+        this.isWait = true;
+
+        this.isFirstInject = false;
+        await this.getAreaListC();
+        this.initData(index);
+        
+        this.isWait = false;
+        this.$apply();
+      }
+    },
+    injectData(index) {
+      this.activeIndex = index;
+      this.nextData = this.preData[index].Children;
+    },
+    showSearch() {
+      this.isShowSearch = true;
+    },
+    hideSearch() {
+      this.isShowSearch = !this.isShowSearch;
+    },
+    toggleSearch(e) {
+      console.log(e.detail.value);
+      var currentValue = e.detail.value;
+      if (currentValue) {
+        this.matchList = this.similarMatch(currentValue);
+      } else {
+        this.matchList = null;
+      }
+    },
+    handleInput(e) {
+      var currentValue = e.detail.value;
+      !currentValue && (this.matchList = null);
+    },
+    selectItem(item) {
+      tools.cacheGlobalData("filterInfo", item)
+      tools.goBack();
+    }
+  };
+
+  initData(index) {
+    this.typeIndex = index;
+    this.activeIndex = 0;
+    this.preData = this.typeData[this.typeIndex].Children;
+    this.nextData = this.preData[this.activeIndex].Children;
+  }
+
+  similarMatch(v) {
+    var loop = 0,
+      firstScope = this.typeData[this.typeIndex].Children, //一级范围数组
+      secondScope, //二级范围数组
+      result = [];
+    while ((secondScope = firstScope[loop++])) {
+      var list = secondScope.Children; //地级市 or 具体职业
+      var name = secondScope.Name; //省名 or 行业
+      list.forEach(function(val) {
+        //val代表二级范围的元素 type: {Id:0, Name:''}
+        var regex = new RegExp( "(" + v + ")" );
+        if (regex.test(val.Name)) {
+          val.Name = val.Name + " -来自" + name;
+          result.push(val);
+        }
+      });
+    }
+    return result;
+  }
+
+  async onLoad() {
+    this.isWait = true;
+    await this.getIndustryC();
+    // await this.getAreaListC()
+    this.initData(0);
+    this.isWait = false;
+    this.$apply();
+  }
+
+  async getIndustryC() {
+    var result = await core.getIndustry();
+    if (!result.isok) {
+      tools.showModalCancel(result.Msg);
+      return;
+    }
+    this.typeData[0].Children = result.dataObj;
+    console.log(this.typeData[0].Children, "行业数据");
+  }
+
+  async getAreaListC() {
+    var result = await core.getAreaList();
+    if (!result.isok) {
+      tools.showModalCancel(result.Msg);
+      return;
+    }
+    this.typeData[1].Children = result.dataObj;
+    console.log(this.typeData[1].Children, "地区数据");
+  }
+}
+</script>

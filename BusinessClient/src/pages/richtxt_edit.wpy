@@ -1,0 +1,69 @@
+<style>
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="">
+    <web-view src="{{webViewURL}}" bindmessage="saveContent"></web-view>
+  </view>
+</template>
+
+<script>
+//第一步： 引入组件文件
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import addr from "../lib/addr";
+import baseMixin from "../mixins/base";
+
+export default class richtxt_edit extends wepy.page {
+  config = {
+    navigationBarTitleText: "编辑产品详情",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  mixins = [baseMixin];
+  //第二步：声明组件
+  components = {};
+  data = {
+    vm: JSON.parse(JSON.stringify(vm)),
+    currentStore: {},
+    webViewURL: "",
+    id: 0
+  };
+  computed = {};
+  methods = {
+    saveContent(e) {
+      var that=this;
+      console.log(e.detail);
+      if(e.detail&&e.detail.data.length>0){
+        core.setStorageSync("temp_p_description_"+that.id,e.detail.data[0].txt);
+      }
+    }
+  };
+  events = {};
+  async onLoad(options) {
+    let that = this;
+    if (options.id) {
+      that.id = options.id;
+      that.webViewURL =addr.richtexturl+"?id=" +that.id +"#wechat_redirect";
+    }
+  }
+  async onShow() {}
+
+  async onPullDownRefresh() {
+    await this.reload();
+  }
+  async reload() {
+    this.vm = JSON.parse(JSON.stringify(vm));
+
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 300);
+  }
+}
+</script>

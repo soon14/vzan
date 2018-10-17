@@ -1,0 +1,381 @@
+<style lang="less">
+  .d-status {
+    position: relative;
+    width: 100%;
+    height: 290rpx;
+    border-bottom: 1px solid #f5f5f5;
+    .d-img {
+      width: 100rpx;
+      height: 100rpx;
+    }
+    .d-btn {
+      width: 140rpx;
+      height: 54rpx;
+      line-height: 54rpx;
+      text-align: center;
+      color: #fff;
+      font-size: 22rpx;
+      border-radius: 8rpx;
+    }
+  }
+  .d-info {
+    background: #fff;
+    margin-bottom: 20rpx;
+    padding-bottom: 30rpx;
+    .d-person {
+      font-size: 32rpx;
+      color: #111;
+      margin: 42rpx 23rpx 20rpx 65rpx;
+    }
+    .d-address {
+      font-size: 26rpx;
+      color: #666;
+      margin: 0 20rpx;
+    }
+  }
+  .d-price {
+    width: 100%;
+    background: #fff;
+    border-top: 1px solid #f3f3f3;
+    text-align: right;
+    padding: 35rpx 22rpx 35rpx 0;
+  }
+  .p-price {
+    color: #f20033;
+  }
+  .p-order::before {
+    content: "商品金额:";
+    margin-left: 20rpx;
+  }
+  .p-freight::before {
+    content: "运费:";
+  }
+  .p-dis::before {
+    content: "优惠金额:-";
+  }
+  .p-pay::before {
+    color: #111;
+    content: "实付金额:";
+  }
+  /* 订单信息 */
+  .d-order {
+    padding: 23rpx;
+    background: #fff;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .d-left {
+    font-size: 26rpx;
+    color: #666;
+    flex-grow: 1;
+  }
+  .d-right {
+    margin-top: 2rpx;
+    width: 140rpx;
+    height: 50rpx;
+    text-align: center;
+    line-height: 50rpx;
+    border: 1px solid #666;
+    font-size: 24rpx;
+    color: #666;
+    border-radius: 25rpx;
+  }
+  .d-back {
+    width: 100%;
+    height: 100rpx;
+    line-height: 100rpx;
+    text-align: center;
+    color: #fff;
+    font-size: 36rpx;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+  }
+  .olt-bg {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+  }
+  .olt-btn {
+    width: 200rpx;
+    height: 60rpx;
+    text-align: center;
+    line-height: 60rpx;
+    border: 1px solid #fff;
+    font-size: 26rpx;
+    border-radius: 30rpx;
+    z-index: 2;
+  }
+  .d-showinfo {
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 26rpx;
+    color: #666;
+    padding: 23rpx;
+  }
+  .hxqrcode {
+    text-align: center;
+    widows: 100%;
+    width: 240rpx;
+    height: 240rpx;
+    box-shadow: 0 0 12rpx #fff;
+    padding: 10rpx;
+    border-radius: 100%;
+    background-color: #fff;
+  }
+  .hxqrcode image {
+    width: 220rpx;
+    height: 220rpx;
+    margin: 0 auto;
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class='{{currentSkin}}'>
+    <view class='d-status f fv fc fc-h skin_bg'>
+      <image src="http://j.vzan.cc/miniapp/img/sharebg/bg.png" class="olt-bg" />
+      <!-- 各状态值 -->
+      <view class="f fc">
+        <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-1.png" class="d-img" wx:if="{{vm_order.goodOrder.State==1}}" />
+        <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-2.png" class="d-img" wx:if="{{vm_order.goodOrder.State==0}}" />
+        <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-3.png" class="d-img" wx:if="{{vm_order.goodOrder.State==2}}" />
+        <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-4.png" class="d-img" wx:if="{{vm_order.goodOrder.State==-1}}" />
+        <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-5.png" class="d-img" wx:if="{{vm_order.goodOrder.State==3}}" />
+        <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-6.png" class="d-img" wx:if="{{vm_order.goodOrder.State==-4}}" />
+        <text class="cfff f32" wx:if="{{vm_order.stateRemark!='待自取'&&vm_order.stateRemark!='待消费'}}">{{vm_order.stateRemark}}</text>
+        <view class="f fc fv" wx:else>
+          <view wx:if="{{hexiaoQrcode}}" class="hxqrcode">
+            <image src="{{hexiaoQrcode}}" style="border-radius:50%;" />
+          </view>
+          <text class="f24 mt5" wx:if="{{vm_order.goodOrder.GetWay==0}}">提取码：{{vm_order.goodOrder.TablesNo}}</text>
+          <text class="f24 mt5" wx:if="{{vm_order.goodOrder.GetWay==6}}">消费码：{{vm_order.goodOrder.TablesNo}}</text>
+        </view>
+      </view>
+      <text class="cfff f26 mt30" wx:if="{{vm_order.goodOrder.State==1}}">订单已接收，请耐心等候发货</text>
+      <text class="cfff f26 mt30" wx:if="{{vm_order.goodOrder.State==3}}">交易完成，感谢您的购买</text>
+      <text class="cfff f26 mt30" wx:if="{{vm_order.goodOrder.State==-1}}">订单已取消，欢迎您下次再来购买</text>
+      <text class="cfff f26 mt30" wx:if="{{vm_order.goodOrder.State==-4}}">退款完成，欢迎您下次再来购买</text>
+      <text class="cfff f26 mt30 olt-btn" wx:if="{{vm_order.goodOrder.State==2}}" @tap="confirmBar({{vm_order.goodOrder.Id}},{{vm_order.goodOrder.Id}})">确认收货</text>
+      <text class="cfff f26 mt30 olt-btn" wx:if="{{vm_order.goodOrder.State==0}}" @tap="goPay({{vm_order.goodOrder.OrderId}})">继续付款</text>
+    </view>
+    <!-- 收货人 地址 -->
+    <view class='d-info f fv'>
+      <view class='d-person f fc fj'>
+        <text wx:if="{{vm_order.goodOrder.GetWay==0}}">提货人:{{vm_order.goodOrder.AccepterName}}</text>
+        <text wx:if="{{vm_order.goodOrder.GetWay==1}}">收货人:{{vm_order.goodOrder.AccepterName}}</text>
+        <text wx:if="{{vm_order.goodOrder.GetWay==6}}">消费人:{{vm_order.goodOrder.AccepterName}}</text>
+        <text>{{vm_order.goodOrder.AccepterTelePhone}}</text>
+      </view>
+      <view class='d-address f fc'>
+        <text class="dzicon icon-zhuanyebaniconkuozhan_shouhuodizhi f36 ccc" />
+        <text style="padding-left:5rpx">{{vm_order.goodOrder.Address}}</text>
+      </view>
+      <view style='padding:20rpx 0 0 65rpx;font-size:26rpx;color:#666' wx:if='{{vm_order.zqStoreName}}'>店铺:{{vm_order.zqStoreName}}</view>
+    </view>
+    <!-- 产品详情 -->
+    <view class="bg-w">
+      <repeat>
+        <comItem :currentCom.sync="vm_order.goodOrderDtl"></comItem>
+      </repeat>
+    </view>
+    <view class='d-price f fv f32'>
+      <view class="f fc f-end">
+        <text>共{{vm_order.goodOrder.QtyCount}}件,</text>
+        <wxc-price class="p-order">{{vm_order.goodOrder.OnlyGoodsMoney}}</wxc-price>
+      </view>
+      <wxc-price class="p-dis mt10" wx:if="{{vm_order.goodOrder.ReducedPriceStr>0}}">{{vm_order.goodOrder.ReducedPriceStr}}</wxc-price>
+      <wxc-price class="p-freight mt10">{{vm_order.freightPrice}}</wxc-price>
+      <wxc-price class="p-pay mt10 p-price">{{vm_order.goodOrder.BuyPriceStr}}</wxc-price>
+    </view>
+    <!-- 订单信息 -->
+    <view class='d-order f fj'>
+      <view class='d-left f fv'>
+        <text>订单编号：{{vm_order.goodOrder.OrderNum}}</text>
+        <text class="mt10">下单时间：{{vm_order.goodOrder.CreateDateStr}}</text>
+      </view>
+      <view class='d-right' @tap='copy'>复制订单</view>
+    </view>
+    <view class="d-showinfo f fv">
+      <view>支付方式：{{payType}}</view>
+      <view class="f  mt10" wx:if="{{vm_order.goodOrder.BuyMode != 11}}">支付时间：{{vm_order.goodOrder.State==1||vm_order.goodOrder.State==3||vm_order.goodOrder.State==2||vm_order.goodOrder.State==8?vm_order.goodOrder.PayDateStr:''}}</view>
+      <view class="f1 mt10" wx:if="{{vm_order.goodOrder.Message!=null}}">买家留言：{{vm_order.goodOrder.Message}}</view>
+      <view class="f1 mt10" wx:if="{{vm_order.goodOrder.GetWay!=0}}">发货时间：{{vm_order.goodOrder.State==2||vm_order.goodOrder.State==3?vm_order.goodOrder.DistributeDateStr:""}}</view>
+      <view class="f1 mt10">配送方式：{{vm_order.goodOrder.GetWayStr}}</view>
+      <view class="f1 mt10">成交时间：{{vm_order.goodOrder.State==3?vm_order.goodOrder.AcceptDateStr:''}}</view>
+    </view>
+    <!-- 联系商家 -->
+    <view style="height:100rpx"></view>
+    <view class='d-back skin_bg' @tap="goHome">返回首页</view>
+    <comRedu wx:if="{{showReduct}}" @goReduction.user="goReduction" @closeRecution.user="closeRecution"></comRedu>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js"
+  import com_goodItem from "../../components/com_goodItem";
+  import com_reduction from "../../components/com_reduction";
+  import addr from "../../lib/addr.js";
+  import {
+    core,
+    pay,
+    tools,
+    http
+  } from "../../lib/core";
+  //第一步： 引入组件文件
+  export default class orderDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: "订单确认",
+      usingComponents: {
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index"
+      }
+    };
+    //第二步：声明组件
+    components = {
+      comItem: com_goodItem,
+      comRedu: com_reduction
+    };
+    data = {
+      currentSkin: {},
+      vm_order: {},
+      showReduct: false,
+      hexiaoQrcode: ""
+    };
+    computed = {
+      payType() {
+        var goodOrder = this.vm_order.goodOrder
+        if (goodOrder && goodOrder.BuyMode) {
+          switch (parseInt(goodOrder.BuyMode)) {
+            case 1:
+              return '微信支付';
+            case 2:
+              return '储值支付';
+            case 11:
+              return '货到付款';
+          }
+        }
+        return ''
+      }
+    };
+    methods = {
+      closeRecution() {
+        this.showReduct = false;
+      },
+      goHome() {
+        tools.goLaunch("/pages/index/index");
+      },
+      goReduction() {
+        let app = wepy.$instance;
+        tools.goRedirecto("/pages/discount/reduction?couponsid=" + app.globalData.reduction.Id + "&orderid=" + this.vm_order.goodOrder.Id);
+      },
+      // 复制订单
+      copy() {
+        tools.copy(this.vm_order.goodOrder.OrderNum);
+      },
+      // 微信二次付款
+      async goPay(oradid) {
+        wx.showNavigationBarLoading();
+        let that = this;
+        let newparam = {
+          orderid: oradid,
+          type: 1
+        };
+        let wxInfo = await pay.PayOrder(newparam);
+        if (wxInfo != '' && wxInfo.errMsg.includes("requestPayment:ok")) {
+          tools.loading("支付成功");
+          setTimeout(() => {
+            if (that.dbOrder) {
+              core.orderDtl(that.dbOrder, that);
+            } else {
+              core.getBarOlt(that.buid, that);
+            }
+          }, 1000);
+        } else {
+          tools.loading("取消支付");
+        }
+        wx.hideNavigationBarLoading();
+      },
+      // 确认收货按钮
+      async confirmBar(id, pid) {
+        let vm = {
+          orderId: pid,
+          state: 3
+        };
+        let showModal = await tools.showModal("亲，是否确认收货？");
+        if (showModal.confirm) {
+          if (this.dbOrder) {
+            let state = await core.oltState(vm);
+            state.isok == 1 ? await core.orderDtl(this.dbOrder, this) : "";
+          } else {
+            await core.confirmBar(id, this, 1);
+          }
+        }
+      }
+    };
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      let dbOrder = _get(options, 'dbOrder', 0)
+      let buid = _get(options, 'buid', 0)
+      let check = _get(options, 'check', "")
+      if (dbOrder) {
+        this.goodOrderInfo(dbOrder, check)
+        this.dbOrder = dbOrder;
+      } else {
+        core.getBarOlt(buid, this);
+        this.buid = buid;
+      }
+      this.$apply();
+    }
+    async goodOrderInfo(dbOrder, check) {
+      let app = wepy.$instance
+      let userInfo = _get(app.globalData, 'userInfo', '')
+      if (userInfo == '') {
+        userInfo = await core.getUserInfo()
+      }
+      http.get(addr.getMiniappGoodsOrderById, {
+        appid: app.globalData.appid,
+        openid: userInfo.openId,
+        orderId: dbOrder
+      }).then(async info => {
+        if (info.isok == 1) {
+          var vm = info.postdata
+          for (let i = 0, len = vm.goodOrderDtl.length; i < len; i++) {
+            var goodOrderDtlItem = vm.goodOrderDtl[i]
+            goodOrderDtlItem.ImgUrl = goodOrderDtlItem.goodImgUrl
+            goodOrderDtlItem.Introduction = goodOrderDtlItem.goodname
+            goodOrderDtlItem.SpecInfo = goodOrderDtlItem.orderDtl.SpecInfo
+            goodOrderDtlItem.discountPrice = goodOrderDtlItem.orderDtl.priceStr
+            goodOrderDtlItem.oldPrice = goodOrderDtlItem.orderDtl.originalPriceStr
+            goodOrderDtlItem.Count = goodOrderDtlItem.orderDtl.Count
+            goodOrderDtlItem.type = 'good'
+          }
+          //获取自取核销二维码
+          if (vm.stateRemark && (vm.stateRemark == "待自取" || vm.stateRemark == "待消费")) {
+            var qrcodeResult = await core.GetTableNoQrCode(dbOrder);
+            if (qrcodeResult && qrcodeResult.isok) {
+              this.hexiaoQrcode = qrcodeResult.Msg;
+            }
+          }
+          this.vm_order = vm
+          this.$apply()
+          if (check == "") {
+            this.reduction(vm)
+          }
+        }
+      })
+    }
+    // 立减金
+    reduction(vm) {
+      let app = wepy.$instance;
+      if ((vm.goodOrder.State == 1 || vm.goodOrder.State == 8) && app.globalData.reduction != null) {
+        this.showReduct = true;
+      } else {
+        this.showReduct = false;
+      }
+      this.$apply()
+    }
+  }
+</script>

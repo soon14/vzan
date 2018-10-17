@@ -1,0 +1,464 @@
+<style>
+page {
+  background-color: #fff;
+}
+
+.form-list {
+  position: relative;
+  margin-bottom: 20rpx;
+}
+
+.form-list:first-child {
+  margin-top: 20rpx;
+}
+
+.form-list::before,
+.form-list::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0;
+  height: 1px;
+  width: 100%;
+  transform: scaleY(0.5);
+  background-color: #e3e3e3;
+}
+
+.form-list::before {
+  top: 0;
+}
+
+.form-list::after {
+  bottom: 0;
+}
+
+.form-item {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  padding: 15rpx 40rpx;
+  background-color: #fff;
+}
+
+.form-item::before {
+  content: "";
+  display: block;
+  position: absolute;
+  z-index: 99;
+  left: 0;
+  top: 0;
+  height: 1px;
+  width: 100%;
+  transform: scaleY(0.5);
+  background-color: #e1e1e1;
+}
+
+.form-item-hd {
+  width: 150rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+}
+
+.form-item-bd {
+  flex: 1;
+  height: 60rpx;
+  line-height: 60rpx;
+}
+
+input,
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 60rpx;
+  line-height: 60rpx;
+  background-color: #fff;
+  padding: 0 15rpx;
+}
+
+switch {
+  position: absolute;
+  right: 40rpx;
+  top: 50%;
+  margin-right: -10rpx;
+  margin-top: -16px;
+  transform: scale(0.9);
+  transform-origin: right center;
+}
+
+.input-placeholder {
+  color: #ccc;
+}
+
+.save-btn {
+  width: 90%;
+  height: 70rpx;
+  margin: 0 auto;
+  font-size: 32rpx;
+  text-align: center;
+  line-height: 70rpx;
+  background-color: #fe536f;
+  border-radius: 6rpx;
+  color: #fff;
+  border-radius: 35rpx;
+  margin-top: 40rpx;
+}
+
+.save-btn:active {
+  background-color: #fe536f;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.message {
+  position: fixed;
+  top: 80%;
+  left: 50%;
+  width: 400rpx;
+  height: 80rpx;
+  margin-left: -200rpx;
+  background-color: rgba(0, 0, 0, 0.75);
+  border-radius: 20px;
+  text-align: center;
+  line-height: 80rpx;
+  color: #fff;
+  opacity: 0;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    -webkit-transform: translate3d(0, 100%, 0);
+    transform: translate3d(0, 100%, 0);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+
+.area-item {
+  line-height: 40px;
+  text-align: center;
+}
+
+.distpicker {
+  bottom: 0;
+  left: 0;
+  z-index: 999;
+  width: 100%;
+  height: 560rpx;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  background-color: #fff;
+}
+
+.distpicker-btn {
+  display: flex;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 40rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background-color: #fafafa;
+  color: #586c94;
+}
+
+.distpicker-content {
+  box-sizing: border-box;
+  width: 100%;
+  height: 560rpx;
+  background-color: #fff;
+}
+
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 998;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+</style>
+
+
+
+<template>
+
+  <form bindsubmit="savePersonInfo">
+    <view class="form-list">
+
+      <view class="form-item">
+        <view class="form-item-hd">商家配送</view>
+        <view class="form-item-bd">
+          <switch type="switch" name="default" color="#fe536f" checked="{{selfDelivery}}" bindchange="switchChange" />
+        </view>
+      </view>
+
+      <view class="form-item" wx:if="{{!selfDelivery}}">
+        <view class="form-item-hd">物流公司</view>
+        <view class="form-item-bd">
+          <picker bindchange="bindPickerChange" value="{{index}}" range-key="Title" range="{{companyList}}">
+            <view class="picker">
+              <input type="picker" placeholder-class="input-placeholder" value="{{express}}" placeholder="请选择" disabled="disabled" />
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view class="form-item" wx:if="{{!selfDelivery}}">
+        <view class="form-item-hd">物流单号</view>
+        <view class="form-item-bd">
+          <input type="number" bindinput="inputNo" placeholder-class="input-placeholder" value="{{deliveryNo}}" placeholder="请输入物流单号" />
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="form-item-hd">收货人</view>
+        <view class="form-item-bd">
+          <input type="text" bindinput="inputContact" placeholder-class="input-placeholder" name="name" value="{{contactName}}" placeholder="请输入姓名" />
+        </view>
+      </view>
+      <view class="form-item">
+        <view class="form-item-hd">联系方式</view>
+        <view class="form-item-bd">
+          <input type='number' bindinput="inputPhone" placeholder-class="input-placeholder" name="tel" value="{{contactTel}}" placeholder="请输入手机号码" maxlength="11" />
+        </view>
+      </view>
+      <!-- <view class="form-item">
+                <view class="form-item-hd">地区</view>
+                <view class="form-item-bd" bindtap="showDistpicker">
+                    <view class="input {{!provinceName[provinceSelIndex] ? 'input-placeholder' : ''}}">
+                        <block wx:if="{{provinceName[provinceSelIndex]}}">{{provinceName[provinceSelIndex]}} {{cityName[citySelIndex]}} {{districtName[districtSelIndex]}}</block>
+                        <block wx:else>请选择所在地区</block>
+                    </view>
+                    <input type="text" name="province" value="{{provinceName[provinceSelIndex]}}" class="hidden" />
+                    <input type="text" name="city" value="{{cityName[citySelIndex]}}" class="hidden" />
+                    <input type="text" name="district" value="{{districtName[districtSelIndex]}}" class="hidden" />
+                </view>
+            </view> -->
+      <view class="form-item">
+        <view class="form-item-hd">收货地址</view>
+        <view class="section" style="height: 80rpx;flex: 1;overflow: hidden;">
+
+          <!-- <picker mode="region" bindchange="bindRegionChange" value="{{region}}" custom-item="{{customItem}}">
+                            <view class="picker" wx:if='{{region[0].length>0}}'>
+                                当前选择：{{region[0]}}，{{region[1]}}，{{region[2]}}
+                            </view>
+                            <view wx:else class="section__title">请选择所在地区</view>
+                        </picker> -->
+          <textarea placeholder="" style="width:100%; height:100%;" value="{{address}}" bindinput="inputAddr" />
+        </view>
+      </view>
+      <!-- <view class="form-item">
+                <view class="form-item-hd">详细地址</view>
+                <view class="form-item-bd">
+                    <input type="text" placeholder-class="input-placeholder" name="address" value="{{address}}" placeholder="可补充街道和门牌号等地址信息"
+                    />
+                </view>
+            </view> -->
+
+      <view class="form-item">
+        <view class="form-item-hd">备注</view>
+        <view class="form-item-bd">
+          <input type="text" bindinput="inputRemark" placeholder-class="input-placeholder" value="{{Remark}}" placeholder="请填写备注" />
+        </view>
+      </view>
+    </view>
+    <button formType="submit" class="save-btn">确认发货</button>
+  </form>
+
+  <view catchtap="distpickerCancel" hidden="{{!showDistpicker}}"></view>
+  <view class="message {{showMessage ? 'fade-in' : ''}}" hidden="{{!showMessage}}">{{messageContent}}</view>
+  <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+</template>
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import baseMixin from "../mixins/base";
+
+export default class order_list extends wepy.page {
+  config = {
+    navigationBarTitleText: "",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    region: ["", "", ""],
+    companyList: [], //快递公司列表
+    selectCompany: -1, //选择的快递公司
+    express: "",
+    contactName: "",
+    contactTel: "",
+    CompanyCode: "",
+    CompanyTitle: "",
+    deliveryNo: "",
+    address: "",
+    selfDelivery: false, //商家配送还是快递配送，默认快递配送
+    Remark: "",
+    isAjaxing: false, //开关
+    orderType: "",
+    orderId: 0,
+    state: 0,
+    oldState: 0
+  };
+  components = {};
+  mixins = [baseMixin];
+  methods = {
+    inputNo(e) {
+      this.deliveryNo = e.detail.value;
+    },
+    inputRemark(e) {
+      this.Remark = e.detail.value;
+    },
+    inputContact(e) {
+      this.contactName = e.detail.value;
+    },
+    inputPhone(e) {
+      this.contactTel = e.detail.value;
+    },
+    switchChange(e) {
+      this.selfDelivery = e.detail.value;
+    },
+    inputAddr(e) {
+      this.address = e.detail.value;
+    },
+    bindRegionChange: function(e) {
+      console.log("picker发送选择改变，携带值为", e.detail.value);
+      this.region = e.detail.value;
+    },
+    savePersonInfo(e) {
+      var thisVue = this;
+
+      if (!thisVue.checkInput()) {
+        return;
+      }
+
+      if (thisVue.isAjaxing) {
+        return;
+      }
+      thisVue.isAjaxing = true;
+
+      var selectDelvery =null;
+      var deliveryInfo = {
+        ContactName: thisVue.contactName,
+        ContactTel: thisVue.contactTel,
+        CompanyCode: "",
+        CompanyTitle: "",
+        DeliveryNo: thisVue.deliveryNo,
+        Address: thisVue.address,
+        selfDelivery: thisVue.selfDelivery,
+        Remark: thisVue.Remark
+      };
+      if(!this.selfDelivery){
+        selectDelvery=thisVue.companyList[thisVue.selectCompany]
+        deliveryInfo.CompanyCode=selectDelvery.Code;
+        deliveryInfo.CompanyTitle=selectDelvery.Title;
+      }
+      var that = this;
+      wx.showModal({
+        title: "提示",
+        content: "修改后订单状态不能撤销，确定修改吗？",
+        success: function(res) {
+          if (res.confirm) {
+            core
+              .UpdteOrderState(
+                that.orderType,
+                that.orderId,
+                that.state,
+                that.oldState,
+                "",
+                JSON.stringify(deliveryInfo)
+              )
+              .then(function(result) {
+                if (result) {
+                  if (result.isok) {
+                    that.ShowToast("发货成功");
+                    setTimeout(function() {
+                      wx.navigateBack({
+                        delta: 1
+                      });
+                    }, 1000);
+                  } else {
+                    that.ShowToast(result.Msg);
+                  }
+                }
+                thisVue.isAjaxing = true;
+              });
+          } else if (res.cancel) {
+            thisVue.isAjaxing = true;
+          }
+        }
+      });
+    },
+    bindPickerChange(e) {
+      console.log(e.detail.value);
+      //索引
+      this.selectCompany = Number(e.detail.value);
+
+      this.express = this.companyList[e.detail.value].Title;
+    }
+  };
+
+  checkInput() {
+    var thisVue = this;
+    if (!thisVue.contactName) {
+      this.ShowToast("请填写收货人");
+      return false;
+    }
+    if (!thisVue.contactTel) {
+      this.ShowToast("请填写联系方式");
+      return false;
+    }
+    if (!thisVue.address) {
+      this.ShowToast("请填写收货地址");
+      return false;
+    }
+    if (thisVue.selfDelivery) {
+      return true;
+    }
+    if (thisVue.selectCompany == -1) {
+      this.ShowToast("请选择物流公司");
+      return false;
+    }
+    if (!thisVue.deliveryNo) {
+      this.ShowToast("请填写物流单号");
+      return false;
+    }
+
+    return true;
+  }
+  async onLoad(options) {
+    var result = await core.getDeliveryCompany();
+    this.companyList = result.dataObj;
+    this.contactName = options.name || "";
+    this.contactTel = options.tel || "";
+    this.address = options.addr || "";
+    this.orderType = options.orderType || "";
+    this.orderId = options.orderid || 0;
+    this.state = options.state || 0;
+    this.oldState = options.oldState || 0;
+    this.$apply();
+  }
+}
+</script>

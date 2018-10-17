@@ -1,0 +1,633 @@
+<style lang="less">
+  .edit-shop {
+    padding-bottom: 30rpx;
+    .header-image {
+      display: block;
+      height: 160rpx;
+      background: rgba(217, 216, 217, 1);
+    }
+    .base-item {
+      &:last-child {
+        border-bottom: none;
+      }
+      height: 110rpx;
+      line-height: 110rpx;
+      input {
+        height: 80rpx;
+        line-height: 80rpx;
+        margin-left: 50rpx;
+      }
+      .address {
+        width: 395rpx;
+      }
+    }
+    .base-settings {
+      .upload-img {
+        height: 200rpx;
+        .img-wrap-size {
+          overflow: hidden;
+          &:last-child {
+            margin-right: 0;
+          }
+          margin-right: 25rpx;
+          width: 164rpx;
+          height: 164rpx;
+        }
+
+        .img-size {
+          width: 164rpx;
+          height: 164rpx;
+          background: rgba(161, 162, 163, 1);
+        }
+
+        .upload {
+          width: 164rpx;
+          height: 164rpx;
+          border: 2px dotted #d9d8d9;
+          line-height: 1;
+        }
+      }
+      .devide {
+        min-height: 187rpx;
+        padding-top: 30rpx;
+        .select {
+          margin-left: 50rpx;
+          .item {
+            height: 126rpx;
+            &:first-child {
+              margin-right: 60rpx;
+            }
+          }
+        }
+      }
+      .holder-color {
+        color: #d9d8d9;
+      }
+      .btn-location {
+        width: 114rpx;
+        height: 44rpx;
+        border: 1px solid rgba(255, 160, 118, 1);
+        border-radius: 22rpx;
+        line-height: 44rpx;
+        color: rgba(255, 160, 118, 1);
+      }
+    }
+    .icon {
+      background-color: rgba(0, 0, 0, 0.5);
+      font-size: 24rpx;
+      width: 100rpx;
+      height: 100rpx;
+      top: -54rpx;
+      right: -54rpx;
+      border-radius: 50%;
+    }
+    .ml50 {
+      margin-left: 50rpx;
+    }
+    .description {
+      padding-bottom: 30rpx;
+      min-height: 264rpx;
+      textarea {
+        min-height: 234rpx;
+      }
+    }
+    .pt26 {
+      padding-top: 26rpx;
+    }
+    .mt18 {
+      margin-top: 17rpx;
+    }
+    .shop-picture {
+      padding: 30rpx 30rpx 10rpx 30rpx;
+    }
+    .base-size {
+      overflow: hidden;
+      width: 144rpx;
+      height: 144rpx;
+    }
+    .mrg {
+      margin-right: 20rpx;
+      margin-bottom: 20rpx;
+    }
+    .shop-picture-upload {
+      border: 2px dotted #d9d8d9;
+    }
+    .color-blue {
+      color: #5f97c3;
+    }
+    .mhr {
+      margin-top: 50rpx;
+    }
+    .btn-cross {
+      bottom: 12rpx;
+      left: 16rpx;
+    }
+    .h80 {
+      height: 80rpx;
+    }
+    .w690 {
+      width: 700rpx;
+    }
+    .wp17 {
+      width: 167rpx;
+    }
+    .wp83 {
+      width: 522rpx;
+    }
+    .box-sizing {
+      box-sizing: border-box
+    }
+    .pt2 {
+      padding-top: 4rpx
+    }
+    .devide-item {
+      width: 40%;
+      margin-right: 30rpx;
+    }
+  }
+
+</style>
+<template>
+  <view class="edit-shop">
+    <image src="http://j.vzan.cc/miniapp/img/platformPro/edit-shop-banner.jpg" class="header-image w-100"></image>
+    <view class="base-settings bg-w c333 f26 pl30">
+      <view class="bbeee upload-img f fc pr30">
+        <text class="wp17 fs">上传图片:</text>
+        <scroll-view scroll-x class="wp83 box-sizing">
+          <view class="f fc">
+            <view class="img-wrap-size rel fs" wx:for="{{bannerMustArray}}" wx:key="{{index}}">
+              <image class="img-size" mode="aspectFill" src="{{item}}" @tap="preViewImage({{item}}, {{bannerMustArray}})"></image>
+              <view class="icon abs colorD9D8D9" @tap="removeBanner({{index}})">
+                <text class="abs dzicon icon-iconset0127 btn-cross"></text>
+              </view>
+            </view>
+            <view class="upload f fv fc jc fs" wx:if="{{!isThree}}" @tap="uploadBanners">
+              <text class="dzicon colorD9D8D9 icon-paizhao f40"></text>
+              <text class="f26 colorD9D8D9 mt15">(限制5张)</text>
+            </view>
+          </view> 
+        </scroll-view>
+      </view>
+      <view class="bbeee f fc base-item pr30">
+        <text class="fs">店铺名称:</text>
+        <input value="{{form.storeName}}" class="f26 fg1" @input="inputShopName" placeholder-class="holder-color" placeholder="请输入门店名称"
+        />
+      </view>
+      <view class="bbeee f fc base-item pr30">
+        <text class="fs">店铺位置:</text>
+        <input disabled class="f26 address line line1" value="{{form.location}}" @input="inputLocation" placeholder-class="holder-color"
+          placeholder="请输入门店位置" />
+        <button @tap="getLocation" class="btn-location tc f20 ml20">定位</button>
+      </view>
+      <view class="bbeee f devide c333 pb30">
+        <text class="mt10 fs">店内设施:</text>
+        <view class="f fw select w-100">
+          <view class="devide-item mb10 mt10 f flex-start fs" wx:if="{{item.ServiceName}}" @tap="activeService({{index}})" wx:for="{{serviceList}}" wx:key="{{index}}">
+            <text class="f44 mr15 dzicon {{item.ServiceState == true ? 'icon-Choice_xuanze color-light-green' : 'icon-Unselected_weixuanze holder-color'}}"></text>
+            <text class="pt2">{{item.ServiceName}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="bbeee f fc base-item pr30">
+        <text class="fs">营业时间:</text>
+        <input value="{{form.openTime}}" class="f26 fg1" @input="selectTime" placeholder-class="holder-color" placeholder="请输入营业时间(如: 10:00-23:00 选填)"
+        />
+      </view>
+      <view class="bbeee f fc base-item pr30">
+        <text class="fs">客服电话:</text>
+        <input value="{{form.phone}}" @input="inputPhone" class="f26 fg1" placeholder-class="holder-color" placeholder="请输入客服电话"
+        />
+      </view>
+      <view class="bbeee f fc base-item pr30">
+        <text class="fs">店铺公告:</text>
+        <input value="{{form.storeRemark}}" @input="inputStoreRemark" class="f26 fg1" placeholder-class="holder-color" placeholder="请输入门店公告（选填）"
+        />
+      </view>
+    </view>
+    <view class="description f26 mt25 bg-w f fv">
+      <view class="fs h80 bbeee f fc pl30">业务描述</view>
+      <textarea style="line-height: 1.2;" @input="inputDescription" value="{{form.businessDescription}}" auto-height="true" maxlength="-1"
+        class="ml30 w690 mt18" placeholder-class="holder-color" placeholder="业务简述，建议不超过100字，超出部分无法显示"></textarea>
+    </view>
+    <view class="description f26 mt25 bg-w" style="padding-bottom: 0;">
+      <view class="f fj fc w-100 bbeee pl30 pr30 h80">
+        <text class="fs">店铺介绍</text>
+        <text class="fs color-blue" @tap="onlineEdit">点击编辑富文本</text>
+      </view>
+      <comRichIn :currentCom.sync="temp"></comRichIn>
+    </view>
+    <view class="shop-picture f26 mt25 bg-w f pl30 pr30">
+      <text class="fs">店铺图片:</text>
+      <view class="f fv flex-start fg1 ml50">
+        <text class="fs c666">为了保证效果，建议上传3张以上图片</text>
+        <view class="cl mt30">
+          <view class="base-size mrg rel fl" wx:for="{{storeImgsMustArray}}" wx:key="{{index}}">
+            <image src="{{item}}" mode="aspectFill" class="base-size" @tap="preViewImage({{item}}, {{storeImgsMustArray}})"></image>
+            <view class="f fc jc icon abs colorD9D8D9" @tap="removeShopPicture({{index}})">
+              <text class="abs btn-cross dzicon icon-iconset0127"></text>
+            </view>
+          </view>
+          <view wx:if="{{!isNight}}" class="fl base-size shop-picture-upload f jc fc mb20" @tap="uploadShopPicture">
+            <text class="dzicon colorD9D8D9 icon-paizhao f40"></text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <picker range="{{typeRange}}" value="{{typeIndex}}" disabled @tap="selectType">
+      <view class="bbeee f fc f26 pl30 base-item pr30 mt20 bg-w">
+        <text class="fs">选择分类:</text>
+        <view class="cl fg1 ml50">
+          <text class="fl {{categoryType == '请选择类型' ? 'colorD9D8D9' : ''}}">{{categoryType}}</text>
+          <text class="fr c666 dzicon icon-arrow-right"></text>
+        </view>
+      </view>
+    </picker>
+    <view wx:if="{{0}}" class="radio-group pl30 f fc f24 mt30 mb30 h45" @tap="selectProtocol">
+      <text class="f34 dzicon  mr15 {{isReaded ? 'icon-Choice_xuanze color-light-green' : 'icon-Unselected_weixuanze c666'}}"></text>
+      <text class="c666">我已阅读并同意</text>
+      <text class="c666 color-blue">《平台用户服务协议》</text>
+    </view>
+    <button class="f30 block-center mhr btn-big bg-green cfff" @tap="publishShop">立即发布</button>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    http,
+    tools,
+    core
+  } from "@/lib/core";
+  import com_richIn from "@/components/com_richIn";
+  import {
+    wxParse
+  } from "@/lib/wxParse/wxParse";
+  const app = wepy.$instance;
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "编辑店铺"
+    };
+
+    data = {
+      isThree: false, //轮播图是否显示3个
+      isNight: false, //商户照片 最多9张
+      form: {
+        banners: [], //轮播图
+        storeName: "", //店铺名
+        location: "", //位置
+        lng: "", //经度
+        lat: "", //纬度
+        storeService: "", //提供服务
+        openTime: "", //营业时间
+        phone: "", //电话
+        businessDescription: "", //商业描述
+        storeDescription: "", //店铺描述 富文本
+        storeImgs: [], //商铺图片展示
+        category: 0, //分类: 大类 小类
+        myCardId: 0,
+        storeRemark: ""
+      },
+      serviceList: [
+        //default item 8
+        {
+          ServiceState: false,
+          ServiceName: "WIFI"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "停车位"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "支付宝支付"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "微信支付"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "刷卡支付"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "空调雅座"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "付费停车"
+        },
+        {
+          ServiceState: false,
+          ServiceName: "接送服务"
+        }
+      ],
+      // typeRange: ["小类", "大类"],
+      // typeIndex: 0,
+      categoryType: "请选择类型",
+      isReaded: false, //前端判断(是否阅读规则)，
+      temp: {},
+      banners: [],
+      storeId: null, //用于在线编辑的链接的参数
+      categoryList: [], //配置类型列表
+      isBigType: false, // 是否是大类
+      mapFirstTypeIndex: 0,
+      mappingFirstType: [2, 1],
+      isModifyMode: "" //修改模式标记
+    };
+
+    components = {
+      comRichIn: com_richIn
+    };
+
+    computed = {
+      bannerMustArray() {
+        var thing = this.form.banners;
+        return Array.isArray(thing) ? thing : thing == "" ? [] : thing.split(",");
+      },
+      storeImgsMustArray() {
+        var thing = this.form.storeImgs;
+        return Array.isArray(thing) ? thing : thing == "" ? [] : thing.split(",");
+      }
+    };
+
+    onLoad(query) {
+      var myCardId = query.myCardId;
+      this.isModifyMode = query.isModifyMode;
+      if (!myCardId) {
+        tools.goBack(1);
+        return;
+      }
+      this.form.myCardId = myCardId;
+      this.getStoreCategoryLevelC();
+      if (this.isModifyMode) {
+        //修改模式,注入服务端数据
+        this.getStoreDetailC();
+      }
+    }
+
+    async getStoreDetailC(myCardId) {
+      tools.showLoading();
+      var vm = this;
+      var result = await core.getStoreDetail({
+        myCardId: this.form.myCardId,
+        type: 1
+      });
+      tools.handleResult(result, res => {
+        console.log(res);
+        vm.categoryType = res.platStore.CategoryName;
+        vm.storeId = res.platStore.Id;
+        vm
+          .injectThisForm(res.platStore)
+          .str2arr(vm.form.banners, vm.form.storeImgs)
+          .recoverserVice(vm.form.storeService)
+          .injectWxParseContext(vm.form.storeDescription);
+      });
+      wx.hideLoading();
+    }
+
+    //获取店铺配置信息
+    async getStoreCategoryLevelC() {
+      //获取店铺等级
+      var level = await core.GetStoreCategoryLevel();
+      console.log(level);
+      this.mapFirstTypeIndex = level - 1;
+      this.getStoreCategoryC();
+    }
+
+    //平台店铺对应类别的分类
+    async getStoreCategoryC() {
+      var isFirstType = this.mappingFirstType[this.mapFirstTypeIndex];
+      isFirstType == 1 ? (this.isBigType = true) : (this.isBigType = false);
+
+      var result = await core.GetStoreCategory({
+        isFirstType: isFirstType
+      });
+
+      tools.handleResult(
+        result,
+        res => {
+          //inject
+          this.categoryList = res.list;
+        },
+        res => {
+          tools.showModalCancle(res.Msg);
+        }
+      );
+
+      this.$apply();
+    }
+
+    toChinese(v) {
+      if (typeof v !== "number") return;
+      this.typeIndex = v;
+      this.form.category = this.typeRange[this.typeIndex];
+      return this;
+    }
+
+    recoverserVice(v) {
+      var arr
+      try {
+        arr = JSON.parse(v);
+      } catch (error) {
+        tools.showModalCancle('JSON.parse报错')
+        return
+      }
+      
+      typeof arr === 'object' && Array.isArray(arr) && ( this.serviceList = arr )
+
+      return this;
+    }
+
+    injectWxParseContext(richText) {
+      this.temp = wxParse("content_fmt", "html", richText || "", this, 5);
+      console.log(this.temp);
+      this.$apply();
+    }
+
+    toUpperCasefirst(key) {
+      return key.replace(/^(\w)/, s1 => {
+        return s1.toUpperCase();
+      });
+    }
+
+    injectThisForm(src) {
+      for (var key in this.form) {
+        var KEY = this.toUpperCasefirst(key);
+        if (KEY == "StoreName") KEY = "Name";
+        this.form[key] = src[KEY];
+      }
+      console.log(this.form);
+      return this;
+    }
+
+    str2arr(banners, storeImgs) {
+      this.form.banners = banners != "" ? banners.split(",") : [];
+      if (this.form.banners.length == 5) {
+        this.isThree = true;
+      }
+      this.form.storeImgs = storeImgs != "" ? storeImgs.split(",") : [];
+      if (this.form.storeImgs.length == 10) {
+        this.isNight = true;
+      }
+      return this;
+    }
+
+    methods = {
+      preViewImage(curr, list) {
+        tools.preViewShow(curr, list);
+      },
+      async uploadBanners() {
+        this.isThree = await this.uploadImg("banners", 5);
+        this.$apply();
+      },
+      removeBanner(index) {
+        this.form.banners.splice(index, 1);
+        this.isThree = false;
+      },
+      removeShopPicture(index) {
+        this.form.storeImgs.splice(index, 1);
+        this.isNight = false;
+      },
+      onlineEdit() {
+        tools.goNewPage("../edit-shop-web/index?storeId=" + this.storeId);
+      },
+      inputShopName(e) {
+        this.form.storeName = e.detail.value;
+      },
+      inputLocation(e) {
+        this.form.location = e.detail.value;
+      },
+      inputStoreRemark(e) {
+        this.form.storeRemark = e.detail.value;
+      },
+      getLocation() {
+        var vm = this;
+        var form = this.form;
+        wx.chooseLocation({
+          success: res => {
+            console.log(res);
+            form.lng = res.longitude;
+            form.lat = res.latitude;
+            form.location = res.address;
+            vm.$apply();
+          }
+        });
+      },
+      activeService(index) {
+        this.serviceList[index].ServiceState = !this.serviceList[index].ServiceState
+      },
+      selectTime(e) {
+        this.form.openTime = e.detail.value;
+      },
+      inputPhone(e) {
+        this.form.phone = e.detail.value;
+      },
+      inputDescription(e) {
+        this.form.businessDescription = e.detail.value;
+      },
+      async uploadShopPicture() {
+        this.isNight = await this.uploadImg("storeImgs", 10);
+        this.$apply();
+      },
+      async selectType(e) {
+        tools.showLoading();
+        await this.getStoreCategoryC();
+        wx.hideLoading();
+        if (this.categoryList.length == 0) {
+          tools.showModalCancle("暂无该类别信息");
+          return;
+        }
+        var isOpenSecond = this.isBigType ? "1" : "0";
+        tools.cacheGlobalData("categoryList", this.categoryList);
+        tools.goNewPage(
+          "../show-shop-category/index?isOpenSecond=" + isOpenSecond
+        );
+      },
+      selectProtocol() {
+        this.isReaded = !this.isReaded;
+      },
+      async publishShop() {
+        wx.showLoading({
+          title: "提交中",
+          mask: true
+        });
+        var form = this.form;
+        // if (!this.isReaded) {
+        //     tools.showModalCancle('请同意《平台用户服务协议》')
+        //     return;
+        // }
+        form.appid = app.globalData.appid;
+        form.storeService = JSON.stringify(this.serviceList);
+
+        try {
+          form.banners = form.banners.join();
+          form.storeImgs = form.storeImgs.join();
+        } catch (e) {
+          form.banners = form.banners;
+          form.storeImgs = form.storeImgs;
+        }
+        console.log(form);
+        var result = await core.addStore(form);
+
+        tools.handleResult(
+          result,
+          async res => {
+            wx.hideLoading();
+            if (this.isModifyMode) {
+              //修改模式
+              await tools.showModalCancle("修改成功！");
+              tools.cacheGlobalData("modify", this.form.myCardId);
+              tools.goBack();
+            } else {
+              //入驻模式
+              await tools.showModalCancle("入驻成功！");
+              tools.goRedirecto(
+                "../my-shop/index?myCardId=" + this.form.myCardId
+              );
+            }
+          },
+          err => {
+            wx.hideLoading();
+            tools.showModalCancle(err.Msg);
+          }
+        );
+      }
+    };
+
+    async uploadImg(targertKey, limit) {
+      var src = await tools.upload();
+      if (src.length > 0) {
+        this.form[targertKey] = this.form[targertKey].concat(src).slice(0, limit);
+        if (this.form[targertKey].length == limit) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    handleRichTextStorage() {
+      var richTextList = tools.cacheGlobalData("shop-rich-text");
+      if (richTextList) {
+        console.log(richTextList, "取数据");
+        var richText = (this.form.storeDescription = richTextList[0].richText);
+        this.injectWxParseContext(richText);
+        tools.cacheGlobalData("shop-rich-text", "");
+      }
+    }
+
+    handleShopCategoryStorage() {
+      var shopCategory = tools.cacheGlobalData("shop-category");
+      if (shopCategory) {
+        this.categoryType = shopCategory.name;
+        this.form.category = shopCategory.categoryId;
+        tools.cacheGlobalData("shop-category", "");
+      }
+    }
+
+    onShow() {
+      this.handleRichTextStorage();
+      this.handleShopCategoryStorage();
+    }
+  }
+
+</script>

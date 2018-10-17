@@ -1,0 +1,88 @@
+<style lang="less">
+  .com-swiper {
+    .wrap {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .data-part {
+      box-sizing: border-box; // flex-wrap: wrap;
+      padding-top: 10rpx;
+      .data-item {
+        // justify-content: center;
+        width: 130rpx;
+        height: 150rpx;
+        margin-bottom: 5rpx;
+        &:nth-child(5) {
+          margin-right: 0;
+        }
+        &:nth-child(10) {
+          margin-right: 0;
+        }
+        .data-img {
+          width: 90rpx;
+          height: 90rpx;
+          border-radius: 50%;
+          background-color: #eee;
+        } 
+      }
+    }
+  }
+</style>
+<template>
+  <view class="com-swiper f26 pw30 bg-w">
+    <swiper class="wrap" indicator-color="#D9D8D9" interval="{{interval}}" autoplay="{{autoplay}}" indicator-dots="{{showIdots}}" style="height:{{swiperHeight}}rpx;">
+      <repeat for="{{imgNavSwp}}" item="swiperItem" index="swiperIndex" key="swiperIndex" wx:if="{{swiperIndex<2}}">
+        <swiper-item class="f fw data-part">
+          <repeat for="{{swiperItem}}" item="item" index="index" key="index">
+            <view class="f fv fc data-item mr10 fl" @tap="clickItem({{swiperIndex}},{{index}})">
+              <image class="data-img" src="{{item.MaterialPath}}" mode="aspectFill"></image>
+              <text class="mt10 ellipsis">{{item.Name}}</text>
+            </view>
+          </repeat>
+        </swiper-item>
+      </repeat>
+    </swiper>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  export default class Com_swiper extends wepy.component {
+    props = {
+      source: {
+        type: Array,
+        default: []
+      },
+      autoplay: {
+        type: Boolean,
+        default: false
+      },
+      interval: {
+        type: Number,
+        default: 4000
+      },
+    }
+    data = {
+      imgNavSwp: [],
+      showIdots: true,
+      swiperHeight: 370,
+    }
+    methods = {
+      devideData() {
+        let list = this.source;
+        list.length > 1 ? '' : this.showIdots = false;
+        list[0].length <= 5 ? this.swiperHeight = 200 : this.swiperHeight = 370;
+        if (list.length > 2) {
+          list[1].pop();
+          list[1].push({
+            Name: '更多分类',
+            MaterialPath: 'https://gratisography.com/pictures/446_1.jpg'
+          });
+        }
+        this.imgNavSwp = list;
+      },
+      clickItem(pageIndex, index) {
+        this.$emit('clickItem', pageIndex, index);
+      }
+    }
+  }
+</script>

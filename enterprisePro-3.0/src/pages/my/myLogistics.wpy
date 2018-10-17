@@ -1,0 +1,206 @@
+<style lang="less">
+  .logistics {
+    .commodity-avator-wrap {
+      width: 122rpx;
+      height: 122rpx;
+    }
+    .commodity-avator {
+      width: 120rpx;
+      height: 120rpx;
+      display: inline-block;
+    }
+    .count {
+      bottom: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, .8);
+      color: #fff;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .br-cc {
+      border: 1px solid transparent;
+    }
+    .pt5 {
+      padding-top: 5rpx;
+    }
+    .c-light-blue {
+      color: #2a99d3;
+    }
+    .logistics-title {
+      height: 90rpx;
+      line-height: 90rpx;
+      padding: 0 20rpx;
+      border-bottom: 1px solid #ccc;
+    }
+    .icon-query {
+      margin-left: 10rpx;
+      font-size: 30rpx;
+    }
+    .logistics-item {
+      border-left: 1px solid #ccc;
+      justify-content: flex-end;
+      padding-left: 40rpx;
+    }
+    .logistics-address {
+      border-bottom: 1px solid #ccc;
+      padding-right: 40rpx;
+      width: 100%;
+      .icon-zhifuchenggong {
+        font-size: 26rpx;
+        background-color: #fff;
+      }
+      .status-pos {
+        top: 18rpx;
+        left: -52rpx;
+      }
+      .status-point {
+        height: 24rpx;
+        width: 24rpx;
+        background: #ccc;
+        border-radius: 100%;
+      }
+    }
+  }
+</style>
+<template>
+  <view class="logistics c999">
+    <view class="bg-w f p20">
+      <view class="commodity-avator-wrap br-cc rel">
+        <image class="commodity-avator" src="{{imgUrl}}" />
+        <text class="abs count f20">共{{count}}类商品</text>
+      </view>
+      <view class="fv ml20 w-100">
+        <view class="mt20">
+          物流公司：
+          <text class="color-green">{{logisticsCompany}}</text>
+        </view>
+        <view class='f fj'>
+          <text> 物流单号：{{logisticsNo}}</text>
+          <text @tap='copy({{logisticsNo}})'>复制</text>
+        </view>
+      </view>
+    </view>
+    <view class="mt20 f fv bg-w">
+      <view class="f fj logistics-title">
+        <text style="color:#000">物流状态</text>
+        <text class="color:#222">
+            </text>
+      </view>
+      <view class="ph20 ml40" style="min-height:70vh;">
+        <repeat for="{{logisticsInfo}}" index="index" item="item">
+          <view class="logistics-item f ">
+            <view class="{{index == 0 && 'color-green'}} logistics-address p10 rel">
+              <text class="f f1">{{item.context}}</text>
+              <text class="f20">{{item.time}}</text>
+              <view wx:if="{{index == 0}}" class="abs status-pos dzicon icon-zhifuchenggong color-green"></view>
+              <view wx:else class="status-point status-pos abs"></view>
+            </view>
+          </view>
+        </repeat>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http,
+    tools
+  } from "../../lib/core";
+  import addr from "../../lib/addr.js";
+  export default class Logistics extends wepy.page {
+    //基础配置层
+    config = {
+      navigationBarTitleText: "查看物流"
+    };
+    data = {
+      logisticsInfo: [{
+        time: "",
+        context: ""
+      }],
+      logisticsCompany: "",
+      logisticsNo: 0,
+      imgUrl: "",
+      count: 0
+    };
+    methods = {
+       // 复制订单
+      copy(num) {
+        tools.copy(num)
+      },
+      goAppeal() {
+        wepy.navigateTo({
+          url: "myAppeal"
+        });
+      }
+    };
+    //生命钩子层
+    onShow() {
+      tools.setPageSkin(this);
+    }
+    async onLoad(query) {
+      await tools.showLoading();
+      //提交参数准备
+      var type = query.type || 0;
+      this.imgUrl = query.imgUrl;
+      this.count = query.count;
+      var orderid = query.orderId;
+      var userInfo = await core.getUserInfo();
+      var aid = wepy.$instance.globalData.appid;
+      //返回数据
+      var result = await http.post(addr.LogisticsInfo, {
+        appid: aid,
+        openid: userInfo.openId,
+        orderid: orderid,
+        deliverytype: type
+      });
+      wx.hideLoading();
+      //取有效数据
+      var json = result.dataObj;
+      //拼接
+      this.logisticsCompany = json.CompanyTitle;
+      this.logisticsNo = json.DeliveryNo;
+      var check;
+      //1.捕抓异常，json.FeedBack可能为空 2.旧版版物流接口数据储存在json.FeedBack.data,所以要加以判断
+      try {
+        check = JSON.parse(json.FeedBack);
+        "data" in check && (check = check.data);
+      } catch (e) {
+        check = null;
+      }
+      //嗅探，假如结果不是数组 则返回默认值--暂无物流信息
+      this.logisticsInfo =
+        typeof check === "object" && Array.isArray(check) && check.length > 0 ?
+        "context" in check ? check : this.changeListKeys(check) : [{
+          context: "暂无物流信息"
+        }];
+      this.$apply();
+    }
+    //自定义方法层
+    changeListKeys(list) {
+      var vm = this;
+      var newList = list.map(obj => {
+        return vm.keyTransverter(
+          ["context", "time"], ["AcceptStation", "AcceptTime"],
+          obj
+        );
+      });
+      return newList;
+    }
+    /**
+     * 对象key转换器
+     * @param {Array} targetKeys 你想转换成的key集合
+     * @param {Array} originKeys 源key集合
+     * @param {Object} origin 源对象
+     * @return {Object}  返回一个含有 targetKeys 的对象
+     */
+    keyTransverter(targetKeys, originKeys, origin) {
+      var target = {};
+      for (var i = 0, len = targetKeys.length; i < len; i++) {
+        target[targetKeys[i]] = origin[originKeys[i]];
+      }
+      return target;
+    }
+  }
+</script>

@@ -1,0 +1,135 @@
+<style lang="less">
+  .icon-item {
+    width: 89rpx;
+    height: 89rpx;
+    line-height: 89rpx;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    .i-contact {
+      width: 37rpx;
+      height: 37rpx;
+      background: url('http://j.vzan.cc/dz/content/enterprise/img/pageset/Service.png') no-repeat;
+      background-size: 37rpx 37rpx;
+      border: 0;
+      background-color: none;
+      padding: 0;
+      margin: 0;
+    }
+    image {
+      height: 37rpx;
+      width: 37rpx;
+    }
+    .i-img {
+      width: 40rpx;
+      height: 35rpx;
+    }
+  }
+  .icon-item-txt {
+    font-size: 22rpx;
+    width: 89rpx;
+    height: 89rpx;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+</style>
+<template>
+  <view>
+    <!-- 拨打 -->
+    <view class="icon-item" wx:if="{{vm.phone.show}}" @tap="goIcon(2,{{vm.phone.tel}})">
+      <view class="dzicon icon-contact3 f40 cfff"></view>
+    </view>
+    <!-- 客服 -->
+    <button class='icon-item f fc fc-h' wx:if="{{vm.suspend&&vm.custom=='wxServer'}}" open-type='contact'>
+                            <view class="i-contact" ></view>
+                          </button>
+    <view class='icon-item f fc fc-h' wx:if="{{vm.suspend&&vm.custom=='miniappServer'&&vm.userInfo.newUser==false}}" @tap="goIcon(8)">
+      <view class="i-contact"></view>
+    </view>
+    <button class='icon-item f fc fc-h' wx:if="{{vm.suspend&&vm.custom=='miniappServer'&&vm.userInfo.newUser}}" open-type="getUserInfo" @getuserinfo="getUser">
+                            <view class="i-contact" ></view>
+                          </button>
+    <!-- 分享 -->
+    <view class='icon-item f fc fc-h' wx:if="{{vm.share}}" @tap="goIcon(3)">
+      <image src="http://j.vzan.cc/dz/content/enterprise/img/pageset/share.png" />
+    </view>
+    <!-- 音乐组件 -->
+    <view class='icon-item f fc fc-h' wx:if="{{vm.music}}" @tap="goIcon(7,{{vm.bgmSrc}})">
+      <image wx:if="{{vm.bgmusic}}" src='https://j.vzan.cc/miniapp/img/enterprise/bgmusic1.png' />
+      <image wx:else src="http://j.vzan.cc/miniapp/img/enterprise/stopmusic4.png" />
+    </view>
+    <!-- 预约 -->
+    <view class="icon-item-txt f fv fc fc-h" wx:if="{{vm.sub}}" @tap="goIcon(4)">
+      <text>我的</text>
+      <text>预约单</text>
+    </view>
+    <!-- 购物车 -->
+    <view class="icon-item f fc fc-h" wx:if="{{vm.shop}}" @tap="goIcon(5)">
+      <image class="i-img" src="https://j.vzan.cc/miniapp/img/enterprise/i-shopCar.png" />
+    </view>
+    <!-- 首页 -->
+    <view class="icon-item f fc fc-h" wx:if="{{vm.homeStatus}}" @tap="goIcon(1)">
+      <image src="https://j.vzan.cc/miniapp/img/enterprise/i-home.png" />
+    </view>
+    <!-- 立减金 -->
+    <view class="icon-item f fc fc-h" wx:if="{{vm.reduction}}" @tap="goIcon(6)">
+      <image src="https://j.vzan.cc/miniapp/img/enterprise/i-redu.png" />
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    canvas,
+    tools
+  } from "../lib/core.js";
+  export default class com_icon extends wepy.component {
+    methods = {
+      async goIcon(id, parm) {
+        switch (Number(id)) {
+          case 1:
+            tools.goLaunch("/pages/index/index?currentPageIndex=0")
+            break;
+          case 2:
+            tools.phoneFunc(parm);
+            break;
+          case 3:
+            await tools.showLoading()
+            await canvas.getShare()
+            this.$emit("showCanvas")
+            wx.hideLoading()
+            break;
+          case 4:
+            tools.goNewPage("/pages/good/goodSub?showform=false");
+            break;
+          case 5:
+            tools.goNewPage("/pages/good/goodShopCar");
+            break;
+          case 6:
+            tools.goNewPage("/pages/discount/reductionLst")
+            break;
+          case 7:
+            let bgm = this.$parent.data.vm_com_icon.bgmusic
+            bgm = !bgm
+            if (bgm) {
+              wx.playBackgroundAudio({
+                dataUrl: parm
+              })
+            } else {
+              wx.stopBackgroundAudio()
+            }
+            this.$parent.data.vm_com_icon.bgmusic = bgm
+            this.$apply()
+            break;
+          case 8:
+            core.gochat();
+            break;
+        }
+      },
+      getUser(e) {
+        this.$emit('getUser', e)
+      }
+    };
+  }
+</script>

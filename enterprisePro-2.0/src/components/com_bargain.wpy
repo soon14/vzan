@@ -1,0 +1,109 @@
+<style lang="less">
+  .c-bargain {
+    width: 100%;
+    margin-bottom: 20rpx;
+    background-color: #fff;
+    .c-bargain-m {
+      width: 100%;
+      padding-left: 30rpx;
+    }
+    .c-bargain-main:last-child {
+      border-bottom: none;
+    }
+    .c-bargain-main {
+      width: 100%;
+      padding: 30rpx 30rpx 30rpx 0;
+      border-bottom: 1px solid #eee;
+      image {
+        width: 220rpx;
+        height: 220rpx;
+        border-radius: 5rpx;
+        margin-right: 30rpx;
+      }
+      .c-bargain-main-content {
+        height: 220rpx;
+        .c-bargain-time {
+          width: 45rpx;
+          text-align: center;
+          padding: 5rpx 0;
+          border-radius: 5rpx;
+          border: 1px solid #d9d8d9;
+          color: #444;
+          margin-left: 8rpx;
+          margin-right: 8rpx;
+        }
+        .c-bargain-time:first-child {
+          margin-left: 0 !important;
+        }
+        .c-bargain-btn {
+          width: 140rpx;
+          height: 66rpx;
+          line-height: 66rpx;
+          text-align: center;
+          border-radius: 5rpx;
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          z-index: 1;
+        }
+      }
+    }
+  }
+</style>
+<template>
+  <view class="c-bargain">
+    <view class='component-title f fc fc-h' wx:if='{{currentCom.title}}'><text class='component-title-left dzicon icon-_xiegan skin_txt' />{{currentCom.title}}<text class='component-title-right dzicon icon-_xiegan skin_txt' /></view>
+    <view class="c-bargain-m">
+      <repeat for="{{vm}}">
+        <view class="c-bargain-main f">
+          <image src="{{item.ImgUrl||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+          <view class="c-bargain-main-content f fv f1 fj">
+            <view class="line line2">{{item.BName}}</view>
+            <view class="rel">
+              <view class="f fc">
+                <text class="f34 skin_txt">￥{{item.FloorPriceStr}}</text>
+                <text class="rel line-thor f24 c123 ml20">￥{{item.OriginalPriceStr}}</text>
+              </view>
+              <view class="f24 c123" style="margin:8rpx 0 20rpx 0">剩余{{item.RemainNum}}份</view>
+              <view class="f fc f22">
+                <text class="c-bargain-time">{{item.time[0]>99?99:(item.time[0]||'00')}}</text>
+                <text class="c333">天</text>
+                <text class="c-bargain-time">{{item.time[1]||'00'}}</text>
+                <text class="c333 t-b">:</text>
+                <text class="c-bargain-time">{{item.time[2]||'00'}}</text>
+                <text class="c333 t-b">:</text>
+                <text class="c-bargain-time">{{item.time[3]||'00'}}</text>
+              </view>
+              <button class="c-bargain-btn skin_bg f28" wx:if="{{item.stateStr=='进行中'&&user.newUser}}" open-type="getUserInfo" @getuserinfo="getUser({{item.Id}})">立即砍价</button>
+              <view class="c-bargain-btn skin_bg" wx:if="{{item.stateStr=='进行中'&&user.newUser==false}}" @tap="goBar({{item.Id}})">立即砍价</view>
+              <view class="c-bargain-btn" style="background-color:#f2f2f2;color:#666" wx:if="{{item.stateStr=='未开始'}}">未开始</view>
+              <view class="c-bargain-btn" style="background-color:#f2f2f2;color:#666" wx:if="{{item.stateStr=='已失效'}}">已结束</view>
+            </view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    tools,
+    core
+  } from "../lib/core.js";
+  export default class com_bargain extends wepy.component {
+    methods = {
+      goBar(id) {
+        tools.goNewPage("/pages/bargain/bargain?id=" + id)
+      },
+      async getUser(id, e) {
+        this.$parent.vm_com_user = await tools.getRnUser(e)
+        if (this.$parent.vm_com_user.newUser == false) {
+          tools.goNewPage("/pages/bargain/bargain?id=" + id)
+          this.$apply()
+        }
+      },
+    };
+  }
+</script>

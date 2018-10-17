@@ -1,0 +1,377 @@
+<style lang="less">
+  .shoppingCarts-index {
+    padding-bottom: 130rpx;
+    .good-item {
+      padding: 30rpx;
+      overflow: hidden;
+    }
+    .good-pto-wrap {
+      height: 170rpx;
+      width: 170rpx;
+      margin: 0 30rpx;
+    }
+    .good-pto {
+      height: 170rpx;
+      width: 170rpx;
+      background-color: #ccc;
+    }
+    .light-gray {
+      color: #d9d8d9;
+    }
+    .lh1 { 
+      line-height: 1;
+    }
+    .detail {
+      min-height: 170rpx;
+      width: 62%;
+    }
+    .wp94 {
+      width: 94%;
+    }
+    .vb {
+      vertical-align: bottom;
+    }
+    .mw30 {
+      margin-left: 30rpx;
+      margin-right: 30rpx;
+    }
+    .total-bar {
+      position: fixed; 
+      border-top: 1px solid #eee;
+      width: 100%;
+      bottom: 0;
+      height: 100rpx;
+      .price {}
+      .btn-buy {
+        width: 249rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+      }
+    }
+
+    .com-counter {
+      width: 250rpx;
+      .btn-count {
+        width: 70rpx;
+        height: 50rpx;
+        border: 1px solid #aaa;
+        line-height: 50rpx;
+      }
+      .left-border-none {
+        border-left: none !important;
+      }
+      .right-border-none {
+        border-right: none !important;
+      }
+      .left-radius {
+        border-top-left-radius: 5rpx;
+        border-bottom-left-radius: 5rpx;
+      }
+      .right-radius {
+        border-top-right-radius: 5rpx;
+        border-bottom-right-radius: 5rpx;
+      }
+      .view {
+        width: 108rpx;
+        height: 50rpx;
+        border: 1px solid #aaa;
+        line-height: 50rpx;
+      }
+      .disabled {
+        border: 1px solid #d9d8d9;
+        color: #d9d8d9;
+      }
+    }
+    .inner-wrap {
+      overflow: hidden;
+    }
+    .btn-delete {
+      width: 100%;
+      height: 42rpx;
+      line-height: 40rpx;
+      background-color: rgba(0, 0, 0, 0.3);
+      bottom: 0;
+    }
+    .shopcar-pto {
+      height: 264rpx;
+      width: 300rpx;
+      margin-left: 18rpx;
+    }
+    .c262626 {
+      color: #262626;
+    }
+    .data-null {
+      margin-top: 187rpx;
+    }
+  }
+
+</style>
+<template leng="wxml">
+  <view class="shoppingCarts-index {{currentSkin}}">
+    <view class="inner-wrap">
+      <view class="data-null f fv fc" wx:if="{{goodList.length == 0}}">
+        <image class="shopcar-pto" src="http://j.vzan.cc/miniapp/img/platformPro/shopcar-null.png"></image>
+        <text class="c262626 f26 mt30"> 购物车是空的</text>
+        <text class="c666 f26 mt15">去选几件中意的商品吧</text>
+      </view>
+      <view class="good-item f mt30 fc bg-w" wx:for="{{goodList}}" wx:key="{{index}}">
+        <text @tap="selectItem({{index}})" class="dzicon f40 {{selectIndexList[index] == 1 ? 'icon-Choice_xuanze skin_txt' : 'icon-Unselected_weixuanze light-gray'}}"></text>
+        <view class="good-pto-wrap rel">
+          <image class="fs good-pto" src="{{item.SpecImg}}"></image>
+          <view class="abs btn-delete tc cfff" @tap.stop="deleteItem({{item}}, {{index}})">
+            <text class="dzicon icon-iconfontlajitong"></text>
+          </view>
+        </view>
+        <view class="f fv f26 c333 detail fj">
+          <view>
+            <view class="lh1 ellipsis wp94">
+              {{item.GoodsName}}
+            </view>
+            <view class="mt10 f24 c666">
+              {{item.SpecInfo}}
+            </view>
+          </view>
+          <view class="f fj">
+            <text class="f20 t-b vb lh1 f fv fe">
+              <text class="f30 t-b">￥</text>
+              <text class="f30 t-b">{{item.OriginalPriceStr}}</text>
+            </text>
+            <view class="">
+              <view class="com-counter bg-w cl">
+                <button class="btn-count left-radius  f30 right-border-none fl f fc jc {{item.Count == min ? 'disabled' : ''}}" disabled="{{item.Count == min}}"
+                  @tap.stop="count('sub', {{index}}, {{item}})">-</button>
+                <view class="f26 ib view fl tc">{{item.Count}}</view>
+                <button class="f fc jc fl right-radius btn-count f30  left-border-none {{item.Count == max ? 'disabled' : ''}}" disabled="{{item.Count == max}}"
+                  @tap.stop="count('add', {{index}}, {{item}})">+</button>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <comLoading :showLoading.sync="loadMore" :showBottom.sync="loadAll" />
+    </view>
+    <view class="total-bar bg-w f26 c666 cl">
+      <view class="f fc fl h100">
+        <text class="dzicon f40 {{isSelectAll ? 'icon-Choice_xuanze skin_txt' : 'icon-Unselected_weixuanze light-gray'}} mw30"
+          @tap="selectAll"></text>
+        <text class="mr30">已选({{showTotalCount}})</text>
+        <view class="price c333 f fc fr">
+          <text class="mr10">总计:</text>
+          <text class="skin_txt">
+            <text class="f26">￥</text>
+            <text class="f26">{{showTotalPrice}}</text>
+          </text>
+        </view>
+      </view>
+      <view class="btn-buy skin_bg cfff tc fr" @tap="confirmOrder">
+        下单
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+    http
+  } from "@/lib/core";
+  import com_wait from "@/components/com_wait";
+  import com_loading from "@/components/com_loading";
+  export default class shoppingCarts extends wepy.page {
+    config = {
+      navigationBarTitleText: "购物车",
+      enablePullDownRefresh: false
+    };
+
+    data = {
+      currentSkin: '',
+      isWait: false,
+      goodList: [
+        /**
+         *
+         */
+      ],
+      count: 0, //购物数
+      selectIndexList: [], //根据这个数组映射被选商品
+      max: 9999,
+      min: 1,
+      isSelectAll: false,
+      loadMore: false,
+      loadAll: false,
+      pageIndex: 1,
+      selectedGoodList: []
+    };
+
+    components = {
+      comLoading: com_loading,
+      comWait: com_wait
+    };
+
+    computed = {
+      showTotalCount() {
+        var selectedArray = this.getTrueList();
+        if (selectedArray.length != this.goodList.length) {
+          this.isSelectAll = false;
+        } else if (
+          selectedArray.length > 0 &&
+          selectedArray.length == this.goodList.length
+        ) {
+          this.isSelectAll = true;
+        }
+        return selectedArray.length;
+      },
+      showTotalPrice() {
+        this.selectedGoodList = this.getGoodsListBySelected();
+        var i = 0;
+        var goodItem;
+        var price = 0;
+        while ((goodItem = this.selectedGoodList[i++])) {
+          var itemPrice = Number(goodItem.OriginalPrice);
+          var itemCount = Number(goodItem.Count);
+          price = price.add(itemPrice.mul(itemCount));
+        }
+        return price.div(100).toFixed(2);
+      }
+    };
+
+    methods = {
+      async count(mode, index) {
+        switch (mode) {
+          case "add":
+            if (this.goodList[index].Count >= this.max) {
+              return;
+            }
+            this.goodList[index].Count++;
+            break;
+          case "sub":
+            if (this.goodList[index].Count <= this.min) {
+              return;
+            }
+            this.goodList[index].Count--;
+            break;
+        }
+      },
+      selectItem(index) {
+        this.selectIndexList[index] = this.selectIndexList[index] == 1 ? 0 : 1;
+      },
+      async deleteItem(item, index) {
+        var data = null;
+
+        data = this.outputShopCartData([item]);
+
+        this.isWait = true;
+
+        var result = await core.updateOrDeleteGoodsCarData(data, -1);
+        tools.handleResult(
+          result,
+          async res => {
+            this.goodList.splice(index, 1);
+            this.isWait = false;
+          },
+          () => {
+            this.isWait = false;
+          }
+        );
+        this.$apply();
+      },
+      selectAll() {
+        var boolean_;
+        this.isSelectAll = !this.isSelectAll;
+        boolean_ = this.isSelectAll ? 1 : 0;
+        this.selectIndexList = this.selectIndexList.map(val => {
+          return boolean_;
+        });
+      },
+      async confirmOrder() {
+        //选择商品之后
+        if (this.selectedGoodList.length > 0) {
+          var datas = this.outputShopCartData(this.selectedGoodList);
+          this.isWait = true;
+          var result = await core.updateOrDeleteGoodsCarData(datas, 0);
+          if (!result.isok) {
+            tools.freeToast(result.Msg, "none");
+            return
+          }
+          this.isWait = false;
+          this.$apply();
+          wx.setStorageSync("goodsList", this.selectedGoodList);
+          tools.goNewPage("../shoppingCarts-confirmOrder/index");
+        } else {
+          wx.showToast({
+            icon: "none",
+            title: "亲， 您还没选商品哦"
+          });
+        }
+      }
+    };
+
+    outputShopCartData(arr) {
+      var keys = ["Id", "GoodsId", "SpecIds", "SpecInfo", "Count", "SpecImg"],
+        key;
+      arr = arr.map(val => {
+        var i = 0,
+          data = {};
+        while ((key = keys[i++])) {
+          data[key] = val[key];
+        }
+        return data
+      });
+      return JSON.stringify(arr);
+    }
+
+    async onLoad() {
+      tools.setThemeColor(this)
+      this.isWait = true;
+      await this.getGoodsCarListC();
+      this.isWait = false;
+      this.$apply();
+    }
+
+    async getGoodsCarListC() {
+      var result = await core.getGoodsCarList(this.pageIndex);
+      tools.handleResult(result, res => {
+        console.log(res);
+        this.count = res.count;
+        if (res.carlist.length > 0) {
+          //获取新数据入栈
+          this.mappingDefaultSelectStatus(res.carlist);
+          this.goodList = this.goodList.concat(res.carlist);
+          this.pageIndex > 1 && res.carlist.length < 8 && (this.loadAll = true);
+        } else {
+          this.pageIndex > 1 && (this.loadAll = true);
+        }
+      });
+    }
+
+    async onReachBottom() {
+      if (this.count > 8 && !this.loadAll) {
+        this.loadMore = true;
+        this.pageIndex++;
+        await this.getGoodsCarListC();
+        this.loadMore = false;
+        this.$apply();
+      }
+    }
+
+    mappingDefaultSelectStatus(array) {
+      array.forEach(() => {
+        this.selectIndexList.push(false);
+      });
+    }
+
+    getTrueList() {
+      return this.selectIndexList.filter(v => {
+        return v == 1;
+      });
+    }
+
+    getGoodsListBySelected() {
+      return this.goodList.filter((v, i) => {
+        return this.selectIndexList[i] == 1;
+      });
+    }
+  }
+
+</script>

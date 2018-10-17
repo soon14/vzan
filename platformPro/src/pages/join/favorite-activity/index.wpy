@@ -1,0 +1,136 @@
+<style lang="less">
+.favorite-activity {
+  .info-label {
+    .active {
+      color: #3fd682; // font-weight: bold;
+      border-bottom: 5rpx solid #3fd682;
+      padding-bottom: 10rpx;
+    }
+  }
+  .line-fuck {
+    height: 1px;
+    width: 100%;
+    background-color: #eee;
+  }
+  .null {
+    height: 100vh;
+    width: 100%;
+  }
+}
+</style>
+
+<template> 
+    <view> 
+        <view class="favorite-activity">
+            <view class="null f30 c333 f fc jc" wx:if="{{totalCount == 0}}">暂无数据</view>
+            <block wx:else>
+                <view class="line-fuck"></view>
+                <repeat>
+                    <comInfoItem :infoList.sync="infoList" isRegister2="1" jumpPath="../../classify/classify-details/index" :isMyPublishOrFavorite="myPublishOrFavorite" :onClickDelAfter="deleteMsg"></comInfoItem>
+                </repeat> 
+            </block>
+            <comLoading :isShowLoading.sync="loadMore" :isShowBottom.sync="loadAll" />
+            <comWait wx:if="{{showWait}}"  />
+        </view>
+    </view>
+</template>
+ 
+<script>
+import wepy from "wepy"; 
+import { core, tools, http } from "@/lib/core";
+import addr from "@/lib/addr";
+import com_infoItem from "@/components/com_infoItem";
+import com_wait from "@/components/com_wait";
+import com_loading from "@/components/com_loading";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "收藏动态"
+  };
+  components = {
+    comInfoItem: com_infoItem,
+    comWait: com_wait,
+    comLoading: com_loading
+  };
+  data = {
+    myPublishOrFavorite: true,
+    infoList: [],
+    showWait: false,
+    userId: 0,
+    totalCount: 0,
+    loadMore: false,
+    loadAll: false,
+    pageIndex: 1
+  };
+  methods = {};
+
+  events = {};
+  async onLoad(option) {
+    this.userId = option.userId;
+    if (!this.userId) {
+      tools.goBack(1);
+      return;
+    }
+    this.showWait = true;
+    await this.GetInfoList();
+    this.showWait = false;
+    this.$apply();
+  }
+
+  //获取帖子列表
+  async GetInfoList() {
+    let data = await core.getListMyFavoriteMsg(this.pageIndex);
+    tools.handleResult(data, res => {
+      this.totalCount = res.totalCount;
+      let dataList = res.list;
+      if (dataList.length > 0) {
+        for (let i = 0, l = dataList.length; i < l; i++) {
+          dataList[i].DzBtnText = dataList[i].IsDzed ? "取消" : "赞";
+        }
+        this.infoList = this.infoList.concat(dataList);
+        this.pageIndex > 1 && dataList.length < 10 && (this.loadAll = true)
+      } else {
+        this.pageIndex > 1 && (this.loadAll = true)
+      }
+    });
+  }
+
+  async onReachBottom() {
+    if (!this.LoadAll) {
+      this.loadMore = true;
+      this.pageIndex++;
+      await this.GetInfoList();
+      this.loadMore = false;
+      this.$apply();
+    }
+  }
+
+  async deleteMsg(id, favoriteId) {
+    console.log(id, "删除我的帖子");
+    console.log(favoriteId, "删除收藏帖子");
+    var option = {
+      Id: favoriteId,
+      myCardId: this.userId,
+      delType: 1
+    };
+    var result = await core.delMyFavoriteOrMyMsg(option);
+    tools.handleResult(result, async res => {
+      wx.showToast({
+        icon: "success",
+        title: "删除成功"
+      });
+      this.showWait = true;
+      this.resetData()
+      await this.GetInfoList();
+      this.showWait = false;
+      this.$apply()
+    });
+  }
+
+  resetData() {
+    this.loadMore = false,
+    this.loadAll = false,
+    this.pageIndex = 1
+    this.infoList = []
+  }
+}
+</script>

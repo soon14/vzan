@@ -1,0 +1,177 @@
+<style lang="less">
+    .sell-hear {
+        width: 100%;
+        height: 160rpx;
+        >view {
+            width: 50%;
+        }
+    }
+    .sell {
+        width: 100%;
+        color: #333;
+        margin-top: 20rpx;
+        .hear {
+            width: 100%;
+            height: 120rpx;
+            line-height: 120rpx;
+            background: #fff;
+            padding: 0 20rpx;
+            border-bottom: 1px solid #f7f7f7;
+        }
+        .p-main {
+            width: 100%;
+            height: 210rpx;
+            background: #fff;
+            padding: 0 20rpx;
+            margin-bottom: 20rpx;
+            >image {
+                width: 130rpx;
+                height: 130rpx;
+                border-radius: 50%;
+            }
+            .p-right {
+                margin-left: 20rpx;
+            }
+        }
+        .o-main {
+            padding: 0 40rpx;
+            width: 100%;
+            background: #fff;
+            margin-bottom: 20rpx;
+            .o-num {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                border-bottom: 1px solid #f7f7f7;
+            }
+            .o-pro {
+                width: 100%;
+                height: 272rpx;
+                >image {
+                    width: 110rpx;
+                    height: 110rpx;
+                }
+                .o-right {
+                    margin-left: 20rpx;
+                    height: 110rpx;
+                }
+            }
+        }
+    }
+</style>
+<template>
+    <view class='{{currentSkin}}'>
+        <!-- 头部 -->
+        <view class='sell-hear skin_bg f fc-h fc'>
+            <view class='f fv fc' @tap='goPeople'>
+                <text class='f60 t-b'>{{vm.people.RecordCount}}</text>
+                <text class='mt5'>累计客户></text>
+            </view>
+            <view class='f fv fc' @tap='goOrder'>
+                <text class='f60 t-b'>{{vm.order.RecordCount}}</text>
+                <text class='mt5'>推广订单></text>
+            </view>
+        </view>
+        <!-- 累计客户 -->
+        <view class='sell f fv' wx:if='{{vm.people.SalesManRecordUserList!=null}}'>
+            <view class='hear f fc'>
+                <text class='f1 f32 mr20'>累计客户</text>
+                <view class='f fc' @tap='goPeople'>查看全部<text class='dzicon icon-xiala-copy-right' /></view>
+            </view>
+            <repeat for='{{vm.people.SalesManRecordUserList}}' wx:if='{{index<2}}'>
+                <view class='p-main f fc'>
+                    <image src='{{item.ImgLogo}}' />
+                    <view class='p-right f1 f fv'>
+                        <view class='f fc f1'>
+                            <view class='f36 f1'>{{item.NickName}}</view>
+                            <view><text class='c999'>保护期:</text>{{item.cur_protected_time}}天</view>
+                        </view>
+                        <view class='f fc f1 fj mt20'>
+                            <view><text class='c999'>订单:</text>{{item.orderCount}}</view>
+                            <view><text class='c999'>成交额:</text>￥{{item.orderMoneyStr}}</view>
+                            <view><text class='c999'>佣金:</text>￥{{item.cpsMoneyStr}}</view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <!-- 累计订单 -->
+        <view class='sell f fv' wx:if="{{vm.order.List!=null}}">
+            <view class='hear f fc'>
+                <text class='f1 f32 mr20'>推广订单</text>
+                <view class='f fc' @tap='goOrder'>查看全部<text class='dzicon icon-xiala-copy-right' /></view>
+            </view>
+            <repeat for='{{vm.order.List}}' wx:if='{{index<2}}' item='good'>
+                <view class='o-main'>
+                    <view class='o-num f fj'>
+                        <text class='f32 c666'>{{good.orderNumber}}</text>
+                        <text class='skin_txt'>已结算</text>
+                    </view>
+                    <repeat for='{{good.listOrderGoodsDetail}}'>
+                        <viwe class='o-pro f fc'>
+                            <image src='{{item.goodImgUrl}}' />
+                            <view class='o-right f1 f fv fj'>
+                                <view class='f32 line line1'>{{item.goodname}}</view>
+                                <view class='f fj fc'>
+                                    <text class='f32 f1'>￥{{item.price}}</text>
+                                    <text class='f32' style='color:#F20033'>收益占比：<text class='f38'>{{item.cps_rate}}%</text></text>
+                                </view>
+                            </view>
+                        </viwe>
+                        <view class='w-100 f fj fc' style='padding-bottom:38rpx;'>
+                            <text class='f32 c666'>{{good.addTimeStr}}</text>
+                            <text>赚取佣金：<text class='f38'>￥{{item.cpsMoneyStr}}</text></text>
+                        </view>
+                    </repeat>
+                </view>
+            </repeat>
+        </view>
+        <wxc-abnor type="DATA" wx:if="{{vm.people.SalesManRecordUserList==null&&vm.order.List==null}}"></wxc-abnor>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js"
+    export default class sellShow extends wepy.page {
+        config = {
+            navigationBarTitleText: "我的分销",
+            // 引入min组件
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            },
+        };
+        data = {
+            currentSkin: {},
+            vm: {}
+        }
+        methods = {
+            goPeople() {
+                tools.goNewPage("/pages/sellCenter/sellMain?type=" + 1)
+            },
+            goOrder() {
+                tools.goNewPage("/pages/sellCenter/sellMain?type=" + 2)
+            }
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            this.sellInfo()
+        }
+        async sellInfo() {
+            //累计客户
+            let _p = await core.getSaleManRecord()
+            //累计订单
+            let _o = await core.getSaleRecord()
+            if (_p.isok) {
+                this.vm.people = _p.obj
+            }
+            if (_o.isok) {
+                this.vm.order = _o.obj
+            }
+            this.$apply()
+        }
+    }
+</script>

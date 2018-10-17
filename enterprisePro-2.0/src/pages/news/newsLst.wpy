@@ -1,0 +1,142 @@
+<style lang="less">
+    .c-list {
+        width: 100%;
+        padding: 0 30rpx;
+        background-color: #fff;
+        .c-news-small-main:last-child {
+            border-bottom: none;
+        }
+        .c-news-small-main {
+            width: 100%;
+            padding: 30rpx 0;
+            border-bottom: 1px solid #eee;
+            >image {
+                width: 220rpx;
+                height: 220rpx;
+                border-radius: 5rpx;
+                margin-left: 30rpx;
+                flex-shrink: 0;
+            }
+        }
+    }
+    .c-icon-other-main {
+        position: fixed;
+        bottom: 10%;
+        right: 30rpx;
+        z-index: 87;
+    }
+</style>
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <view wx:if="{{isShowBtn}}" class="dzicon icon-xiala-copy c-icon-other-main" @tap="goTop" />
+        <view class="c-list ">
+            <repeat for="{{content.list}}">
+                <view class="c-news-small-main f" @tap="goCon({{item.id}})">
+                    <view class="f1 f fv fj">
+                        <view class="f fv">
+                            <view class="line line1">{{item.title}}</view>
+                            <view class="f26 c666 line line2 mt20" wx:if="{{item.description}}">{{item.description}}</view>
+                        </view>
+                        <view class="f fj w-100 f24 c999">
+                            <text>{{item.addtime}}</text>
+                            <text>{{item.VirtualPV+item.PV||0}}浏览</text>
+                        </view>
+                    </view>
+                    <image src="{{item.img||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                </view>
+            </repeat>
+        </view>
+        <!-- 加载状态 -->
+        <view class="loding w-100 f fc-h" style="padding:20rpx 0" wx:if="{{content.loadall==false}}">
+            <text class="loading-icon" />
+            <text class="c999 f26 ml20">正在加载中...</text>
+        </view>
+        <!-- 加载完毕 -->
+        <view class="w-100 tc c123 f24 ph20" style="background-color:#f6f6f6" wx:if="{{content.loadall}}">到底啦</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import addr from "@/lib/addr.js";
+    import {
+        wxParse
+    } from "@/lib/wxParse/wxParse";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class newsLst extends wepy.page {
+        config = {
+            navigationBarTitleText: "更多资讯",
+        };
+        data = {
+            content: {
+                pageindex: 1,
+                pagesize: 10,
+                list: [],
+                ispost: false,
+                loadall: false,
+                showVm: false
+            },
+            isShowBtn: false,
+            currentSkin: {},
+        };
+        computed = {};
+        methods = {
+            goCon(id) {
+                tools.goNewPage("../news/news?id=" + id);
+            },
+            goTop(e) {
+                tools.onPageScroll();
+            },
+        };
+        onReachBottom() {
+            this.moreLst(this.typeid)
+        }
+        onPageScroll(e) {
+            this.isShowBtn = e.scrollTop == 0 ? false : true;
+            this.$apply()
+        }
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            let id = _get(options, "id", 0)
+            this.moreLst(id)
+            this.typeid = id
+            this.$apply()
+        }
+        //全部
+        async moreLst(typeid) {
+            let vm = this.content;
+            if (vm.ispost || vm.loadall)
+                return;
+            if (!vm.ispost)
+                vm.ispost = true;
+            let aid = wepy.$instance.globalData.aid
+            http.get(addr.GetNewsList, {
+                aid,
+                typeid,
+                liststyle: '',
+                pageIndex: vm.pageindex,
+                pageSize: vm.pagesize,
+            }).then(data => {
+                if (data.isok) {
+                    vm.ispost = false;
+                    // 时间戳转换 对数据进行格式化
+                    data.data.forEach(function(o, i) {
+                        o.addtime = tools.ChangeDateFormat(o.addtime);
+                    });
+                    data.data.length > 0 ? vm.list = vm.list = [...vm.list, ...data.data] : "";
+                    data.data.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true;
+                    this.content = vm;
+                    this.$apply();
+                }
+            })
+        }
+    }
+</script>

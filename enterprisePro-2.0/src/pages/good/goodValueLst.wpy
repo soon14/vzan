@@ -1,0 +1,256 @@
+<style lang="less">
+  .c-value {
+    width: 100%;
+    .c-value-top {
+      position:fixed;
+      top:0;
+      left:0;
+      width: 100%;
+      border-bottom: 1px solid #eee;
+      background: #fff;
+      >view {
+        font-size: 30rpx;
+        width: 50%;
+        height: 100rpx;
+      }
+    }
+    .c-value-main {
+      width: 100%;
+      .c-value-item {
+        width: 100%;
+        padding: 30rpx;
+        background-color: #fff;
+        margin-bottom: 20rpx;
+        .c-value-item-logo {
+          width: 66rpx;
+          height: 66rpx;
+          border-radius: 50%;
+          margin-right: 20rpx;
+        }
+        .c-value-item-imgs {
+          width: 100%;
+          margin-top: 30rpx;
+          >image {
+            width: 220rpx;
+            height: 220rpx;
+            border-radius: 5rpx;
+            margin: 0 10rpx 30rpx 0;
+          }
+        }
+        .c-value-item-btn {
+          width: 136rpx;
+          height: 58rpx;
+          border-radius: 29rpx;
+        }
+        .c-value-item-no {
+          border: 1px solid #d0d0d0;
+          color: #333;
+        }
+        .c-value-item-replay {
+          width:100%;
+          padding:30rpx;
+          border-radius: 5rpx;
+          background-color:#eee;
+          margin-bottom: 30rpx;
+          .c-value-item-sanjiao {
+            position:absolute;
+            top:-40rpx;
+            left:10rpx;
+            width: 0;
+            height: 0;
+            border-top: 30rpx solid transparent;
+            border-bottom: 30rpx solid #EEEEEE;
+            border-right: 30rpx solid transparent;
+            border-left: 30rpx solid transparent;
+          }
+        }
+      }
+      .c-value-main-none {
+        color: #d9d8d9;
+        height: 80vh;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="c-value {{currentSkin}}">
+    <view class="c-value-top f">
+      <view class="f fc fc-h" @tap="selChange(-1)">
+        <text class="{{currentId==-1?'skin_bottom':'c333'}}" style="padding-bottom: 20rpx;">全部</text>
+      </view>
+      <view class="f fc fc-h" @tap="selChange(1)">
+        <text class="{{currentId==1?'skin_bottom':'c333'}}" style="padding-bottom: 20rpx;">有图</text>
+      </view>
+    </view>
+    <view style="height:100rpx"/>
+    <view class="c-value-main">
+      <repeat for="{{vm.list}}">
+        <view class="c-value-item">
+          <view class="f fc">
+            <image class="c-value-item-logo" src="{{item.HeadImgUrl||'http://j.vzan.cc/content/city/images/voucher/10.jpg'}}" />
+            <text class="f26">{{item.Anonymous?'匿名':item.NickName}}</text>
+          </view>
+          <view class="f26 mt30">{{item.Comment?item.Comment:'该用户暂无评论'}}</view>
+          <view class="f24 c999 f mt30">
+            <text>{{item.AddTimeStr}}</text>
+            <text style="margin-left:20rpx">{{item.GoodsSpecification}}</text>
+          </view>
+          <view class="c-value-item-imgs f fw" wx:if="{{item.CommentImgs.length}}">
+            <repeat for="{{item.CommentImgs}}" item="imgs">
+              <image src="{{imgs.thumbnail}}" @tap="showimg({{item.CommentImgs}},{{index}})" />
+            </repeat>
+          </view>
+          <view class="c-value-item-replay rel" wx:if="{{item.Replay!=null}}">
+            <text class="c-value-item-sanjiao" />
+            <view class="f fv">
+              <text class="c666">商家回复:</text>
+              <text class='f24 mt20'>{{item.Replay}}</text>
+            </view>
+          </view>
+          <view class="w-100 f f-end">
+            <view class="c-value-item-btn f fc fc-h {{item.UserPoints?'skin_br':'c-value-item-no'}}" @tap="getPoint({{item.Id}},{{index}})">
+              <text class="dzicon icon-dianzan {{item.UserPoints?'skin_txt':'c123'}}" />
+              <text class="f24 ml10">{{item.UserPoints?item.Points:'点赞'}}</text>
+            </view>
+          </view>
+        </view>
+      </repeat>
+      <view wx:if="{{vm.list.length==0}}" class="c-value-main-none f fc fc-h">暂无评论~</view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js"
+  import {
+    core,
+    tools
+  } from "@/lib/core";
+  export default class goodValueLst extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      },
+    };
+    data = {
+      currentId: -1,
+      showpoint: false,
+      currentSkin: {},
+      vm: {
+        pageindex: 1,
+        pagesize: 10,
+        ispost: false,
+        loadall: false,
+        list: [],
+        sel: -1,
+        goodsid: 0,
+      },
+    };
+    computed = {};
+    methods = {
+      showimg(item, index) {
+        let img = item[index].filepath
+        let array = []
+        for (let i = 0, len = item.length; i < len; i++) {
+          array.push(item[i].filepath)
+        }
+        tools.preViewShow(img, array)
+      },
+      async getPoint(id, index) {
+        let state = 0
+        let point = await core.pointValue(id)
+        if (point.isok) {
+          this.vm.list[index].UserPoints = !this.vm.list[index].UserPoints
+          if (this.vm.list[index].UserPoints) {
+            this.vm.list[index].Points = this.vm.list[index].Points + 1
+          } else {
+            this.vm.list[index].Points = this.vm.list[index].Points - 1
+          }
+          this.$apply()
+        }
+      },
+      async selChange(id) {
+        if (this.currentId != id) {
+          await tools.showLoading()
+          let vm = await tools.resetArray(this.vm)
+          vm.sel = id
+          if (this.type == 'user') {
+            this.valueInfo(vm)
+          } else {
+            this.goodValue(vm, this.goodsid)
+          }
+          await tools.onPageScroll()
+          this.currentId = Number(id)
+          this.$apply()
+          wx.hideLoading()
+        }
+      }
+    }
+    /**
+     * @param {type:pro"该商品评价列表"，user"该用户所有评价列表"}
+     * @param {goodsid 商品id}
+     */
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      this.type = _get(options, "type", '')
+      this.goodsid = _get(options, "id", 0)
+      this.type.includes('user') ? await this.valueInfo(this.vm) : await this.goodValue(this.vm, this.goodsid);
+      this.$apply()
+    }
+    async valueInfo(vm) {
+      await tools.setPageTitle("我的评价")
+      if (vm.ispost || vm.loadall)
+        return
+      if (!vm.ispost)
+        vm.ispost = true
+      let data = await core.getGoodsValue(vm)
+      if (data.isok) {
+        let obj = data.dataObj
+        vm.ispost = false
+        vm.count = data.dataObj.count
+        for (let i = 0, len = obj.list.length; i < len; i++) {
+          obj.list[i].GoodsPrice = parseFloat(obj.list[i].GoodsPrice.div(100)).toFixed(2)
+        }
+        obj.list.length < vm.pagesize ? vm.loadall = true : vm.pageindex += 1;
+        obj.list.length > 0 ? vm.list = [...vm.list, ...obj.list] : '';
+        this.vm = vm
+        this.$apply()
+      } else {
+        tools.showModal(data.Msg, false)
+      }
+    }
+    async goodValue(vm, goodsid) {
+      await tools.setPageTitle("商品评价")
+      vm.goodsid = goodsid
+      if (vm.ispost || vm.loadall)
+        return
+      if (!vm.ispost)
+        vm.ispost = true
+      let data = await core.getShowGoodValue(vm)
+      if (data.isok) {
+        let obj = data.dataObj
+        vm.ispost = false
+        vm.count = data.dataObj.count
+        for (let i = 0, len = obj.list.length; i < len; i++) {
+          obj.list[i].GoodsPrice = parseFloat(obj.list[i].GoodsPrice.div(100)).toFixed(2)
+        }
+        obj.list.length < vm.pagesize ? vm.loadall = true : vm.pageindex += 1;
+        obj.list.length > 0 ? vm.list = [...vm.list, ...obj.list] : '';
+        this.vm = vm
+        this.$apply()
+      } else {
+        tools.showModal(data.Msg, false)
+      }
+    }
+    onReachBottom() {
+      if (this.type == 'user') {
+        this.valueInfo(this.vm)
+      } else {
+        this.goodValue(this.vm, this.goodsid)
+      }
+    }
+  }
+</script>

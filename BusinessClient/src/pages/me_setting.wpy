@@ -1,0 +1,87 @@
+<style>
+.set-item {
+  padding: 40rpx 20rpx;
+  background-color: #fff;
+  margin-top: 20rpx;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view>
+    <view class="set-item f">
+      <view class="f1">到店自取</view>
+      <view>
+        <switch checked="{{storeModel.funJoinModel.openInvite}}" bindchange="changeSelftake" />
+      </view>
+    </view>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import baseMixin from "../mixins/base";
+import { core } from "../lib/core";
+// import
+//第一步： 引入组件文件
+
+export default class me_setting extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+    }
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    storeModel: {}//funJoinModel
+  };
+  computed = {};
+  methods = {
+    ShowToast(msg) {
+      let that = this;
+      that.$toast.show = true;
+      that.$toast.msg = msg;
+      setTimeout(() => {
+        that.$toast.show = false;
+        that.$apply();
+      }, 1000);
+    },
+    async changeSelftake(e) {
+      let that = this;
+      this.storeModel.funJoinModel.openInvite = e.detail.value;
+      let result = await core.SaveStoreInfo(this.storeModel);
+      if (result) {
+        that.ShowToast(result.Msg);
+      }
+    }
+  };
+  events = {};
+  async onLoad() {
+    let that = this;
+  }
+  async onShow() {
+    let result = await core.GetStoreInfo();
+    let that = this;
+    if (result) {
+      if (result.isok) {
+        that.storeModel = result.dataObj;
+      } else {
+        that.ShowToast(result.Msg);
+      }
+      that.$apply();
+    }
+  }
+}
+</script>

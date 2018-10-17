@@ -1,0 +1,126 @@
+<style lang="less">
+    .c-subLst {
+        width: 100%;
+        padding: 30rpx;
+        .c-subLst-main {
+            width: 100%;
+            background-color: #fff;
+            padding: 30rpx;
+            border-radius: 15rpx;
+            margin-bottom: 50rpx;
+            .c-subLst-main-status {
+                font-size: 24rpx;
+                color: #666;
+                margin-bottom: 30rpx;
+                >text:first-child {
+                    display: inline-block;
+                    width: 15rpx;
+                    height: 15rpx;
+                    border-radius: 50%;
+                    margin-right: 10rpx;
+                }
+            }
+            .c-subLst-main-same {
+                margin-bottom: 20rpx;
+                font-size: 26rpx;
+                >text:first-child {
+                    color: #999;
+                    width: 130rpx;
+                    display: inline-block;
+                }
+                >text:last-child {
+                    color: #333;
+                }
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='c-subLst {{currentSkin}}'>
+        <repeat for="{{vm.list}}">
+            <view class="c-subLst-main">
+                <view class="c-subLst-main-status f fc">
+                    <text style="background-color:{{item.state==1?'#666':'#09BB07'}}" />
+                    <text>{{item.state==1?'待商家确认':'商家已确认'}}</text>
+                </view>
+                <view class="f30" style="margin-bottom:30rpx;">{{item.remark.goods.name}}</view>
+                <view class="c-subLst-main-same f">
+                    <text>预约时间：</text>
+                    <text class="skin_txt f1 line line1">{{item.formdatajson[6][1]}}</text>
+                </view>
+                <view class="c-subLst-main-same f">
+                    <text>预约地区：</text>
+                    <text class="f1 line line1">{{item.formdatajson[4][1]}}</text>
+                </view>
+                <view class="c-subLst-main-same f">
+                    <text>详细街道：</text>
+                    <text class="f1 line line1">{{item.formdatajson[5][1]}}</text>
+                </view>
+                <view class="c-subLst-main-same f">
+                    <text>姓名：</text>
+                    <text class="f1 line line1">{{item.formdatajson[0][1]}}</text>
+                </view>
+                <view class="c-subLst-main-same f">
+                    <text>年龄：</text>
+                    <text class="f1 line line1">{{item.formdatajson[2][1]}}</text>
+                </view>
+                <view class="c-subLst-main-same f">
+                    <text>手机号码：</text>
+                    <text class="f1 line line1">{{item.formdatajson[3][1]}}</text>
+                </view>
+                <view class="c-subLst-main-same f" wx:if="{{item.money}}">
+                    <text>预约费用：</text>
+                    <text class="f1 line line1">{{item.money}}元</text>
+                </view>
+            </view>
+        </repeat>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import {
+        core,
+        tools
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class goodSubLst extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+            },
+            navigationBarTitleText: "预约单",
+            enablePullDownRefresh: true,
+        };
+        data = {
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                pageindex: 1,
+                pagesize: 10,
+            },
+            currentSkin: {},
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            core.subMore(this)
+        }
+        onReachBottom() {
+            core.subMore(this)
+        }
+        onPullDownRefresh() {
+            wx.showNavigationBarLoading();
+            this.vm = tools.resetArray(this.vm)
+            core.subMore(this);
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

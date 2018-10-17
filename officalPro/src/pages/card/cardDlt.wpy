@@ -1,0 +1,366 @@
+<style lang="less">
+    page {
+        background: #f6f6f6;
+    }
+    .card {
+        width: 100%;
+        >image {
+            width: 100%
+        }
+        .p-info {
+            font-size: 24rpx;
+            color: #666;
+            width: 100%;
+            margin: 30rpx 0 42rpx 0;
+        }
+        .p-opera {
+            width: 100%;
+            >button {
+                width: 33.3%;
+            }
+            >view {
+                width: 33.3%;
+                text-align: center
+            }
+        }
+        .p-concat {
+            width: 100%;
+            margin-top: 40rpx;
+            background: #fff;
+            padding: 75rpx 30rpx 30rpx 30rpx;
+            .p-item {
+                margin: 40rpx 0;
+            }
+            .p-btn {
+                font-size: 24rpx;
+                color: #666;
+                width: 84rpx;
+                height: 48rpx;
+                line-height: 48rpx;
+                text-align: center;
+                border: 1px solid #d9d8d9;
+            }
+            .p-operaBtn {
+                width: 100%;
+                height: 90rpx;
+                line-height: 90rpx;
+                font-size: 30rpx;
+                text-align: center;
+                margin-top: 20rpx;
+            }
+        }
+        .p-dynamic {
+            width: 100%;
+            background: #fff;
+            padding: 0 30rpx;
+            margin-top: 24rpx;
+            .p-none {
+                width: 100%;
+                height: 500rpx;
+                text-align: center;
+                line-height: 500rpx;
+                color: #d9d8d9;
+            }
+        }
+        .p-good {
+            width: 100%;
+            background: #fff;
+            margin-top: 24rpx;
+            .g-title {
+                padding: 30rpx 0 0 30rpx;
+            }
+            .g-none {
+                width: 100%;
+                height: 500rpx;
+                text-align: center;
+                line-height: 500rpx;
+                color: #d9d8d9;
+            }
+        }
+        .more {
+            padding: 37rpx 0;
+            width: 100%;
+        }
+        .card-home {
+            position: fixed;
+            bottom: 5%;
+            right: 30rpx;
+            background: #fff;
+            width: 100rpx;
+            height: 100rpx;
+            border-radius: 50%;
+            box-shadow: 0 0 10rpx rgba(57, 57, 58, 0.3);
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='card'>
+        <view class="card-home f fv fc fc-h" wx:if="{{pageScroll!=0}}" @tap="goHome">
+            <text class="dzicon icon-shouye2 f36" />
+            <text class="f20 mt5">首页</text>
+        </view>
+        <image mode='widthFix' src='{{vm.personInfo.Avatar}}' @tap="openImg({{vm.personInfo.Avatar}})" />
+        <!-- 个人信息 -->
+        <view class='p-info f fv fc'>
+            <text class='f34 c333 t-b'>{{vm.personInfo.Name}}</text>
+            <text class='mt20'>{{vm.personInfo.DepartMentName}}  {{vm.personInfo.Job}}</text>
+            <text class='mt20'>{{vm.personInfo.CompanyName}}</text>
+        </view>
+        <!-- 操作 -->
+        <view class='p-opera f fc'>
+            <button open-type='share' class='c666 f fv'><text class='dzicon icon-fenxiang f50' style='color:#a1a2a3'/><text class='f28 mt20'>转发{{vm.personInfo.ShareCount}}</text></button>
+            <view class='f fv c666' @tap="goChat">
+                <text class='dzicon icon-pinglun1 f50' style='color:#a1a2a3' />
+                <text class='mt20'>私聊</text>
+            </view>
+            <view class="f fv {{vm.personInfo.IsDzed?'cff3':'c666'}}" @tap="dzPoint">
+                <text class='dzicon icon-dianzan f50' style="color:{{vm.personInfo.IsDzed?'#ff3838':'#a1a2a3'}}" />
+                <text class='mt20'>点赞{{vm.personInfo.DzCount}}</text>
+            </view>
+        </view>
+        <!-- 联系方式 -->
+        <view class='p-concat f fv'>
+            <view class='f34 t-b c333'>联系方式</view>
+            <!-- 手机 -->
+            <view class='p-item f fc f1'>
+                <view class='dzicon icon-shouji f47 c1a12' />
+                <view class='f fv f1' style='margin-left:59rpx;'>
+                    <text>{{vm.personInfo.Phone}}</text>
+                    <text class='f24 c999 mt10'>手机</text>
+                </view>
+                <view class='p-btn' @tap="makePhone({{vm.personInfo.Phone}})">拨打</view>
+            </view>
+            <!-- 微信 -->
+            <view class='p-item f fc f1' wx:if="{{vm.personInfo.WxAccount}}">
+                <view class='dzicon icon-shouji f47 c1a12' />
+                <view class='f fv f1' style='margin-left:59rpx;'>
+                    <text>{{vm.personInfo.WxAccount}}</text>
+                    <text class='f24 c999 mt10'>微信</text>
+                </view>
+                <view class='p-btn' @tap="copy({{vm.personInfo.WxAccount}})">复制</view>
+            </view>
+            <!-- 公司电话 -->
+            <view class='p-item f fc f1'>
+                <view class='dzicon icon-dianhua3 f40 c1a12' />
+                <view class='f fv f1' style='margin-left:59rpx;'>
+                    <text>{{vm.personInfo.CompanyPhone}}</text>
+                    <text class='f24 c999 mt10'>公司电话</text>
+                </view>
+                <view class='p-btn' @tap="makePhone({{vm.personInfo.CompanyPhone}},,'nosend')">拨打</view>
+            </view>
+            <!-- 地址 -->
+            <view class='p-item f fc f1'>
+                <view class='dzicon icon-dizhi f36 c1a12' />
+                <view class='f fv f1' style='margin-left:59rpx;'>
+                    <text class="line line2">{{vm.personInfo.CompanyAddress}}</text>
+                    <text class='f24 c999 mt10'>地址</text>
+                </view>
+                <view class='p-btn ml20' @tap="openMap">导航</view>
+            </view>
+            <view class='p-operaBtn c666' style='border:1px solid #d9d8d9'  @tap="savePhone">保存到通讯录</view>
+            <button open-type='getPhoneNumber' @getphonenumber="getPhone" class='p-operaBtn cfff t-b' style='background-color:#444' wx:if="{{vm.userInfo.TelePhone==null}}">查看名片夹</button>
+            <view class='p-operaBtn cfff t-b'   style='background-color:#444' @tap="goJia" wx:if="{{vm.userInfo.TelePhone}}">查看名片夹</view>
+        </view>
+        <!-- 动态 -->
+        <view class='p-dynamic'>
+            <view class='t-b f34 c333' style='padding-top:30rpx;'>TA的动态</view>
+            <repeat for="{{vm.personInfo.listQiyePostMsg}}">
+                <comDong :current.sync="item" wx:if="{{vm.personInfo.listQiyePostMsg.length}}" />
+            </repeat>
+            <view class="p-none" wx:if="{{vm.personInfo.listQiyePostMsg.length==0}}">这个人很低调，还没有发表任何动态</view>
+            <view class='more c666 f fc fc-h' @tap="dongtaiMore" wx:if="{{vm.personInfo.listQiyePostMsg.length}}">查看全部动态<text class='dzicon icon-zhuanyebaniconkuozhan_Distribu2 f32 mt5' /></view>
+        </view>
+        <!-- 推荐商品 -->
+        <view class='p-good'>
+            <view class='g-title t-b f34'>推荐商品</view>
+            <repeat>
+                <comGoodLst :vm.sync="vm.personInfo" :false.sync='false' :true.sync="true" wx:if="{{vm.personInfo.listQiyeGoods.length}}" />
+            </repeat>
+            <view class="g-none" wx:if="{{vm.personInfo.listQiyeGoods.length==0}}">暂无上架商品哦~</view>
+            <view class='more c666 f fc fc-h' @tap="goodsGO" wx:if="{{vm.personInfo.listQiyeGoods.length}}">查看全部商品<text class='dzicon icon-zhuanyebaniconkuozhan_Distribu2 f32 mt5' /></view>
+        </view>
+        <view style="width:100%;height:220rpx;background:#f6f6f6" />
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_goodlst from "@/components/com_goodLst";
+    import com_dongTai from "@/components/com_dongTai";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class cardDlt extends wepy.page {
+        config = {
+            navigationBarTitleText: "名片详情",
+            navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+            }
+        };
+        //第二步：声明组件
+        components = {
+            comGoodLst: com_goodlst,
+            comDong: com_dongTai,
+        };
+        data = {
+            vm: {},
+            pageScroll: 0,
+        };
+        methods = {
+            //获取手机号码
+            async getPhone(e) {
+                let _u = e.detail
+                if(_u.errMsg.includes('getPhoneNumber:fail')){
+                    return;
+                }
+                let code = await core.login();
+                let vm = {
+                    code,
+                    phone: 1,
+                    iv: _u.iv,
+                    data: _u.encryptedData,
+                    sign: this.vm.userInfo.Id,
+                }
+                this.vm.userInfo = await core.loginUserInfo(vm)
+                this.$apply()
+                tools.goNewPage("./cardJia")
+                core.onShareUp('客户授权了手机号,赶紧联系看有啥需要帮忙的吧')
+            },
+            // 回到首页
+            goHome() {
+                tools.goLaunch("/pages/index/index")
+            },
+            //查看名片加
+            goJia() {
+                tools.goNewPage("./cardJia")
+            },
+            //私信
+            goChat() {
+                let app = wepy.$instance
+                let _g = this.vm.personInfo
+                if (_g.UserId == app.globalData.userInfo.Id) {
+                    return;
+                }
+                let vm = {
+                    id: _g.UserId,
+                    name: _g.Name,
+                    img: _g.Avatar,
+                }
+                core.gochat(vm)
+            },
+            // 复制
+            copy(num) {
+                tools.copy(num)
+            },
+            openImg(img) {
+                tools.preViewShow(img)
+            },
+            // 拨打电话
+            makePhone(number, type) {
+                tools.makePhone(number, type)
+            },
+            // 导航
+            openMap() {
+                let _g = this.vm.personInfo
+                let _v = {
+                    lat: Number(_g.Location[0]),
+                    lng: Number(_g.Location[1]),
+                    name: _g.CompanyName,
+                    address: _g.CompanyAddress
+                }
+                tools.openMap(_v)
+            },
+            //查看更多商品
+            goodsGO() {
+                tools.goNewPage("/pages/goods/goodsLstMore")
+            },
+            //查看更多动态
+            dongtaiMore() {
+                tools.goNewPage("/pages/card/dongTaiMore?type=order&&userId=" + this.vm.personInfo.UserId)
+            },
+            //保存电话号码
+            async savePhone() {
+                let _v = {
+                    name: this.vm.personInfo.Name,
+                    phone: this.vm.personInfo.Phone,
+                    company: this.vm.personInfo.CompanyName,
+                }
+                let info = await tools.addPhone(_v)
+                if (info.errMsg == 'addPhoneContact:ok') {
+                    tools.wxShowToast("保存成功")
+                }
+            },
+            // 点赞
+            dzPoint() {
+                let _g = this.vm
+                let _v = {
+                    action: 1,
+                    id: _g.personInfo.Id,
+                    type: 3,
+                }
+                core.AddFavorite(_v, this)
+            },
+            onPageScroll(e) {
+                this.pageScroll = e.scrollTop
+                this.$apply()
+            }
+        }
+        /**
+         *@param {scene:扫码,_type:转发,_g:转发或扫码所需对象,_v:看过名片所需人气}
+        `*@return {id}
+         */
+        onLoad(options) {
+            let scene = _get(options, "scene", "")
+            let _type = _get(options, "type", "")
+            let id = _get(options, "id", "")
+            let _g = {}
+            _g.type = 7
+            if (scene) {
+                let _array = [];
+                _array = decodeURIComponent(scene);
+                _array = _array.split("_");
+                id = _array[0]
+                _g.action = 7
+                _g.id = id
+                core.AddFavorite(_g, this)
+            }
+            if (_type) {
+                _g.action = 6
+                _g.id = id
+                core.AddFavorite(_g, this)
+            }
+            let _v = {
+                action: 3,
+                type: 3,
+                id: id
+            }
+            core.AddFavorite(_v, this)
+            core.GetEmployee(id, this, 'dlt')
+            this.id = id
+            this.$apply()
+        }
+        onShareAppMessage() {
+            let that = this
+            let _g = that.vm.personInfo
+            let _v = {}
+            _v.type = 3
+            _v.action = 6
+            _v.id = _g.Id
+            return {
+                title: "您好，我是" + _g.CompanyName + _g.Name + ",请多多关照",
+                path: "/pages/card/cardDlt?id=" + _g.Id + "&type=6",
+                imageUrl: _g.Avatar,
+                success: function(res) {
+                    tools.wxShowToast("转发成功")
+                    core.AddFavorite(_v, that)
+                    core.onShareUp('客户转发你的名片，快去感谢Ta吧')
+                }
+            };
+        }
+    }
+</script>

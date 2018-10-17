@@ -1,0 +1,355 @@
+<style lang="less">
+    .header {
+        image {
+            width: 100%;
+        }
+        .cutDown {
+            width: 100%;
+            height: 120rpx;
+            background-image: url('http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload//20180628/cc4bb7706a084039aaf233ded0acad361530187001317.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            padding: 0 20rpx 0 40rpx;
+            .cutNum {
+                width: 30rpx;
+                height: 30rpx;
+                line-height: 30rpx;
+                font-size: 22rpx;
+                background: #2E2A2A;
+                text-align: center;
+                margin: 0 5rpx;
+                color: #fff;
+            }
+        }
+    }
+    .wrap-title {
+        width: 100%;
+        padding: 38rpx 20rpx;
+        background: #fff;
+    }
+    .wrap-deal {
+        width: 100%;
+        background: #fff;
+        height: 100rpx;
+        line-height: 100rpx;
+        margin-top: 20rpx;
+        border-bottom: 1px solid #f7f7f7;
+        .wrap-line {
+            width: 6rpx;
+            height: 32rpx;
+            background: #F20033;
+            margin-right: 20rpx;
+        }
+    }
+    .wrap-btn {
+        width: 100%;
+        height: 100rpx;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        .wrap-buy {
+            height: 100rpx;
+            line-height: 100rpx;
+            font-size: 36rpx;
+            text-align: center;
+        }
+    }
+    .shopCar {
+        width: 100vh;
+        height: 100vh;
+    }
+    .close {
+        width: 100%;
+        height: 100vh;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='{{currentSkin}}'>
+        <view class='header rel'>
+            <image src='{{vm.goodInfo.img_fmt}}' mode='widthFix' />
+            <view class='cutDown f fc fj'>
+                <view class='f fv'>
+                    <view class='f fc'>
+                        <wxc-price class='f38 cfff' icon='sub'>{{vm.goodInfo.discountPricestr}}</wxc-price>
+                        <wxc-price status="del" del-color="#fff" class='f24 ml10' wx:if='{{vm.goodInfo.discount!=100}}'>{{vm.goodInfo.priceStr}}</wxc-price>
+                    </view>
+                    <view class='f22 cfff'>已售{{vm.goodInfo.salesCount+vm.goodInfo.virtualSalesCount}}件</view>
+                </view>
+                <view class='f fv fc c333'>
+                    <text class='f20'>距结束还有:</text>
+                    <view class='f fc f24 mt10'>
+                        <text class='cutNum'>{{vm.countDownArray[0]||'00'}}</text>
+                        <text>天</text>
+                        <text class='cutNum'>{{vm.countDownArray[1]||'00'}}</text>
+                        <text>时</text>
+                        <text class='cutNum'>{{vm.countDownArray[2]||'00'}}</text>
+                        <text>分</text>
+                        <text class='cutNum'>{{vm.countDownArray[3]||'00'}}</text>
+                        <text>秒</text>
+                    </view>
+                </view>
+            </view>
+        </view>
+        <view class='wrap-title f fc'>
+            <text class='f1 f34 c333'>{{vm.goodInfo.name}}</text>
+            <view class='f fv fc' wx:if='{{vm.store.productQrcodeSwitch}}' @tap="shareQrc">
+                <text class='dzicon icon-zhuanyebaniconkuozhan_share f34' style='color:#F20033' />
+                <text class='f22 c666 mt10'>分享</text>
+            </view>
+        </view>
+        <view class='wrap-deal f fc'>
+            <text class='wrap-line' />
+            <text class='f32'>商品详情</text>
+        </view>
+        <view class='w-100 bg-w' style='padding-top:20rpx;'>
+            <repeat>
+                <comRich :currentCom='vm' wx:if="{{vm.goodInfo.description!=''}}"></comRich>
+                <wxc-abnor type="DATA" wx:if="{{vm.goodInfo.description==''}}"></wxc-abnor>
+            </repeat>
+        </view>
+        <view style='height:101rpx' />
+        <view class='wrap-btn f'>
+            <repeat>
+                <comIm :false.sync="false" :vm.sync="vm.userInfo" wx:if="{{vm.store.imSwitch}}" @getUser.user="getUser" :wxServer.sync="vm.store.wxServer"/>
+            </repeat>
+            <button wx:if='{{vm.userInfo.newUser}}' class='wrap-buy f1 skin_bg' open-type="getUserInfo" @getuserinfo="getUser">立即购买</button>
+            <form wx:if='{{vm.userInfo.newUser==false}}' report-submit="true" @submit="showMask" class='f1'>
+                <button class='wrap-buy f1 skin_bg' formType="submit">立即购买</button>
+            </form>
+        </view>
+        <!-- 购物车弹窗 -->
+        <repeat>
+            <wxc-mask status="{{maskStatus}}" locked="true" class="w-100">
+                <view class="shopCar">
+                    <view class="close" @tap.stop="hideMask"></view>
+                    <comShop :disable="disable" :currentCom.sync="vm.goodInfo" @hideMask.user="hideMask" @changeSpec.user="changeSpec" @add.user="add" @less.user="less" @goShop.user="goShop" @setNum.user="setNum"></comShop>
+                </view>
+            </wxc-mask>
+            <comVas hidden="{{showCanvas==false}}" @hideCanvas.user="hideCanvas"></comVas>
+        </repeat>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_shopCar from "../../components/com_shopCar";
+    import com_richt_in from "../../components/com_richtxt";
+    import com_canvas from "../../components/com_canvas";
+    import com_imSwitch from "@/components/com_imSwitch";
+    import {
+        core,
+        pro,
+        tools,
+        canvas
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class detail extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                "wxc-mask": "../../packages/@minui/wxc-mask/dist/index",
+            },
+            navigationBarTitleText: "",
+            enablePullDownRefresh: true,
+        };
+        //第二步：声明组件
+        components = {
+            comRich: com_richt_in,
+            comShop: com_shopCar,
+            comVas: com_canvas,
+            comIm: com_imSwitch,
+        };
+        data = {
+            vm: {},
+            toast: {},
+            currentSkin: {},
+            maskStatus: "hide",
+            disable: true,
+            showCanvas: false,
+        };
+        computed = {};
+        methods = {
+            shareQrc() {
+                tools.showLoading();
+                let goodVm = this.vm.goodInfo;
+                let vm = {
+                    pid: goodVm.id,
+                    type: '',
+                    recordId: '',
+                    showprice: '',
+                    protype: 4,
+                    flashId: this.vm.flashPayInfo.Id
+                };
+                canvas.getQrcode(vm, this);
+            },
+            hideCanvas() {
+                this.showCanvas = false;
+            },
+            //登陆
+            async getUser(e) {
+                let _u = e.detail
+                if (_u.errMsg.includes('getUserInfo:fail auth deny')) {
+                    return;
+                }
+                let code = await core.login();
+                let vm = {
+                    code,
+                    phone: 0,
+                    iv: _u.iv,
+                    data: _u.encryptedData,
+                    sign: _u.signature,
+                }
+                this.vm.userInfo = await core.loginUserInfo(vm)
+                this.$apply()
+            },
+            wxParseImgTap(e) {
+                let src = e.currentTarget.dataset.src;
+                tools.preViewShow(src);
+            },
+            // 显示购物车
+            async showMask(e) {
+                if (this.vm.flashPayInfo.canPay == false) {
+                    tools.showModal(this.vm.flashPayInfo.descr, false)
+                    return;
+                }
+                core.formId(e.detail.formId);
+                this.maskStatus = "show";
+                let _g = await pro.resetPro(this.vm.goodInfo, 'buy', 'miaosha')
+                this.vm.goodInfo = _g
+                this.$apply()
+            },
+            //隐藏购物车
+            hideMask() {
+                this.maskStatus = "hide";
+            },
+            //选择事件
+            async changeSpec(p, c) {
+                this.vm.goodInfo = await pro.choosePro(this.vm.goodInfo, p, c, "miaosha");
+                this.$apply()
+            },
+            // +事件
+            async add() {
+                let limit = Number(this.vm.flashPayInfo.amountLimit)
+                let good = this.vm.goodInfo
+                let _add = await pro.addPro(good, "miaosha", this);
+                if (_add) {
+                    if (_add.count > limit) {
+                        _add.count = limit
+                        tools.showModal('该商品每单限购' + limit + '件', false)
+                    }
+                    good.danMaiPrice = parseFloat((_add.price).mul(_add.count)).toFixed(2);
+                    good.totalCount = _add.count;
+                    this.price = _add.price;
+                    this.vm.goodInfo = good
+                    this.$apply();
+                }
+            },
+            // -事件
+            async less() {
+                if (this.vm.goodInfo.totalCount == 1) {
+                    tools.ShowToast("亲,不要再减啦", this)
+                    return;
+                }
+                let _less = await pro.lessPro(this.vm.goodInfo, this);
+                if (this.price) {
+                    this.vm.goodInfo.danMaiPrice = parseFloat((this.price).mul(_less)).toFixed(2);
+                    this.vm.goodInfo.totalCount = _less;
+                    this.$apply();
+                }
+            },
+            // 确定
+            goShop(e) {
+                let goodVm = this.vm.goodInfo
+                core.formId(e.detail.formId);
+                let specTemp = goodVm.GASDetailList.find(f => f.id == goodVm.specId);
+                if (goodVm.pickspecification.length) {
+                    if (goodVm.specId == "") {
+                        tools.loading("请选择商品规格");
+                        return;
+                    }
+                    if (specTemp == undefined) {
+                        tools.loading("未选择完");
+                        return;
+                    }
+                    if (goodVm.stockLimit) {
+                        if (goodVm.totalCount > specTemp.stock) {
+                            tools.loading("库存不足");
+                            return;
+                        } else {
+                            this.goMethod();
+                        }
+                    } else {
+                        this.goMethod();
+                    }
+                } else {
+                    if (goodVm.stockLimit) {
+                        if (goodVm.totalCount > goodVm.stock) {
+                            tools.loading("库存不足");
+                            return;
+                        } else {
+                            this.goMethod();
+                        }
+                    } else {
+                        this.goMethod();
+                    }
+                }
+            },
+        }
+        async onLoad(options) {
+            let id = _get(options, 'id', '')
+            await tools.setPageSkin(this);
+            core.miaoShaDeail(id, this)
+            this.id = id
+            this.$apply()
+        }
+        async goMethod() {
+            let goodVm = this.vm.goodInfo
+            let para = {
+                pid: goodVm.id,
+                specId: goodVm.specId,
+                SpecInfo: goodVm.specInfo,
+                count: goodVm.totalCount,
+                record: 1,
+                isgroup: "",
+                img: goodVm.selImg,
+            };
+            let shopInfo = await core.addShopCar(para);
+            if (shopInfo.isok == 1) {
+                let _g = await pro.orderPro(goodVm, "miaosha")
+                _g.cartid = shopInfo.cartid;
+                _g.flashDealId = this.vm.flashPayInfo.Id
+                this.$preload("vm_order", _g);
+                this.$navigate("./order");
+                this.maskStatus = "hide";
+                this.$apply();
+            } else {
+                tools.showModal(shopInfo.msg, false);
+            }
+        }
+        async onPullDownRefresh() {
+            if (this.maskStatus == 'show') {
+                wx.stopPullDownRefresh();
+                return;
+            }
+            clearInterval(this.miaoDeal);
+            wepy.$instance.globalData.vipInfo = "";
+            wepy.$instance.globalData.storeConfig = "";
+            wx.showNavigationBarLoading();
+            core.miaoShaDeail(this.id, this)
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

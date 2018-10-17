@@ -1,0 +1,127 @@
+<style lang="less">
+  .com-canvasMask {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    .canvas-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 600rpx;
+      height: 900rpx;
+      background-color: #fff;
+      border-radius: 10rpx;
+    }
+    .btn-close {
+      width: 88rpx;
+      height: 88rpx;
+      bottom: 1.8%;
+      left: 50%; 
+      transform: translateX(-50%);
+    }
+    .list-btn {
+      padding: 0 53rpx;
+      margin-top: 60rpx;
+    }
+    .item {
+      width: 135rpx;
+      .icon-wrap {
+        width: 70rpx; 
+        height: 70rpx;
+        line-height: 70rpx;
+        border-radius: 50%;
+      }
+    }
+  }
+
+</style>
+<template>
+  <view class="com-canvasMask">
+    <view class="canvas-wrap">
+      <slot name="canvas666"></slot>
+      <view class="f list-btn cfff fj">
+        <view class="f fv item fc fs" @tap="saveImg">
+          <view class="icon-wrap tc bg-orange">
+            <text class="dzicon f38 icon-Choice_xuanze"></text>
+          </view>
+          <text class="f26 c666 mt15">保存图片</text>
+        </view>
+
+        <view class="f fv item fc fs" @tap="saveImg">
+          <view class="icon-wrap tc bg-lightyellow">
+            <text class="dzicon f40 icon-Circleoffriends_pengyou"></text>
+          </view>
+          <text class="f26 c666 mt15">发朋友圈</text>
+        </view>
+
+      <button class="f fv item fc cfff" open-type="share"> 
+        <view class="icon-wrap tc bg-deepYellow">
+          <text class="dzicon f32 icon-Forward_fenxiang"></text>
+        </view>
+        <text class="f26 c666 mt15">分享给朋友</text>
+      </button>
+
+    </view>
+  </view>
+   <view class="f fj jc btn-close cfff abs" @tap="close">
+      <text class="f60 dzicon icon-zhuanyebaniconkuozhan_Close"></text>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+    http
+  } from "@/lib/core";
+  export default class com_canvasMask extends wepy.component {
+    props = {
+      isShow: {
+        type: Boolean,
+        default: false,
+        twoWay: true
+      },
+      canvasId: {
+        type: String,
+        default: ''
+      }
+    };
+
+    methods = {
+      close() {
+        this.isShow = false;
+      },
+      saveImg() {
+        wx.canvasToTempFilePath({
+          canvasId: this.canvasId,
+          success: (res) => {
+            var path =  res.tempFilePath
+            wx.saveImageToPhotosAlbum({
+              filePath: path,
+              success: () => {
+                wx.showToast({
+                  icon: 'success',
+                  title: '保存成功'
+                })
+              },
+              fail: () => {
+                wx.showToast({
+                  icon: 'none',
+                  title: '保存失败，请重试'
+                })
+              }
+            })
+          },
+          fail: () => {
+            console.log('失败')
+          }
+        })
+      }
+    };
+  }
+
+</script>

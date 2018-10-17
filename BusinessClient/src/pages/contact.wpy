@@ -1,0 +1,110 @@
+<style>
+
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view>
+    <block wx:for="{{vm.list}}" wx:for-index="index1">
+
+    </block>
+
+    <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import baseMixin from "../mixins/base";
+// import
+//第一步： 引入组件文件
+
+export default class contact extends wepy.page {
+  config = {
+    navigationBarTitleText: "联系人",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    vm: JSON.parse(JSON.stringify(vm)),
+  };
+  computed = {};
+  methods = {
+    ShowToast(msg) {
+      let that = this;
+      that.$toast.show = true;
+      that.$toast.msg = msg;
+      setTimeout(() => {
+        that.$toast.show = false;
+        that.$apply();
+      }, 1000);
+    }
+  };
+  events = {};
+  async onLoad() {
+    let that = this;
+    await this.loadMore();
+  }
+
+  async onShow() {
+
+  }
+  async loadMore() {
+    var that = this;
+
+    if (that.vm.ispost || that.vm.loadall) return;
+
+    let result = await core.GetContactList(
+      that.vm.pageindex,
+      that.vm.pagesize
+    );
+    if (result) {
+      if (result.isok) {
+        that.vm.ispost = false;
+        let key = "vm.list[" + that.vm.pageindex + "]";
+        if (result.data.length >= that.vm.pagesize) {
+          that.vm.pageindex += 1;
+        } else {
+          that.vm.loadall = true;
+        }
+
+
+        that.setData({
+          [key]: result.data,
+          "vm.pageindex": that.vm.pageindex,
+          "vm.loadall": that.vm.loadall
+        });
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+  }
+  //下拉刷新
+  async onPullDownRefresh() {
+    await this.reload();
+  }
+  async reload() {
+    this.vm = JSON.parse(JSON.stringify(vm));
+    await this.loadMore();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+}
+</script>

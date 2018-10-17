@@ -1,0 +1,114 @@
+<style lang="less">
+  .com-swiper {
+    .wrap {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .data-part {
+      box-sizing: border-box;
+      flex-wrap: wrap;
+      padding-top: 10rpx;
+      .data-item {
+        justify-content: center;
+        width: 130rpx;
+        height: 150rpx;
+        margin-bottom: 5rpx;
+        &:nth-child(5) {
+          margin-right: 0;
+        }
+        &:nth-child(10) {
+          margin-right: 0;
+        } 
+        .data-img {
+          width: 90rpx;
+          height: 90rpx;
+          border-radius: 50%;
+          background-color: #eee;
+        }
+      }
+    }  
+  }
+  
+</style>
+<template>
+  <view class="com-swiper f26 pw30 bg-w">
+    <swiper class="wrap" indicator-color="#D9D8D9" interval="{{interval}}" autoplay="{{autoplay}}" indicator-dots="{{showIdots}}" style="height:{{swiperHeight}}rpx;">
+      <swiper-item>
+        <view class="data-part cl">
+          <view class="f fv fc data-item mr10 fl" wx:for="{{preLisrt}}" wx:key="{{index}}" @tap="">
+            <image class="data-img" src="{{item.MaterialPath}}" mode="aspectFill"></image>
+            <text class="mt10 ellipsis">{{item.Name}}</text>
+          </view>
+        </view> 
+      </swiper-item>
+      <swiper-item wx:if="{{afterFlag}}">
+        <view class="data-part cl">
+          <view class="f fv fc data-item mr10 fl" wx:for="{{afterList}}" wx:key="{{index}}">
+            <image class="data-img" src="{{item.MaterialPath}}" mode="aspectFill"></image>
+            <text class="mt10 ellipsis">{{item.Name}}</text>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  export default class Com_swiper extends wepy.component {
+    props = {
+      source: {
+        type: Array,
+        default: []
+      },
+      autoplay: {
+        type: Boolean,
+        default: false
+      },
+      interval: {
+        type: Number,
+        default: 4000
+      }
+    }
+
+    data = {
+      preLisrt: [],
+      afterList: [],
+      showIdots: true,
+      swiperHeight: 370,
+      afterFlag: false
+    }
+
+    methods = {
+      devideData() {
+        var scrLen = this.source.length
+        if (scrLen > 20) {
+          this.afterFlag = true
+          this.preLisrt = this.source.slice(0, 10)
+          //去掉最后一个后添加‘查看更多’
+          this.afterList = this.source.slice(10, 19)
+          this.afterList.push({
+            name: '更多分类',
+            materialPath: 'http://j.vzan.cc/miniapp/img/platformPro/more.png'
+          })
+          return;
+        }
+
+        scrLen > 10 
+          ? (
+              this.preLisrt = this.source.slice(0, 10), 
+              this.afterList = this.source.slice(10, scrLen),
+              this.afterFlag = true
+            ) 
+          : (
+              this.preLisrt = this.source,
+              this.showIdots = false,
+              this.preLisrt.length <= 5 ? this.swiperHeight = 200 : this.swiperHeight = 340
+            )
+        console.log(this.preLisrt, '前列表')
+        console.log(this.afterList, '后列表')
+      }
+    }
+    
+  }
+
+</script>

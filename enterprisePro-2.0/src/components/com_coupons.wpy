@@ -1,0 +1,101 @@
+<style lang="less">
+    .c-coup {
+        width: 100%;
+        margin-bottom: 20rpx;
+        padding-bottom: 30rpx;
+        background-color: #fff;
+        .c-coup-main {
+            width: 100%;
+            padding: 30rpx 0 0 30rpx;
+            .c-coup-main-item {
+                width: 500rpx;
+                height: 210rpx;
+                margin-right: 20rpx;
+                background-image: url('http://j.vzan.cc/miniapp/img/enterprise/c-counp.png');
+                background-size: cover;
+                flex-shrink: 0;
+                padding: 30rpx 20rpx 30rpx 40rpx;
+                .c-coup-main-item-title {
+                    font-size: 36rpx;
+                    color: #fff;
+                    font-weight: bold;
+                }
+                .c-coup-main-item-tip {
+                    font-size: 22rpx;
+                    color: #FFE5D2;
+                }
+                .c-coup-main-item-Lit {
+                    font-size: 22rpx;
+                    color: #FF7443;
+                    background-color: #FFD3B2;
+                    padding: 5rpx 20rpx;
+                }
+                .c-coup-main-item-btn {
+                    width: 98rpx;
+                    height: 36rpx;
+                    font-size: 20rpx;
+                    color: #FF7443;
+                    border-radius: 18rpx;
+                    background: -webkit-linear-gradient(right, #FFD3B2, #FFC091);
+                }
+            }
+        }
+        .c-coup-btn {
+            width: 260rpx;
+            height: 56rpx;
+            border-radius: 5rpx;
+            border: 1px solid #d0d0d0;
+            color: #6666;
+            text-align: center;
+            line-height: 56rpx;
+            margin: 50rpx auto 0 auto;
+        }
+    }
+</style>
+<template>
+    <view class="c-coup">
+        <view class='component-title f fc fc-h'><text class='component-title-left dzicon icon-_xiegan skin_txt' />优惠券<text class='component-title-right dzicon icon-_xiegan skin_txt' /></view>
+        <scroll-view scroll-x>
+            <view class="c-coup-main f">
+                <repeat for="{{currentCom.items}}">
+                    <view class="c-coup-main-item f  fj" wx:if="{{index<3}}">
+                        <view class="f fv fj">
+                            <text class="c-coup-main-item-title">{{item.CouponName}}{{item.Money}}{{item.CouponWay==0?'元':'折'}}</text>
+                            <view>
+                                <text class="c-coup-main-item-Lit">{{item.LimitMoney=='0'?'无门槛使用':'满'+item.LimitMoney+'元使用'}}</text>
+                            </view>
+                            <text class="c-coup-main-item-tip" wx:if="{{item.ValType==0}}">{{item.StartUseTime}} - {{item.EndUseTime}}</text>
+                            <text class="c-coup-main-item-tip" wx:if="{{item.ValType==1||item.ValType==2}}">领券{{item.ValType==1?'次日':'当日'}}开始{{item.ValDay}}天内有效</text>
+                        </view>
+                        <view class="f fv fc fj">
+                            <view class="c-coup-main-item-tip f fv">
+                                <text>满足条件</text>
+                                <text>即可使用</text>
+                            </view>
+                            <view class="c-coup-main-item-btn f fc fc-h" @tap="getCoupon({{item.id}})">立即领取</view>
+                        </view>
+                    </view>
+                </repeat>
+            </view>
+        </scroll-view>
+        <view class="c-coup-btn" wx:if="{{currentCom.items.length>3}}" @tap="goMyCoupons">查看全部</view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class com_coupons extends wepy.component {
+        methods = {
+            async getCoupon(id) {
+                let coupInfo = await core.getCoupon(id)
+                tools.showModal(coupInfo.msg, false)
+            },
+            goMyCoupons() {
+                tools.goNewPage("/pages/discount/couponCenter")
+            }
+        }
+    }
+</script>

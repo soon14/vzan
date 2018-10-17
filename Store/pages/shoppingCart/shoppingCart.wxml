@@ -1,0 +1,180 @@
+<!--pages/orderList/orderList.wxml-->
+
+
+
+<!-- 购物车不为空时 -->
+<view wx:if="{{isok==1}}">
+  <!-- body1 -->
+  <view class="body1">
+    <block wx:for="{{goodsList}}" wx:for-item="this" wx:for-index="im1">
+      <!-- 商品模板 -->
+      <view class="body1_header">
+        <view style="display:flex;align-items:center;" bindtap="navToclassify" id="{{im1}}">
+          <text>{{this.typeName}}</text>
+          <image src="../../image/a9.png" class="body1_headericon"></image>
+        </view>
+        <text catchtap="setEditor" data-state="{{this.editor}}" id="{{im1}}">{{this.editor==true?'完成':'编辑'}}</text>
+      </view>
+      <block wx:for="{{this.GoodsCar}}" wx:for-index="im2">
+        <view class="body2" style="border-bottom: 20rpx solid #f3f3f3; padding-right:{{item.editor==true?'unset':''}}" id="{{index}}">
+          <image src="{{item.choose?'../../image/a8.png':'../../image/a7.png'}}" class="body2_icon" bindtap="setChoose" id="{{im1+'_'+im2}}"></image>
+          <image src="{{item.goodsMsg.ImgUrl}}" class="body2_img" mode="aspectFill" style="margin-right:{{item.editor!=true?'':'unset'}}" id="{{im1+'_'+im2}}" bindtap="navTogoodList"></image>
+          <!-- 判断item.editor, 如果为false就进入编辑状态 -->
+          <view class="body2_content" wx:if="{{this.editor!=true}}" bindtap="navTogoodList" id="{{im1+'_'+im2}}">
+            <text style="line-height: 30rpx;">{{item.goodsMsg.GoodsName}}</text>
+            <view class="body2_content1" style="width:100%;justify-content: unset;">
+              <text wx:if="{{item.SpecInfo==null||item.SpecInfo=='undefined'}}"></text>
+              <text wx:if="{{item.SpecInfo!=null&&item.SpecInfo!='undefined'}}">{{item.SpecInfo}}</text>
+            </view>
+            <view class="body2_content2">
+              <view style="display:flex;align-items:center">
+                <view style='position: relative;display:flex'>
+                  <view class='priceposition1' wx:if="{{item.goodsMsg.discount!=100}}"></view>
+                  <text style="color:{{item.goodsMsg.discount!=100?'#999':'#f20033'}}">￥</text>
+                  <text style="color:{{item.goodsMsg.discount!=100?'#999':'#f20033'}}">{{item.goodsMsg.PriceStr}}</text>
+                </view>
+                <text style='font-size:20rpx;color:#999;margin-left:30rpx;' wx:if="{{item.goodsMsg.discount!=100}}">折后价</text>
+                <text wx:if="{{item.goodsMsg.discount!=100}}">￥{{item.goodsMsg.discountPricestr}}</text>
+              </view>
+              <text>x{{item.Count}}</text>
+            </view>
+          </view>
+          <!-- 编辑状态 -->
+          <view class="editor" wx:if="{{this.editor}}">
+            <!-- 选择数量 -->
+            <view class="editor_line1">
+
+              <!-- 减号 -->
+              <view class="editor_reduce" data-index="{{index}}" bindtap="reduceListArray" id="{{im1+'_'+im2}}">-</view>
+              <view class="editor_reduce" style="font-size:36rpx;color:rgba(17,17,17,1);">
+                <input class="" id="{{im1+'_'+im2}}" type="number" value="{{item.Count}}" style="height:76rpx" bindinput="setValue" />
+              </view>
+              <!-- 加号 -->
+              <view class="editor_reduce" bindtap="increaseListArray" id="{{im1+'_'+im2}}">+</view>
+
+            </view>
+            <!-- 选择颜色、码数 -->
+            <view class="editor_line2" bindtap="setNature" id="{{im2}}" data-pid="{{im1}}" data-cid="{{item.Id}}" data-count="{{item.Count}}" data-SpecInfo="{{item.SpecInfo}}" data-attrid="{{item.SpecIds}}">
+              <text style="width:80%" wx:if="{{item.SpecInfo==null||item.SpecInfo=='undefined'}}"></text>
+              <text style="width:80%" wx:if="{{item.SpecInfo!=null&&item.SpecInfo!='undefined'}}">{{item.SpecInfo}}</text>
+              <image src="../../image/a10.png" style="height:16rpx;width:24rpx"></image>
+            </view>
+          </view>
+          <view class="editor_del" wx:if="{{this.editor}}" bindtap="delShop" id="{{im1+'_'+im2}}">删除</view>
+        </view>
+      </block>
+    </block>
+  </view>
+  <!-- 底部按钮 -->
+  <view style="height:100rpx;"></view>
+  <view class="bottom1" hidden="{{goodsList.length<1}}">
+    <view class="bottom1_left">
+      <view class='flex-rowc'>
+        <image src="{{selectedAllStatus?'../../image/a8.png':'../../image/a7.png'}}" class="body2_icon" bindtap="setAllchoose"></image>
+        <text style="font-size:30rpx;">全选</text>
+      </view>
+      <view class='flex-rowc marri10'>
+        <text>合计：</text>
+        <text style="font-size:20rpx;color:#ef0000">￥</text>
+        <text style="font-size:28rpx;color:#ef0000">{{total}}</text>
+      </view>
+    </view>
+    <!-- 提交模拟formId -->
+    <form bindsubmit="checkgood" report-submit="true" style='background-color: #ef0000;'>
+      <button class="bottomright" formType="submit" wx:if="{{clientTel!='未绑定'}}">去结算({{shoplenght}})</button>
+      <button class="bottomright" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" wx:if="{{clientTel=='未绑定'}}">去结算({{shoplenght}})</button>
+    </form>
+  </view>
+  <!-- 购物车不为空时 end! -->
+</view>
+<!-- 购物车为空时 -->
+<view wx:if="{{isok==-1}}">购物车为空
+  <!-- 购物车为空时 end! -->
+</view>
+<!-- 选择商品属性项 显隐 -->
+<view class="nature" wx:if="{{setNature}}">
+  <!-- nature_header -->
+  <!-- <block wx:for="{{changeGood}}" wx:for-item="this"> -->
+  <view class="nature_header">
+    <image src="{{Goods.ImgUrl}}" class="nature_img" mode="aspectFill"></image>
+    <view class="nature_headertxt">
+
+
+      <view class="flex">
+        <text class='pricetxt' wx:if="{{discount==100&&allyuanjia==undefined}}">{{sumprice}}</text>
+        <text class='pricetxt' wx:if="{{discount==100&&allyuanjia!=undefined}}">{{allyuanjia}}</text>
+        <text class='pricetxt marri30' wx:if="{{discount!=100&&allzhekou==undefined}}">{{alldiscountprice}}</text>
+        <text class='pricetxt marri30' wx:if="{{discount!=100&&allzhekou!=undefined}}">{{allzhekou}}</text>
+        <view class='posre' wx:if="{{discount!=100}}">
+          <text class='pricetxt' style='color:#999' wx:if="{{alldiscountprice!=undefined&&allyuanjia==undefined}}">{{sumprice}}</text>
+          <text class='pricetxt' style='color:#999' wx:if="{{alldiscountprice!=undefined&&allyuanjia!=undefined}}">{{allyuanjia}}</text>
+          <view class='posa5'></view>
+        </view>
+      </view>
+      <!-- <view class="classname">
+        <text style="font-size:22rpx;color:#f20033">￥</text>
+        <text style="color:#f20033" class='pricetxt'>{{sumprice}}</text>
+        <text style="color:#f20033">{{alldiscountprice}}</text>
+      </view> -->
+      <text>库存{{singlecount}}件</text>
+      <!-- <text hidden="{{firstInfo!=''||secondInfo!=''||thirdInfo!=''}}">库存 {{defaultInventory}}</text>
+      <text hidden="{{firstInfo==''&&secondInfo==''&&thirdInfo==''}}">库存{{tempInventory}}件</text> -->
+      <view style="display:flex;">
+        <text wx:if="{{selectAttrInfo==null||selectAttrInfo=='undefined'}}"></text>
+        <text wx:if="{{selectAttrInfo!=null&&selectAttrInfo!='undefined'}}">{{selectAttrInfo}}</text>
+        <!-- <text wx:if="{{firstInfo=='' && secondInfo=='' && thirdInfo==''}}">请选择</text>
+        <text wx:if="{{firstInfo!='' || secondInfo!='' || thirdInfo!=''}}">已选</text>
+        <text style="margin:0 14rpx;" wx:if="{{firstInfo!=''}}">{{firstInfo}}</text>
+        <text style="margin:0 14rpx;" wx:if="{{secondInfo!=''}}">{{secondInfo}}</text>
+        <text style="margin:0 14rpx;" wx:if="{{thirdInfo!=''}}">{{thirdInfo}}</text> -->
+      </view>
+    </view>
+    <!-- nature_header -->
+  </view>
+  <!-- 各项属性值 -->
+  <view class="nature_choose">
+    <!-- scroll-view -->
+    <scroll-view scroll-y style="height:587rpx;width:100%;">
+      <block wx:for="{{goodsAttrList}}" wx:for-item="this" wx:for-index="pindex">
+        <text style="margin-bottom:29rpx;">{{this.AttrName}}</text>
+        <view class="nature_inchoose">
+          <!-- 第一项属性 -->
+          <block wx:if="{{pindex==0}}">
+            <block wx:for="{{this.SpecList}}">
+              <text class="choose_item {{groupindex1==item.Id?'choosetxtandbg1':'choosetxtandbg'}}" bindtap="setgoodInfo" data-pid="{{pindex}}" id="{{item.Id}}">{{item.SpecName}}</text>
+            </block>
+          </block>
+          <!-- 第二项属性 -->
+          <block wx:elif="{{pindex==1}}">
+            <block wx:for="{{this.SpecList}}">
+              <text class="choose_item {{groupindex2==item.Id?'choosetxtandbg1':'choosetxtandbg'}}" bindtap="setgoodInfo" data-pid="{{pindex}}" id="{{item.Id}}">{{item.SpecName}}</text>
+            </block>
+          </block>
+          <!-- 第三项属性 -->
+          <block wx:elif="{{pindex==2}}">
+            <block wx:for="{{this.SpecList}}">
+              <text class="choose_item {{groupindex3==item.Id?'choosetxtandbg1':'choosetxtandbg'}}" bindtap="setgoodInfo" data-pid="{{pindex}}" id="{{item.Id}}">{{item.SpecName}}</text>
+            </block>
+          </block>
+        </view>
+      </block>
+      <!-- 数量 -->
+      <view class="nature_count">
+        <text>数量</text>
+        <!-- 数量按钮 -->
+        <view class="nature_countbtn">
+          <view class="nature_countbtn1" bindtap="valueReduce">-</view>
+          <input value="{{buyamount}}" style="font-size:28rpx;" class="nature_countbtn1" bindchange="setValue2" disabled='true' />
+          <view class="nature_countbtn1" bindtap="valueAdd">+</view>
+        </view>
+      </view>
+      <view style="height:29rpx"></view>
+      <!-- scroll-view end! -->
+    </scroll-view>
+  </view>
+  <!-- 确定按钮 -->
+  <view class="makesure" bindtap="updateGood">确定</view>
+  <!-- </block> -->
+</view>
+<!-- 弹窗后背景模糊 -->
+<view class="bg" wx:if="{{setNature}}" catchtap="hiddenShow"></view>

@@ -1,0 +1,254 @@
+<block wx:if="{{glo_is_load}}">
+  <view class="glo_load_view">
+    <text class="iconfont icon-loading animated infinite rotate mr5"></text>
+    <text>正在努力加载</text>
+  </view>
+</block>
+<block wx:else>
+  <view class="top-msg">
+    <image class="topbg" src="{{this_dish_info.dish_info.dish_logo}}" mode="aspectFill"></image>
+    <view class="top-content flex write">
+      <view class="logo-img mr10">
+        <image src="{{this_dish_info.dish_info.dish_logo}}" mode="aspectFill"></image>
+      </view>
+      <view class="sub">
+
+        <!--店铺名称-->
+        <view class="name f16">
+          {{this_dish_info.dish_info.dish_name}}
+          <block wx:if="{{this_dish_info.dish_info.dish_quyu}}">
+            ({{this_dish_info.dish_info.dish_quyu}})
+          </block>
+        </view>
+
+        <!--星级-->
+        <view class="star">
+          <block wx:for="{{this_dish_info.dish_comment_fenshu}}">
+            <text class="iconfont icon-xingjifull"></text>
+          </block>
+          <block wx:for="{{5-this_dish_info.dish_comment_fenshu}}">
+            <text class="iconfont icon-xingjiline"></text>
+          </block>
+        </view>
+
+        <!--附加信息-->
+        <view class="other-msg f12 mt5">
+          <block wx:for="{{this_dish_info.dish_info.dish_fuwuList}}" wx:for-item="fu_idx">
+            <view class="mr5" wx:if="{{fu_idx}}">{{fu_idx}}</view>
+          </block>
+        </view>
+
+        <!--价格-->
+        <view class="price f12 mt5">￥{{this_dish_info.dish_info.dish_pingjunxiaofei||0}}/人</view>
+      </view>
+      <view wx:if="{{this_open_mini==0}}" class="eatpay gridFourCirle" bindtap="zhuanzhang_bind" id="{{this_dish_info.dish_info.dish_id}}">买单</view>
+    </view>
+
+    <block wx:if="{{this_is_card_open && this_open_mini==0}}">
+      <view wx:if="{{this_is_user_card==null||this_is_user_card==0}}">
+        <button class='res-rceive-btn' type='primary' bindtap="get_user_card_info" wx:if="{{userInfo.avatarUrl}}">领取会员卡</button>
+        <button class='res-rceive-btn' type='primary' wx:else open-type='getUserInfo' bindgetuserinfo='getuserInfo'>领取会员卡</button>
+      </view>
+      <view class='flex tc res-card-box f14' wx:if="{{this_is_user_card==1}}">
+        <view class='sub res-card-items' bindtap="go_user_card_info" id='0'>
+          <text class='iconfont icon-huiyuanka'></text>
+          <view>会员卡</view>
+        </view>
+        <view class='sub res-card-items' bindtap="go_user_card_info" id='1'>
+          <text class='iconfont icon-chongzhi'></text>
+          <view>充值</view>
+        </view>
+        <view class='sub res-card-items' bindtap="go_card_log_bind">
+          <text class='iconfont icon-yue'></text>
+          <view>{{this_user_card_info.account_balance!=0?this_user_card_info.account_balance:'0.00'}}</view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 领取会员卡弹框 -->
+  <view class='floatBox res-rceive-box' style='display:none;'>
+    <view class='res-rceive-card mid'>
+      <view class='tc f18 mb20'>领取会员卡</view>
+      <view class='gridXb'>
+        <input class='res-rceive-inp' placeholder='请输入手机号'></input>
+      </view>
+      <view class='flex mt10 get-code-box'>
+        <view class='sub gridXb mr15'>
+          <input class='res-rceive-inp' placeholder='请输入验证码'></input>
+        </view>
+        <button class='get-code'>获取验证码</button>
+      </view>
+      <view class='rceive-card-btn'>
+        <button type='primary'>立即领取</button>
+      </view>
+    </view>
+    <view class='floatBox floatBoxBg' style='display:block'></view>
+  </view>
+
+  <!--横排列表-->
+  <view class='orderNew' wx:if="{{this_open_mini==1&&this_dish_info.dish_info.menu_style==0}}">
+    <form bindsubmit="openmini_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_diannei==1}}">
+      <button class='onBtn arrowR' form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary">
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_tomini_apptext||'点餐'}}</text>
+      </button>
+    </form>
+  </view>
+
+  <!-- 圆型入口 -->
+  <view class='new_entry' wx:if="{{this_dish_info.dish_info.menu_style==1}}">
+    <form bindsubmit="diancan_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_diannei==1}}">
+      <button form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary" class='btn h120w120b new_diannei'>店内</button>
+    </form>
+
+    <form bindsubmit="waimai_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_waimai==1}}">
+      <button form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary" class='btn h120w120b new_waimai'>外卖</button>
+    </form>
+
+    <form bindsubmit="yuding_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_yuding==1}}">
+      <button form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary" class='btn h120w120b new_yuding'>预定</button>
+    </form>
+
+    <form bindsubmit="paidui_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_paidui==1}}">
+      <button form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary" class='btn h120w120b new_paidui'>排队</button>
+    </form>
+
+    <form bindsubmit="ziqu_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_ziqu==1}}">
+      <button form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary" class='btn h120w120b new_ziqu'>自取</button>
+    </form>
+  </view>
+
+  <!-- 竖排入口 -->
+  <view class='orderNew' wx:if="{{this_open_mini==0&&this_dish_info.dish_info.menu_style==0}}">
+    <form bindsubmit="diancan_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_diannei==1}}">
+      <button class='onBtn arrowR' form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}" type="primary">
+        <text class='iconfont icon-diancan'></text>
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_diannei_text||'点餐'}}</text>
+        <text class='gridFourRadio'>极速达</text>
+      </button>
+    </form>
+    <form bindsubmit="waimai_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_waimai==1}}">
+      <button class='onBtn arrowR' type="primary" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+        <text class='iconfont icon-waimai'></text>
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_waimai_text||'外卖'}}</text>
+        <text class='gridFourRadio'>极速达</text>
+      </button>
+    </form>
+    <form bindsubmit="ziqu_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_ziqu==1}}">
+      <button class='onBtn arrowR' type="primary" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+        <text class='iconfont icon-ziqu'></text>
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_ziqu_text||'自提'}}</text>
+        <text class='gridFourRadio'>更方便</text>
+      </button>
+    </form>
+    <form bindsubmit="yuding_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_yuding==1}}">
+      <button class='onBtn arrowR' type="primary" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+        <text class='iconfont icon-yuding'></text>
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_yuding_text||'预订'}}</text>
+        <text class='gridFourRadio'>更便捷</text>
+      </button>
+    </form>
+    <form bindsubmit="paidui_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_paidui==1}}">
+      <button class='onBtn arrowR' type="primary" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+        <text class='iconfont icon-paiduiquhao'></text>
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_paidui_text||'排队'}}</text>
+        <text class='gridFourRadio'>省时间</text>
+      </button>
+    </form>
+    <form bindsubmit="webview_formsubmit" report-submit="true" wx:if="{{this_dish_info.dish_info.dish_is_webview_open==1}}">
+      <button class='onBtn arrowR' type="primary" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+        <text class='iconfont icon-lianjie'></text>
+        <text class='onTxt'>{{this_dish_info.dish_info.dish_webview_text||'360全景展示'}}</text>
+      </button>
+    </form>
+  </view>
+
+  <!-- <view class="mb10 tc flex order">
+<form bindsubmit="diancan_formsubmit" report-submit="true">
+  <button class="formid_btn" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+  <view class="sub">
+    <text class="order-item {{this_dish_info.dish_info.dish_is_diannei!=1?'false':''}}">{{this_dish_info.dish_info.dish_diannei_text||'点餐'}}</text>
+  </view>
+  </button>
+  </form>
+  <view class="sub" bindtap="dish_yuding_bind" id="{{this_dish_info.dish_info.dish_id}}">
+    <text class="order-item {{this_dish_info.dish_info.dish_is_yuding!=1?'false':''}}">{{this_dish_info.dish_info.dish_yuding_text||'预订'}}</text>
+  </view>
+  <form bindsubmit="paidui_formsubmit" report-submit="true">
+  <button class="formid_btn" form-type="submit" data-id="{{this_dish_info.dish_info.dish_id}}">
+  <view class="sub">
+    <text class="order-item {{this_dish_info.dish_info.dish_is_paidui!=1?'false':''}}">{{this_dish_info.dish_info.dish_paidui_text||'排队'}}</text>
+  </view>
+  </button>
+  </form>
+  <view class="sub" bindtap="dish_waimai_bind" id="{{this_dish_info.dish_info.dish_id}}">
+    <text class="order-item {{this_dish_info.dish_info.dish_is_waimai!=1?'false':''}}">{{this_dish_info.dish_info.dish_waimai_text||'外卖'}}</text>
+  </view>
+</view>  -->
+
+  <!--详细列表-->
+  <view class="detail f16 mt10">
+    <view class="list gridXb flex">
+      <text class="iconfont icon-shop f20 grey"></text>
+      <view class="sub ml10">{{this_dish_info.dish_info.dish_name}}</view>
+    </view>
+    <view class="list gridXb flex" bindtap="get_location_bind">
+      <text class="iconfont icon-location f20 grey"></text>
+      <view class="sub ml10">{{this_dish_info.dish_info.dish_address}}</view>
+    </view>
+    <view class="list gridXb flex" bindtap="call_phone_bind">
+      <text class="iconfont icon-phone f20 grey"></text>
+      <view class="sub ml10">电话：{{this_dish_info.dish_info.dish_con_mobile}}</view>
+    </view>
+    <view class="list gridXb flex">
+      <text class="iconfont icon-time f20 grey"></text>
+      <view class="sub ml10">营业时间：店内 {{this_dish_info.dish_info.dish_yingye_time_text_diannei}} 外卖 {{this_dish_info.dish_info.dish_yingye_time_text_waimai}} </view>
+    </view>
+  </view>
+  <!--商家环境-->
+  <view class="environment mb10" wx:if="{{this_dish_info.dish_info.dish_shijing}}">
+    <view class="title">商家环境</view>
+    <view class="pho-content">
+      <block wx:for="{{this_dish_info.dish_info.dish_shijing}}" wx:for-item="sj_idx">
+        <image class="mr10 mt10" src="{{sj_idx}}" bindtap="img_max_bind" data-url="{{sj_idx}}" mode="aspectFill"></image>
+      </block>
+    </view>
+  </view>
+  <!--商家资质-->
+  <view class="environment mb10" wx:if="{{this_dish_info.dish_info.dish_zizhi}}">
+    <view class="title">商家资质</view>
+    <view class="pho-content">
+      <block wx:for="{{this_dish_info.dish_info.dish_zizhi}}" wx:for-item="zz_idx">
+        <image class="mr10 mt10" src="{{zz_idx}}" bindtap="img_max_bind_zz" data-url="{{sj_idx}}" mode="aspectFill"></image>
+      </block>
+    </view>
+  </view>
+  <view class="go_home tc write" bindtap="go_dish_index_bind" data-url="/pages/restaurant/restaurant-home/index" wx:if="{{cPagelength!=1}}">
+    <text class="f18 iconfont icon-homefill"></text>
+  </view>
+  <view class="go_home new_go_home tc write" bindtap="go_dish_index_bind" data-url="/pages/user/user_index/index" wx:if="{{cPagelength==1}}">
+    <image src='/images/tabbar/DuoguanDish-template-orange/user_in.png' class='new_go_homeicon'></image>
+  </view>
+
+  <button class='btn s_btn' bindtap='share_card' data-Logo="{{this_dish_info.dish_info.dish_logo}}" data-Name="{{this_dish_info.dish_info.dish_name}}" data-Score="{{this_dish_info.dish_comment_fenshu}}" data-Price="{{this_dish_info.dish_info.dish_pingjunxiaofei}}"
+    data-Code="{{this_dish_info.dish_info.storeHome_qrcode}}" data-Labels="{{this_dish_info.dish_info.dish_fuwuList}}">
+    <text class='dzicon icon-Forward_fenxiang'></text>
+  </button>
+</block>
+
+
+<view class='share_bg' wx:if="{{showShareCard}}"></view>
+<view class='canvas fc' wx:if="{{showShareCard}}">
+  <canvas class='c_part' canvas-id="shareCard"></canvas>
+  <view class='c_bottom'>
+    <block wx:for="{{shareArray}}">
+      <view class='c_item' id="{{index}}" bindtap='doSomething'>
+        <button class="btn c_btn" style="background-color:{{item.bgcolor}}" open-type="{{index==2?'share':''}}">
+          <text class="dzicon {{item.font}}"></text>
+        </button>
+        <text class='c666 f26'>{{item.content}}</text>
+      </view>
+    </block>
+  </view>
+  <text class='c-cancel dzicon icon-zhuanyebaniconkuozhan_Close' bindtap='unshowShareCard'></text>
+</view>

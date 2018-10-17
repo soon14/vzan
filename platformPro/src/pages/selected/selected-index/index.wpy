@@ -1,0 +1,202 @@
+<style lang="less">
+.category-list {
+  padding: 0 30rpx;
+  .list {
+    width: 600rpx;
+    height: 100%;
+  }
+}
+.aaa {
+  display: flex;
+}
+</style>
+<template leng="wxml">
+  <view>
+    <view class="category-list f fc h100 bg-w">
+      <scroll-view class="list" scroll-x>
+        <view class='f fc h-full'>
+          <repeat for="{{categoryList}}" key="index">
+            <view class="mr40 {{categoryNum==index?'t-b c333':'c666'}}" style="white-space:nowrap;" @tap="clickCategory({{index}})">{{item.Name}}</view>
+          </repeat>
+        </view>
+      </scroll-view>
+      <view class="ml20 h-full f fc fc-h" style="width:90rpx;" @tap="jumpSearch">
+        <text class="dzicon icon-shaixuan f50 c999"></text>
+      </view>
+    </view>
+    <comGoods :isEmpty.sync="showEmptyContent" :comGoodsList.sync="goodsList" onClickGoodsItem="jumpGoodsDetail" />
+    <comLoading :showBottom.sync="showBottom" wx:if="{{isShowBottom}}" />
+    <comWait :isShow.sync="showWait" />
+    <comIllegal :isShowIllegal.sync="isShowIllegal"/>
+  </view>
+</template>
+<script> 
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import com_wait from "@/components/com_wait";
+import com_goods from "@/components/com_goods"; 
+import com_loading from "@/components/com_loading";
+import com_illegal from "@/components/com_illegal";
+export default class selectedIndex extends wepy.page {
+  config = { 
+    navigationBarTitleText: "优选商城",
+    enablePullDownRefresh: true
+  };
+  components = {
+    comGoods: com_goods,
+    comLoading: com_loading,
+    comWait: com_wait,
+    comIllegal: com_illegal
+  };
+  data = {
+    level: 1, //判断是开启一级还是二级分类
+    categoryParam: {
+      isFirstType: 0, //1:大类,2:小类,其他:选单独大类时填写
+      parentId: ""
+    },
+    categoryList: [],
+    categoryNum: 0,
+    goodsParam: {
+      isFirstType: "", //默认1代表查找大类下的商品,2代表查找小类下商品
+      categoryId: "", //需查询的店铺类别id,默认全部
+      goodsName: "", //搜索的关键字
+      pageIndex: 1,
+      pageSize: 10
+    },
+    resetParam: {
+      isFirstType: "",
+      categoryId: "",
+      goodsName: "",
+      pageIndex: 1,
+      pageSize: 10
+    },
+    goodsList: [],
+    isOnReach: false,
+    isLoading: true,
+    showBottom: true,
+    isShowBottom: false,
+    showWait: true,
+    showEmptyContent: false,
+    isShowIllegal: false
+  };
+  methods = {
+    clickCategory(i) {
+      this.categoryNum = i;
+      this.goodsParam.categoryId = this.categoryList[i].Id;
+      this.goodsParam.pageIndex = 1;
+      this.goodsList = [];
+      this.GetStoreGoods();
+    },
+    jumpSearch() {
+      tools.goNewPage("../goods-search/index");
+    }
+  };
+  jumpGoodsDetail(pid) {
+    tools.goNewPage("../goods-details/index?pid=" + pid);
+  }
+  onShow() {
+    this.getStoreGoodsC()
+  }
+
+  getStoreGoodsC() {
+    this.categoryNum = 0;
+    this.isOnReach = false;
+    this.goodsList = [];
+    tools.extend(this.goodsParam, this.resetParam);
+    let app = wepy.$instance.globalData;
+    if (app.category) {
+      this.goodsParam.categoryId = app.category.Id || "";
+      this.goodsParam.isFirstType = app.category.isFirstType || 1;
+      this.goodsParam.goodsName = app.category.goodsName || "";
+      this.categoryList.splice(0, this.categoryList.length, app.category);
+      this.GetStoreGoods();
+    } else {
+      this.init();
+    }
+  }
+
+  onLoad() {
+    tools.checkVaildCard(this)
+  }
+
+  //下拉刷新
+  onPullDownRefresh() {
+    tools.extend(this.goodsParam, this.resetParam);
+    this.categoryNum = 0;
+    this.isOnReach = false;
+    this.init();
+    wx.stopPullDownRefresh();
+  }
+  //上拉触底
+  onReachBottom() {
+    this.goodsParam.pageIndex++;
+    this.isOnReach = true;
+    this.isLoading ? this.GetStoreGoods() : "";
+  }
+  //初始化
+  async init() {
+    wx.showNavigationBarLoading();
+    this.level = await core.GetStoreCategoryLevel();
+    if (this.level == 1) {
+      this.categoryParam.isFirstType = 2;
+      this.goodsParam.isFirstType = 2;
+    } else if (this.level == 2) {
+      this.categoryParam.isFirstType = 1;
+      this.goodsParam.isFirstType = 1;
+    }
+    this.GetCategoryList();
+    this.GetStoreGoods();
+    wx.hideNavigationBarLoading();
+  }
+  //获取分类列表
+  async GetCategoryList() {
+    let data = await core.GetStoreCategory(this.categoryParam);
+    tools.handleResult(
+      data,
+      res => {
+        let baseArr = [
+          {
+            Name: "全部",
+            Id: ""
+          }
+        ];
+        this.categoryList = baseArr.concat(res.list);
+        this.$apply();
+      },
+      err => {
+        tools.showModalCancle(err.Msg);
+      }
+    );
+  }
+  //获取分类店铺下的商品
+  async GetStoreGoods() {
+    this.showWait = true;
+    let data = await core.GetStoreGoods(this.goodsParam);
+    tools.handleResult(
+      data,
+      res => {
+        let pageIndex = this.goodsParam.pageIndex;
+        let app = wepy.$instance.globalData;
+        res.list.length == 0 && pageIndex > 1
+          ? ((this.isShowBottom = true),
+            (this.isLoading = false),
+            (app.category = ""))
+          : ((this.isShowBottom = false), (this.isLoading = true));
+        app.category = "";
+        res.list.forEach(goods => {
+          goods.Price = goods.Price.toFixed(2);
+        });
+        this.goodsList = this.isOnReach
+          ? this.goodsList.concat(res.list)
+          : res.list;
+        this.showWait = false;
+        this.$apply();
+        console.log("加载列表完成");
+      },
+      err => {
+        tools.showModalCancle(err.Msg);
+      }
+    );
+  }
+}
+</script>

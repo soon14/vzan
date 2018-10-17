@@ -1,0 +1,389 @@
+<style lang="less">
+    page {
+        background: #fff;
+    }
+    .sellSecond {
+        width: 100%;
+        height: 100rpx;
+        border-bottom: 1px solid #f7f7f7;
+        line-height: 100rpx;
+        color: #333;
+        padding-left: 20rpx;
+        font-size: 30rpx;
+        >image {
+            width: 64rpx;
+            height: 64rpx;
+            border-radius: 50%;
+        }
+    }
+    .sell {
+        width: 100%;
+        .sell-btn {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            font-size: 36rpx;
+            text-align: center;
+            color: #fff;
+            height: 100rpx;
+            line-height: 100rpx;
+        }
+        .bgcc {
+            background: #ccc;
+        }
+    }
+    .sell-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        opacity: 0.6;
+        display: block;
+        z-index: 4;
+        background-color: #000;
+    }
+    .sell-modal {
+        width: 600rpx;
+        height: 476rpx;
+        position: fixed;
+        top: 25%;
+        left: 50%;
+        margin-left: -300rpx;
+        background: #fff;
+        z-index: 5;
+        border-radius: 8rpx;
+        .sell-title {
+            width: 100%;
+            font-size: 36rpx;
+            height: 100rpx;
+            line-height: 100rpx;
+            border-bottom: 1px solid #f3f3f3;
+            text-align: center;
+        }
+        .sell-contxt {
+            font-size: 32rpx;
+            color: #666;
+            margin-top: 50rpx;
+        }
+        .sell-input {
+            width: 540rpx;
+            height: 100rpx;
+            line-height: 100rpx;
+            background-color: #f3f3f3;
+            margin: 38rpx 0 55rpx 0;
+            border-radius: 7rpx;
+            padding-left: 29rpx;
+        }
+        .sell-pbtn {
+            width: 100%;
+            font-size: 34rpx;
+            height: 100rpx;
+            line-height: 100rpx;
+            border-top: 1px solid #f3f3f3;
+            color: #666;
+            text {
+                width: 50%;
+                text-align: center;
+            }
+            text:last-child {
+                border-left: 1px solid #f3f3f3;
+            }
+        }
+    }
+    .sell-tip {
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        position: fixed;
+        top: 0;
+        left: 0;
+        .s-mask {
+            width: 600rpx;
+            height: 550rpx;
+            background: #fff;
+            .icon-icon_lianjieshixiao {
+                font-size: 250rpx;
+                color: #e4e4e4;
+            }
+            .s-btn {
+                width: 450rpx;
+                height: 88rpx;
+                line-height: 88rpx;
+                text-align: center;
+                font-size: 36rpx;
+                margin-top: 50rpx;
+            }
+        }
+    }
+</style>
+<template>
+    <view class="{{currentSkin}}">
+        <view class='sellSecond f fc' wx:if='{{saleId}}'>
+            <image src='{{vm.ParentSalesMan.headerImg}}' />
+            <text class='ml20'>{{vm.ParentSalesMan.nickName}}<text class='skin_txt'>邀请</text>您成为分销员</text>
+        </view>
+        <view class='sell'>
+            <view class='f36 mt30 pw20'>{{vm.RecruitPlan.title}}</view>
+            <repeat>
+                <comRichIn :currentCom="vm" class='mt20'></comRichIn>
+            </repeat>
+            <view style="height:100rpx;"></view>
+            <!-- 注册 -->
+            <button wx:if="{{userInfo.newUser}}" open-type='getUserInfo' class="sell-btn {{vm.showBtn?'skin_bg':'bgcc'}}" @getuserinfo="getUser">{{vm.text}}</button>
+            <!-- 分享 -->
+            <button wx:if="{{showBtn==false&&userInfo.newUser==false}}" open-type='share' class="sell-btn {{vm.showBtn?'skin_bg':'bgcc'}}">{{vm.text}}</button>
+            <view wx:if="{{showBtn&&userInfo.newUser==false}}" class="sell-btn {{vm.showBtn?'skin_bg':'bgcc'}}" @tap="getApply({{vm.showBtn}})">{{vm.text}}</view>
+        </view>
+        <view wx:if="{{showMask}}">
+            <view class='sell-bg'></view>
+            <view class='sell-modal f fv fc'>
+                <view class='sell-title'>绑定手机号码</view>
+                <view class='sell-contxt'>申请成为分销员，需要绑定您的手机号</view>
+                <input type='number' class='sell-input' placeholder='请输入您的手机号码' placeholder-class='f26 c999' value='' @input="getInput" maxlength="11" />
+                <view class='sell-pbtn f'>
+                    <text @tap="cancle">取消</text>
+                    <text @tap="goSure">确定</text>
+                </view>
+            </view>
+        </view>
+        <view class='sell-tip f fc fc-h' wx:if="{{showTipMask}}">
+            <view class='s-mask f fv fc'>
+                <text class='dzicon icon-icon_lianjieshixiao' />
+                <text>该邀请链接失效</text>
+                <text>您也可以直接去申请哦</text>
+                <text class='s-btn skin_bg' @tap='goSell'>马上申请</text>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import com_richt_in from "../../components/com_richtxt";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js"
+    import {
+        wxParse
+    } from '../../lib/wxParse/wxParse';
+    import _get from "../../lib/lodash.get.js";
+    export default class sell extends wepy.page {
+        config = {
+            enablePullDownRefresh: true,
+            navigationBarTitleText: "分销员招募计划",
+        }
+        components = {
+            comRichIn: com_richt_in,
+        };
+        data = {
+            vm: {},
+            showBtn: true,
+            showMask: false,
+            currentSkin: {},
+            userInfo: {},
+            showTipMask: false,
+            saleId: '',
+        }
+        methods = {
+            async getUser(e) {
+                let _u = e.detail
+                if (_u.errMsg == 'getUserInfo:fail auth deny') {
+                    return;
+                }
+                let code = await core.login();
+                let vm = {
+                    code,
+                    phone: 0,
+                    iv: _u.iv,
+                    data: _u.encryptedData,
+                    sign: _u.signature,
+                }
+                this.userInfo = await core.loginUserInfo(vm)
+                this.$apply()
+            },
+            wxParseImgTap(e) {
+                let src = e.currentTarget.dataset.src
+                tools.preViewShow(src)
+            },
+            getInput(e) {
+                this.phone = e.detail.value
+            },
+            /**
+             * @method getApply 申请成为分销员
+             */
+            getApply() {
+                let _g = this.vm
+                if (_g.IsSecondSale == false && this.saleId != '') {
+                    this.showTipMask = true
+                    this.$apply()
+                    return
+                }
+                if (_g.SalesMan && _g.SalesMan.state == 0) {
+                    return;
+                }
+                this.showMask = true
+                this.$apply()
+            },
+            goSell() {
+                tools.goRedirecto('/pages/sellCenter/sell')
+            },
+            cancle() {
+                this.showMask = false
+            },
+            async goSure() {
+                let _g = await core.postApply(this.phone, this.saleId)
+                if (_g.isok) {
+                    this.showMask = false
+                    this.$apply()
+                    await this.info()
+                    if (this.vm.SalesManManager.is_verify_on < 2) {
+                        tools.showModal('申请提交后，商家将会进行审核，审核通过后即可成为本店的分销员', false)
+                    }
+                } else {
+                    tools.showModal(_g.msg, false)
+                }
+            },
+        }
+        async onLoad(options) {
+            let saleId = ''
+            let app = wepy.$instance
+            let _sinfo = false
+            let sceneShow = false
+            let scene = _get(options, "scene", '')
+            let second = Boolean(_get(options, 'second', false))
+            await tools.setPageSkin(this);
+            if (scene) {
+                let _array = [];
+                _array = decodeURIComponent(scene).split("_");
+                saleId = _array[0]
+                sceneShow = true
+                _sinfo = false
+            } else {
+                _sinfo = second
+                sceneShow = false
+                saleId = _get(options, "saleId", '')
+            }
+            this.info(_sinfo, saleId, sceneShow)
+            this.saleId = saleId
+            this._sinfo = _sinfo
+            this.sceneShow = sceneShow
+            this.$apply()
+        }
+        /**
+         * @param {secondSate是否开启二级分销}
+         * @param {allow_recruit是否开启分销 0关闭 1开启}
+         */
+        async info(sinfo, saleId, sceneShow) {
+            let app = wepy.$instance
+            let vipInfo = _get(app.globalData, 'vipInfo', '')
+            if (vipInfo == '') {
+                vipInfo = await core.getVipInfo()
+            }
+            let _g = await core.getMiniSale(saleId)
+            if (_g.isok) {
+                let vm = _g.obj
+                let state = _get(vm.SalesMan, "state", '')
+                vm.vipInfo = vipInfo
+                vm.content_fmt = vm.RecruitPlan.description.replace(/[<]br[/][>]/g, '<div style="height:20px"></div>').replace(/&nbsp;/g, '<span style="margin-left:16rpx;"></span>').replace(/[<][/]p[>][<]p[>]/g, "<div></div>");
+                vm.content_fmt = wxParse("description", "html", vm.RecruitPlan.description || "", this, 5);
+                app.globalData.secondSate = vm.secondeSaleState == 1 ? true : false;
+                if (sinfo) {
+                    this.shareOth(vm, app)
+                    return;
+                }
+                if (sceneShow && state == '' && state != 2) {
+                    this.sceneSelf(vm, app)
+                    return;
+                }
+                this.directSale(vm, app, state)
+            } else {
+                await tools.showModal(_g.msg, false)
+                tools.goBack(1)
+            }
+        }
+        /**
+         * @method shareOth 分销商邀请
+         * @method sceneSelf 扫分销码进入申请
+         * @method directSale 直接点击进入分销或者由转发进来
+         */
+        directSale(vm, app, state) {
+            if (vm.SalesMan == null) {
+                if (vm.SalesManManager.allow_recruit == 0) {
+                    this.showBtn = false
+                    wx.hideShareMenu()
+                }
+                vm.showBtn = true
+                vm.text = "成为分销员"
+            } else {
+                switch (state) {
+                    case -1:
+                        tools.goRedirecto('/pages/sellCenter/sellIndivi')
+                        break;
+                    case 0:
+                        vm.text = "待审核"
+                        vm.showBtn = false
+                        break;
+                    case 1:
+                        vm.text = "待审核"
+                        vm.showBtn = false
+                        break;
+                    case 2:
+                        tools.goRedirecto('/pages/sellCenter/sellIndivi')
+                        break;
+                }
+            }
+            this.vm = vm
+            this.userInfo = app.globalData.userInfo
+            this.$apply()
+        }
+        shareOth(vm, app) {
+            vm.text = "邀请分销商"
+            vm.showBtn = true
+            if (vm.SalesManManager.allow_recruit == 0) {
+                this.showBtn = false
+                wx.hideShareMenu()
+            } else {
+                this.showBtn = false
+                wx.showShareMenu()
+            }
+            this.vm = vm
+            this.userInfo = app.globalData.userInfo
+            this.$apply()
+        }
+        sceneSelf(vm, app) {
+            vm.text = "成为分销员"
+            vm.showBtn = true
+            if (vm.SalesManManager.allow_recruit == 0) {
+                this.showBtn = false
+                wx.hideShareMenu()
+            } else {
+                this.showBtn = true
+                wx.hideShareMenu()
+            }
+            this.vm = vm
+            this.userInfo = app.globalData.userInfo
+            this.$apply()
+        }
+        async onPullDownRefresh() {
+            wx.showNavigationBarLoading()
+            await this.info(this._sinfo, this.saleId, this.sceneShow)
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+        onShareAppMessage() {
+            let saleId = wepy.$instance.globalData.saleId
+            return {
+                title: '',
+                path: "/pages/sellCenter/sell?saleId=" + saleId,
+                imageUrl: '',
+                success: function(res) {
+                    tools.loading("转发成功", 'success');
+                }
+            };
+        }
+    }
+</script>

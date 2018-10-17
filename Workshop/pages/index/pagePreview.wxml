@@ -1,0 +1,109 @@
+<!--pages/index/pagePreview.wxml-->
+<import src="/modules/wxParse/wxParse.wxml" />
+<block wx:for="{{vm.content.coms}}">
+  <!--轮播图-->
+  <block wx:if="{{item.type=='slider'&&item.show}}">
+    <swiper indicator-dots="{{true}}" autoplay="{{false}}" interval="{{true}}" class='com-swiper'>
+      <block wx:for="{{item.items}}" wx:for-item="slideItem">
+        <swiper-item wx:if="{{slideItem.src!=''}}">
+          <image src="{{slideItem.src}}" class="slide-image" mode='aspectFill' />
+        </swiper-item>
+      </block>
+    </swiper>
+  </block>
+  <!--/轮播图-->
+  <!--电话-->
+  <block wx:elif="{{item.type=='tel'}}">
+    <image src='/img/tel.png' class='ico_tel' bindtap='makecall' data-phone="{{item.content}}"></image>
+  </block>
+  <!--/电话-->
+  <!--图片-->
+  <block wx:elif="{{item.type=='img'&&item.src!=''}}">
+    <view class='c-page-img'>
+      <image src='{{item.src}}' mode='widthFix'></image>
+    </view>
+
+  </block>
+  <!--/图片-->
+  <!--文本-->
+  <block wx:elif="{{item.type=='txt'&&item.content!=''}}">
+    <view class='c-page-txt'>
+      <template is="wxParse" data="{{wxParseData:item.content_fmt.nodes}}" />
+    </view>
+  </block>
+  <!--/文本-->
+
+  <!--视频-->
+  <block wx:elif="{{item.type=='video'&&item.src!=''}}">
+    <view class='c-page-video rel'>
+      <video src='{{item.src}}' autoplay="{{item.autoplay}}" wx:if="{{item.autoplay}}"></video>
+      <image src='{{item.poster}}' mode='widthFix' class='w-full' wx:if="{{!item.autoplay}}"></image>
+      <view class='btn-play ic ic-play' data-com-index="{{index}}" wx:if="{{!item.autoplay}}" bindtap='playVideo'></view>
+    </view>
+  </block>
+  <!--/视频-->
+
+  <!--表单-->
+  <block wx:elif="{{item.type=='form'&&item.items.length>0}}">
+    <form bindsubmit='submitForm' data-index='{{index}}'>
+      <view class='c-page-form'>
+        <view class='c-page-form-title'>
+          {{item.title}}
+        </view>
+        <view class='c-page-form-item' wx:for="{{item.items}}" wx:for-item="formItem" wx:for-index="formIndex">
+          <view class='c-page-form-item-name'>{{formItem.name}}</view>
+          <view class='bg-w'>
+            <block wx:if="{{formItem.type=='text'}}">
+              <input type='text' name="{{formItem.name}}" class='formcontrol'></input>
+            </block>
+            <block wx:elif="{{formItem.type=='number'}}">
+              <input type='number' name="{{formItem.name}}" class='formcontrol'></input>
+            </block>
+            <block wx:elif="{{formItem.type=='date'}}">
+              <picker mode="date" bindchange="bindDateChange" data-com-index='{{index}}' data-item-index="{{formIndex}}">
+                <view class="formcontrol">
+                  <block wx:if="{{formItem.value!=''}}">当前选择：{{formItem.value}}</block>
+                </view>
+              </picker>
+              <input type='text' name="{{formItem.name}}" hidden='hidden' value='{{formItem.value}}'></input>
+            </block>
+            <block wx:elif="{{formItem.type=='radio'}}">
+              <picker range='{{formItem.items}}' range-key="name" bindchange="bindRadioChange" data-com-index='{{index}}' data-item-index="{{formIndex}}">
+                <view class="formcontrol">
+                  <block wx:if="{{formItem.value!=''}}">当前选择：{{formItem.value}}</block>
+                </view>
+              </picker>
+              <input type='text' name="{{formItem.name}}" hidden='hidden' value='{{formItem.value}}'></input>
+            </block>
+          </view>
+        </view>
+      </view>
+      <view class='p20'>
+        <button type='primary' form-type="submit" disabled='{{formSubmit}}'>提交</button>
+      </view>
+    </form>
+  </block>
+  <!--/表单-->
+  <view wx:if="{{user&&vm&&user.uid==vm.uid}}">
+
+    <view class='action-btns f fc' wx:if="{{user.uid==vm.uid}}">
+      <view class='f1'>
+        <image src='/img/btn_savetemp.png' mode='aspectFill' bindtap='save' data-state='0'></image>
+      </view>
+      <view class='f1'>
+        <image src='/img/btn_publish.png' mode='aspectFill' bindtap='save' data-state='1'></image>
+      </view>
+    </view>
+    <view class='action-btns f fc' wx:elif="{{frompage=='temp'}}">
+      <view class='f1' bindtap='editAgain'>
+        <image src='/img/btn_editagain.png' mode='aspectFill' data-state='0'></image>
+      </view>
+      <view class='f1'>
+        <image src='/img/btn_publish.png' mode='aspectFill' bindtap='save' data-state='1'></image>
+      </view>
+    </view>
+  </view>
+
+
+
+</block>

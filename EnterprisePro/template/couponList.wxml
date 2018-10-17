@@ -1,0 +1,74 @@
+<template name="couponList">
+  <view class='coupon-list'>
+    <view class='coupon-item {{vm.listname=="pickmycoupon"|| vm.listname=="mycoupon"?(item.CanUse?"":"disable"):(vm.listname=="storecoupon"?(item.CanGet?"":"disable"):"")}}' wx:for="{{vm.list}}">
+
+      <view class=' d-flex d-flex-center'>
+        <view class='coupon-left d-flex d-flex-center jusc'>
+          <view class='d-flex cfff' wx:if="{{item.CouponWay==0}}">
+            <view class='f30 ptop24'>￥</view>
+            <view class='f70'>{{item.Money_fmt}}</view>
+          </view>
+          <view wx:else class='d-flex cfff'>
+            <view class='f70'>{{item.Money_fmt}}</view>
+            <view class='f24' style='align-self:flex-end;'>折</view>
+          </view>
+        </view>
+        <view class='coupon-right d-flex d-flex-center'>
+          <view class='d-flex d-flex-center flex1'>
+            <view class='flex1'>
+              <view class='c333 t30 coupon-name line2 fb'>{{item.CouponName}}</view>
+              <view class='f26 c666 mtop10'>
+                <block wx:if="{{item.LimitMoney>0}}">满{{item.LimitMoney/100}}元可用</block>
+                <block wx:if="{{item.LimitMoney==0}}">不限金额</block>
+              </view>
+              <view class='f22 c666 ' wx:if="{{vm.listname=='pickmycoupon'||vm.listname=='mycoupon'}}">
+                {{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}
+              </view>
+              <view wx:else class='f22 c666 '>
+                <block wx:if="{{item.ValType==1}}">领券次日开始{{item.ValDay}}天内有效</block>
+                <block wx:elif="{{item.ValType==2}}">领券当日开始{{item.ValDay}}天内有效</block>
+                <block wx:elif="{{item.ValType==0}}">
+                  {{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}
+                </block>
+              </view>
+            </view>
+            <view>
+              <!--领券中心-->
+              <block wx:if="{{vm.listname=='storecoupon'}}">
+                <view class='btn-getcoupon marri24' bindtap='getCoupon' data-id='{{item.Id}}' wx:if="{{item.CanGet}}">领取</view>
+                <view class='btn-getcoupon marri24 disable' wx:else>已领取</view>
+              </block>
+              <!--我的优惠券-->
+              <block wx:elif="{{vm.listname=='mycoupon'}}">
+
+                <block wx:if="{{item.CanUse}}">
+                  <view class='btn-getcoupon marri24' bindtap='useCoupon' data-id='{{item.Id}}' wx:if="{{item.State==0}}">去使用</view>
+                </block>
+                <block wx:else>
+                  <view class='btn-getcoupon disable marri24'>
+                    <block>{{item.State==1?"已使用":"不可用"}}</block>
+                  </view>
+                </block>
+
+              </block>
+              <!--选择优惠券-->
+              <block wx:elif="{{vm.listname=='pickmycoupon'}}">
+                <block wx:if="{{item.CanUse}}">
+                  <view class='btn-getcoupon marri24' bindtap='useMyCoupon' data-index='{{index}}' data-id='{{item.Id}}' wx:if="{{item.State==0}}">使用</view>
+                </block>
+                <block wx:else>
+                  <view class='btn-getcoupon disable marri24'>不可用</view>
+                </block>
+              </block>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class='tc f28 loading' wx:if="{{vm.ispost}}">加载中...</view>
+    <view class='tc f28 loading' wx:if="{{vm.loadall&&vm.list.length>=0}}">已加载全部优惠券</view>
+    <view class='tc' wx:if="{{vm.loadall&&vm.list.length==0&&vm.listname!='storecoupon'}}">
+          <navigator open-type='navigate' hover-class='none' class='link' url='storecouponlist'>没有券，去领取</navigator>
+        </view>
+  </view>
+</template>

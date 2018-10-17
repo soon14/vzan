@@ -1,0 +1,245 @@
+<style lang="less">
+  .good {
+    width: 100%;
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      background: #fff;
+      width: 100%;
+      height: 100rpx;
+      border-bottom: 1px solid #eee;
+      font-size: 34rpx;
+      >view {
+        width: 25%;
+        text-align: center;
+      }
+    }
+    .logo {
+      position: fixed;
+      right: 30rpx;
+      bottom: 10%;
+      .show-ht {
+        visibility: visible;
+        height: 274rpx;
+        background: #eee;
+        transition: all 0.2s ease-in-out;
+      }
+      .hidden-ht {
+        visibility: hidden;
+        height: 0;
+        transition: all 0.4s ease-in-out;
+      }
+      .show-op {
+        opacity: 1;
+        visibility: visible;
+        transition: all 0.5s ease-in-out;
+      }
+      .hidden-op {
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease-in-out;
+      }
+      .top {
+        font-size: 24rpx;
+        color: #666;
+        width: 100rpx;
+        border-radius: 50rpx 49rpx 49rpx 49rpx;
+        position: absolute;
+        right: 0;
+        bottom: 0rpx;
+      }
+      .wrap {
+        width: 100rpx;
+        height: 100rpx;
+        background: rgb(204, 204, 204);
+        border-radius: 50%;
+        text-align: center;
+        line-height: 100rpx;
+        position: absolute;
+        bottom: -10rpx;
+        right: 0;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class='good'>
+    <!-- 头部 -->
+    <view class='header f fc'>
+      <view class="t-b {{selHeader==0?'c333':'c999'}}" @tap="resetSort(0)">综合</view>
+      <view class="t-b {{selHeader==1?'c333':'c999'}}" @tap="saleSort(1)">销量</view>
+      <view class="t-b f fc fc-h" @tap='priceSort'>
+        <text class="{{selHeader==2||selHeader==3?'c333':'c999'}}">价格</text>
+        <view class='f fv f18' style='color:#D0D0D0; margin:5rpx 0 0 10rpx'>
+          <text class="dzicon icon-xiala1-copy {{selHeader==2?'c333':'c999'}}" />
+          <text class="dzicon icon-xiala1 {{selHeader==3?'c333':'c999'}}" />
+        </view>
+      </view>
+      <view class="t-b  {{selHeader==4?'c333':'c999'}}" @tap='goFenlei'>筛选</view>
+    </view>
+    <view style='height:100rpx' />
+    <!-- 列表 -->
+    <repeat>
+      <comGoodLst :vm.sync="goodsLst" :false.sync='false' :true.sync="true" />
+    </repeat>
+    <!-- 悬浮图标 -->
+    <view class='logo'>
+      <view class='rel'>
+        <view class="top  {{showLogo?'show-ht':'hidden-ht'}}">
+          <view class="{{showLogo?'show-op':'hidden-op'}} f f1 fv fc">
+            <text style="margin-top:40rpx" @tap.stop="goOrderLst">订单</text>
+            <text style="margin-top:40rpx" @tap.stop="goShop">购物车</text>
+          </view>
+        </view>
+        <view class="wrap" @tap='showLogo'>
+          <text class='dzicon icon-shangpin-xuanzhong f50 cfff' />
+        </view>
+      </view>
+    </view>
+    <repeat>
+      <comMess :vm.sync="chatLst"  wx:if="{{chatLst.showMask}}" @goChat.user="goChat" />
+    </repeat>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js";
+  import com_goodlst from "@/components/com_goodLst";
+  import com_message from "@/components/com_message";
+  import {
+    core,
+    tools
+  } from "@/lib/core.js"
+  export default class goods extends wepy.page {
+    config = {
+      enablePullDownRefresh: true,
+      usingComponents: {
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+        "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index",
+      }
+      // 引入min组件
+    };
+    //第二步：声明组件
+    components = {
+      comMess: com_message,
+      comGoodLst: com_goodlst
+    };
+    data = {
+      selHeader: 0, //头部导航栏选中
+      priceShow: false, //价格排序切换
+      showLogo: false,
+      goodsLst: {
+        ids: "",
+        list: [],
+        search: "",
+        pricesort: "",
+        isFirstType: "",
+        saleCountSort: "",
+        pageindex: 1,
+        pagesize: 10,
+        ispost: false,
+        loadall: false,
+        noGoodlst: false,
+      }
+    };
+    methods = {
+      goChat(item) {
+        let vm = {
+          id: item.fuserId,
+          name: item.fnickName,
+          img: item.fheadImg,
+        }
+        core.gochat(vm)
+      },
+      //订单列表
+      goOrderLst() {
+        tools.goNewPage("./goodsLst")
+      },
+      //购物车
+      goShop() {
+        tools.goNewPage("./goodShop")
+      },
+      // 图标显示
+      showLogo() {
+        this.showLogo = !this.showLogo
+        this.$apply()
+      },
+      // 初始排序
+      resetSort(index) {
+        let goodsid = _get(wepy.$instance.globalData, 'goodsid', '')
+        this.selHeader = index
+        this.goodsLst = tools.resetArray(this.goodsLst)
+        core.GetGoodsList(this.goodsLst, this)
+        this.$apply()
+        wepy.$instance.globalData.goodsid = ''
+      },
+      // 销量排序
+      saleSort(index) {
+        let goodsid = _get(wepy.$instance.globalData, 'goodsid', '')
+        this.selHeader = index
+        this.goodsLst = tools.resetArray(this.goodsLst)
+        this.goodsLst.ids = goodsid
+        this.goodsLst.saleCountSort = 'desc'
+        core.GetGoodsList(this.goodsLst, this)
+        this.$apply()
+      },
+      // 价格排序
+      priceSort(type, index, e) {
+        let goodsid = _get(wepy.$instance.globalData, 'goodsid', '')
+        this.priceShow = !this.priceShow
+        this.goodsLst = tools.resetArray(this.goodsLst)
+        if (this.priceShow) {
+          this.selHeader = 2
+          this.goodsLst.pricesort = 'desc'
+        } else {
+          this.selHeader = 3
+          this.goodsLst.pricesort = 'asc'
+        }
+        this.goodsLst.ids = goodsid
+        core.GetGoodsList(this.goodsLst, this)
+        this.$apply()
+      },
+      //筛选
+      goFenlei() {
+        tools.goNewPage('./goodsFenlei')
+        this.selHeader = 4
+        this.$apply()
+      }
+    }
+    onLoad() {
+      core.GetGoodsList(this.goodsLst, this)
+    }
+    onShow() {
+      let app = wepy.$instance
+      let goodsid = _get(app.globalData, 'goodsid', '')
+      let goodsMore = _get(app.globalData, 'goodsMore', "")
+      if (goodsid) {
+        goodsid = goodsid == -1 ? "" : goodsid;
+        app.globalData.goodsid = goodsid
+        this.goodsLst = tools.resetArray(this.goodsLst)
+        this.goodsLst.ids = goodsid
+        this.goodsLst.isFirstType = goodsMore ? 0 : ''
+        core.GetGoodsList(this.goodsLst, this)
+      }
+      tools.setPageSkin("#000000", "#ffffff");
+      tools.setPageTitle("产品")
+    }
+    onReachBottom() {
+      core.GetGoodsList(this.goodsLst, this)
+    }
+    async onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      this.goodsLst = tools.resetArray(this.goodsLst)
+      await core.GetGoodsList(this.goodsLst, this)
+      wx.hideNavigationBarLoading();
+      wx.stopPullDownRefresh();
+      this.selHeader = 0
+      this.$apply()
+    }
+  }
+</script>

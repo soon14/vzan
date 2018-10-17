@@ -1,0 +1,175 @@
+<style lang="less">
+    .phcolor {
+        color: #999;
+    }
+    .search {
+        padding: 0 30rpx;
+        .content {
+            width: 100%;
+            height: 60rpx;
+            line-height: 60rpx;
+            padding: 0 20rpx;
+            background: #eee;
+            border-radius: 30rpx;
+        }
+    }
+    .tabList {
+        .active {
+            color: #333;
+            font-weight: bold;
+        }
+    }
+    .category-wrap {
+        .category-list {
+            width: 160rpx;
+            height: 91.5vh;
+            background-color: #fff;
+            .item {
+                width: inherit;
+                height: 125rpx;
+                line-height: 125rpx;
+            }
+            .active {
+                background-color: #f7f7f7;
+            }
+        }
+        .type-wrap {
+            width: 590rpx;
+            height: 91.5vh;
+            padding: 0 30rpx;
+            .single-type {
+                .type-list {
+                    width: 100%;
+                    .item {
+                        width: 176rpx;
+                        height: 214rpx;
+                        &>image {
+                            width: 116rpx;
+                            height: 120rpx;
+                            background-color: #eee;
+                        }
+                    }
+                    .empty-content{
+                        height: 200rpx;
+                        line-height: 200rpx;
+                        background-color:#f7f7f7;
+                    }
+                }
+            }
+        }
+        .first-type {
+            width: 100%;
+            padding: 0;
+        }
+    }
+</style>
+<template leng="wxml">
+    <view>
+        <view>
+            <!-- 搜索 -->
+            <view class="search f fc fj w-100 h100 bg-w">
+                <input value="{{infoLabel.keyMsg}}" placeholder-class="phcolor" placeholder="请输入关键字" focus="true" class="content f26 c666" @confirm="search" />
+            </view>
+        </view>
+        <view class="category-wrap f">
+            <scroll-view class="category-list" scroll-y="true" wx:if="{{categoryLevel===2}}">
+                <repeat for="{{firstLevelList}}" key="index">
+                    <view class="item tc {{firstLevelNum==index?'active':''}}" @tap="clickCategory({{index}})">{{item.Name}}</view>
+                </repeat>
+            </scroll-view>
+            <scroll-view class="type-wrap {{categoryLevel===1?'first-type':''}}" scroll-y="true" bindscrolltolower="lower">
+                <view class="single-type">
+                    <view class="hl100 f fj f24" wx:if="{{categoryLevel===2}}">
+                        <view>{{firstLevelList[firstLevelNum].Name}}</view>
+                        <view class="c666 f fc" @tap="jumpSingleCategory()">
+                            <text>全部</text>
+                            <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f34"></text>
+                        </view>
+                    </view>
+                    <view class="type-list f fw {{secondLevelList==''?'':'bg-w'}} {{categoryLevel===1?'pw20':''}}">
+                        <repeat for="{{secondLevelList}}" key="index">
+                            <view class="item f fv fc fc-h" @tap="jumpSingleType({{index}})">
+                                <image src="{{item.MaterialPath}}" mode="aspectFill"></image>
+                                <text class="mt20">{{item.Name}}</text>
+                            </view>
+                        </repeat>
+                        <view class="empty-content w-full tc c666 f24" wx:if="{{secondLevelList==''}}">暂无内容</view>
+                    </view>
+                    
+                </view>
+            </scroll-view>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    export default class Search extends wepy.component {
+        components = {};
+        props = {
+            firstLevelNum:{
+                type:Number,
+                default:0,
+            },
+            categoryLevel: {
+                type: [Number, String],
+                default: 1,
+            },
+            firstLevelList: {
+                type: Array,
+                default: [],
+            },
+            secondLevelList: {
+                type: Array,
+                default: [],
+            },
+            onClickCategory: {
+                type: String,
+                default: "",
+            },
+            onSearch: {
+                type: String,
+                default: "",
+            },
+            jumpCategory:{
+                type: String,
+                default: "",
+            },
+            jumpType:{
+                type: String,
+                default: "",
+            },
+        };
+        data = {
+            searchValue: "",
+            categoryLevel: 1, //判断是开启一级还是二级分类 
+        };
+        methods = {
+            search(e) {
+                let value = e.detail.value;
+                let parent = this.$parent;
+                this.onSearch && typeof parent[this.onSearch] === "function" && parent[this.onSearch](value);
+            },
+            clickCategory(index) {
+                //let index = i;
+                let parent = this.$parent;
+                this.onClickCategory && typeof parent[this.onClickCategory] === "function" && parent[this.onClickCategory](index);
+            },
+            jumpSingleCategory() {
+                let parent = this.$parent;
+                this.jumpCategory && typeof parent[this.jumpCategory] === "function" && parent[this.jumpCategory]();
+            },
+            jumpSingleType(index) {
+                let parent = this.$parent;
+                this.jumpType && typeof parent[this.jumpType] === "function" && parent[this.jumpType](index);
+            },
+            // lower() {
+            //     console.log("加载中了喂");
+            // }
+        };
+    }
+</script>

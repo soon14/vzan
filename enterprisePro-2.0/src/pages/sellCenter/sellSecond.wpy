@@ -1,0 +1,153 @@
+<style lang='less'>
+    .sell-hear {
+        width: 100%;
+        height: 160rpx;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        .sell-hearitem {
+            width: 50%;
+        }
+    }
+    .sell-lstitle {
+        position: fixed;
+        top: 180rpx;
+        left: 0;
+        width: 100%;
+        height: 120rpx;
+        background: #fff;
+        font-size: 32rpx;
+        line-height: 120rpx;
+        z-index: 1;
+        >text {
+            width: 50%;
+            text-align: center;
+        }
+    }
+    .sell-lst {
+        width: 100%;
+        background: #fff;
+        .sell-main {
+            width: 100%;
+            height: 100rpx;
+            border-top: 1px solid #f7f7f7;
+            >view {
+                width: 50%;
+            }
+            image {
+                width: 60rpx;
+                height: 60rpx;
+                border-radius: 50%;
+            }
+        }
+    }
+</style>
+<template>
+    <view class='{{currentSkin}}'>
+        <view class='sell-hear skin_bg f  fc'>
+            <view class='sell-hearitem f fv fc'>
+                <text class='f60 t-b'>{{vm.totalcount}}</text>
+                <text>人数</text>
+            </view>
+            <view class='sell-hearitem f fv fc'>
+                <text class='f60 t-b'>{{vm.totalprice}}</text>
+                <text>累计分佣</text>
+            </view>
+        </view>
+        <view style='height:20rpx;background:#f7f7f7;position:fixed;top:160rpx;width:100%'></view>
+        <view style='height:160rpx'></view>
+        <view class='sell-lstitle f'>
+            <text>下级分销商</text>
+            <text>获得分拥</text>
+        </view>
+        <view style='height:140rpx'></view>
+        <view class='sell-lst'>
+            <repeat for='{{vm.list[vm.pageindex]}}'>
+                <view class='sell-main f fc'>
+                    <view class='f fc' style='padding-left:99rpx;'>
+                        <image src='{{item.Avatar}}' />
+                        <text class='c666 ml10'>{{item.Name}}</text>
+                    </view>
+                    <view class='f30 tc skin_txt t-b'>{{item.CpsPrice}}</view>
+                </view>
+            </repeat>
+            <wxc-abnor type="DATA" wx:if="{{vm.list[1].length==0}}"></wxc-abnor>
+            <view class="loding w-100 f fc-h" style="margin:50rpx 0" wx:if="{{vm.showLoading&&vm.loadall==false}}">
+                <text class="loading-icon"></text>
+                <text class="c999 f26 ml20">正在加载中...</text>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js"
+    import _get from "../../lib/lodash.get.js";
+    export default class sellSecond extends wepy.page {
+        config = {
+            navigationBarTitleText: "下级分销",
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+            },
+            enablePullDownRefresh: true
+        }
+        data = {
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                pageindex: 1,
+                pagesize: 10,
+                saleManId: 0,
+                totalcount: 0,
+                totalprice: 0.00,
+                showLoading: false
+            },
+            currentSkin: {}
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            this.secondLst()
+        }
+        async secondLst() {
+            let vm = this.vm
+            let app = wepy.$instance
+            vm.saleManId = _get(app.globalData, "saleId", '')
+            if (vm.ispost || vm.loadall)
+                return
+            if (!vm.ispost)
+                vm.ispost = true
+            let _g = await core.GetSaleManRelationList(vm)
+            if (_g.isok) {
+                vm.ispost = false
+                vm.list[vm.pageindex] = _g.obj.list
+                _g.obj.list.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true
+                vm.totalcount = _g.obj.totalCount
+                vm.totalprice = _g.obj.totalSecondCpsPrice
+                this.vm = vm
+                this.$apply()
+            } else {
+                tools.showModal(_g.msg,false)
+                tools.goBack(1)
+            }
+        }
+        async onReachBottom() {
+            this.vm.showLoading = true
+            await this.secondLst();
+            this.vm.showLoading = false
+        }
+        async onPullDownRefresh() {
+            wx.showNavigationBarLoading();
+            await tools.resetArray(this.vm)
+            this.secondLst();
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

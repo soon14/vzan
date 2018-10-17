@@ -1,0 +1,322 @@
+<style lang="less">
+    .show-hide {
+        height: 100vh;
+        overflow: hidden;
+    }
+    .dlt {
+        width: 100%;
+        image {
+            width: 100%;
+        }
+        .header {
+            width: 100%;
+            padding: 30rpx;
+            .label {
+                padding: 6rpx 16rpx 5rpx 16rpx;
+                font-size: 22rpx;
+                color: #555;
+                background: #eee;
+                border-radius: 20rpx;
+                margin-right: 20rpx;
+            }
+        }
+        .wrap {
+            width: 100%;
+            >.title {
+                padding: 30rpx 0 39rpx 30rpx;
+            }
+        }
+        .footer {
+            width: 100%;
+            height: 100rpx;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            .kefu {
+                width: 113rpx;
+                height: 100rpx;
+                background: #fafafa;
+            }
+            .footbtn {
+                height: 100rpx;
+                line-height: 100rpx;
+                text-align: center;
+                font-size: 30rpx;
+                font-weight: bold;
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="dlt {{shopMask?'show-hide':''}}" wx:if="{{vm}}">
+        <swiper wx:if="{{vm.Slideimgs}}" class='w-100' style='height:750rpx' indicator-dots="true" indicator-active-color='#fff' indicator-color='rgba(238, 238, 238, .3)' autoplay="true" interval="5000" duration="1000">
+            <repeat for="{{vm.Slideimgs}}">
+                <swiper-item>
+                    <image src="{{item}}" mode="widthFix" class='w-100' @tap="preImg({{item}},{{vm.Slideimgs}})" />
+                </swiper-item>
+            </repeat>
+        </swiper>
+        <image mode='widthFix' src='{{vm.Img}}' wx:if="{{vm.Slideimgs==''}}" />
+        <view class='header'>
+            <view class='f fc' wx:if="{{vm.GoodType==0}}">
+                <wxc-price class='t-b f44 cff3'>{{vm.Price}}</wxc-price>
+                <wxc-price status="del" del-color="#CECECE" class='f26 ml20 mt10'>{{vm.OriginalPriceStr}}</wxc-price>
+            </view>
+            <view class='f44 cff3 t-b' wx:if="{{vm.GoodType==1}}">{{vm.GoodTypeStr}}</view>
+            <view class='f fc mt30'>
+                <text class='f30 c333' style='margin-right:20rpx;width:598rpx'>{{vm.Name}}</text>
+                <button open-type="share" class='f fv c999'>
+                                                    <text class='dzicon icon-fenxiang f47' />
+                                                    <text class='f24'>分享</text>
+                                                </button>
+            </view>
+            <view class='mt30 f fc fw' wx:if="{{vm.PlabelStr_Arry}}">
+                <repeat for="{{vm.PlabelStr_Arry}}" key="index" index="index" item="label_item">
+                    <text class="label">{{label_item}}</text>
+                </repeat>
+            </view>
+        </view>
+        <view style='height:24rpx;background:#f6f6f6' />
+        <view class='wrap'>
+            <view class='title f34 t-b c333'>商品详情</view>
+            <repeat>
+                <comRichtxt :currentCom.sync="vm" />
+            </repeat>
+        </view>
+        <view style='height:130rpx' />
+        <view class='footer'>
+            <view class='w-100 f fc' wx:if="{{vm.GoodType==0}}">
+                <view class='kefu f fv fc fc-h' @tap="goChat">
+                    <text class='dzicon icon-kefu f40' style='color:#444' />
+                    <text class='c666'>客服</text>
+                </view>
+                <view class='kefu f fv fc fc-h' style="border-left:1px solid #eee" @tap="shopNav">
+                    <text class='dzicon icon-wodegouwuche f40' style='color:#444' />
+                    <text class='c666'>购物车</text>
+                </view>
+                <form class='f1' report-submit="true" @submit="showMask('shop')">
+                    <button formType="submit" class='footbtn f1' style='background: #444444;color: #fff;'>加入购物车</button>
+                </form>
+                <form class='f1' report-submit="true" @submit="showMask('buy')">
+                    <button formType="submit" class='footbtn f1' style='background: #FF3838;color: #fff;'>立即购买</button>
+                </form>
+            </view>
+            <view class='footbtn f1' style='background: #444444;color: #fff;' wx:if="{{vm.GoodType==1}}" @tap="goChat">咨询客服</view>
+        </view>
+        <repeat>
+            <comShop @hideMask.user="hideMask" @chooseSpec.user="chooseSpec" @add.user="addNum" @less.user='lessNum' @setNum.user="setNum" @goShop.user="goShop" :vm.sync="vm" :shopMask.sync='shopMask' />
+        </repeat>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_goodShop from "@/components/com_goodShop";
+    import com_richtxt from "@/components/com_richtxt";
+    import {
+        core,
+        tools,
+        pro
+    } from "@/lib/core.js";
+    export default class goodsDlt extends wepy.page {
+        config = {
+            navigationBarTitleText: "",
+            enablePullDownRefresh: true,
+            navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            }
+            // 引入min组件
+        };
+        components = {
+            comShop: com_goodShop,
+            comRichtxt: com_richtxt,
+        };
+        data = {
+            vm: {},
+            shopMask: false,
+            toast: {},
+            display: '',
+        }
+        methods = {
+            //客服
+            goChat() {
+                let _v = wepy.$instance.globalData.storeKefu
+                let vm = {
+                    id: _v.UserId,
+                    name: _v.Name,
+                    img: _v.Avatar,
+                }
+                core.gochat(vm)
+            },
+            //富文本
+            wxParseImgTap(e) {
+                let src = e.currentTarget.dataset.src;
+                tools.preViewShow(src);
+            },
+            shopNav() {
+                tools.goNewPage("./goodShop")
+            },
+            preImg(img, imglst) {
+                tools.preViewShow(img, imglst)
+            },
+            // 显示购物车
+            showMask(mode, e) {
+                core.formId(e.detail.formId)
+                this.vm = pro.resetPro(this.vm)
+                this.shopMask = true
+                this.display = mode
+                this.$apply()
+            },
+            //隐藏
+            hideMask() {
+                this.shopMask = false
+                this.$apply()
+            },
+            //选择规格
+            chooseSpec(_pindex, _cindex) {
+                this.vm = pro.choosePro(this.vm, _pindex, _cindex)
+                this.$apply()
+            },
+            //加
+            addNum() {
+                let num = pro.addPro(this.vm, this)
+                this.vm.count = num
+                this.$apply()
+            },
+            //减
+            lessNum() {
+                let num = pro.lessPro(this.vm, this)
+                this.vm.count = num
+                this.$apply()
+            },
+            //输入数字
+            setNum(num) {
+                this.vm.count = pro.setPro(this.vm, num, this)
+                this.setData({
+                    vm: this.vm
+                })
+            },
+            /**
+             * @param {display 'shop' 加入购物车 'buy' 前往订单页}
+             */
+            goShop() {
+                let _g = {
+                    list: []
+                }
+                let vm = this.vm
+                let display = this.display
+                let specId = _get(vm, 'specId', "")
+                if (vm.count == 0) {
+                    vm.count = 1
+                }
+                if (vm.PickSpec.length) {
+                    if (specId == '') {
+                        tools.loading("请选择商品规格");
+                        return;
+                    }
+                    let specTemp = vm.GASDetailList.find(f => f.Id == specId);
+                    if (specTemp == undefined) {
+                        tools.loading("未选择完");
+                        return;
+                    }
+                    if (vm.StockLimit) {
+                        if (vm.count > specTemp.Stock) {
+                            tools.loading("库存不足");
+                            return;
+                        }
+                    }
+                }
+                if (vm.StockLimit) {
+                    if (vm.count > vm.Stock) {
+                        tools.loading("库存不足");
+                        return;
+                    }
+                }
+                if (display == 'buy') {
+                    this.goBuy(vm)
+                } else {
+                    this.addShop(vm)
+                }
+            }
+        }
+        onLoad(options) {
+            let id = _get(options, 'id', '')
+            core.GetGoodInfo(id, this)
+        }
+        // 购买
+        async goBuy(vm) {
+            let _g = {
+                list: []
+            }
+            let _shop = {
+                specId: vm.specId,
+                specInfo: vm.specInfo,
+                specImg: vm.specImg,
+                goodid: vm.Id,
+                count: vm.count,
+                gotoBuy: 1,
+            }
+            let _sp = await core.AddGoodsCarData(_shop)
+            if (_sp.isok) {
+                vm.totalPrice = parseFloat(Number(vm.danMaiPrice).mul(Number(vm.count))).toFixed(2)
+                _g.list.push({
+                    img: vm.specImg,
+                    name: vm.Name,
+                    specInfo: vm.specInfo || "",
+                    price: vm.itemPrice,
+                    count: vm.count,
+                })
+                _g.cartid = _sp.dataObj.id
+                _g.totalPrice = vm.totalPrice
+                this.$preload("vm", _g);
+                this.$navigate("./goodsOrder");
+            } else {
+                tools.showModal(_sp.Msg, false)
+            }
+        }
+        // 添加购物车
+        async addShop(vm) {
+            let _shop = {
+                specId: vm.specId,
+                specInfo: vm.specInfo,
+                specImg: vm.specImg,
+                goodid: vm.Id,
+                count: vm.count,
+                gotoBuy: 0,
+            }
+            let _g = await core.AddGoodsCarData(_shop)
+            if (_g.isok) {
+                tools.ShowToast("添加成功", this)
+                this.shopMask = false
+            } else {
+                tools.showModal(_g.Msg, false)
+            }
+        }
+        async onPullDownRefresh() {
+            if (this.shopMask) {
+                return;
+            }
+            wx.showNavigationBarLoading();
+            await core.GetGoodInfo(this.vm.Id, this)
+            wx.hideNavigationBarLoading();
+            wx.stopPullDownRefresh();
+        }
+        onShareAppMessage() {
+            let _v = this.vm
+            return {
+                title: _v.Name,
+                path: "/pages/goods/goodsDlt?id=" + _v.Id,
+                imageUrl: _v.Img,
+                success: function(res) {
+                    tools.wxShowToast("转发成功")
+                }
+            };
+        }
+    }
+</script>

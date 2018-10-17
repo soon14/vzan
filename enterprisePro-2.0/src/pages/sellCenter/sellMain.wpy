@@ -1,0 +1,392 @@
+<style lang="less">
+    .header {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        background: #fff;
+    }
+    .header>view {
+        width: 100%;
+    }
+    .more-person {
+        width: 100%;
+        margin-top: 20rpx;
+    }
+    .person-item {
+        width: 100%;
+        height: 210rpx;
+        background: #fff;
+        margin-bottom: 20rpx;
+    }
+    .person-img {
+        width: 130rpx;
+        height: 130rpx;
+        border-radius: 50%;
+        margin-left: 20rpx;
+    }
+    .person-content {
+        padding: 0 20rpx;
+    }
+    .per-price::before {
+        content: "佣金:";
+        font-size: 28rpx;
+        color: #999;
+    }
+    .per-succ::before {
+        content: "成交额:";
+        font-size: 28rpx;
+        color: #999;
+    }
+    .per-order::before {
+        content: "订单:";
+        font-size: 28rpx;
+        color: #999;
+    }
+    .per-pro::before {
+        content: "保护期:";
+        font-size: 28rpx;
+        color: #999;
+    }
+    .sell-header {
+        width: 100%;
+        height: 200rpx;
+        background: #fff;
+        padding: 32rpx 20rpx 0 20rpx;
+    }
+    .sell-search {
+        width: 100%;
+        height: 68rpx;
+        background: #eee;
+        border-radius: 6rpx;
+        padding: 0 20rpx;
+    }
+    .sell-input {
+        width: 100%;
+        height: 68rpx;
+        margin-left: 10rpx;
+    }
+    .sell-classify {
+        width: 100%;
+        margin-top: 35rpx;
+    }
+    .pb30 {
+        padding-bottom: 28rpx;
+    }
+    .sell-list {
+        width: 100%;
+        padding: 20rpx;
+    }
+    .sell-item {
+        width: 345rpx;
+        background: #fff;
+        margin-bottom: 20rpx;
+    }
+    .sell-item>image {
+        width: 345rpx;
+        height: 345rpx;
+    }
+    .sell-price {
+        font-size: 38rpx;
+        color: #f20033;
+    }
+    .sell-rate::before {
+        content: "收益比例：";
+        color: #666;
+        font-size: 28rpx;
+    }
+    .sell-str::before {
+        content: "预计收益:";
+        color: #666;
+        font-size: 28rpx;
+    }
+    .sell-image {
+        width: 370rpx;
+        height: 370rpx;
+    }
+    .oreder {
+        width: 100%;
+        padding: 20rpx;
+    }
+    .oreder-item {
+        background: #fff;
+        margin-bottom: 20rpx;
+    }
+    .order-top {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        padding: 0 20rpx;
+        border-bottom: 1px solid #f7f7f7;
+    }
+    .cf97 {
+        color: #F97C6A;
+    }
+    .order-main {
+        padding: 30rpx 20rpx;
+    }
+    .order-img {
+        width: 110rpx;
+        height: 110rpx;
+    }
+    .order-price {
+        width: 100%;
+    }
+    .order-tiem {
+        padding: 0 20rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+        border-top: 1px solid #f7f7f7;
+    }
+</style>
+<template>
+    <view class='{{currentSkin}}'>
+        <!-- 累计客户  -->
+        <repeat wx:if="{{type==1}}">
+            <view class='header'>
+                <view class='f fc fsa'>
+                    <repeat for="{{state}}">
+                        <view class="{{vmCount.state==item.id?'skin_bottom':'c333'}}" @tap="select({{item.id}})">{{item.txt}}</view>
+                    </repeat>
+                </view>
+            </view>
+            <view class='more-person' wx:if="{{vmCount.list[1]!=null}}">
+                <repeat for="{{vmCount.list}}" item="person">
+                    <repeat for="{{person}}">
+                        <view class='w-100 person-item f fc'>
+                            <image mode='aspectFill' src="{{item.ImgLogo}}" class='person-img' />
+                            <view class='person-content f1'>
+                                <view class='f fj fc'>
+                                    <text class='f36'>{{item.NickName}}</text>
+                                    <text class='per-pro f30'>{{item.cur_protected_time}}天</text>
+                                </view>
+                                <view class='f fj fc mt20'>
+                                    <text class='per-order f30'>{{item.orderCount}}</text>
+                                    <text class='per-succ f30'>{{item.orderMoneyStr}}</text>
+                                    <text class='per-price f30'>{{item.cpsMoneyStr}}</text>
+                                </view>
+                            </view>
+                        </view>
+                    </repeat>
+                </repeat>
+            </view>
+            <wxc-abnor type="DATA" wx:if="{{vmCount.list[1]==null}}"></wxc-abnor>
+        </repeat>
+        <!--推广订单 -->
+        <repeat wx:if="{{type==2}}">
+            <view class='oreder' wx:if="{{vmCount.list[1]!=null}}">
+                <repeat for="{{vmCount.list}}" item="order">
+                    <repeat for="{{order}}" item='good'>
+                        <view class='oreder-item'>
+                            <view class='order-top f fj'>
+                                <text class='f32 c666'>{{good.orderNumber}}</text>
+                                <text class='cf97'>已结算</text>
+                            </view>
+                            <repeat for='{{good.listOrderGoodsDetail}}'>
+                                <view class='order-main f fc w-100'>
+                                    <image mode='aspectFill' src='{{item.goodImgUrl}}' class='order-img' />
+                                    <view class='f fv fj ml20 f1' style='height:110rpx;'>
+                                        <text class='line line1 f32'>{{item.goodname}}</text>
+                                        <view class='order-price f fc fj'>
+                                            <text>￥{{item.price}}</text>
+                                            <text style='color:#F20033'>收益占比:{{item.cps_rate}}%</text>
+                                        </view>
+                                    </view>
+                                </view>
+                                <view class='order-tiem w-100 f fc fj'>
+                                    <text class='c666'>{{good.addTimeStr}}</text>
+                                    <text class='f32'>赚取佣金：￥{{item.cpsMoneyStr}}</text>
+                                </view>
+                            </repeat>
+                        </view>
+                    </repeat>
+                </repeat>
+            </view>
+            <wxc-abnor type="ORDER" wx:if="{{vmCount.list[1]==null}}"></wxc-abnor>
+        </repeat>
+        <!--  推广商品 -->
+        <repeat wx:if="{{type==3}}">
+            <view class='sell-header'>
+                <view class='sell-search f fc'>
+                    <view class='dzicon icon-sousuo_rearch f40 c123'/>
+                    <input class='sell-input' placeholder='请输入您要查询的商品' placeholder-class='c999' @confirm="search"></input>
+                </view>
+                <view class='sell-classify f fc fsa'>
+                    <repeat for="{{priceState}}">
+                        <view class="pb30 {{vmCount.state==item.id?'skin_bottom':'c333'}}" @tap="select({{item.id}})">{{item.txt}}</view>
+                    </repeat>
+                </view>
+            </view>
+            <view class='sell-list f fw fj' wx:if="{{vmCount.list[1].length!=0}}">
+                <repeat for="{{vmCount.list}}" item="pro">
+                    <repeat for="{{pro}}">
+                        <view class='sell-item' @tap='navGood({{item.goodsId}})'>
+                            <image mode='aspectFill' src='{{item.goodsImg}}' />
+                            <view class='p10 f fv'>
+                                <text class='f32 m20-b line line1'>{{item.goodsName}}</text>
+                                <text wx:if="{{item.is_show_cps_type==0}}" class='sell-str sell-price'>￥{{item.cps_Money}}</text>
+                                <text wx:else class='sell-rate sell-price'>{{item.cps_rate}}%</text>
+                            </view>
+                        </view>
+                    </repeat>
+                </repeat>
+            </view>
+            <wxc-loadmore is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" wx:if="{{vmCount.list[1].length!=0&&vmCount.loadall}}"></wxc-loadmore>
+            <wxc-abnor type="DATA" wx:if="{{vmCount.list[1].length==0}}"></wxc-abnor>
+        </repeat>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js"
+    export default class sellMain extends wepy.page {
+        config = {
+            navigationBarTitleText: "",
+            // 引入min组件
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            },
+        };
+        data = {
+            state: [{
+                    txt: "全部",
+                    id: "0"
+                },
+                {
+                    txt: "未失效",
+                    id: "1"
+                },
+                {
+                    txt: "已失效",
+                    id: "2"
+                }
+            ],
+            priceState: [{
+                    txt: "佣金",
+                    id: "0"
+                },
+                {
+                    txt: "最新",
+                    id: "1"
+                },
+                {
+                    txt: "价格",
+                    id: "2"
+                }
+            ],
+            vmCount: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 10,
+                state: 0,
+                search: "",
+            },
+            type: 0,
+            currentSkin: {}
+        }
+        methods = {
+            async select(index) {
+                await tools.showLoading()
+                this.vmCount.ispost = false
+                this.vmCount.loadall = false
+                this.vmCount.pageindex = 1
+                this.vmCount.state = index
+                await this.mainInfo(this.type)
+                wx.hideLoading();
+            },
+            async search(e) {
+                await tools.showLoading()
+                this.vmCount.ispost = false
+                this.vmCount.loadall = false
+                this.vmCount.pageindex = 1
+                this.vmCount.search = e.detail.value
+                await this.mainInfo(this.type)
+                wx.hideLoading();
+            },
+            navGood(id) {
+                tools.pathGood(id, "buy", true, 1)
+            }
+        }
+        async onLoad(options) {
+            let type = Number(options.type) || 0
+            await tools.setPageSkin(this);
+            await this.mainInfo(type)
+            this.type = type
+            this.$apply()
+        }
+        async mainInfo(type) {
+            switch (type) {
+                case 1:
+                    let pm = this.vmCount
+                    if (pm.ispost || pm.loadall)
+                        return
+                    if (!pm.ispost)
+                        pm.ispost = true
+                    let _p = await core.getSaleManRecord(pm)
+                    if (_p.isok) {
+                        pm.ispost = false
+                        pm.list[pm.pageindex] = _p.obj.SalesManRecordUserList
+                        if (_p.obj.SalesManRecordUserList != null) {
+                            _p.obj.SalesManRecordUserList.length >= pm.pagesize ? pm.pageindex += 1 : pm.loadall = true
+                        }
+                        this.vmCount = pm
+                        this.$apply()
+                        tools.setPageTitle("累计客户")
+                    } else {
+                        tools.showModal(_p.msg, false)
+                    }
+                    break;
+                case 2:
+                    let om = this.vmCount
+                    if (om.ispost || om.loadall)
+                        return
+                    if (!om.ispost)
+                        om.ispost = true
+                    let _o = await core.getSaleRecord(om)
+                    if (_o.isok) {
+                        om.ispost = false
+                        om.list[om.pageindex] = _o.obj.List
+                        if (_o.obj.List != null) {
+                            _o.obj.List.length >= om.pagesize ? om.pageindex += 1 : om.loadall = true
+                        }
+                        this.vmCount = om
+                        this.$apply()
+                        tools.setPageTitle("累计订单")
+                    } else {
+                        tools.showModal(_o.msg, false)
+                    }
+                    break;
+                case 3:
+                    let vm = this.vmCount
+                    if (vm.ispost || vm.loadall)
+                        return
+                    if (!vm.ispost)
+                        vm.ispost = true
+                    let _g = await core.getSaleLst(vm)
+                    if (_g.isok) {
+                        vm.ispost = false
+                        vm.list[vm.pageindex] = _g.obj.SalesmanGoodsList
+                        _g.obj.SalesmanGoodsList.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true
+                        this.vmCount = vm
+                        this.$apply()
+                        tools.setPageTitle("推广商品")
+                    } else {
+                        tools.showModal(_g.msg, false)
+                    }
+                    break;
+            }
+        }
+        async onReachBottom() {
+            if (this.vmCount.loadall != true) {
+                await tools.showLoading()
+            }
+            await this.mainInfo(this.type)
+            wx.hideLoading();
+        }
+    }
+</script>

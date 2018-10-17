@@ -1,0 +1,273 @@
+<style lang="less">
+    page {
+        background: #fff;
+    }
+    .dlt-hear {
+        width: 100%;
+        height: 260rpx;
+        image {
+            width: 112rpx;
+            height: 125rpx;
+            margin-right: 20rpx;
+        }
+    }
+    .dlt-user {
+        width: 100%;
+        background: #fff;
+        padding: 40rpx 20rpx;
+    }
+    .dlt-pro {
+        width: 100%;
+        .dlt-item {
+            width: 100%;
+            background: #ffffff;
+            padding: 20rpx;
+            image {
+                width: 200rpx;
+                height: 200rpx;
+                margin-right: 20rpx;
+            }
+            .dlt-ps {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                padding: 10rpx;
+                background: #ff9a37;
+                color: #fff;
+            }
+            .dlt-con {
+                height: 200rpx;
+            }
+        }
+    }
+    .dlt-olt {
+        width: 100%;
+        background: #fff;
+        padding: 20rpx;
+        .dlt-copy {
+            width: 90rpx;
+            height: 50rpx;
+            text-align: center;
+            line-height: 50rpx;
+            color: #666;
+            border: 1px solid #666;
+            border-radius: 6rpx;
+            font-size: 24rpx;
+        }
+    }
+    .btn-invit {
+        margin: 0 auto;
+        font-size: 30rpx;
+        width: 95%;
+        height: 88rpx;
+        line-height: 88rpx;
+        border-radius: 8rpx;
+    }
+    .dlt-check {
+        width: 100%;
+        justify-content: flex-end;
+        padding: 20rpx;
+        background: #f7f7f7;
+        .dlt-plain {
+            color: #666;
+            border-radius: 6rpx;
+            border: 1px solid #999;
+            width: 180rpx;
+            height: 70rpx;
+            line-height: 70rpx;
+            text-align: center;
+        }
+    }
+    .icon-shouye2 {
+        width: 80rpx;
+        height: 80rpx;
+        line-height: 80rpx;
+        text-align: center;
+        border-radius: 50%;
+        font-size: 36rpx;
+        position: fixed;
+        bottom: 50rpx;
+        right: 30rpx;
+        font-size: 50rpx;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <view class="dlt-hear skin_bg f fc fc-h">
+            <image src='https://j.vzan.cc/miniapp/img/group2/icon_time.png' />
+            <view class="f fv" wx:if="{{isgroup==0&&vm_dlt.groupState==1&&(vm_dlt.user.State==1||vm_dlt.user.State==8)}}">
+                <text class="f32 t-b">开团成功</text>
+                <view class='f28 mt10'>快分享邀请小伙伴来参团吧</view>
+            </view>
+            <view class="f fv" wx:if="{{isgroup==1&&vm_dlt.groupState==1&&vm_dlt.user.State==1}}">
+                <text class="f32 t-b">参团成功</text>
+                <view class='f28 mt10'>快分享邀请小伙伴来参团吧</view>
+            </view>
+            <view class='ml20' wx:if="{{vm_dlt.user.State==0}}">
+                <view class='f36 t-b'>待付款</view>
+                <view class='f28'>商品库存不多了哟，快付款下单吧</view>
+            </view>
+            <view class='ml20' wx:if="{{vm_dlt.groupState==2}}">
+                <view class='f36 t-b'>拼团成功</view>
+                <view class='f28'>恭喜您，该购物已成团</view>
+            </view>
+            <view class='ml20' wx:if="{{vm_dlt.groupState==-1||vm_dlt.groupState==-4}}">
+                <view class='f36 t-b'>开团失败</view>
+                <view class='f28'>规定时间未成团，已退款至支付账户</view>
+            </view>
+        </view>
+        <!-- 用户信息 -->
+        <view class="dlt-user f fc">
+            <view class="dzicon icon-dingwei f42 ccc mr20" />
+            <view class="f fv">
+                <view class="f fc">
+                    <text class="f32 tb mr10">{{vm_dlt.user.AccepterName}}</text>
+                    <text class="c666">{{vm_dlt.user.AccepterTelePhone}}</text>
+                </view>
+                <view class="c999 mt10">{{vm_dlt.user.Address}}</view>
+                <view class="c999 mt10" wx:if='{{vm_dlt.user.attrbuteModel.zqStoreName}}'>{{vm_dlt.user.attrbuteModel.zqStoreName}}</view>
+            </view>
+        </view>
+        <view style="height:30rpx;background:#f7f7f7" />
+        <!-- 商品信息 -->
+        <view class="dlt-pro">
+            <repeat for="{{vm_dlt.pro}}">
+                <view class="dlt-item f fc">
+                    <view class="rel" style="width:200rpx;height:200rpx">
+                        <image mode="aspectFill" src="{{item.goodImgUrl}}" @tap="preview({{item.goodImgUrl}})" />
+                        <text class="dlt-ps" wx:if="{{isgroup==0&&vm_dlt.groupState==1&&(vm_dlt.user.State==1||vm_dlt.user.State==8)}}">开团成功</text>
+                        <text class="dlt-ps" wx:if="{{isgroup==1&&vm_dlt.groupState==1&&vm_dlt.user.State==1}}">参团成功</text>
+                        <text class="dlt-ps" wx:if="{{vm_dlt.user.State==0}}">参团成功</text>
+                        <text class="dlt-ps" wx:if="{{vm_dlt.groupState==2}}">拼团成功</text>
+                        <text class="dlt-ps" wx:if="{{vm_dlt.groupState==-1||vm_dlt.groupState==-4}}">开团失败</text>
+                    </view>
+                    <view class="dlt-con f fj fv f1 ml20">
+                        <text class="f1 f32">{{item.goodname}}</text>
+                        <view class="f fc fj">
+                            <wxc-price class="f30 cred">{{item.orderDtl.originalPriceStr}}</wxc-price>
+                            <text class="f30 ccc">X{{item.orderDtl.Count}}</text>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <view class="dlt-check f">
+            <view class='dlt-plain' @tap='navShare({{vm_dlt.user.GroupId}})'>查看团详情</view>
+        </view>
+        <button class='btn-invit skin_bg' open-type='share' wx:if="{{vm_dlt.groupState==1}}">邀请好友拼团{{time.timeInter}}后结束</button>
+        <view style="background:#f7f7f7;height:20rpx" wx:if="{{vm_dlt.groupState==1}}"></view>
+        <!-- 订单信息 -->
+        <view class="dlt-olt f28 f fv">
+            <view class="f1 f fc">
+                <view class="f1 c666">订单编号:{{vm_dlt.user.OrderNum}}</view>
+                <view class="dlt-copy" @tap="copy">复制</view>
+            </view>
+            <view class="mt20 f1 c666">下单时间:{{vm_dlt.user.CreateDateStr}}</view>
+            <view class="mt20 f1 c666">支付方式:{{vm_dlt.user.BuyModeStr}}</view>
+            <view class="mt20 f1 c666">支付价格:<text class="cred">￥{{vm_dlt.buyprice}} </text></view>
+            <view class="mt20 f1 c666">配送方式:{{vm_dlt.user.GetWayStr}}</view>
+            <view class="mt20 f1 c666" wx:if="{{vm_dlt.user.GetWayStr=='到店自取'}}">提货码:{{vm_dlt.user.TablesNo}}</view>
+            <view class="mt20 f1 c666">备注留言:{{vm_dlt.user.Message||""}}</view>
+        </view>
+        <view class='dzicon icon-shouye2 skin_br' @tap="goHome" />
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        pay,
+        tools
+    } from "../../lib/core.js";
+    //第一步： 引入组件文件
+    export default class group2Dlt extends wepy.page {
+        config = {
+            navigationBarTitleText: "开团成功",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index"
+            }
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            currentSkin: {},
+            vm_dlt: {},
+            time: {},
+            isgroup: 0, //用于区分团长与团员
+        };
+        computed = {};
+        methods = {
+            preview(img) {
+                tools.preViewShow(img)
+            },
+            copy() {
+                tools.copy(this.vm_dlt.user.OrderNum)
+            },
+            goHome() {
+                tools.goLaunch("/pages/index/index")
+                clearInterval(this.$parent.$pages["/pages/group2/group2Share"].timeInter)
+                clearInterval(this.$parent.$pages["/pages/group2/group2Share"].timeInter_sec)
+            },
+            navShare(id) {
+                this.$navigate("../group2/group2Share?id=" + id)
+            }
+        };
+        async onLoad(options) {
+            let id = options.id || 0;
+            this.isgroup = options.isgroup || 0;
+            await tools.setPageSkin(this);
+            this.dltInfo(id);
+        }
+        async dltInfo(id) {
+            let dltInfo = await core.getMinOrderId(id);
+            if (dltInfo.isok == 1) {
+                this.vm_dlt.buyprice = dltInfo.postdata.buyPrice
+                this.vm_dlt.user = dltInfo.postdata.goodOrder;
+                this.vm_dlt.pro = dltInfo.postdata.goodOrderDtl;
+                this.vm_dlt.order = {
+                    time: dltInfo.postdata.groupendtime,
+                    stateTxt: dltInfo.postdata.stateRemark
+                };
+                this.vm_dlt.groupState = dltInfo.postdata.groupstate;
+                this.$apply();
+                this.cutDow();
+            } else {
+                tools.showModal(dltInfo.msg, false)
+            }
+        }
+        onShow() {
+            this.cutDow()
+        }
+        onHide() {
+            //当navigateTo或底部tab切换时调用
+            clearInterval(this.cutDown);
+        }
+        onUnload() {
+            //当redirectTo或navigateBack的时候调用
+            clearInterval(this.cutDown);
+        }
+        //倒计时
+        cutDow() {
+            let that = this
+            if (Object.keys(that.vm_dlt).length) {
+                that.cutDown = setInterval(async res => {
+                    let start = that.vm_dlt.user.CreateDateStr
+                    let end = that.vm_dlt.order.time
+                    that.time = await core.groupTime(start, end)
+                    that.$apply()
+                }, 1000)
+            }
+        }
+        onShareAppMessage() {
+            let vm = {
+                id: this.vm_dlt.user.GroupId,
+                name: this.vm_dlt.pro[0].goodname,
+                img: this.vm_dlt.pro[0].goodImgUrl
+            }
+            return core.group2Share(vm)
+        }
+    }
+</script>

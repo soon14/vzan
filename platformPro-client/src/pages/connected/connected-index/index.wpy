@@ -1,0 +1,351 @@
+<style lang="less">
+.c-d9d8d9 {
+  color: #d9d8d9;
+}
+.connected-wrap {
+  padding-bottom: 0rpx;
+  .build-card {
+    height: 320rpx;
+    background-color: #d9d8d9;
+  }
+  .option {
+    top: 100rpx;
+    left: 0;
+    z-index: 9;
+    border-bottom: 1px solid #eee;
+    .item {
+      height: 88rpx;
+      line-height: 88rpx;
+      padding-left: 60rpx;
+    }
+    .active {
+      color: #3fd983;
+      background-color: #f6f6f6;
+    }
+  }
+  .mt280 {
+    margin-top: 280rpx;
+  }
+  .selectList {
+    background: #fff;
+    border: 1px solid #eee;
+    border-top: none;
+    left: 0;
+    right: 0;
+    top: 100rpx;
+    z-index: 8;
+    .item {
+      &:nth-child(2n) {
+        background: #f6f6f6;
+      }
+      height: 80rpx;
+    }
+  }
+  .wp60 {
+    max-width: 60%;
+  }
+  .wp33 {
+    width: 33.33333%
+  }
+}
+</style>
+<template leng="wxml">
+    <view class="connected-wrap">
+        <image mode="aspectFill" class="build-card w-full" src="https://images.900.tw/upload_file/40/content/ecd031d4-58bf-0beb-9c05-de5ef66f5385.jpg"></image>
+        <view class="card-tab w-full h100 rel f fc c666 bg-w" style="{{isFixed ? 'position:fixed; top:0; z-index: 10;' : ''}}">
+            <view class="fs wp33 f fc fc-h h-full c333" @tap="openOption">
+                <view>{{currentOption}}</view>
+                <view class="dzicon icon-xiala ml20 f22" style="transform:{{showOption?'rotate(180deg)':''}}"></view>
+            </view>
+            <view class="fs wp33 f fc fc-h h-full rel" @tap="showNearbyList">
+                <view>{{nearbyStatus}}</view>
+                <view class="dzicon icon-xiala ml20 f22 c-d9d8d9"></view>
+                <view class="abs selectList" wx:if="{{isFindNearby}}">
+                  <view class="item f fc jc" @tap.stop="shrinkNearby(1)">
+                    附近1公里
+                  </view>
+                  <view class="item f fc jc" @tap.stop="shrinkNearby(2)">
+                    附近2公里
+                  </view>
+                  <view class="item f fc jc" @tap.stop="shrinkNearby(3)">
+                    附近3公里
+                  </view>
+                  <view class="item f fc jc" @tap.stop="shrinkNearby(-2)">
+                    同城
+                  </view>
+                </view>
+            </view>
+            <view class="fs wp33 f fc fc-h h-full" @tap="goFilter">
+                <view class="wp60 ellipsis">{{filterStatus}}</view>
+                <view class="dzicon icon-xiala ml20 f22 c-d9d8d9"></view>
+            </view>
+            <view class="option abs bg-w w-full f30 c333" wx:if="{{showOption}}">
+                <repeat for="{{options}}" item="option" index="optionIndex">
+                    <view class="item f fc fj {{optionsNum==optionIndex?'active':''}}" @tap.stop="clickOption({{optionIndex}})">
+                        <view>{{option}}</view>
+                        <view class="dzicon icon-xuanze_Choice f40 mr30" wx:if="{{optionsNum==optionIndex}}"></view>
+                    </view>
+                </repeat>
+            </view>
+        </view>
+        <view style="{{isFixed ? 'margin-top: 110rpx;' : ''}}">
+            <!-- contactsInfo.count == 0 -->
+            <view wx:if="{{contactsInfo.count == 0}}" class="mt280 f fc fc-h tc">
+                暂无数据  
+            </view>
+            <repeat for="{{contactsInfo.list}}" key="index" index="index" item="item">
+                <view class="f fc fc-h" @tap="goDetail({{item.UserId}})">
+                    <comNameCard class="mt15" :itemIndex="index" :onFollowAfter="toFollow" :cardModal.sync="item"></comNameCard>
+                </view>
+            </repeat>
+            <comLoading :showBottom.sync="isShowBottom" :showLoading.sync="isLoading" />
+         </view>
+        <comWait wx:if="{{isWait}}" />
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+import { core, tools } from "@/lib/core";
+import com_nameCard from "@/components/com_nameCard";
+import com_wait from "@/components/com_wait";
+import com_loading from "@/components/com_loading";
+export default class connected extends wepy.page {
+  config = {
+    navigationBarTitleText: "人脉圈",
+    enablePullDownRefresh: true
+  };
+  components = {
+    comNameCard: com_nameCard,
+    comWait: com_wait,
+    comLoading: com_loading
+  };
+  data = {
+    isFindNearby: false,
+    isShowBottom: false,
+    isLoading: false,
+    isWait: false,
+    options: ["人气榜", "点赞榜", "关注榜"],
+    mappingActionType: [3, 1, 2],
+    optionsNum: 0,
+    showOption: false,
+    currentOption: "人气榜",
+    contactsInfo: {
+      count: 0,
+      list: []
+    },
+    isFixed: false,
+    scrollTop: 0,
+    cacheItem: null,
+    pageindex: 1,
+    filterStatus: '筛选',
+    //需要记忆
+    type: 3, //行动类型
+    distance: -1,
+    industryId: 0,
+    areaCode: 0,
+    isRegister: false, //用户是否注册（上）
+    isPerfect: false //用户是否完善名片（下）
+  };
+
+  computed = {
+    nearbyStatus() {
+      var distance2Str = String(this.distance)
+      switch (distance2Str) {
+        case '-1':
+          return "附近的人";
+        case '1':
+          return "附近1公里";
+        case '2':
+          return "附近2公里";
+        case '3':
+          return "附近3公里";
+        case '-2':
+          return "同城";
+      }
+    }
+  };
+  methods = {
+    showNearbyList() {
+      this.isFindNearby = !this.isFindNearby;
+    },
+    openOption() {
+      this.showOption = !this.showOption;
+    },
+    shrinkNearby(distance) {
+      this.distance = distance;
+      this.isFindNearby = false;
+      this.resetListData().handleScroll().getConnectionsListCOnload();
+    },
+    clickOption(i) {
+      //恢复默认数据 
+      this.setOption(i).resetListData().handleScroll().getConnectionsListCOnload();
+    },
+    goFilter() {
+      tools.goNewPage("../connected-filter/index");
+    },
+    goDetail(userId) {
+      var finallyUrl = ''
+      if (this.isRegister) {
+        if (this.isPerfect) {
+          finallyUrl = "../connected-detail/index?someoneId=" + userId
+        } else {
+          finallyUrl = '../../join/my/updateCard'
+        }
+      } else {
+        finallyUrl = '../../join/bindPhone/register'
+      }
+      tools.goNewPage(finallyUrl);
+    }
+  }; 
+  events = {};
+  async onLoad() {
+    await this.getConnectionsListCOnload();
+    await this.checkUserInfo()
+  }
+
+  async checkUserInfo() {
+    var result = await core.getMyCard()
+    tools.handleResult(result, res => {
+      console.log(res)
+      this.isRegister = res.Phone
+      this.isPerfect = res.Address
+    })
+    this.$apply()
+  }
+
+  async getConnectionsListCOnload() {
+    this.isWait = true;
+    await this.getConnectionsListC();
+    this.isWait = false;
+    this.$apply();
+  }
+
+  async getConnectionsListC(pageindex) {
+    var setting = {
+      areacode: this.areaCode,
+      industryid: this.industryId,
+      distance: this.distance,
+      actiontype: this.type
+    };
+
+    pageindex && (setting["pageindex"] = pageindex);
+
+    var result = await core.getConnectionsList(setting);
+
+    if (!result.isok) {
+      tools.showModalCancel(result.Msg);
+      return;
+    }
+
+    this.contactsInfo.count = result.dataObj.count;
+    var currList = result.dataObj.list;
+    if (currList.length > 0) {
+      this.contactsInfo.list = this.contactsInfo.list.concat(currList);
+    } else {
+      this.contactsInfo.count != 0 && (this.isShowBottom = true);
+    }
+  }
+
+  toFollow(currIndex) {
+    this.isWait = true;
+    var item = this.contactsInfo.list[currIndex];
+    console.log(currIndex);
+    core.addDynamic(
+      2,
+      item.Id,
+      function() {
+        item.IsFollow = true;
+        this.isWait = false;
+        console.log("follow success", "人脉圈");
+      },
+      this
+    );
+  }
+
+  async onPullDownRefresh() {
+    wx.showNavigationBarLoading();
+    this.setOption(0).resetArguments().resetListData().resetFilterStatus();
+    await this.getConnectionsListCOnload();
+    wx.hideNavigationBarLoading();
+    wx.stopPullDownRefresh();
+  }
+
+  async onReachBottom() {
+    if (!this.isShowBottom) {
+      this.isLoading = true;
+      await this.getConnectionsListC(++this.pageindex);
+      this.isLoading = false;
+      this.$apply();
+    }
+  }
+
+  onPageScroll(scrollTop) {
+    this.scrollTop = scrollTop.scrollTop;
+    if (this.scrollTop >= 164) {
+      if (this.isFixed) {
+        return;
+      }
+      this.isFixed = true;
+    } else {
+      if (!this.isFixed) {
+        return;
+      }
+      this.isFixed = false;
+    }
+    this.$apply();
+  }
+
+  async onShow() {
+    this.cacheItem = wx.getStorageSync("filterInfo");
+    console.log(this.cacheItem, "filterInfo");
+    if (this.cacheItem) {
+      this.filterStatus = this.cacheItem.Name
+      "Id" in this.cacheItem
+        ? (this.industryId = this.cacheItem.Id)
+        : (this.areaCode = this.cacheItem.Code);
+      this.resetListData().handleScroll().getConnectionsListCOnload();
+      wx.removeStorageSync("filterInfo");
+      this.cacheItem = null;
+    }
+  }
+
+  resetListData() {
+    this.pageindex = 1;
+    this.contactsInfo.count = 0;
+    this.contactsInfo.list = [];
+    this.isShowBottom = false;
+    return this
+  }
+
+  handleScroll() {
+    this.scrollTop > 164 &&
+      wx.pageScrollTo({
+        scrollTop: 164,
+        duration: 0
+      });
+    return this;
+  }
+
+  setOption(i) {
+    this.type = this.mappingActionType[i];
+    this.optionsNum = i;
+    this.currentOption = this.options[i];
+    this.showOption = false;
+    return this;
+  }
+
+  resetFilterStatus() {
+    this.filterStatus = '筛选'
+    return this;
+  }
+
+  resetArguments() {
+    //默认3为人气榜
+    this.type = 3;
+    this.distance = -1
+    this.industryId = 0 
+    this.areaCode = 0
+    return this;
+  }
+}
+</script>

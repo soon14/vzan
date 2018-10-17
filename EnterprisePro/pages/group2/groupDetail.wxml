@@ -1,0 +1,165 @@
+<import src="/utils/wxParse/wxParse.wxml" />
+<import src="/template/shopcart.wxml" />
+<view class='{{currentSkin}} {{showModalStatus?"w-hidden":""}}'>
+
+  <view class="groupTop">
+    <view class='rel' wx:if="{{msg.slideimgs.length>0}}">
+      <swiper class='groupImg' duration='300' bindchange="changeGroupImage" circular="{{true}}">
+        <block wx:for="{{slideimgs_fmt}}">
+          <swiper-item>
+            <image src="{{item}}" class="groupImg" mode="aspectFill" bindtap='previewSwiper' id="{{index}}" />
+          </swiper-item>
+        </block>
+      </swiper>
+      <text class='groupimg-indicator'>{{currentGroupImg}}/{{slideimgs_fmt.length}}</text>
+    </view>
+    <image wx:else src='{{msg.img_fmt}}' mode='widthFix' class='w-full'></image>
+    <view class='p20'>
+      <view class='groupName line4 f38'>
+        {{groupdetail.name||""}}
+      </view>
+      <view class='d-flex d-flex-center'>
+        <view class='priceDesc mt10 flex1'>
+          <text class='f24'>￥</text>
+          <text class='f38'>{{msg.EntGroups.GroupPriceStr||""}}</text>
+          <text class='f24 ml20 c999 t-del'>￥{{msg.EntGroups.OriginalPriceStr||""}}</text>
+          <view class='c999'>
+            <text class='f26'>已团{{msg.EntGroups.GroupsNum}}件 · {{msg.EntGroups.GroupSize}}人团</text>
+          </view>
+        </view>
+        <button class='tc btn-none' open-type='share'>
+          <image src='/image/group_share.png' mode='widthFix' style='width:36rpx;'></image>
+          <view class='f26 c999'>分享</view>
+        </button>
+      </view>
+      <!--价格和倒计时 end-->
+      <view class='mt20 d-flex d-flex-center groupUser'>
+        <view class='flex1 d-flex d-flex-center groupUser'>
+
+          <image src='{{item}}' mode='aspectFill' wx:for="{{groupdetail.GroupUserList}}"></image>
+          <!-- <view class='groupUserMore c999 d-flex d-flex-center'>···</view> -->
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class='mt20 bg-w groupTopTwo' wx:if="{{groupdetail.GroupSponsorList!=null&&groupdetail.GroupSponsorList.length>0}}">
+    <view class='title f28'>以下小伙伴正在发起拼团，您可以直接参与：</view>
+    <view class='groupTopTwo-wrap'>
+      <view class='d-flex d-flex-center item' wx:for="{{groupdetail.GroupSponsorList}}">
+        <image src='{{item.UserLogo}}' mode='aspectFill' class=''></image>
+        <text class='f32 username flex1 line1'>{{item.UserName}}</text>
+        <view class='f24 des'>
+          <view class='cFFB049'>差
+            <text class='cF20033'>{{item.NeedNum}}</text> 人成团</view>
+          <view class='c999'>剩余{{item.countdown}}</view>
+        </view>
+        <view class='btn-joinGroup' bindtap='joinGroup' data-group='{{item}}'>去参团</view>
+      </view>
+    </view>
+  </view>
+
+  <view class='mt20 bg-w groupDes'>
+    <view class='article-head f fc'>
+      <view class='title'>商品详情</view>
+    </view>
+    <view class='content'>
+      <view class='richtext'>
+        <template is="wxParse" data="{{wxParseData:article.nodes}}" />
+      </view>
+
+    </view>
+  </view>
+
+  <view class='blank-120'></view>
+  <view class='bg-w d-flex d-flex-center groupBottom'>
+    <navigator open-type='reLaunch' url="/pages/index/index">
+      <view class='home'>
+        <view class='dzicon icon-home3'></view>
+        <text class='f24'>首页</text>
+      </view>
+    </navigator>
+
+    <view class='flex1 notbegin disabled' wx:if="{{msg.stockLimit&&msg.stock<=0}}">
+      <text>库存不足</text>
+    </view>
+    <view wx:elif="{{msg.state==0}}">
+      <text>产品已下架</text>
+    </view>
+    <view wx:elif="{{msg.tag==-1}}">
+      <text>产品已删除</text>
+    </view>
+    <!--<view class='flex1 d-flex d-flex-center' wx:else>
+    <form report-submit="true" bindsubmit='clidkAddGroupSingle' class='w1005' data-groupid='{{msg.Id}}'>
+      <button class='btn btnBuySingle flex1  d-flex d-flex-center' formType="submit" wx:if="{{clientTel!='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{msg.priceStr}}</text>
+          </view>
+          <view class='f24'>单独购买</view>
+        </view>
+      </button>
+      <button class='btn btnBuySingle flex1  d-flex d-flex-center' open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" wx:if="{{clientTel=='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{msg.priceStr}}</text>
+          </view>
+          <view class='f24'>单独购买</view>
+        </view>
+      </button>
+    </form>
+    <form report-submit="true" bindsubmit='clidkAddGroup' class='w1005' data-groupid='{{msg.Id}}'>
+      <button class='btn btnBuyGroup flex1 d-flex d-flex-center' formType="submit" wx:if="{{clientTel!='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{msg.EntGroups.GroupPriceStr}}</text>
+          </view>
+          <view class='f24'>一键开团</view>
+        </view>
+      </button>
+      <button class='btn btnBuyGroup flex1 d-flex d-flex-center' open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" wx:if="{{clientTel=='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{msg.EntGroups.GroupPriceStr}}</text>
+          </view>
+          <view class='f24'>一键开团</view>
+        </view>
+      </button>
+    </form>
+  </view>-->
+    <view class='flex1 d-flex d-flex-center' wx:else>
+      <form report-submit="true" bindsubmit='clidkAddGroup' class='w1005' data-groupid='{{msg.Id}}'>
+        <button class='btn btnBuySingle flex1  d-flex d-flex-center pro_btn br0' formType="submit">
+          <view>
+            <view>
+              <text class='f20'>￥</text>
+              <text class='f32' wx:if="{{msg.GASDetailList.length>0}}">{{msg.GASDetailList[0].groupPrice}}</text>
+              <text class='f32' wx:if="{{msg.GASDetailList.length==0}}">{{msg.EntGroups.GroupPriceStr}}</text>
+            </view>
+            <view class='f24'>立即参团</view>
+          </view>
+        </button>
+
+      </form>
+      <!-- <form report-submit="true" bindsubmit='clidkAddGroup' class='w1005' data-groupid='{{msg.Id}}'>
+      <button class='btn btnBuyGroup flex1 d-flex d-flex-center' formType="submit">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{msg.EntGroups.GroupPriceStr}}</text>
+          </view>
+          <view class='f24'>一键开团</view>
+        </view>
+      </button>
+      
+    </form> -->
+    </view>
+  </view>
+
+  <!-- 购物车弹窗 -->
+  <template is="shopcart" data="{{msg,showModalStatus,pickspecification,animationData,discountTotal,oldprice,stock,specInfo,addshop,gobuy,totalCount}}" />
+
+</view>

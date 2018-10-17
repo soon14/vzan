@@ -1,0 +1,87 @@
+<style lang="less">
+    .st-icon {
+        width: 210rpx;
+        height: 210rpx;
+        border-radius: 100%;
+        margin-top: 100rpx;
+    }
+    .pt40 {
+        padding-top: 40rpx;
+    }
+    .st-bottom {
+        position: fixed;
+        top: 80%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        .bottom {
+            position: fixed;
+            top: 80%;
+            left: 50%;
+            transform: translate(-50%, -50%)
+        }
+        .st-btn {
+            width: 470rpx;
+            height: 98rpx;
+            line-height: 98rpx;
+            text-align: center;
+            font-size: 36rpx;
+            border-radius: 49rpx;
+        }
+        .btn-default {
+            background-color: #FBFAFC;
+            border: 1px solid #D6D5D6
+        }
+    }
+</style>
+<template>
+    <view class="{{currentSkin}}">
+        <view class='tc'>
+            <image src='https://j.vzan.cc/miniapp/img/enterprise/ico_chuzhi.png' class='st-icon' />
+            <view class='pt40 f32 c333'>储值余额</view>
+            <view class='f70 c333'>￥{{vm.AccountMoneyStr||0.00}}</view>
+        </view>
+        <view class='st-bottom'>
+            <navigator hover-class='none' url="/pages/my/storePay" open-type='navigate'>
+                <view class='st-btn skin_bg'>去支付</view>
+            </navigator>
+            <navigator hover-class='none' url='/pages/my/mysavePrice?type=save' open-type='navigate'>
+                <view class='st-btn mt40  btn-default'>充值</view>
+            </navigator>
+            <navigator hover-class='none' url='/pages/my/mysavePrice?type=history' open-type='navigate'>
+                <view class='c999 mt40 tc'>查看账单记录</view>
+            </navigator>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,tools
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class storeValue extends wepy.page {
+        config = {
+            navigationBarTitleText: "支付",
+        };
+        components = {};
+        data = {
+            vm: {},
+            currentSkin: {}
+        }
+        methods = {}
+        async onShow() {
+            await tools.setPageSkin(this);
+            await this.priceInfo()
+        }
+        async priceInfo() {
+            let _g = await core.valueMoney();
+            if (_g.isok) {
+                this.vm = _g.saveMoneySetUser
+                this.$apply()
+            } else {
+                tools.showModal(_g.msg,false)
+            }
+        }
+    }
+</script>

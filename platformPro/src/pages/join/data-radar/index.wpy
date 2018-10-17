@@ -1,0 +1,185 @@
+<style lang="less">
+  .data-radar {
+    border-top: 1px solid #eee;
+    line-height: 1;
+    .my-card-data {
+      padding-top: 18rpx;
+    }
+    .wheight160 {
+      height: 160rpx;
+      flex-shrink: 0;
+      width: 250rpx;
+    }
+    .vertical-line {
+      height: 72rpx;
+      width: 1px;
+      right: 0;
+      top: 50%;
+      margin-top: -36rpx;
+      background: #dbdbdb;
+    }
+    .btn-type {
+      width: 108rpx;
+      height: 48rpx;
+      border: 1px solid rgba(63, 212, 129, 1);
+      border-radius: 24rpx;
+    }
+    .my-contact-data {
+      padding-top: 30rpx;
+    }
+    .my-shop-data {
+      padding-top: 30rpx;
+    }
+  }
+</style>
+<template>
+  <view class="data-radar">
+    <view class="my-card-data bg-w">
+      <view class="pw30 f fj c333 f24 fc">
+        <text>我的名片数据分析</text>
+        <picker range="{{typeRange}}" value="{{type}}" @change="getTypeData">
+          <view class="btn-type color-light-green f fc jc">
+            <text class="mr10 f22">{{name}}</text>
+            <text class="dzicon icon-xiala"></text>
+          </view>
+        </picker>
+      </view>
+      <view class="content mt20 bg-w f">
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.MyCardViewCount}}</text>
+          <text class="f26 c666 mt25">浏览量</text>
+          <view class="abs vertical-line"></view>
+        </view>
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.MyCardFollowCount}}</text>
+          <text class="f26 c666 mt25">收藏数</text>
+          <view class="abs vertical-line"></view>
+        </view>
+        <view class=" wheight160 f fv fc">
+          <text class="f60 c333 mt25">{{radar.MyCardVisitorCount}}</text>
+          <text class="f26 c666 mt25">累计访客</text>
+        </view>
+      </view>
+      <view class="content mt20 bg-w f">
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.MyCardDzCount}}</text>
+          <text class="f26 c666 mt25">点赞量</text>
+          <view class="abs vertical-line"></view>
+        </view>
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.MyCardSiXinCount}}</text>
+          <text class="f26 c666 mt25">私信</text>
+          <view class="abs vertical-line"></view>
+        </view>
+        <view class=" wheight160 f fv fc">
+          <text class="f60 c333 mt25">{{radar.MyCardShareCount}}</text>
+          <text class="f26 c666 mt25">转发量</text>
+        </view>
+      </view>
+    </view>
+    <view class="my-contact-data bg-w mt20">
+      <view class="pl30 f24 c666">人脉关系统计</view>
+      <view class="content mt20 bg-w f">
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.MutualFollowCount}}</text>
+          <text class="f26 c666 mt25">相互关注</text>
+        </view>
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.FollowCount}}</text>
+          <text class="f26 c666 mt25">已关注</text>
+        </view>
+        <view class=" wheight160 f fv fc">
+          <text class="f60 c333 mt25">{{radar.FanCount}}</text>
+          <text class="f26 c666 mt25">粉丝</text>
+        </view>
+      </view>
+    </view>
+    <view class="my-shop-data bg-w mt20" wx:if="{{radar.StoreViewCount != 0 || radar.StoreFavoriteCount != 0 || radar.StoreVisitorCount != 0}}">
+      <view class="pl30 f24 c666">平台入驻店铺数据统计</view>
+      <view class="content mt20 bg-w f">
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.StoreViewCount}}</text>
+          <text class="f26 c666 mt25">店铺浏览量</text>
+        </view>
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{radar.StoreFavoriteCount}}</text>
+          <text class="f26 c666 mt25">店铺收藏量</text>
+        </view>
+        <view class=" wheight160 f fv fc">
+          <text class="f60 c333 mt25">{{radar.StoreVisitorCount}}</text>
+          <text class="f26 c666 mt25">店铺访客量</text>
+        </view>
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import addr from "@/lib/addr";
+  import {
+    http,
+    tools,
+    core
+  } from "@/lib/core";
+  import com_wait from "@/components/com_wait";
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "数据雷达"
+    };
+    data = {
+      typeRange: ["累计", "本月", "上月"],
+      type: 0,
+      name: "累计",
+      radar: {
+        //接口怼回来的数据
+        MyCardViewCount: 0,
+        MyCardDzCount: 0,
+        MyCardFollowCount: 0,
+        MyCardVisitorCount: 0,
+        MyCardShareCount: 0,
+        MyCardSiXinCount: 0,
+        MyCardSiXinCount: 0,
+        FollowCount: 0,
+        FanCount: 0,
+        MutualFollowCount: 0,
+        StoreViewCount: 0,
+        StoreFavoriteCount: 0,
+        StoreVisitorCount: 0
+      },
+      isWait: false
+    };
+    components = {
+      comWait: com_wait
+    }
+    watch = {
+      type(newValue, oldValue) {
+        var actual = Number(newValue) - 1
+        this.getRadarDataC(actual)
+      }
+    };
+    methods = {
+      getTypeData(e) {
+        this.type = e.detail.value;
+        this.name = this.typeRange[this.type];
+      }
+    };
+    onLoad() {
+      this.getRadarDataC();
+    }
+    async getRadarDataC() {
+      this.isWait = true
+      var defaultType = this.type - 1;
+      var result = await core.getRadarData(defaultType);
+      tools.handleResult(result, res => {
+        for (var key in this.radar) {
+          this.radar[key] = res[key];
+        }
+      }, (err) => {
+        tools.showModalCancle(err.Msg);
+      });
+      this.isWait = false
+      this.$apply()
+    }
+  }
+</script>

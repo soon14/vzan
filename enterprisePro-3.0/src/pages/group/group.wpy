@@ -1,0 +1,419 @@
+<style lang="less">
+  .group {
+    width: 100%;
+    .loding {
+      width: 100%;
+      height: 100vh;
+    }
+    .g-pro {
+      background: #fff;
+      padding: 20rpx;
+      .g-clock {
+        width: 270rpx;
+        height: 85rpx;
+        text-align: center;
+        font-style: italic;
+        box-shadow: 0 10rpx 40rpx #f7f5f2;
+        text:first-child {
+          font-style: normal;
+        }
+      }
+      .g-userImg {
+        width: 50rpx;
+        height: 50rpx;
+        border-radius: 50%;
+        margin-left: 15rpx;
+        box-shadow: 0 0 5rpx #999;
+      }
+    }
+    .g-more {
+      margin-top: 20rpx;
+      background: #fff;
+      padding: 40rpx 0;
+      .g-title {
+        padding-left: 30rpx;
+        border-left: 6rpx solid #f20033;
+      }
+      .g-moreLst {
+        padding: 20rpx 30rpx;
+        .g-moreitem {
+          background-color: #fafafa;
+          margin-top: 20rpx;
+          height: 110rpx;
+          padding-left: 20rpx;
+          >image {
+            width: 88rpx;
+            height: 88rpx;
+            border-radius: 100%;
+          }
+          .g-morebtn {
+            width: 164rpx;
+            background-color: #f20033;
+            height: 110rpx;
+            text-align: center;
+            line-height: 110rpx;
+            color: #fff;
+          }
+        }
+      }
+    }
+    .g-detail {
+      margin-top: 20rpx;
+      background: #fff;
+      .g-deltitle {
+        height: 100rpx;
+        line-height: 100rpx;
+        font-size: 36rpx;
+        text-align: center;
+      }
+    }
+    .g-bottom {
+      background: #f9f9f9;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 100rpx;
+      border-top: 1px solid #eee;
+      .g-home {
+        width: 100rpx;
+        height: 100rpx;
+        text-align: center;
+        color:#ccc;
+      }
+      .g-btn {
+        height: 100rpx;
+        font-size: 32rpx;
+        text-align: center;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="group {{currentSkin}}">
+    <repeat wx:if="{{vm_group.ImgList.length}}">
+      <comSlider :currentCom.sync="vm_group" />
+    </repeat>
+    <image wx:else mode="widthFix" class="w-100" src="{{vm_group.ImgUrl}}" />
+    <!-- 商品信息 -->
+    <view class='g-pro'>
+      <view class='f36 line line3'>{{vm_group.GroupName||""}}</view>
+      <view class='f fc'>
+        <view class='f1'>
+          <wxc-price icon="sub" class="f42 cred">{{(vm_group.DiscountPrice||0)/100}}</wxc-price>
+          <wxc-price status="del" class="c999 ml20">{{(vm_group.UnitPrice||0)/100}}</wxc-price>
+        </view>
+        <view class='g-clock f fv skin_txt' wx:if="{{group_time.groupstate==1}}">
+          <text class='f24'>{{group_time.fromTheEnd_txt}}</text>
+          <text>{{group_time.timeInter}}</text>
+        </view>
+      </view>
+      <view class='mt20 f fc'>
+        <view class='f1 f fc'>
+          <text class='f26'>已售{{vm_group.virtualSalesCount+vm_group.salesCount}}</text>
+          <repeat for="{{vm_group.GroupUserList}}">
+            <image src='{{item}}' mode='aspectFill' class="g-userImg" />
+          </repeat>
+        </view>
+        <text class='f26 c999'>仅剩{{vm_group.RemainNum}}份<repeat wx:if="{{vm_group.LimitNum>0}}"> | 限购{{vm_group.LimitNum}}份</repeat></text>
+      </view>
+    </view>
+    <repeat wx:if="{{vm_group.value}}">
+      <comValue :vm.sync="vm_group.value" />
+    </repeat>
+    <view class='g-more' wx:if="{{vm_group.GroupSponsorList!=null&&vm_group.GroupSponsorList.length>0}}">
+      <view class='g-title'>以下小伙伴正在发起拼团，您可以直接参与：</view>
+      <view class='g-moreLst'>
+        <repeat for="{{order_time}}">
+          <view class='f fc g-moreitem'>
+            <image src='{{item.UserLogo}}' mode='aspectFill' />
+            <text class='f32 pl20 f1 line line1'>{{item.UserName||""}}</text>
+            <view class='f24 f fc fv mr10'>
+              <view>差 <text class="cred">{{item.NeedNum}}</text> 人成团</view>
+              <view class='c999'>剩余{{item.countdown}}</view>
+            </view>
+            <form report-submit="true" @submit='joinGroup({{item.Id}})'>
+              <button class='g-morebtn f28' formType="submit">去参团</button>
+            </form>
+          </view>
+        </repeat>
+      </view>
+    </view>
+    <view class='g-detail'>
+      <view class='w-100 f fc'>
+        <repeat for="{{tab}}">
+          <view class="f1 g-deltitle {{tabId==index?'skin-bfoot':''}}" @tap='clickTab({{index}})'>{{item}}</view>
+        </repeat>
+      </view>
+      <repeat wx:if="{{tabId==0}}">
+        <comRichIn :currentCom="vm_group" wx:if="{{vm_group.Description!=''}}" />
+        <wxc-abnor type="DATA" wx:else></wxc-abnor>
+      </repeat>
+      <repeat wx:if="{{tabId==1}}">
+        <view class="p20">
+          <view class='t-b'>1.拼团有效期</view>
+          <text>拼团有效期是自开团起的24小时内，如果距离活动结束时间小于24小时，则已活动时间为准。</text>
+          <view class='t-b mt20'>2.拼团成功</view>
+          <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。</text>
+          <view class='t-b mt20'>3.拼团失败</view>
+          <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+        </view>
+      </repeat>
+    </view>
+    <view style="height:100rpx;" />
+    <view class='g-bottom f fc'>
+      <navigator class='g-home f fv fc fc-h' open-type='reLaunch' url="/pages/index/index">
+        <text class='dzicon icon-home3 f42' />
+        <text class='f24 c666'>首页</text>
+      </navigator>
+      <repeat>
+        <comIm :false.sync="false" :vm.sync="userInfo" wx:if="{{vm_group.imswitch}}" @getUser.user="getUser" :wxServer.sync="vm_group.wxServer"/>
+      </repeat>
+      <view class='f1 g-btn bgcc cfff' style="line-height:100rpx;" wx:if="{{vm_group.RemainNum<=0}}">库存不足</view>
+      <view class='f f1 fc' wx:if="{{vm_group.RemainNum>0&&group_time.groupstate==1&&userInfo.newUser==false}}">
+        <form report-submit="true" @submit='goBuy({{vm_group.Id}})' class='w-100'>
+          <button class='g-btn cfff btnBuySingle f fv fc fc-h' formType="submit"><text>单独购买</text><text>￥{{vm_group.UnitPrice/100}}</text></button>
+        </form>
+        <form report-submit="true" @submit='groupBuy({{vm_group.Id}})' class='w-100'>
+          <button class='g-btn cfff btnBuyGroup f fv fc fc-h' formType="submit"><text>一键拼团</text><text>￥{{vm_group.DiscountPrice/100}}</text></button>
+        </form>
+      </view>
+      <view class='f f1 fc' wx:if="{{vm_group.RemainNum>0&&group_time.groupstate==1&&userInfo.newUser}}">
+        <button class='f1 g-btn cfff btnBuySingle f fv fc fc-h' open-type='getUserInfo' @getuserinfo='getUser'><text>单独购买</text><text>￥{{vm_group.UnitPrice/100}}</text></button>
+        <button class='f1 g-btn cfff btnBuyGroup f fv fc fc-h' open-type='getUserInfo' @getuserinfo='getUser'><text>一键拼团</text><text>￥{{vm_group.DiscountPrice/100}}</text></button>
+      </view>
+      <view class='f1 g-btn btnBuyGroup cfff' style="line-height:100rpx;" wx:elif="{{group_time.groupstate==-1}}">距离开始还有：{{group_time.timeInter}}</view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import com_slider_in from "../../components/com_slider_in";
+  import com_richtxt from "../../components/com_richtxt";
+  import com_goodValue from "@/components/com_goodValue";
+  import com_imSwitch from "@/components/com_imSwitch";
+  import _get from "../../lib/lodash.get.js";
+  import addr from "../../lib/addr.js";
+  import {
+    core,
+    tools,
+    http
+  } from "../../lib/core.js";
+  import {
+    wxParse
+  } from '../../lib/wxParse/wxParse';
+  // import
+  //第一步： 引入组件文件
+  export default class group extends wepy.page {
+    config = {
+      navigationBarTitleText: "商品详情",
+      // 引入min组件
+      usingComponents: {
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+        "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+      }
+    };
+    //第二步：声明组件
+    components = {
+      comSlider: com_slider_in,
+      comRichIn: com_richtxt,
+      comValue: com_goodValue,
+      comIm: com_imSwitch,
+    };
+    data = {
+      vm_group: {},
+      groupId: 0,
+      tab: ["商品详情", "拼团规则"],
+      tabId: 0,
+      userInfo: {},
+      group_time: {},
+      order_time: {},
+      currentSkin: {},
+    };
+    methods = {
+      wxParseImgTap(e) {
+        let src = e.currentTarget.dataset.src;
+        tools.preViewShow(src);
+      },
+      async getUser(e) {
+        let _u = e.detail
+        if (_u.errMsg.includes('getUserInfo:fail auth deny')) {
+          return;
+        }
+        let code = await core.login();
+        let vm = {
+          code,
+          phone: 0,
+          iv: _u.iv,
+          data: _u.encryptedData,
+          sign: _u.signature,
+        }
+        this.userInfo = await core.loginUserInfo(vm)
+        this.$apply()
+      },
+      // 获取用户手机号码
+      async getPhoneNumber(e) {
+        let _g = e.detail;
+        if (_g.errMsg == "getPhoneNumber:fail user deny") {
+          return;
+        }
+        let code = await core.login();
+        let vm = {
+          iv: _g.iv,
+          code,
+          data: _g.encryptedData,
+          sign: this.userInfo.userid,
+          phone: 1
+        };
+        await core.loginUserInfo(vm);
+        this.userInfo = await core.getUserInfo();
+        this.$apply();
+      },
+      //点击：商品详情/拼团规则
+      clickTab(index) {
+        this.tabId = index;
+      },
+      //去参团
+      joinGroup(id, e) {
+        core.formId(e.detail.formId);
+        tools.goNewPage("../group/groupInvite?id=" + id);
+      },
+      //单独购买
+      goBuy(id, e) {
+        core.formId(e.detail.formId);
+        tools.goNewPage(
+          "../group/groupOrder?groupid=" + id + "&isGroup=0&isGHead=0&gsid=0"
+        );
+      },
+      //一键拼团
+      groupBuy(id, e) {
+        core.formId(e.detail.formId);
+        tools.goNewPage(
+          "../group/groupOrder?groupid=" + id + "&isGroup=1&isGHead=1&gsid=0"
+        );
+      }
+    };
+    onLoad(options) {
+      this.groupId = _get(options, "id", 0);
+      this.$apply()
+    }
+    async initGroupInfo(groupId) {
+      let app = wepy.$instance
+      if (!groupId) {
+        await tools.showModal("团购不存在！", false)
+        tools.goBack(1)
+        return;
+      }
+      let store = _get(app.globalData, 'storeConfig', '')
+      if (store == '') {
+        store = await core.getStoreConfig()
+      }
+      let userInfo = _get(app.globalData, 'userInfo', '')
+      if (userInfo == '') {
+        userInfo = await core.getUserInfo();
+      }
+      http.post(addr.GetGroupDetail, {
+        appId: app.globalData.appid,
+        groupId: groupId,
+      }).then(async groupInfo => {
+        if (!groupInfo.isok) {
+          await tools.showModal(groupInfo.msg, false)
+          tools.goBack(1)
+          return;
+        }
+        let _g = groupInfo.groupdetail;
+        _g.slideimgs = []
+        _g.slideimgs_fmt = []
+        for (let i = 0, len = _g.ImgList.length; i < len; i++) {
+          _g.slideimgs_fmt.push(_g.ImgList[i].thumbnail)
+          _g.slideimgs.push(_g.ImgList[i].filepath)
+        }
+        //选取前5个用户
+        if (_g.GroupUserList && _g.GroupUserList.length > 0) {
+          _g.GroupUserList = _g.GroupUserList.slice(0, 5)
+        }
+        //选取两个可以参加的团
+        if (_g.GroupSponsorList && _g.GroupSponsorList.length > 0) {
+          _g.GroupSponsorList = _g.GroupSponsorList.slice(0, 2)
+        }
+        //转换富文本
+        _g.content_fmt = wxParse('content_fmt', 'html', _g.Description || "", this, 5);
+        _g.ValidDateStart = _g.ValidDateStart.replace(/-/g, "/");
+        _g.ValidDateEnd = _g.ValidDateEnd.replace(/-/g, "/");
+        _g.imswitch = store.storeInfo.funJoinModel.imSwitch
+        _g.wxServer=store.storeInfo.funJoinModel.wxServer
+        //保存
+        this.vm_group = _g
+        this.userInfo = userInfo
+        this.$apply()
+        this.goodValue(groupId);
+        this.groupCutDown(_g)
+      })
+    }
+    //评论
+    goodValue(id) {
+      let app = wepy.$instance
+      let userInfo = app.globalData.userInfo
+      let vm = {
+        goodsid: id || 0,
+        pageindex: 1,
+        pagesize: 1,
+        sel: -1
+      };
+      http.post(addr.GetGoodsCommentList, {
+        appid: app.globalData.appid,
+        userid: userInfo.userid,
+        goodsid: vm.goodsid,
+        pageIndex: vm.pageindex,
+        pageSize: vm.pagesize,
+        haveimg: vm.sel,
+      }).then(_g => {
+        let _v = [];
+        if (_g.dataObj.list.length) {
+          _v = _g.dataObj.list[0];
+        } else {
+          _v = "";
+        }
+        this.vm_group.value = _v;
+        this.$apply();
+      })
+    }
+    onUnload() {
+      clearInterval(this.timeInter);
+    }
+    onHide() {
+      clearInterval(this.timeInter);
+    }
+    async onShow() {
+      await tools.setPageSkin(this);
+      this.initGroupInfo(this.groupId);
+    }
+    async groupCutDown(vm_group) {
+      let that = this;
+      if (Object.keys(vm_group).length) {
+        let starTime = vm_group.ValidDateStart;
+        let endTime = vm_group.ValidDateEnd;
+        that.timeInter = setInterval(async res => {
+          that.group_time = await core.groupTime(starTime, endTime);
+          that.order_time = await core.initCountDown(vm_group);
+          that.$apply();
+        }, 1000);
+      }
+    }
+    onShareAppMessage() {
+      let [_title, ImgUrl] = [this.vm_group.GroupName, this.vm_group.ImgUrl];
+      return {
+        title: _title,
+        path: "/pages/group/group?id=" + this.vm_group.Id,
+        imageUrl: ImgUrl,
+        success: function(res) {
+          tools.loading("转发成功", 'success');
+        }
+      };
+    }
+  }
+</script>

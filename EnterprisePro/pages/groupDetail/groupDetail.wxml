@@ -1,0 +1,147 @@
+<import src="/template/countdown.wxml" />
+<import src="/utils/wxParse/wxParse.wxml" />
+
+
+<view class='{{currentSkin}}'>
+<view class="groupTop">
+  
+  <swiper class='groupImg' circular="true" autoplay='true' interval='3000' duration='500'>
+    <block wx:for="{{groupdetail.ImgList}}">
+      <swiper-item>
+        <image mode='scaleToFill' src="{{item.thumbnail}}" class="groupImg" bindtap='previewSwiper' id="{{index}}" />
+      </swiper-item>
+    </block>
+  </swiper>
+  <view class='p20'>
+    <view class='groupName line4'>
+      {{groupdetail.GroupName||""}}
+    </view>
+    <!--价格和倒计时 begin-->
+    <view class='d-flex d-flex-center'>
+      <view class='p-price mt10 flex1'>
+        <text class='f22'>￥</text>
+        <text class='f42'>{{(groupdetail.DiscountPrice||0)/100}}</text>
+        <text class='f24 ml20 c999 fprice'>￥{{(groupdetail.UnitPrice||0)/100}}</text>
+      </view>
+      <view>
+        <view class='groupEndClock' wx:if="{{groupstate==1}}">
+          <view class='f24'>{{fromTheEnd_txt}}</view>
+          <!--倒计时-->
+          <template is="tpl_countdown" data="{{...fromTheEnd}}" />
+        </view>
+      </view>
+    </view>
+    <!--价格和倒计时 end-->
+    <view class='mt20 d-flex d-flex-center groupUser'>
+      <view class='flex1 d-flex d-flex-center groupUser'>
+        <text class='f26'>已售{{groupdetail.CreateNum-groupdetail.RemainNum}}份</text>
+        <image src='{{item}}' mode='aspectFill' wx:for="{{groupdetail.GroupUserList}}"></image>
+        <!-- <view class='groupUserMore c999 d-flex d-flex-center'>···</view> -->
+      </view>
+      <text class='f26 c999 txtnobr'>仅剩{{groupdetail.RemainNum}}份<block wx:if="{{groupdetail.LimitNum>0}}"> | 限购{{groupdetail.LimitNum}}份</block>
+      </text>
+    </view>
+  </view>
+</view>
+<view class='mt20 bg-w groupTopTwo' wx:if="{{groupdetail.GroupSponsorList!=null&&groupdetail.GroupSponsorList.length>0}}">
+  <view class='title f28'>以下小伙伴正在发起拼团，您可以直接参与：</view>
+  <view class='groupTopTwo-wrap'>
+    <view class='d-flex d-flex-center item' wx:for="{{groupdetail.GroupSponsorList}}">
+      <image src='{{item.UserLogo}}' mode='aspectFill' class=''></image>
+      <text class='f32 username flex1 line1'>{{item.UserName}}</text>
+      <view class='f24 des'>
+        <view class='cFFB049'>差
+          <text class='cF20033'>{{item.NeedNum}}</text> 人成团</view>
+        <view class='c999'>剩余{{item.countdown}}</view>
+      </view>
+      <view class='btn-joinGroup' bindtap='joinGroup' data-group='{{item}}'>去参团</view>
+    </view>
+  </view>
+</view>
+
+<view class='mt20 bg-w groupDes'>
+  <view class='d-flex d-flex-center title'>
+    <view class='flex1 item {{item.sel?"sel":""}}' wx:for="{{tab}}" data-index='{{index}}' bindtap='clickTab'>{{item.name}}</view>
+  </view>
+  <view class='content detail-info'>
+    <!--商品详情-->
+    <view wx:if="{{tab[0].sel}}" class='richtext'>
+      <template is="wxParse" data="{{wxParseData:groupdetail.Description.nodes}}" />
+    </view>
+    <!--拼团规则-->
+    <view wx:if="{{tab[1].sel}}">
+      <view class='h3'>1.拼团有效期</view>
+      <text>拼团有效期是自开团起的24小时内，如果距离活动结束时间小于24小时，则已活动时间为准。</text>
+      <view class='h3'>2.拼团成功</view>
+      <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。</text>
+      <view class='h3'>3.拼团失败</view>
+      <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+    </view>
+  </view>
+</view>
+
+<view class='blank-120'></view>
+<view class='bg-w d-flex d-flex-center groupBottom'>
+  <navigator open-type='reLaunch' url="/pages/index/index"  class='home f fc fc-h'>
+    <view>
+      <view class='dzicon icon-home3'></view>
+      <text class='f24'>首页</text>
+    </view>
+  </navigator>
+  <view class='home f fc fc-h' style='border-left:1rpx solid #f2f2f2;border-right:1rpx solid #f2f2f2;width:100rpx;text-align:center;color:#333333;' bindtap='gochat' wx:if="{{imSwitch}}">
+    <view class=''>
+      <view class='dzicon icon-contact2'></view>
+      <view class='f24' style='word-break:keep-all;'>客服</view>
+    </view>
+  </view>
+  <view class='flex1 notbegin disabled' wx:if="{{groupdetail.RemainNum<=0}}">
+    <text>库存不足</text>
+  </view>
+  <view class='flex1 d-flex d-flex-center' wx:elif="{{groupstate==1}}">
+    <form report-submit="true" bindsubmit='clidkAddGroupSingle' class='w1005' data-groupid='{{groupdetail.Id}}'>
+      <button class='btn btnBuySingle flex1  d-flex d-flex-center' formType="submit" wx:if="{{clientTel!='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{groupdetail.UnitPrice/100}}</text>
+          </view>
+          <view class='f24'>单独购买</view>
+        </view>
+      </button>
+      <button class='btn btnBuySingle flex1  d-flex d-flex-center' open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" wx:if="{{clientTel=='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{groupdetail.UnitPrice/100}}</text>
+          </view>
+          <view class='f24'>单独购买</view>
+        </view>
+      </button>
+    </form>
+    <form report-submit="true" bindsubmit='clidkAddGroup' class='w1005' data-groupid='{{groupdetail.Id}}'>
+      <button class='btn btnBuyGroup flex1 d-flex d-flex-center' formType="submit" wx:if="{{clientTel!='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{groupdetail.DiscountPrice/100}}</text>
+          </view>
+          <view class='f24'>一键拼团</view>
+        </view>
+      </button>
+      <button class='btn btnBuyGroup flex1 d-flex d-flex-center' open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" wx:if="{{clientTel=='未绑定'}}">
+        <view>
+          <view>
+            <text class='f20'>￥</text>
+            <text class='f32'>{{groupdetail.DiscountPrice/100}}</text>
+          </view>
+          <view class='f24'>一键拼团</view>
+        </view>
+      </button>
+    </form>
+  </view>
+  <view class='flex1 notbegin' wx:elif="{{groupstate==-1}}">
+    <text>距离开始还有：</text>
+    <template is="tpl_countdown" data="{{...fromTheEnd}}" />
+  </view>
+</view>
+</view>

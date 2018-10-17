@@ -1,0 +1,434 @@
+<style lang="less">
+  .c-d9d8d9 {
+    color: #d9d8d9;
+  }
+
+  .connected-wrap {
+    padding-bottom: 0rpx;
+    .build-card {
+      height: 320rpx;
+      background-color: #d9d8d9;
+    }
+    .option {
+      overflow: hidden;
+      transition: all .35s cubic-bezier(.4,0,0,1);
+      top: 100rpx;
+      left: 0;
+      visibility: hidden;
+      height: 0;
+      z-index: 9;
+      border-bottom: 1px solid #eee;
+      .item {
+        height: 88rpx;
+        line-height: 88rpx;
+        padding-left: 60rpx;
+      }
+      .active {
+        color: #3fd983;
+        background-color: #f6f6f6;
+      }
+    }
+    .fadeIn {
+      visibility: visible!important;
+      height: 264rpx!important;
+    }
+    .fadeIn2 {
+      visibility: visible!important;
+      height: 352rpx!important;
+    }
+    .mt280 {
+      margin-top: 280rpx;
+    }
+    .selectList {
+      background: #fff;
+      border: 1px solid #eee;
+      border-top: none;
+      left: 0;
+      right: 0;
+      top: 100rpx;
+      z-index: 8;
+      .item {
+        height: 80rpx;
+      }
+    }
+    .wp60 {
+      max-width: 60%;
+    }
+    .wp33 {
+      width: 33.33333%;
+    }
+    .refresh {
+      width: 81rpx;
+      height: 81rpx;
+      border-radius: 50%;
+      border: 1px solid #d9d8d9;
+      position: fixed;
+      right: 60rpx;
+      bottom: 60rpx;
+    }
+    .ts {
+      transition: all 0.35s ease-in-out;
+    }
+
+
+  }
+
+</style>
+<template leng="wxml">
+  <view class="connected-wrap" @tap="closeAll">
+    <image mode="aspectFill" wx:if="{{!isPerfect}}" @tap="toUpdateCard" class="build-card w-full" src="http://j.vzan.cc/miniapp/img/platformPro/connected-index-banner.jpg"></image>
+    <view class="card-tab w-full h100 rel f fc c666 bg-w bbeee" style="{{isFixed ? 'position:fixed; top:0; z-index: 10;' : ''}}">
+      <view class="fs wp33 f fc fc-h h-full c333" @tap.stop="openOption">
+        <view>{{currentOption}}</view>
+        <view class="dzicon icon-xiala ml20 f22 ts" style="transform:{{showOption?'rotate(180deg)':''}}"></view>
+      </view>
+      <view class="fs wp33 f fc fc-h h-full rel" @tap.stop="showNearbyList">
+        <view>{{nearbyStatus}}</view>
+        <view class="dzicon icon-xiala ml20 f22 c-d9d8d9 ts"  style="transform:{{isFindNearby?'rotate(180deg)':''}}"></view>
+      </view>
+      <view class="fs wp33 f fc fc-h h-full" @tap="goFilter">
+        <view class="wp60 ellipsis">{{filterStatus}}</view>
+        <view class="dzicon icon-xiala ml20 f22 c-d9d8d9"></view>
+      </view>
+      <view class="option abs bg-w w-full f30 c333 {{showOption ? 'fadeIn' : ''}}">
+        <repeat for="{{options}}" item="option" index="optionIndex">
+          <view class="item f fc fj {{optionsNum==optionIndex?'active':''}}" @tap.stop="clickOption({{optionIndex}})">
+            <view>{{option}}</view>
+            <view class="dzicon icon-xuanze_Choice f40 mr30" wx:if="{{optionsNum==optionIndex}}"></view>
+          </view>
+        </repeat>
+      </view>
+       <view class="option abs bg-w w-full f30 c333 {{isFindNearby ? 'fadeIn2' : ''}}">
+          <view class="item f fc fj {{distance == 1 ?'active':''}}" @tap.stop="shrinkNearby(1)">
+            <view>附近1公里</view>
+            <view class="dzicon icon-xuanze_Choice f40 mr30" wx:if="{{distance == 1}}"></view>
+          </view>
+          <view class="item f fc fj {{distance == 2 ?'active':''}}" @tap.stop="shrinkNearby(2)">
+            <view>附近2公里</view>
+            <view class="dzicon icon-xuanze_Choice f40 mr30" wx:if="{{distance == 2}}"></view>
+          </view>
+          <view class="item f fc fj {{distance == 3 ?'active':''}}" @tap.stop="shrinkNearby(3)">
+            <view>附近3公里</view>
+            <view class="dzicon icon-xuanze_Choice f40 mr30" wx:if="{{distance == 3}}"></view>
+          </view>
+          <view class="item f fc fj {{distance == -2 ?'active':''}}" @tap.stop="shrinkNearby(-2)">
+            <view>同城</view>
+            <view class="dzicon icon-xuanze_Choice f40 mr30" wx:if="{{distance == -2}}"></view>
+          </view>
+        </view>
+    </view>
+    <view style="{{isFixed ? 'margin-top: 110rpx;' : ''}}">
+      <comInitListData :isInit.sync="isInit" :count.sync="count" />
+      <repeat for="{{contactsInfo.list}}" key="index" index="index" item="item">
+        <view class="f fc fc-h" @tap="goDetail({{item.UserId}})">
+          <comNameCard class="mt15" :itemIndex="index" :onFollowAfter="toFollow" :cardModal.sync="item"></comNameCard>
+        </view>
+      </repeat>
+      <comLoading :showBottom.sync="isShowBottom" text="正在为您加载更多人脉" :showLoading.sync="isLoading" />
+    </view>
+    <comWait wx:if="{{isWait}}" />
+    <view class="f fv fc jc refresh bg-w" @tap="refresh">
+      <text class="dzicon icon-tongbu c666"></text>
+      <text class="f20 c666">全部</text>
+    </view>
+    <comLogin :openLogin.sync="openLogin" />
+    <comIllegal :isShowIllegal.sync="isShowIllegal"/>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools
+  } from "@/lib/core";
+  import com_nameCard from "@/components/com_nameCard";
+  import com_wait from "@/components/com_wait";
+  import com_loading from "@/components/com_loading";
+  import com_login from "@/components/com_login";
+  import com_initListData from "@/components/com_initListData";
+  import com_illegal from "@/components/com_illegal";
+  export default class connected extends wepy.page { 
+    config = {
+      navigationBarTitleText: "人脉圈",
+      enablePullDownRefresh: true
+    };
+    components = {
+      comNameCard: com_nameCard, 
+      comWait: com_wait,
+      comLoading: com_loading,
+      comLogin: com_login,
+      comInitListData: com_initListData,
+      comIllegal: com_illegal 
+    }; 
+    data = {
+      isFindNearby: false,
+      isShowBottom: false,
+      isLoading: false,
+      isInit: false,
+      isWait: false,
+      options: ["人气榜", "点赞榜", "关注榜"],
+      mappingActionType: [3, 1, 2],
+      optionsNum: 0,
+      showOption: false,
+      currentOption: "人气榜",
+      contactsInfo: {
+        list: []
+      },
+      isFixed: false,
+      scrollTop: 0,
+      cacheItem: null,
+      pageindex: 1,
+      filterStatus: "筛选",
+      //需要记忆
+      type: 3, //行动类型
+      distance: -1,
+      industryId: 0,
+      areaCode: 0,
+      isRegister: false, //用户是否注册（上）
+      isPerfect: false, //用户是否完善名片（下）
+      locationInfo: {},
+      openLogin: false,
+      count: null,
+      isShowIllegal: false
+    };
+
+    computed = {
+      nearbyStatus() {
+        var distance2Str = String(this.distance);
+        switch (distance2Str) {
+          case "-1":
+            return "附近的人";
+          case "1":
+            return "附近1公里";
+          case "2":
+            return "附近2公里";
+          case "3":
+            return "附近3公里";
+          case "-2":
+            return "同城";
+        }
+      }
+    };
+    methods = {
+      showNearbyList() {
+        this.showOption = false;
+        this.isFindNearby = !this.isFindNearby;
+      },
+      openOption() {
+        this.isFindNearby = false;
+        this.showOption = !this.showOption;
+      },
+      shrinkNearby(distance) {
+        this.distance = distance;
+        this.isFindNearby = false;
+        this.resetListData()
+          .handleScroll()
+          .getConnectionsListCOnload();
+      },
+      clickOption(i) {
+        //恢复默认数据
+        this.setOption(i)
+          .resetListData()
+          .handleScroll()
+          .getConnectionsListCOnload();
+      },
+      goFilter() {
+        tools.goNewPage("../connected-filter/index");
+      },
+      goDetail(userId) {
+        var finallyUrl = "";
+        finallyUrl = "../connected-detail/index?someoneId=" + userId;
+        tools.goNewPage(finallyUrl);
+      },
+      toUpdateCard() {
+        if (!this.isRegister) {
+          this.openLogin = true;
+        } else {
+          tools.goNewPage("../../join/my/updateCard?formConnected=1");
+        }
+      },
+      closeAll() {
+        this.showOption = false;
+        this.isFindNearby = false;
+      }
+    };
+
+    events = {};
+
+    async onLoad() {
+      this.isInit = true;
+      tools.checkVaildCard(this)
+      await this.handleCheck();
+      await this.getConnectionsListCOnload();
+    }
+
+    async handleCheck() {
+      this.openLogin = false;
+      var result = await tools.checkRegister();
+      this.isRegister = result.isRegister;
+      this.isPerfect = result.isCompleteCard;
+      if (!this.isRegister) {
+        this.locationInfo = await core.getUserLocation();
+      }
+      this.$apply();
+    }
+
+    async getConnectionsListCOnload() {
+      this.isInit = true;
+      await this.getConnectionsListC();
+      this.isInit = false;
+      this.$apply();
+    }
+
+    async getConnectionsListC(pageindex) {
+      var setting = {
+        areacode: this.areaCode,
+        industryid: this.industryId,
+        distance: this.distance,
+        actiontype: this.type,
+        lng: this.locationInfo.lng || 0,
+        lat: this.locationInfo.lat || 0
+      };
+
+      pageindex && (setting["pageindex"] = pageindex);
+
+      var result = await core.getConnectionsList(setting);
+
+      if (!result.isok) {
+        tools.showModalCancel(result.Msg);
+        return;
+      }
+
+      this.count = parseInt(result.dataObj.count);
+      var currList = result.dataObj.list;
+      if (currList.length > 0) {
+        this.contactsInfo.list = this.contactsInfo.list.concat(currList);
+        this.pageindex > 1 && currList.length < 10 && (this.isShowBottom = true);
+      } else {
+        this.pageindex > 1 && (this.isShowBottom = true);
+      }
+    }
+
+    toFollow(currIndex) {
+      if (this.isRegister) {
+        this.isWait = true;
+        var item = this.contactsInfo.list[currIndex];
+        core.addDynamic(
+          2,
+          item.Id,
+          function () {
+            item.IsFollow = true;
+            this.isWait = false;
+            console.log("follow success", "人脉圈");
+          },
+          this
+        );
+      } else {
+        this.openLogin = true;
+      }
+      this.$apply()
+
+    }
+
+    async onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      await this.refresh();
+      wx.hideNavigationBarLoading();
+      wx.stopPullDownRefresh();
+    }
+
+    async refresh() {
+      this.setOption(0)
+        .resetArguments()
+        .resetListData()
+        .resetFilterStatus();
+      await this.getConnectionsListCOnload();
+    }
+
+    async onReachBottom() {
+      if (this.count > 10 && !this.isShowBottom) {
+        this.isLoading = true;
+        await this.getConnectionsListC(++this.pageindex);
+        this.isLoading = false;
+        this.$apply();
+      }
+    }
+
+    onPageScroll(scrollTop) {
+      if (!this.isPerfect) {
+        this.scrollTop = scrollTop.scrollTop;
+        if (this.scrollTop >= 164) {
+          if (this.isFixed) {
+            return;
+          }
+          this.isFixed = true;
+        } else {
+          if (!this.isFixed) {
+            return;
+          }
+          this.isFixed = false;
+        }
+      } else {
+        this.isFixed = true;
+      }
+      this.$apply();
+    }
+
+    async onShow() {
+      await this.handleCheck();
+      this.cacheItem = tools.cacheGlobalData("filterInfo");
+      console.log(this.cacheItem, "filterInfo");
+      if (this.cacheItem) {
+        this.filterStatus = this.cacheItem.Name;
+        "Id" in this.cacheItem ?
+          (this.industryId = this.cacheItem.Id) :
+          (this.areaCode = this.cacheItem.Code);
+        this.resetListData()
+          .handleScroll()
+          .getConnectionsListCOnload();
+        tools.cacheGlobalData("filterInfo", '')
+        this.cacheItem = null;
+      }
+    }
+
+    resetListData() {
+      this.pageindex = 1;
+      this.count = null;
+      this.contactsInfo.list = [];
+      this.isShowBottom = false;
+      return this;
+    }
+
+    handleScroll() {
+      this.scrollTop > 164 &&
+        wx.pageScrollTo({
+          scrollTop: 164,
+          duration: 0
+        });
+      return this;
+    }
+
+    setOption(i) {
+      this.type = this.mappingActionType[i];
+      this.optionsNum = i;
+      this.currentOption = this.options[i];
+      this.showOption = false;
+      return this;
+    }
+
+    resetFilterStatus() {
+      this.filterStatus = "筛选";
+      return this;
+    }
+
+    resetArguments() {
+      //默认3为人气榜
+      this.type = 3;
+      this.distance = -1;
+      this.industryId = 0;
+      this.areaCode = 0;
+      return this;
+    }
+  }
+
+</script>

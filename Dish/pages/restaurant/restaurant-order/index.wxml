@@ -1,0 +1,380 @@
+<block wx:if="{{glo_is_load}}">
+  <view class="glo_load_view">
+    <text class="iconfont icon-loading animated infinite rotate mr5"></text>
+    <text>正在努力加载</text>
+  </view>
+</block>
+<block wx:else>
+  <block wx:if="{{data_list.glist == null || data_list.glist == ''}}">
+    <!--暂无内容提示 start-->
+    <view class="no-content tc">
+      <text class="no-content-icon iconfont icon-yemianwuneirong"></text>
+      <view class="no-content-font">购物车暂无商品</view>
+    </view>
+    <!--暂无内容提示 end-->
+  </block>
+  <block wx:else>
+    <form bindsubmit="order_formSubmit" report-submit="true">
+
+      <!-- 店内订单进度 -->
+      <view class="order-progress" wx:if="{{dish_data.dish_info.dish_diannei_tips_show==1 && this_order_type==1 && this_is_ziqu==0}}">
+        <view class="order-pro-tips" wx:if="{{dish_data.dish_info.dish_diannei_fangshi==1}}">{{dish_data.dish_info.dish_diannei_tips_one}}</view>
+        <view class="order-pro-tips" wx:if="{{dish_data.dish_info.dish_diannei_fangshi==2}}">{{dish_data.dish_info.dish_diannei_tips_two}}</view>
+        <view class="order-pro-box">
+          <view class="order-pro-item">
+            <view class="order-pro-ico iconfont icon-unfold"></view>
+            <view>选菜</view>
+          </view>
+          <view class="order-pro-item active">
+            <view class="order-pro-ico iconfont icon-unfold"></view>
+            <view>下单</view>
+          </view>
+          <view class="order-pro-item">
+            <view class="order-pro-ico iconfont icon-unfold"></view>
+            <view>付款</view>
+          </view>
+          <view class="order-pro-item">
+            <view class="order-pro-ico iconfont icon-unfold"></view>
+            <view>评价</view>
+          </view>
+          <view class="order-pro-item">
+            <view class="order-pro-ico iconfont icon-unfold"></view>
+            <view>完成</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 自提信息 -->
+      <view class="pickedup-box" wx:if="{{this_is_ziqu==1}}">
+        <view class="pickedup-msg">
+          <view class="pickedup-item gridXb">
+            <text>提货人：</text>
+            <input class="pickedup-inp" name="ziqu_username" placeholder="请填写提货人姓名" placeholder-style="font-size:14px;"></input>
+          </view>
+          <view class="pickedup-item gridXb">
+            <text>自取电话：</text>
+            <input class="pickedup-inp" type='number' name="ziqu_userphone" maxlength='11' placeholder="请填写自取电话" placeholder-style="font-size:14px;"></input>
+          </view>
+        </view>
+        <view class="pickedup-msg">
+          <view class="pickedup-item gridXb flex">
+            <view>提货时间：</view>
+            <view class="pickedup-time arrowR" bindtap="select_time_show_bind">
+              <text>{{this_ziqu_select_day}}{{' '+this_ziqu_select_time}}</text>
+            </view>
+          </view>
+          <view class="pickedup-item gridXb" bindtap="get_location_bind">
+            <view>提货地址</view>
+            <view class="pickedup-address">{{dish_data.dish_info.dish_address}}</view>
+            <view class="pickedup-address-ico">
+              <text class="iconfont icon-daohang"></text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 自提时间弹出 -->
+      <view class="pickedup-time-popup floatBox" wx:if="{{this_is_show_select_time}}">
+        <view class="pickedup-time-box flex">
+          <scroll-view class="day-time" scroll-y="true">
+            <block wx:for="{{dish_data.dish_info.dish_ziqu_day_data}}">
+              <view class="day-time-item {{this_ziqu_select_day==item.day_title?'active':''}}" bindtap="select_day_bind" data-val="{{item.day_title}}">{{item.day_title}}</view>
+            </block>
+          </scroll-view>
+          <scroll-view class="minute-time" scroll-y="true">
+            <view class="minute-time-item {{this_ziqu_select_time=='立即取货'?'active':''}}" bindtap="select_time_bind" data-val="立即取货">立即取货</view>
+            <block wx:for="{{dish_data.dish_info.dish_ziqu_time}}">
+              <view class="minute-time-item {{this_ziqu_select_time==(item.dish_zq_btime+'-'+item.dish_zq_etime)?'active':''}}" bindtap="select_time_bind" data-val="{{item.dish_zq_btime}}-{{item.dish_zq_etime}}">{{item.dish_zq_btime}}-{{item.dish_zq_etime}}</view>
+            </block>
+          </scroll-view>
+        </view>
+        <view class="floatBox floatBoxBg" style='display:block;' bindtap="select_time_show_bind"></view>
+      </view>
+
+
+      <!--添加地址-->
+      <block wx:if="{{this_order_type == 2}}">
+        <block wx:if="{{wx_address_info}}">
+          <view class="adress mb10 line gridXb" bindtap="select_address_bind">
+            <view>
+              <text class="red mr10 iconfont icon-peoplefill"></text> {{wx_address_info.userName}}
+              <text class="ml15">{{wx_address_info.telNumber}}</text>
+            </view>
+            <view class="grey">
+              <text class="red mr10 f16 iconfont icon-locationfill"></text>
+              <text>{{wx_address_info.provinceName}}{{wx_address_info.cityName}}{{wx_address_info.countyName}}{{wx_address_info.detailInfo}}</text>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view class="addadress mb10 gridXb" bindtap="select_address_bind">
+            <text class="red f16 mr10 iconfont icon-add"></text>
+            <text>选择收货地址</text>
+          </view>
+        </block>
+
+        <!--<view class="addadress flex"><text>送达时间</text><text class="sub blue tr">立即送出（大约17:17)</text></view>-->
+      </block>
+      <view class="ress-c mb10" wx:if="{{this_table_list && this_order_type==1 && this_is_ziqu==0}}">
+        <view class="order-msg-item" bindtap="show_table_layout_bind">
+          <view>桌号：</view>
+          <view class="right-more arrowR">
+            <text>{{this_table_name||'请选择'}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="ress-c mb10">
+        <view class="ress-msg arrowR">
+          <image class="ress-c-logo" src="{{dish_data.dish_info.dish_logo}}" mode="acpectFill" />
+          <view class="ress-cl vertical-2 f1">{{dish_data.dish_info.dish_name}} </view>
+        </view>
+        <view class="ress-c-g">
+          <block wx:for="{{data_list.glist}}">
+            <view class="ress-g-i">
+              <image class="ress-goods-img" src="{{item.goods_img}}" mode="aspectFill" />
+              <view class="ress-g-msg">
+                <view class="ress-g-n">
+                  <view class="lineText2">{{item.goods_name}}</view>
+                  <view class="ress-g-price">￥{{item.goods_price}}</view>
+                </view>
+                <view class="ress-g-n">
+                  <view class="ress-g-attr lineText">{{item.goods_attr}}</view>
+                  <view class="ress-g-num">× {{item.goods_number}}</view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+        <view class="ress-c-o">
+          <view class="ress-c-o-i">
+            <view>餐盒费</view>
+            <view>+￥{{all_g_dabao_price||0}}</view>
+          </view>
+          <view class="ress-c-o-i">
+            <view>配送费</view>
+            <view>+￥{{this_peisong_jiner}}</view>
+          </view>
+          <view class="ress-c-o-i" bindtap="{{isuse_huodong_quan>0?'':'go_select_dai_bind'}}">
+            <view>优惠券</view>
+            <view class="{{isuse_huodong_quan>0?'c999':'red'}}">{{(isuse_huodong_quan>0&&data_list.is_huodong_mianjian_id>0)?'已使用过优惠券':this_quan_info}}</view>
+          </view>
+          <view class="ress-c-o-i" wx:if="{{data_list.is_huodong_shou_status == 1}}">
+            <view>{{data_list.is_huodong_shou_info}}</view>
+            <view class="red">-￥{{data_list.is_huodong_shou_jiner}}</view>
+          </view>
+          <view class="ress-c-o-i" wx:if="{{data_list.is_huodong_mianjian_status == 1}}">
+            <view>{{data_list.is_huodong_mianjian_info}}</view>
+            <view class="red">-￥{{data_list.is_huodong_mianjian_jiner}}</view>
+          </view>
+        </view>
+        <view class="total-box gridXt">总计：
+          <!-- <text class="red">￥{{all_g_price}}</text> -->
+          <text class="red">￥{{payMoney>0?payMoney:0}}</text>
+        </view>
+      </view>
+      <view class="order-o-msg">
+        <view class="order-msg-item gridXb" wx:if="{{this_order_type == 2}}">
+          <view>用餐人数</view>
+          <view class="right-more arrowR">
+            <picker bindchange="bindYcPickerChange" value="{{yc_index==-1?0:yc_index}}" range="{{yc_array}}">
+              {{yc_array[yc_index]||'便于商家带够餐具'}}
+            </picker>
+          </view>
+        </view>
+        <view class="order-msg-item gridXb" bindtap="go_oderbeizhu_bind">
+          <view style='margin-right:12rpx'>订单备注</view>
+          <view class="right-more arrowR f1">{{this_beizhu_info||"口味、偏好等"}}</view>
+        </view>
+        <view class="order-msg-item gridXb" bindtap="select_fapiao_bind">
+          <view>发票信息</view>
+          <view class="right-more arrowR">{{this_fapiao_info}}</view>
+        </view>
+      </view>
+      <!--<view class="ress-c mt10">
+        <view class="ress-c-i flex">
+          <view class="ress-name f16">
+            <text>备注：</text>
+          </view>
+          <view class="sub">
+            <textarea value="{{this_beizhu_info}}" class="ress-c-tt f16" auto-height name="post_info" placeholder="给商家留言" />
+          </view>
+        </view>
+      </view>-->
+      <!-- <view class="ress-c mt10 clearfix">
+        <view class="ress-c-i flex gridXb">
+          <view class="ress-cl green f18 sub">
+
+          </view>
+          <view class="ress-cr">
+            总计：￥{{all_g_price}}
+          </view>
+        </view>
+        <view class="mt10 mb10 f12">
+          <block wx:if="{{this_order_type == 2}}">
+            <view class="juan-list flex">
+              <text class="redbg write mr5">餐</text>
+              <text class="grey sub">餐盒费</text>
+              <text class="red f14">+￥{{all_g_dabao_price||0}}</text>
+            </view>
+            <view class="juan-list flex">
+              <text class="redbg write mr5">配</text>
+              <text class="grey sub">配送费</text>
+              <text class="red f14">+￥{{this_peisong_jiner}}</text>
+            </view>
+          </block>
+          <block wx:if="{{data_list.is_huodong_shou_status == 1}}">
+            <view class="juan-list flex">
+              <text class="greenbg write mr5">新</text>
+              <text class="grey sub">{{data_list.is_huodong_shou_info}}</text>
+              <text class="red f14">-￥{{data_list.is_huodong_shou_jiner}}</text>
+            </view>
+          </block>
+          <block wx:if="{{data_list.is_huodong_mianjian_status == 1}}">
+            <view class="juan-list flex">
+              <text class="orangebg write mr5">减</text>
+              <text class="grey sub">{{data_list.is_huodong_mianjian_info}}</text>
+              <text class="red f14">-￥{{data_list.is_huodong_mianjian_jiner}}</text>
+            </view>
+          </block>
+          <view class="juan-list flex" bindtap="go_select_dai_bind">
+            <text class="redbg write mr5">劵</text>
+            <text class="grey sub">代金券</text>
+            <text class="red f14">{{this_quan_info}}</text>
+          </view>
+        </view>
+      </view> -->
+
+      <!-- 浮动购物车 start-->
+      <view class="ress-c-b">
+        <view class="ress-float gridXt flex">
+          <view class="float-price sub">
+            <view class="price-count f20 red">
+              <text>￥{{payMoney>0?payMoney:0}}</text>
+            </view>
+          </view>
+          <view class="float-btn">
+            <!--<button type="primary" class="float-btn-s" bindtap="go_select_paytype_bind">提交订单</button>-->
+            <input type="text" name="dish_table_id" value="{{this_table_id}}" style="display:none;" />
+            <button type="primary" class="float-btn-s" formType="submit" disabled="{{btn_submit_disabled}}" loading="{{submitIsLoading}}">提交订单</button>
+          </view>
+        </view>
+      </view>
+      <!-- 浮动购物车 end-->
+
+      <!--支付方式选择 start-->
+      <view class="floatBox fbox" wx:if="{{select_pay_type}}">
+        <view class="fxz">
+          <view class="f18 tc">请选择支付方式
+            <view class="f18 mt20 red">￥
+              <text class="f36">{{(all_g_price-data_list.is_huodong_shou_jiner-data_list.is_huodong_mianjian_jiner-this_quan_jiner+this_peisong_jiner+all_g_dabao_price)>0?(all_g_price-data_list.is_huodong_shou_jiner-data_list.is_huodong_mianjian_jiner-this_quan_jiner+this_peisong_jiner+all_g_dabao_price):0}}</text>
+            </view>
+          </view>
+          <radio-group class="mt15 f16" name="dish_pay_type">
+            <block wx:for="{{dish_data.dish_info.pay_typelist}}" wx:for-index="p_idx" wx:for-item="p_item">
+              <label class="fxz-item gridXb">
+                <radio value="{{p_idx}}" checked="{{p_idx==1?true:false}}"></radio>
+                <text class="ml10">{{p_item}}</text>
+              </label>
+            </block>
+          </radio-group>
+          <!--<button type="primary" class="mt20" formType="submit" disabled="{{btn_submit_disabled}}" loading="{{submitIsLoading}}">提交订单</button>-->
+        </view>
+        <!--<view class="fbg" bindtap="go_select_paytype_bind"></view>-->
+      </view>
+      <!--支付方式选择 end-->
+      <!--选择桌号-->
+      <view class="floatBox zhuohao" wx:if="{{is_show_table_layer}}">
+        <view class="zh-box">
+          <view class="zh-title-box">
+            <view class="zh-title tc gridXb">
+              <text>请选择桌号</text>
+              <text class="fr grey f16 iconfont icon-roundclose" bindtap="show_table_layout_bind"></text>
+            </view>
+          </view>
+          <radio-group bindchange="selectTable_bind">
+            <block wx:for="{{this_table_list}}">
+              <label class="zh-list gridXb">
+                <radio value="{{item.id}}" />
+                <text>{{item.table_name}}({{item.table_renshu}}人桌)</text>
+              </label>
+            </block>
+          </radio-group>
+        </view>
+        <view class="floatBox floatBoxBg" style="display:block;" bindtap="show_table_layout_bind"></view>
+      </view>
+
+      <!--选择代金券-->
+      <view wx:if="{{is_show_quan_layer}}">
+        <scroll-view class="daijinjuan" scroll-y="true">
+          <view class="zh-title-box">
+            <view class="zh-title tc gridXb">
+              <text>请选择代金券</text>
+              <text class="fr grey f16 iconfont icon-roundclose" bindtap="go_select_dai__hide_bind"></text>
+            </view>
+          </view>
+          <!--<view class="nonsue tc" bindtap="set_quan_bind" id="0">
+            <label> 不使用代金券
+              <radio></radio>
+            </label>
+          </view>-->
+          <!--暂无内容提示 start-->
+          <block wx:if="{{quan_list == null || quan_list == ''}}">
+            <view class="no-content tc">
+              <text class="no-content-icon iconfont icon-yemianwuneirong"></text>
+              <view class="no-content-font">暂无可用代金券</view>
+            </view>
+          </block>
+          <!--暂无内容提示 end-->
+          <block wx:else>
+            <block wx:for="{{quan_list}}">
+              <block wx:if="{{item.quan_limit_jiner<=all_g_price}}">
+                <view class="canuse">
+                  <view class="dollar-item" bindtap="quan_select_one_bind" data-id="{{item.id}}" data-jiner="{{item.quan_jiner}}" data-name="{{item.quan_name}}">
+                    <view class="top write">
+                      <view class="status tc f18">{{item.quan_name}}</view>
+                      <view class="money-msg f16 fr">¥
+                        <text class="money">{{item.quan_jiner}}</text>
+                      </view>
+                    </view>
+                    <view class="bottom flex">
+                      <view class="grey sub">
+                        <view>
+                          <text class="iconfont icon-time mr10 linght"></text>有效期至：{{item.quan_end_time_fmt}}</view>
+                        <view>
+                          <text class="iconfont icon-info mr10 linght linetext"></text>满{{item.quan_limit_jiner}}元可用</view>
+                      </view>
+                      <view class="status-usebtn tc fr">使用</view>
+                    </view>
+                  </view>
+                </view>
+              </block>
+              <block wx:else>
+                <view class="canuse">
+                  <view class="dollar-item not_use">
+                    <view class="top write">
+                      <view class="status tc f18">{{item.quan_name}}</view>
+                      <view class="money-msg f16 fr">¥
+                        <text class="money">{{item.quan_jiner}}</text>
+                      </view>
+                    </view>
+                    <view class="bottom flex">
+                      <view class="grey sub">
+                        <view>
+                          <text class="iconfont icon-time mr10 linght"></text>有效期至：{{item.quan_end_time_fmt}}</view>
+                        <view>
+                          <text class="iconfont icon-info mr10 linght linetext"></text>满{{item.quan_limit_jiner}}元可用</view>
+                      </view>
+                      <view class="status-usebtn tc fr">不可用</view>
+                    </view>
+                  </view>
+                </view>
+              </block>
+            </block>
+          </block>
+        </scroll-view>
+        <view class="floatBox floatBoxBg" style="display:block;" bindtap="go_select_dai__hide_bind"></view>
+      </view>
+
+    </form>
+  </block>
+</block>

@@ -1,0 +1,152 @@
+<style lang="less">
+    .startbtn {
+        width: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        -webkit-transform: translate(-50%, -50%);
+    }
+    .start-btn {
+        color: #fff;
+        font-size: 32rpx;
+        background: #fe405f;
+    }
+    .start-btn-hover {
+        background: #fc2246;
+    }
+    page {
+        background-color: #f2f2f2;
+        font-size: 24rpx;
+    }
+    .u-list {
+        border-bottom: 1px solid #f9f9f9;
+        background-color: #fff;
+        padding: 0 0 0 17rpx;
+    }
+    .u-img {
+        width: 92rpx;
+        height: 92rpx;
+        border-radius: 10rpx;
+        background-color: #ccc;
+    }
+    .u-item {
+        border-top: 1px solid #f9f9f9;
+        padding: 15rpx 0;
+    }
+    .u-item:first-child {
+        border-top: 0;
+    }
+    .u-item-r {
+        padding-left: 19rpx;
+        padding-right: 17rpx;
+    }
+    .u-lastmsg {
+        color: #8c8c8c;
+        padding-top: 10rpx;
+        font-size: 24rpx;
+    }
+    .u-name {
+        color: #1b1b1b;
+        font-size: 28rpx;
+        font-weight: bolder;
+    }
+    .u-time {
+        color: #8c8c8c;
+    }
+    .mess-tip {
+        position: absolute;
+        top: -10rpx;
+        right: -10rpx;
+        width: 30rpx;
+        height: 30rpx;
+        line-height: 30rpx;
+        text-align: center;
+        border-radius: 50%;
+        font-size: 24rpx;
+    }
+</style>
+
+<template>
+    <view class="{{currentSkin}}">
+        <view class='data-empty' wx:if="{{vm.loadall&&!vm.ispost&&vm.list.length==0}}">
+            <view class='tc p20'>空空如也</view>
+        </view>
+        <view class='chatList'>
+            <view class='u-list'>
+                <repeat for="{{vm.list}}">
+                    <view class='f fc u-item rel' @tap="clickToCaht({{item}})" data-index='{{index}}' data-userid="{{item.tuserId}}" data-nickname='{{item.tuserNicename}}' data-headimg='{{item.tuserHeadImg}}' wx:key="{{item.Id}}">
+                        <view class='rel'>
+                            <image src='{{item.tuserHeadImg}}' class='u-img' />
+                            <!-- <text class='un-read-msg-count' wx:if="{{item.unreadnum>0}}">{{item.unreadnum_fmt}}</text> -->
+                            <view class="mess-tip skin_bg" wx:if="{{item.unReadCount!=0}}">{{item.unReadCount}}</view>
+                        </view>
+                        <view class='f fv u-item-r f1'>
+                            <view class='f'>
+                                <view class='u-name f1'>{{item.tuserNicename}}</view>
+                                <view class='u-time' wx:if="{{item.message}}">{{item.message.sendDate}}</view>
+                            </view>
+                            <view class='u-lastmsg vertical-1'>
+                                <block wx:if="{{item.message}}">
+                                    <block wx:if="{{item.message.msgType==0}}">
+                                        {{item.message.msg||"　"}}
+                                    </block>
+                                    <block wx:if="{{item.message.msgType==1}}">
+                                        [图片]
+                                    </block>
+                                </block>
+                            </view>
+                        </view>
+                    </view>
+                </repeat>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js";
+    import _get from "../../lib/lodash.get.js"
+    export default class contact extends wepy.page {
+        config = {
+            navigationBarTitleText: "最近联系人",
+            enablePullDownRefresh: true
+        };
+        components = {};
+        data = {
+            vm: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 20,
+            },
+            currentSkin: {}
+        }
+        methods = {
+            async clickToCaht(item) {
+                tools.goNewPage("./chat?userid=" + item.tuserId + "&nickname=" + item.tuserNicename + "&headimg=" + item.tuserHeadImg)
+            }
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+        }
+        onShow() {
+            this.vm = tools.resetArray(this.vm)
+            core.getContactList(this.vm, this)
+        }
+        async onPullDownRefresh() {
+            wx.showNavigationBarLoading();
+            this.vm = tools.resetArray(this.vm)
+            await core.getContactList(this.vm, this)
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

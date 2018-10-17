@@ -1,0 +1,386 @@
+<style lang="less">
+    /* pages/im/chat.wxss */
+    page {
+        background-color: #f2f2f2;
+        padding: 0 17rpx;
+        font-size: 24rpx;
+        -webkit-tap-highlight-color: transparent;
+    }
+    view {
+        box-sizing: border-box;
+    }
+    .chat-msglist {
+        overflow-y: scroll;
+        height: 90vh;
+    }
+    .chat-wrap {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    .chat-msg {
+        padding: 0 17rpx;
+        margin-top: 17rpx;
+    }
+    .msg-wrap {
+        min-width: 50rpx;
+        border-radius: 10rpx;
+        max-width: 500rpx;
+        border: 1px solid #ececec;
+        float: right;
+        background-color: #ffffff;
+    }
+    .msg-arrow {
+        border-right: 1px solid #ececec;
+        border-top: 1px solid #ececec;
+        background-color: #ffffff;
+        width: 24rpx;
+        height: 24rpx;
+        position: absolute;
+        top: 29rpx;
+        left: -12rpx;
+        transform: rotate(225deg);
+        z-index: 1;
+    }
+    .msg-txt {
+        word-break: break-all;
+        position: relative;
+        z-index: 2;
+        padding: 25rpx;
+    }
+    .msg-img {
+        padding: 5rpx;
+        position: relative;
+        z-index: 2;
+    }
+    .msg-img image {
+        max-width: 350rpx;
+        max-height: 350rpx;
+        vertical-align: middle;
+    }
+    .chat-photo {
+        width: 80rpx;
+        height: 80rpx;
+        border-radius: 100%;
+        background-color: #ccc;
+    }
+    .chat-photo {
+        margin-right: 25rpx;
+    }
+    .chat-msg.self {
+        justify-content: flex-end;
+    }
+    .chat-msg.self .msg-wrap {
+        border: 1px solid #52d056;
+        float: right;
+        background-color: #9fe658;
+    }
+    .chat-msg.self .msg-arrow {
+        border-right: 1px solid #52d056;
+        border-top: 1px solid #52d056;
+        background-color: #9fe658;
+        right: -12rpx;
+        transform: rotate(45deg);
+        left: auto;
+    }
+    .chat-msg.self .chat-photo {
+        margin-left: 25rpx;
+        margin-right: 0;
+    }
+    .chat-msg:last-child {
+        margin-bottom: 30rpx;
+    }
+    .input-box {
+        background-color: #f4f4f6;
+        border-top: 1px solid #e4e4e6;
+        padding: 20rpx;
+        height: 10vh;
+    }
+    .input-txt {
+        border: 1px solid #e7e7e7;
+        background-color: #fff;
+        border-radius: 10rpx;
+        padding: 0 10rpx;
+        height: 60rpx;
+        line-height: 60rpx;
+    }
+    .input-send {
+        width: 120rpx;
+        overflow: hidden;
+        text-align: center;
+        color: #fff;
+        background-color: #df2025;
+        margin-left: 20rpx;
+        border-radius: 10rpx;
+        box-sizing: border-box;
+        height: 60rpx;
+        line-height: 60rpx;
+    }
+    .input-more {
+        font-size: 60rpx;
+        margin-left: 20rpx;
+        color: #8e8e90;
+    }
+    .more-wrap {
+        border-top: 1px solid #e4e4e6;
+        padding: 28rpx 40rpx;
+        color: #48484a;
+        background-color: #f4f4f6;
+    }
+    .more-item {
+        text-align: center;
+        margin-right: 60rpx;
+    }
+    .more-item:last-child {
+        margin-right: 0;
+    }
+    .more-item .dzicon {
+        font-size: 60rpx;
+        color: #9c9c9c;
+        border: 1px solid #d6d6d8;
+        border-radius: 15rpx;
+        background-color: #fff;
+        padding: 35rpx;
+    }
+    .more-item .more-txt {
+        padding-top: 20rpx;
+    }
+    .inputMask {
+        position: absolute;
+        width: 100%;
+        top: 0;
+        bottom: 0;
+        z-index: 2;
+    }
+</style>
+
+<template>
+    <view class='f fv chat-wrap'>
+        <scroll-view class='f1 rel chat-msglist' scroll-y="true" scroll-into-view="msg{{vm.lastids}}" @tap='clickChat' enable-back-to-top="true" scroll-with-animation="true" bindscrolltoupper="loadMore">
+            <repeat for="{{vm.list}}">
+                <view class="chat-msg {{item.fuserId==fuserInfo.userid?'self':''}} f cl" id="msg{{item.ids}}">
+                    <image wx:if="{{item.fuserId!=fuserInfo.userid}}" class='chat-photo' src='{{tuserInfo.headimg}}' />
+                    <view class='rel msg-wrap'>
+                        <view class='msg-txt' wx:if="{{item.msgType==0}}">{{item.msg}}</view>
+                        <view class='msg-img' wx:elif="{{item.msgType==1}}">
+                            <image src='{{item.msg}}' mode="aspectFill" @tap='previewImage({{item.msg}})' />
+                        </view>
+                        <view class='msg-arrow'></view>
+                    </view>
+                    <image wx:if="{{item.fuserId==fuserInfo.userid}}" class='chat-photo' src='{{fuserInfo.headimg}}' />
+                </view>
+            </repeat>
+        </scroll-view>
+        <view class='input-box f fc' @tap.stop='hideMore'>
+            <view class='rel f1'>
+                <input type='text' class='input-txt ' placeholder='请输入' @input='inputTxtMsg' focus="{{inputfocus}}" value="{{msg}}" cursor-spacing="20" confirm-type="发送" bindconfirm="clickToSend" @blur="inputBlur"></input>
+                <view class='inputMask' wx:if="{{!inputfocus}}"></view>
+            </view>
+            <view class='dzicon icon-jiahao input-more' wx:if="{{msg==''}}" @tap.stop='toggleMore'></view>
+            <view class='input-send' wx:if="{{msg!=''}}" catchtap='clickToSend'>发送</view>
+        </view>
+        <view class='more-wrap' wx:if="{{showMore}}">
+            <view class='f '>
+                <view class='more-item' catchtap='clickImgBtn'>
+                    <view class='dzicon icon-tupian'></view>
+                    <view class='more-txt'>图片</view>
+                </view>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js"
+    import _get from "../../lib/lodash.get.js"
+    export default class chat extends wepy.page {
+        config = {
+            navigationBarTitleText: "最近联系人",
+        };
+        components = {};
+        data = {
+            msg: "",
+            showMore: false,
+            vm: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 20,
+                lastid: 0,
+                lastids: "",
+            },
+            inputfocus: false,
+            tuserInfo: {},
+            fuserInfo: {},
+        }
+        methods = {
+            clickChat() {
+                this.showMore = false
+            },
+            hideMore() {
+                this.showMore = false
+                var that = this;
+                setTimeout(function() {
+                    that.inputfocus = true
+                    that.$apply()
+                }, 200);
+            },
+            inputBlur() {
+                this.inputfocus = false
+            },
+            toggleMore() {
+                this.showMore = !this.showMore
+            },
+            inputTxtMsg(e) {
+                var txt = e.detail.value || "";
+                if (txt.replace(/\s/gi, "").length == 0) {
+                    txt = txt.replace(/\s/gi, "");
+                }
+                this.msg = txt
+            },
+            clickToSend() {
+                var txt = this.msg;
+                txt = txt.replace(/\s/gi, "");
+                if (txt.length == 0) {
+                    tools.showModal("不能发送空白消息", false)
+                    return;
+                }
+                this.sendMsg(0, txt);
+            },
+            clickImgBtn() {
+                var that = this;
+                tools.upload().then(function(res) {
+                    if (res && (Object.prototype.toString.call(res) === "[object Array]") && res.length > 0) {
+                        for (var i = 0, len = res.length; i < len; i++) {
+                            that.sendMsg(1, res[i]);
+                        }
+                    }
+                });
+            },
+            previewImage(img) {
+                let current = img;
+                let _imgArray = []
+                _imgArray.push(current);
+                tools.preViewShow(current, _imgArray);
+            }
+        }
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            let userid = _get(options, "userid", "");
+            let nickname = _get(options, "nickname", "");
+            let headimg = _get(options, "headimg", "");
+            if (userid == "") {
+                tools.goBack(1)
+                return;
+            }
+            let app = wepy.$instance;
+            let userInfo = _get(app.globalData, "userInfo", "") || await core.getUserInfo();
+            this.tuserInfo = {
+                userid,
+                nickname,
+                headimg,
+            }
+            this.fuserInfo = {
+                userid: userInfo.Id,
+                nickname: userInfo.NickName,
+                headimg: userInfo.HeadImgUrl,
+            }
+            this.$apply()
+            tools.setPageTitle(nickname)
+            await this.customer(userInfo)
+            await core.AddContact(userid)
+            await core.getHistory(userid, this.vm, this)
+            this.sendMsg(2, "", 1) //进入
+        }
+        async customer(userInfo) {
+            let store = await core.getStoreConfig()
+            let kefuconfig = store.storeInfo.funJoinModel;
+            let kefuinfo = store.storeInfo.kfInfo;
+            if (kefuconfig.imSwitch && kefuconfig.sayHello && kefuinfo && kefuinfo.uid != userInfo.Id) {
+                this.vm.list.push({
+                    Id: 0,
+                    aId: 0,
+                    appId: "",
+                    createDate: "",
+                    fuserId: kefuinfo.uid,
+                    ids: "",
+                    isRead: 0,
+                    msg: store.storeInfo.funJoinModel.helloWords,
+                    msgType: 0,
+                    roomId: 0,
+                    sendDate: "",
+                    state: 0,
+                    storeId: 0,
+                    tuserId: userInfo.Id,
+                    tuserType: 0,
+                    updateDate: "",
+                })
+                this.$apply()
+            }
+        }
+        async loadMore() {
+            await core.getHistory(this.tuserInfo.userid, this.vm, this)
+        }
+        onShow() {
+            let app = wepy.$instance
+            if (!app.globalData.ws) {
+                core.reConnect();
+            }
+        }
+        // 离开
+        onHide() {
+            this.sendMsg(2, "", 0)
+        }
+        // 离开
+        onUnload() {
+            this.sendMsg(2, "", 0)
+        }
+        sendMsg(msgtype, msg, isChat) {
+            let that = this
+            var app = wepy.$instance;
+            var ws = _get(app, "globalData.ws") || false;
+            var fuserid = _get(that.fuserInfo, "userid");
+            var appid = _get(app, "globalData.appid");
+            var tuserid = _get(that.tuserInfo, "userid");
+            var msg = {
+                appId: appid,
+                fuserId: fuserid,
+                tuserId: tuserid,
+                enterPage: "pages/im/chat",
+                msgType: msgtype,
+                tuserType: 0, //
+                msg: msg,
+                ids: "",
+                tempid: fuserid + '_' + new Date().getTime(), //临时ID用来判断消息是否发送成功
+                isChat: isChat || 0,
+            };
+            if (!ws) {
+                core.reConnect()
+                tools.showLoading("连接中")
+                app.globalData.msgQueue.push(msg)
+                return;
+            }
+            if (!fuserid || !appid || !tuserid) {
+                return;
+            }
+            wx.sendSocketMessage({
+                data: JSON.stringify(msg),
+                success: function() {},
+                fail: function(res) {
+                    app.globalData.msgQueue.push(msg);
+                },
+                complete: function() {
+                    that.msg = ""
+                    that.$apply()
+                }
+            })
+        }
+    }
+</script>

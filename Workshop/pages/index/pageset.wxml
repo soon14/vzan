@@ -1,0 +1,203 @@
+<import src="/template/comOperation.wxml" />
+<import src="/modules/wxParse/wxParse.wxml" />
+
+<view class='bg' bindlongtap='changeSaveShow'>
+  <!--页面标题-->
+  <view class='bg-w rel page-title-wrap'>
+    <input type='text' placeholder='请输入页面标题' class='page-title' placeholder-class='page-title-holder' placeholder-style='color:#2ddc7b' maxlength='10' bindinput='inputPageTitle' value='{{vm.content.pageTitle}}'></input>
+    <view class='page-title-counter'>{{10-vm.content.pageTitle.length}}/10</view>
+  </view>
+  <!--/页面标题-->
+
+  <!--没有数据时-->
+  <view class='rel' wx:if="{{vm.content.coms.length==0}}">
+    <view class='nodata'>
+      <image src='/img/bg2.png'></image>
+    </view>
+  </view>
+  <!--/没有数据时-->
+  <!--组件编辑列表-->
+  <view class='rel' wx:else>
+    <view class='combody'>
+      <view class='com-editwrap'>
+        <!--轮播图 固定在顶部，不传图片不显示-->
+        <view class='com-item'>
+          <view class='f fj'>
+            <view class='com-name'>轮播图(最多选3张)</view>
+          </view>
+          <view class='f fj mt40'>
+            <view class='com-slide-item rel' wx:for="{{vm.content.coms[0].items}}">
+              <image mode='aspectFill' src='{{item.src==""?"/img/slide_blank.png":item.src}}' class='com-slide-item-img'></image>
+              <image src='/img/close.png' class='com-remove' bindtap='removeImg' data-com-index="0" data-item-index="{{index}}" wx:if="{{item.src.length>0}}"></image>
+              <view class='pickimg' bindtap='pickFile' data-com-index="{{0}}" data-item-index="{{index}}">
+                <view>＋选择照片</view>
+                <view>750x400</view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <!--/轮播图-->
+
+
+        <view class='com-item' wx:for="{{vm.content.coms}}" wx:if="{{index!=0}}">
+          <!--电话-->
+          <block wx:if="{{item.type=='tel'}}">
+            <template is="comOperation" data="{{item,index,comlength:vm.content.coms.length}}" />
+            <input type='text' class='txt' placeholder='点击输入电话号码' placeholder-class='com-txt-placeholder' data-com-index="{{index}}" data-item-index="{{-1}}" data-field="content" value='{{item.content}}' bindinput='syncValue'></input>
+          </block>
+          <!--/电话-->
+
+          <!--图片-->
+          <block wx:if="{{item.type=='img'}}">
+            <template is="comOperation" data="{{item,index,comlength:vm.content.coms.length}}" />
+            <view class='rel mt40'>
+              <image mode='widthFix' src='{{item.src==""?"/img/img_blank.png":item.src}}' class='com-img-img'></image>
+              <image src='/img/close.png' class='com-remove' bindtap='removeImg' data-com-index="{{index}}" data-item-index="{{-1}}" wx:if="{{item.src.length>0}}"></image>
+              <view class='pickimg' bindtap='pickFile' data-com-index="{{index}}" data-item-index="{{-1}}">
+                <view>＋选择照片</view>
+                <view>宽度750高度不限</view>
+              </view>
+            </view>
+          </block>
+          <!--/图片-->
+
+          <!--文本-->
+          <block wx:if="{{item.type=='txt'}}">
+            <template is="comOperation" data="{{item,index,comlength:vm.content.coms.length}}" />
+            <view class='rel mt40' bindtap='editCom' data-com-index="{{index}}" data-item-index="-1">
+              <block wx:if="{{item.content.length==0}}">
+                <view class='com-txt'>编辑您要输入的文字</view>
+              </block>
+              <block wx:else>
+                <view class='com-txt com-txt-default'>
+                  <template is="wxParse" data="{{wxParseData:item.content_fmt.nodes}}" />
+                </view>
+              </block>
+            </view>
+          </block>
+          <!--/文本-->
+
+          <!--视频-->
+          <block wx:if="{{item.type=='video'}}">
+            <template is="comOperation" data="{{item,index,comlength:vm.content.coms.length}}" />
+            <view class='f fj mt40'>
+              <view class='rel'>
+                <image mode='aspectFill' src='{{item.poster==""?"/img/slide_blank.png":item.poster}}' class='com-img-img' class='com-slide-item-img'></image>
+                <image src='/img/close.png' class='com-remove' bindtap='removeImg' data-com-index="{{index}}" data-item-index="{{-1}}" data-field="poster" wx:if="{{item.poster.length>0}}"></image>
+                <view class='pickimg' bindtap='pickFile' data-com-index="{{index}}" data-item-index="{{-1}}" data-field="{{'poster'}}">
+                  <view>＋选择封面</view>
+                  <view>750x400</view>
+                </view>
+              </view>
+
+              <view class='rel'>
+                <image mode='widthFix' src='/img/slide_blank.png' class='com-slide-item-img'></image>
+                <image src='/img/close.png' class='com-remove' bindtap='removeImg' data-com-index="{{index}}" data-item-index="{{-1}}" wx:if="{{item.src.length>0}}"></image>
+                <view class='pickimg' bindtap='pickFile' data-file-type="video" data-com-index="{{index}}" data-item-index="{{-1}}">
+                  <view>＋上传视频</view>
+                  <view>20M以内</view>
+                </view>
+              </view>
+            </view>
+          </block>
+          <!--/视频-->
+
+          <!--表单-->
+          <block wx:if="{{item.type=='form'}}">
+            <template is="comOperation" data="{{item,index,comlength:vm.content.coms.length}}" />
+            <view class='rel mt40'>
+              <view>
+                <input type='text' placeholder='点击编辑表单名称' placeholder-class='com-form-name-placeholder' placeholder-style='color:#2ddc7b' class='com-form-name'
+              data-com-index="{{index}}"  data-field="title" value='{{item.title}}' bindinput='syncValue'  
+                ></input>
+              </view>
+              <block wx:for="{{item.items}}" wx:for-item="formItem" wx:for-index="formIndex">
+                <!--文本框-->
+                <view class='com-form-item rel' wx:if="{{formItem.type=='text'}}">
+                  <image src='/img/close.png' class='com-remove' bindtap='removeItem' data-com-index="{{index}}" data-item-index="{{formIndex}}"></image>
+                  <view class='name'>文本</view>
+                  <input type='text' class='txt' placeholder='点击以输入名称' placeholder-class='com-txt-placeholder' data-com-index="{{index}}" data-item-index="{{formIndex}}" data-field="name" value='{{formItem.name}}' bindinput='syncValue'></input>
+                </view>
+                <!--数字框-->
+                <view class='com-form-item rel' wx:elif="{{formItem.type=='number'}}">
+                  <image src='/img/close.png' class='com-remove'></image>
+                  <view class='name'>数字</view>
+                  <input type='text' class='txt' placeholder='点击以输入名称' placeholder-class='com-txt-placeholder' data-com-index="{{index}}" data-item-index="{{formIndex}}" data-field="name" value='{{formItem.name}}' bindinput='syncValue'></input>
+                </view>
+                <!--日期-->
+                <view class='com-form-item rel' wx:elif="{{formItem.type=='date'}}">
+                  <image src='/img/close.png' class='com-remove'></image>
+                  <view class='name'>日期</view>
+                  <input type='text' class='txt' placeholder='点击以输入名称' placeholder-class='com-txt-placeholder' data-com-index="{{index}}" data-item-index="{{formIndex}}" data-field="name" value='{{formItem.name}}' bindinput='syncValue'></input>
+                </view>
+                <!--单选-->
+                <view class='com-form-item rel' wx:elif="{{formItem.type=='radio'}}">
+                  <image src='/img/close.png' class='com-remove' bindtap='removeItem' data-com-index="{{index}}" data-item-index="{{formIndex}}"></image>
+                  <view class='name'>单项选择</view>
+                  <input type='text' class='txt' placeholder='点击以输入名称' placeholder-class='com-txt-placeholder' data-com-index="{{index}}" data-item-index="{{formIndex}}" data-field="name" value='{{formItem.name}}' bindinput='syncValue'></input>
+                  <view class='mutiitem f fc fj' wx:for="{{formItem.items}}" wx:for-item="mutiItem" wx:for-index="mutiIndex">
+                    <view class='mutiitem-name f f1 fc'>
+                      <input type='text' class='txt' placeholder='点击输入选择项' placeholder-class='com-txt-placeholder' data-com-index="{{index}}" data-item-index="{{formIndex}}" data-subitem-index="{{mutiIndex}}" data-field="name" value='{{mutiItem.name}}' bindinput='syncValue'></input>
+                    </view>
+                    <image src='/img/iiremove.png' class='iiremove' bindtap='removeSubItem'
+                    data-com-index="{{index}}" data-item-index="{{formIndex}}" data-subitem-index="{{mutiIndex}}"></image>
+                  </view>
+                  <view class='mutiitem-add' bindtap='addMutiItem' data-com-index="{{index}}" data-item-index="{{formIndex}}">＋添加选项</view>
+                </view>
+
+              </block>
+
+              <view class='formitem-add' bindtap='formitemAdd' data-com-index="{{index}}">
+                ＋添加列表项
+              </view>
+
+
+            </view>
+          </block>
+          <!--/表单-->
+
+
+        </view>
+
+      </view>
+    </view>
+  </view>
+  <!--/组件编辑列表-->
+
+  <!--组件-->
+  <view class='blank140'></view>
+  <view class='bottom-coms rel f fc'>
+    <view class='f1' bindtap='createCom' data-com-name='tel'>
+      <view>
+        <image src='/img/i1.png' class='com-img'></image>
+      </view>
+      <view>电话</view>
+    </view>
+    <view class='f1' bindtap='createCom' data-com-name='img'>
+      <view>
+        <image src='/img/i2.png' class='com-img'></image>
+      </view>
+      <view>图片</view>
+    </view>
+    <view class='f1' bindtap='createCom' data-com-name='txt'>
+      <view>
+        <image src='/img/i3.png' class='com-img'></image>
+      </view>
+      <view>文本</view>
+    </view>
+    <view class='f1' bindtap='createCom' data-com-name='video'>
+      <view>
+        <image src='/img/i4.png' class='com-img'></image>
+      </view>
+      <view>视频</view>
+    </view>
+    <view class='f1' bindtap='createCom' data-com-name='form'>
+      <view>
+        <image src='/img/i5.png' class='com-img'></image>
+      </view>
+      <view>表单</view>
+    </view>
+  </view>
+  <!--/组件-->
+</view>
+<image src='/img/save.png' class='btn-save' bindtap='save' wx:if="{{saveShow}}"></image>

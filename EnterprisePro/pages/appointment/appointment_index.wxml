@@ -1,0 +1,164 @@
+<!--pages/appointment/appointment_index.wxml-->
+
+<!-- 左侧分类 -->
+<scroll-view class='w20 h100vh p-ftop' scroll-y>
+  <block wx:for="{{goodSort}}">
+    <view class='f26 h100-l center {{item.id==typeid?"pro-sel":"c12"}} br-txt bgff' bindtap="chooseGoodType" data-name="{{item.name}}" data-id="{{item.id}}">{{item.name}}</view>
+  </block>
+  <view class='w20 h100-l'></view>
+</scroll-view>
+
+<!-- 右侧商品分类 -->
+<view class='f32 c12 p20-w pr-rig'>
+  <block wx:for="{{goodslist}}">
+    <view class='br20 flex-r m20-t bgff p20' id="{{index}}" data-id="{{item.id}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}">
+      <image class="w180nl h180 br20" mode='scaleToFill' src='{{item.img_fmt}}'></image>
+      <view class='f1 flex-c-sb m20-l'>
+        <text class='br-txt'>{{item.name}}</text>
+        <!-- 标签 -->
+        <view class='flex-r-w' hidden='{{item.plabelstr_array.length==""}}'>
+          <block wx:for="{{item.plabelstr_array}}">
+            <text class='p20-w h40-l center bgeff br20 f20 ca6 m20t10r br-txt'>{{item}}</text>
+          </block>
+        </view>
+        <!-- 按钮 -->
+        <view class='flex-r-sb m20-t'>
+          <view class='cff7'>
+            <view class='price'>
+              <text class='f28 pr-price'>{{item.discountPricestr}}</text>
+              <text class='f22' wx:if="{{item.unit.length!='' }}">/{{item.unit}}</text>
+            </view>
+            <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="fprice m10-t">
+              <text>¥{{item.price}}</text>
+              <text wx:if="{{item.unit.length!=''}}">/{{item.unit}}</text>
+            </view>
+          </view>
+          <view class='flex-wrp'>
+            <text class='f28'>{{item.carCount}}</text>
+            <!-- 购买按钮 -->
+            <form report-submit='true' bindsubmit='addgood' data-id="{{item.id}}" id="{{index}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}">
+              <button class='btn dzicon icon-gouwuche pro-sel f47' style='margin:unset;background-color:white' form-type='submit'></button>
+            </form>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+
+  <!-- 加载提示 -->
+  <view class='w100 center ccc f26 m20-t' wx:if="{{goodListViewModal.list!=0 }}">
+    <text wx:if="{{goodListViewModal.ispost==true}}">加载中</text>
+    <text wx:if="{{goodListViewModal.ispost==false&&goodListViewModal.loadall}}">没有更多</text>
+  </view>
+  <view class='w100 center ccc f26 h70vh m30-t' wx:if="{{this.isShowFilter&&goodListViewModal.list==0}}">啊噢，没有符合条件的产品哦</view>
+  <view class='w100 h78vh ccc center f28 m30-t' wx:if="{{this.isShowFilter==false&&goodListViewModal.list==0&&goodListViewModal.loadall&&goodListViewModal.ispost==false}}">———— 暂无数据 ————</view>
+
+  <view class='w100 h100-l' wx:if="{{this.GoodCatNavStyle=='4'&&status._homeClose==false}}"></view>
+</view>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 选择规格弹窗 -->
+<view class='bg z2' wx:if="{{goodinfoModal}}"></view>
+<scroll-view scroll-y class='w520 bgcfff show-choosegood-modal' wx:if="{{goodinfoModal}}">
+  <view class='flex'>
+    <image class='w150h150 marri24' src='{{foodinfo.img_fmt}}' mode='aspectFill'></image>
+    <view class='flex-column flex1 w1005'>
+      <text class='fontblod t28'>{{foodinfo.name}}</text>
+      <!-- 标签 -->
+      <view class='flex-row'>
+        <block wx:for="{{foodinfo.plabelstr_array}}">
+          <view class='modal-labels'>{{item}}</view>
+        </block>
+      </view>
+      <view class='flex-rowsb'>
+        <text class='show-choosegood-modal-price c535f t38'>{{foodinfo.modalallprice||foodinfo.modalchooseprice||0.00}}</text>
+        <view class='flex aic'>
+          <text class='t28 mal8'>{{foodinfo.nowbuynums}}</text>
+          <image src='/image/a17.png' class='w47h47' bindtap='modaladdnums'></image>
+        </view>
+      </view>
+    </view>
+  </view>
+  <!-- 规格 -->
+  <block wx:for="{{foodinfo.pickspecificationArray}}" wx:for-item='value' wx:for-index='lineid'>
+    <text class='c1212 t28 mtop40'>{{value.name}}</text>
+    <view class='flex-row'>
+      <block wx:for="{{value.items}}">
+        <view class="t26 marri18 lables-minw {{item.ischoose? 'modal-chooselables': 'modal-unchooselables'}}" data-lineid='{{lineid}}' data-index='{{index}}' data-specid='{{item.id}}' data-specname='{{item.name}}' data-attrname='{{value.name}}' bindtap='chooselabels'>{{item.name}}</view>
+      </block>
+    </view>
+  </block>
+  <view class='cfff t36 bg535f h80 flex-rowc br8 mtop50' bindtap='addgood_modalsure'>确定</view>
+</scroll-view>
+<image src='/image/a35.png' class='w80h80 posf show-choosegood-modal-cancel z3' bindtap='cancelchoosegood' wx:if="{{goodinfoModal}}"></image>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--预约购物打开订单按钮  -->
+<view class='flex-rowc appointment_img' bindtap='showappointmentlist'>
+  <image src='/image/new_a11.png' class='w46h56'></image>
+  <view class='w38h38b bgc535f appointment_icon flex-rowc'>{{shopcartlength}}</view>
+</view>
+<!-- 预约点餐订单列表 -->
+<view class='appointment_shopcartList_modal borra8' wx:if="{{showappointmentlist}}">
+  <view class='h69 bobof2 flex-rowsb padl20'>
+    <text class='t28'>我的菜单</text>
+    <view class='flex aic' bindtap="clearShopcartList">
+      <image src='/image/new_a23.png' class='w22h22 marri10'></image>
+      <text class='c999 t24'>清空</text>
+    </view>
+  </view>
+  <scroll-view scroll-y style='max-height:430rpx;'>
+    <block wx:for="{{shopcartList}}">
+      <view class='flex-rowsb h100 bobof2 padl20'>
+        <text class='t28'>{{item.goodname}}</text>
+        <view class='flex aic'>
+          <text class='show-choosegood-modal-price c535f t30'>{{item.discountprice}}</text>
+          <image src="../../image/a16.png" class='w47h47 marle50' id="{{index}}" data-goodid="{{item.goodid}}" bindtap='shopcartmodal_reduce'></image>
+          <text class='c666 t30 mal20'>{{item.buynums}}</text>
+          <image src="../../image/a17.png" class='w47h47' id="{{index}}" data-goodid="{{item.goodid}}" bindtap='shopcartmodal_add'></image>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+  <view class='h100 flex aic t30 marle20 c535f appointment_shopcartList_price'>￥{{alldiscountprice}}</view>
+</view>
+<view class='h138 appointment_bottombtn t30 fontblod cfff' wx:if="{{showappointmentlist}}">
+  <!-- <view class='bgc727c w334 h88 borra8 flex-rowc' bindtap='go_appointment' id='0'>到店扫码下单</view> -->
+  <view class='bgc535f w334 h88 borra8 flex-rowc w1005' bindtap='go_appointment' id='1'>提前预约下单</view>
+</view>
+<view class='bg z2' bindtap='showappointmentlist' wx:if="{{showappointmentlist}}"></view>

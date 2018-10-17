@@ -1,0 +1,359 @@
+<style lang="less">
+    page {
+        background: #f6f6f6
+    }
+    .shop {
+        width: 100%;
+        .shoplst {
+            width: 100%;
+            .shopItem {
+                width: 100%;
+                height: 230rpx;
+                background: #fff;
+                margin-top: 30rpx;
+                padding: 0 30rpx;
+                .icon {
+                    font-size: 52rpx;
+                    color: #d9d8d9;
+                }
+                .icon2 {
+                    font-size: 52rpx;
+                    color: #FF3838;
+                }
+                .shop-img {
+                    width: 170rpx;
+                    height: 170rpx;
+                    position: relative;
+                    margin-left: 30rpx;
+                    image {
+                        width: 170rpx;
+                        height: 170rpx;
+                        border-radius: 5rpx;
+                    }
+                    .shop-del {
+                        width: 100%;
+                        height: 42rpx;
+                        background: rgba(0, 0, 0, 0.3);
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        text-align: center;
+                    }
+                }
+                .shop-info {
+                    height: 170rpx;
+                    margin-left: 30rpx;
+                    .shop-opera {
+                        width: 204rpx;
+                        height: 50rpx;
+                        >view {
+                            font-size: 22rpx;
+                            color: #666;
+                            height: 50rpx;
+                            width: 59rpx;
+                            text-align: center;
+                        }
+                        >view:first-child {
+                            border-top-left-radius: 5rpx;
+                            border-bottom-left-radius: 5rpx;
+                        }
+                        >view:lat-child {
+                            border-top-right-radius: 5rpx;
+                            border-bottom-right-radius: 5rpx;
+                        }
+                        >input {
+                            width: 82rpx;
+                            height: 50rpx;
+                            border-top: 1px solid #666;
+                            border-bottom: 1px solid #666;
+                            min-height: 0;
+                            text-align: center;
+                            font-size: 26rpx;
+                        }
+                    }
+                }
+            }
+        }
+        .shop-btn {
+            width: 100%;
+            height: 100rpx;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            .btn-info {
+                padding: 0 30rpx;
+                width: 70%;
+                height: 100rpx;
+                background: #fff;
+                border-top: 1px solid #f6f6f6;
+            }
+            .btn-buy {
+                width: 30%;
+                height: 100rpx;
+                background: #FF3838;
+                text-align: center;
+                line-height: 100rpx;
+                font-size: 30rpx;
+                font-weight: bold;
+                color: #fff;
+            }
+        }
+    }
+    .shop-none {
+        width: 100%;
+        height: 100vh;
+        text-align: center;
+        line-height: 100vh;
+        font-size: 32rpx;
+        color: #d9d8d9;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='shop'>
+        <view class='shoplst'>
+            <repeat for="{{vm.list}}">
+                <view class='shopItem f fc'>
+                    <view class='icon dzicon icon-Unselected_weixuanze' wx:if="{{item.sel==false}}" @tap="selItem({{index}})" />
+                    <view class='icon2 dzicon icon-Choice_xuanze' wx:if="{{item.sel}}" @tap="selItem({{index}})" />
+                    <view class='shop-img'>
+                        <image src='{{item.SpecImg}}' @tap.stop="openImg({{item.SpecImg}})" />
+                        <view class='shop-del' @tap.stop="delShop({{item.Id}},{{index}})">
+                            <text class='dzicon icon-lajixiang cfff f26' />
+                        </view>
+                    </view>
+                    <view class='f1 shop-info f fv fj'>
+                        <view class='f24 c333'>{{item.GoodsName}}</view>
+                        <view class='f22 c999'>{{item.SpecInfo}}</view>
+                        <view class='f'>
+                            <text class='f30 t-b c333 f1'>￥{{item.PriceStr}}</text>
+                            <view class='shop-opera f fc'>
+                                <view class='f fc fc-h' style="border:1px solid {{item.Count==1?'#d9d8d9':'#666'}};border-right:1px solid #666" @tap="lessNum({{index}})"><text class='dzicon icon-jianhao' /></view>
+                                <input value='{{item.Count}}' type='number' @input="setNum({{index}})" />
+                                <view class='f fc fc-h' style="border:1px solid #666" @tap="addNum({{index}})"><text class='dzicon icon-jiahao1' /></view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+            <view class="loding w-100 f fc-h" style="margin:20rpx 0" wx:if="{{vm.loadall==false}}">
+                <text class="loading-icon" />
+                <text class="c999 f26 ml20">正在加载中...</text>
+            </view>
+            <view class='shop-none' wx:if="{{vm.list.length==0&&vm.loadall}}">暂无商品,快去购物吧~</view>
+        </view>
+        <view style='height:100rpx'></view>
+        <view class="shop-btn f">
+            <view class='btn-info f fc fj'>
+                <view class='f fc'>
+                    <view class='dzicon icon-Unselected_weixuanze f50' style='color:#d9d8d9' wx:if="{{vm.allSel==false}}" @tap="allSel" />
+                    <view class='icon2 dzicon icon-Choice_xuanze f50 cff3' wx:if="{{vm.allSel}}" @tap="allSel" />
+                    <view class='c666 ml20'>全选</view>
+                </view>
+                <view class='f fc f30'>
+                    <text class='c333'>总计：</text>
+                    <text class='cff3 t-b'>￥{{vm.totalPrice}}</text>
+                </view>
+            </view>
+            <view class='btn-buy' @tap="goShop">下单</view>
+        </view>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class goodShop extends wepy.page {
+        config = {
+            navigationBarTitleText: "购物车",
+            navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            }
+            // 引入min组件
+        };
+        data = {
+            vm: {
+                list: [],
+                pageindex: 1,
+                pagesize: 9,
+                ispost: false,
+                loadall: false,
+                totalPrice: '0.00',
+                allSel: false
+            },
+            toast: {}
+        }
+        methods = {
+            // 图片放大
+            openImg(img) {
+                tools.preViewShow(img)
+            },
+            //单个选择
+            selItem(index) {
+                let _v = this.vm
+                _v.list[index].sel = !_v.list[index].sel
+                let _find = _v.list.find(f => f.sel == false)
+                if (_find) {
+                    _v.allSel = false
+                } else {
+                    _v.allSel = true
+                }
+                this.computedPrice()
+                this.vm = _v
+                this.$apply()
+            },
+            //全选
+            async allSel() {
+                let _v = this.vm
+                _v.allSel = !_v.allSel
+                for (let i = 0, len = _v.list.length; i < len; i++) {
+                    if (_v.allSel) {
+                        _v.list[i].sel = true
+                    } else {
+                        _v.list[i].sel = false
+                    }
+                }
+                this.computedPrice()
+                this.vm = _v
+                this.$apply()
+            },
+            //数量+
+            addNum(index) {
+                let count = this.vm.list[index].Count
+                let _v = this.vm.list[index]
+                if (_v.GoodsInfo.StockLimit) {
+                    if (_v.SpecIds) {
+                        let _findSpec = _v.GoodsInfo.GASDetailList.find(f => f.Id == _v.SpecIds)
+                        if (_findSpec) {
+                            if (count < _findSpec.Stock) {
+                                count++
+                            } else {
+                                tools.loading("库存不足")
+                            }
+                        }
+                    } else {
+                        if (count < _v.GoodsInfo.Stock) {
+                            count++
+                        } else {
+                            tools.loading("库存不足")
+                        }
+                    }
+                } else {
+                    count++
+                }
+                this.vm.list[index].Count = count
+                this.$apply()
+            },
+            //数量-
+            lessNum(index) {
+                let count = this.vm.list[index].Count
+                if (count == 1) {
+                    return;
+                }
+                count--
+                this.vm.list[index].Count = count
+                this.$apply()
+            },
+            //手动输入
+            setNum(index, e) {
+                let _num = Number(e.detail.value)
+                let count = this.vm.list[index].Count
+                let _v = this.vm.list[index]
+                if (_v.GoodsInfo.StockLimit) {
+                    if (_v.SpecIds) {
+                        let _findSpec = _v.GoodsInfo.GASDetailList.find(f => f.Id == _v.SpecIds)
+                        if (_findSpec) {
+                            if (_num <= _findSpec.Stock) {
+                                count = _num
+                            } else {
+                                count = 1
+                                tools.loading("库存不足")
+                            }
+                        }
+                    } else {
+                        if (_num <= _v.GoodsInfo.Stock) {
+                            count = _num
+                        } else {
+                            count = 1
+                            tools.loading("库存不足")
+                        }
+                    }
+                } else {
+                    count = _num
+                }
+                this.vm.list[index].Count = count || 1
+                this.$apply()
+            },
+            //删除
+            delShop(id, index) {
+                let vm = {
+                    type: -1,
+                    cartStr: [{
+                        id,
+                        GoodsId: this.vm.list[index].GoodsId,
+                        SpecIds: this.vm.list[index].SpecIds,
+                        SpecInfo: this.vm.list[index].SpecInfo,
+                        Count: this.vm.list[index].Count,
+                        SpecImg: this.vm.list[index].SpecImg
+                    }]
+                }
+                core.UpdateOrDeleteGoodsCarData(vm, this)
+            },
+            goShop() {
+                let _pro = {}
+                let _cardtid = []
+                let array = []
+                let _v = this.vm
+                for (let i = 0, len = _v.list.length; i < len; i++) {
+                    if (_v.list[i].sel) {
+                        array.push({
+                            img: _v.list[i].SpecImg,
+                            name: _v.list[i].GoodsName,
+                            specInfo: _v.list[i].SpecInfo || "",
+                            price: _v.list[i].PriceStr,
+                            count: _v.list[i].Count,
+                        })
+                        _cardtid.push(_v.list[i].Id)
+                        _pro.cartid = _cardtid.join(",")
+                        _pro.list = array
+                        _pro.totalPrice = _v.totalPrice
+                    }
+                }
+                if (array.length == 0) {
+                    tools.ShowToast("请选择商品", this)
+                    return;
+                }
+                this.$preload("vm", _pro);
+                this.$navigate("./goodsOrder");
+            }
+        }
+        onLoad() {
+            core.GetGoodsCarList(this.vm, this)
+        }
+        computedPrice() {
+            let _all = 0
+            let _total = 0
+            let _v = this.vm
+            for (let i = 0, len = _v.list.length; i < len; i++) {
+                if (_v.list[i].sel) {
+                    _all += Number(_v.list[i].PriceStr).mul(Number(_v.list[i].Count))
+                }
+            }
+            _total = parseFloat(_all.add(Number(_total))).toFixed(2)
+            _v.totalPrice = _total
+            this.vm = _v
+            this.$apply()
+        }
+        onReachBottom() {
+            core.GetGoodsCarList(this.vm, this)
+        }
+    }
+</script>

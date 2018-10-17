@@ -1,0 +1,301 @@
+<style lang="less">
+    .c-gpOrderLst {
+        width: 100%;
+        .c-gpOrderLst-top {
+            width: 100%;
+            height: 100rpx;
+            background-color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            >view {
+                font-size: 30rpx;
+                width: 33.3%;
+                text-align: center;
+            }
+        }
+        .c-gpOrderLst-main {
+            width: 100%;
+            margin-top: 20rpx;
+            .c-gpOrder-item:last-child {
+                margin-bottom: 20rpx;
+            }
+            .c-gpOrder-item {
+                width: 100%;
+                padding-left: 30rpx;
+                background-color: #fff;
+                margin-bottom: 20rpx;
+                .c-gpOrder-item-top {
+                    width: 100%;
+                    border-bottom: 1px solid #eee;
+                    padding: 30rpx 30rpx 30rpx 0;
+                }
+                .c-gpOrder-pro {
+                    width: 100%;
+                    padding: 30rpx 30rpx 30rpx 0;
+                    border-bottom: 1px solid #eee;
+                    >image {
+                        width: 130rpx;
+                        height: 130rpx;
+                        flex-shrink: 0;
+                        margin-right: 20rpx;
+                        border-radius: 5rpx;
+                    }
+                }
+                .c-gpOrder-item-bottom {
+                    width: 100%;
+                    padding: 30rpx 30rpx 30rpx 0;
+                    .c-gpOrder-item-btn {
+                        width: 100%;
+                        margin-top: 50rpx;
+                        >text,
+                        .paybtn {
+                            width: 146rpx;
+                            height: 50rpx;
+                            text-align: center;
+                            line-height: 50rpx;
+                            border-radius: 25rpx;
+                            font-size: 26rpx;
+                            border: 1px solid #a1a2a3;
+                        }
+                    }
+                }
+            }
+        }
+    }
+</style>
+<template>
+    <view class="c-gpOrderLst {{currentSkin}}">
+        <view class="c-gpOrderLst-top f fc" style="border-bottom:1px solid {{vm.scroll!=0?'#eee':'none'}}">
+            <repeat for="{{vm.topHead}}">
+                <view @tap="changeState({{item.state}})">
+                    <text class="{{vm.state==item.state?'skin_bottom':''}}" style="padding-bottom: 10rpx;">{{item.name}}</text>
+                </view>
+            </repeat>
+        </view>
+        <view style="height:100rpx" />
+        <view class="c-gpOrderLst-main">
+            <repeat for="{{vm.list}}" item="group">
+                <view class="c-gpOrder-item">
+                    <view class="c-gpOrder-item-top f fj">
+                        <text @tap="copyOrder({{group.orderNum}})">{{group.orderNum}}</text>
+                        <text>{{group.showMark}}</text>
+                    </view>
+                    <repeat for="{{group.goodList}}">
+                        <view class="c-gpOrder-pro f">
+                            <image src="{{item.SpecImg}}" @tap="preView({{item.SpecImg}})"/>
+                            <view class="f f1 fj">
+                                <view class="f fv f24">
+                                    <text class="line line2">{{item.GoodName}}</text>
+                                    <text class="c999 mt10">{{item.SpecInfo}}</text>
+                                </view>
+                                <view class="f fv f24">
+                                    <text>￥{{item.priceStr}}</text>
+                                    <text class="f f-end c999 mt10">X{{item.Count}}</text>
+                                </view>
+                            </view>
+                        </view>
+                    </repeat>
+                    <view class="c-gpOrder-item-bottom">
+                        <view class="f f-end">
+                            <text>共2件 </text>
+                            <text class="ml20">应付总额：</text>
+                            <text class="skin_txt">￥{{group.buyPrice}}</text>
+                        </view>
+                        <view class="c-gpOrder-item-btn f f-end">
+                            <text class="g-btnstr mr20" wx:if="{{group.getWay == 1 && (group.state == 9 || group.state == 4)}}" @tap="pathLog({{group.orderId}}, {{group.goodList}})">查看物流</text>
+                            <text wx:if="{{group.groupstate!=0}}" @tap="pathOrder({{group.orderId}})">订单详情</text>
+                            <text class="ml20" wx:if="{{group.groupstate==1}}" @tap="pathCheck({{group.groupid}})">参团详情</text>
+                            <button class='paybtn skin_bg ml20' wx:if="{{group.groupstate==1}}" style="border:none" open-type="share" data-item="{{group}}">立即邀请</button>
+                            <text class="ml20" wx:if="{{group.state==0}}" @tap="groupConfrim({{group.orderId}},-1)">取消订单</text>
+                            <text class="skin_bg ml20" wx:if="{{group.state==9}}" style="border:none" @tap="groupConfrim({{group.orderId}},3)">确认收货</text>
+                            <form wx:if="{{group.state==0}}" @submit="goPay({{group.citymorderId}},{{group.orderId}})" report-submit="true">
+                                <button class='paybtn skin_bg ml20' style="border:none" formType="submit">立即支付</button>
+                            </form>
+                            <text class="skin_bg ml20" wx:if="{{group.state==6}}" style="border:none" @tap="pathGood({{group.goodList}})">重新拼团</text>
+                            <text class="skin_bg ml20" style="border:none" wx:if="{{group.state==4&&group.goodList[0].IsCommentting==false}}" @tap.stop="pathValue({{group}})">评论</text>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <!-- 加载状态 -->
+        <view class="loding w-100 f fc-h" style="padding:20rpx 0" wx:if="{{vm.list.length&&vm.loadall==false}}">
+            <text class="loading-icon" />
+            <text class="c999 f26 ml20">正在加载中...</text>
+        </view>
+        <!-- 加载完毕 -->
+        <view class="w-100 tc c123 f24 ph20" wx:if="{{vm.loadall&&vm.list.length}}">到底啦~</view>
+        <view class="w-100 f fc fc-h c123 f24" style="height:80vh" wx:if="{{vm.list.length==0}}">暂无数据~</view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        pay,
+        tools
+    } from "@/lib/core.js"
+    export default class group2List extends wepy.page {
+        config = {
+            navigationBarTitleText: "全部拼团",
+        }
+        data = {
+            currentSkin: {},
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                state: 0,
+                pagesize: 10,
+                pageindex: 1,
+                scroll: 0,
+                topHead: [{
+                        name: "全部",
+                        state: 0
+                    },
+                    {
+                        name: "进行中",
+                        state: 1
+                    },
+                    {
+                        name: "已成功",
+                        state: 2
+                    },
+                ]
+            }
+        }
+        methods = {
+            preView(img) {
+                let imgUrls = [];
+                imgUrls.push(img);
+                tools.preViewShow(img, imgUrls);
+            },
+            //复制单号
+            copyOrder(num) {
+                tools.copy(num)
+            },
+            // 导航栏
+            changeState(state) {
+                this.vm = tools.resetArray(this.vm)
+                this.vm.state = state
+                this.$apply()
+                core.getEntGroup(this);
+            },
+            //查看物流
+            pathLog(id, goodsList) {
+                if (goodsList && Array.isArray(goodsList) && goodsList.length > 0) {
+                    var count = goodsList.length
+                    var imgUrl = goodsList[0].SpecImg
+                    tools.goNewPage("../my/myLogistics?orderId=" + id + "&imgUrl=" + imgUrl + "&count=" + count);
+                }
+            },
+            //拼团详情
+            pathGood(item) {
+                tools.goNewPage("/pages/group2/group2?id=" + item[0].FoodGoodsId);
+            },
+            //前往订单页
+            pathOrder(id) {
+                this.$navigate("../group2/group2Dlt?id=" + id)
+            },
+            //参看参团详情
+            pathCheck(id) {
+                this.$navigate("../group2/group2Share?id=" + id)
+            },
+            //评论
+            pathValue(tmp) {
+                let array = []
+                tmp.goodsMsg = {}
+                tmp.SpecImg = tmp.goodList[0].SpecImg
+                tmp.priceStr = tmp.buyPrice
+                tmp.goodsMsg.img = tmp.goodList[0].SpecImg
+                tmp.FoodGoodsId = tmp.goodList[0].FoodGoodsId
+                array.push(tmp)
+                let vm = {
+                    list: array,
+                    orderid: tmp.orderId,
+                    goodType: 1
+                }
+                this.$preload("vm", vm)
+                this.$navigate("/pages/good/goodValue")
+            },
+            /**
+             * 确认收货
+             * 取消订单
+             */
+            async groupConfrim(Id, state) {
+                let groupSt = Number(state)
+                let content = ""
+                switch (groupSt) {
+                    case -1:
+                        content = "是否取消该订单"
+                        break;
+                    case 3:
+                        content = "是否确认收货"
+                        break;
+                }
+                let showModal = await tools.showModal(content)
+                if (showModal.confirm) {
+                    let vm = {
+                        Id,
+                        state: groupSt
+                    }
+                    await core.groupConfrim(vm, this)
+                }
+            },
+            // 微信二次付款
+            async goPay(orderid, id, e) {
+                wx.showNavigationBarLoading();
+                core.formId(e.detail.formId);
+                let newparam = {
+                    orderid,
+                    'type': 1,
+                }
+                let wxInfo = await pay.PayOrder(newparam)
+                if (wxInfo != "" && wxInfo.errMsg.includes("requestPayment:ok")) {
+                    tools.loading("支付成功")
+                    setTimeout(resTime => {
+                        tools.goNewPage("../group2/group2Dlt?id=" + id)
+                    }, 1000)
+                    wx.hideNavigationBarLoading()
+                } else {
+                    tools.loading("取消支付")
+                    wx.hideNavigationBarLoading()
+                }
+            },
+        }
+        async onShow() {
+            await tools.setPageSkin(this);
+            this.vm = tools.resetArray(this.vm)
+            core.getEntGroup(this);
+        }
+        onPageScroll(e) {
+            this.vm.scroll = e.scrollTop
+            this.$apply();
+        }
+        onReachBottom() {
+            core.getEntGroup(this)
+        }
+        onShareAppMessage(res) {
+            if (res.target) {
+                let _g = res.target.dataset.item
+                let vm = {
+                    id: _g.groupid,
+                    name: _g.goodList[0].goodsMsg.name,
+                    img: _g.goodList[0].goodsMsg.img,
+                }
+                return core.group2Share(vm)
+            } else {
+                return {
+                    title: "",
+                    path: "/pages/group2/group2List",
+                    imageUrl: "",
+                    success: function(res) {
+                        tools.loading("转发成功", 'success')
+                    },
+                }
+            }
+        }
+    }
+</script>

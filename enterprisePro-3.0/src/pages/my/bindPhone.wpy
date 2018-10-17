@@ -1,0 +1,107 @@
+<style lang="less">
+.title-content {
+  margin: 62rpx 0 0 56rpx;
+}
+
+.content {
+  box-sizing: border-box;
+  padding: 0 62rpx;
+  display: flex;
+  flex-direction: column;
+  margin-top: 100rpx;
+}
+
+.f48 {
+  font-size: 48rpx;
+  font-family: PingFang-SC-Medium;
+}
+
+.phone-input {
+  border-bottom: 1px solid rgba(51, 51, 51, 1);
+  height: 110rpx;
+  margin-bottom: 30rpx;
+}
+
+.code-input {
+  border-bottom: 1px solid #eee;
+  height: 110rpx;
+}
+
+.bind-phone {
+  height: 80rpx;
+  line-height: 80rpx;
+  width: 640rpx;
+  margin: 70rpx auto;
+}
+</style>
+<template>
+  <view class="{{currentSkin}}">
+    <view class='f48 title-content'>未能获取到微信授权手机号，您还可直接输入手机号注册。</view>
+    <view class='content'>
+      <input placeholder='请输入手机号码' type='number' maxlength='11' class='f30 phone-input' bindinput='inputNumber'/>
+      <view class="f fc code-input">
+        <input placeholder='短信验证码' type='number' maxlength='6' class='f30 f1' bindinput="inputCode"/>
+        <text class="f30" @tap="{{timeOutCode==60?'getCode':''}}">{{timeOutCode==60?'获取验证码':timeOutCode}}</text>
+      </view>
+    </view>
+    <button class="blt-button skin_bg bind-phone" @tap='bindphone'>确定</button>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { tools, core } from "../../lib/core";
+
+export default class Appeal extends wepy.page {
+  //基础配置层
+  config = {
+    navigationBarTitleText: "手机号注册"
+  };
+  data = {
+    currentSkin: {},
+    timeOutCode: 60,
+    phoneNumber: "",
+    phoneCode: ""
+  };
+  methods = {
+    inputNumber(e) {
+      this.phoneNumber = e.detail.value;
+    },
+    inputCode(e) {
+      this.phoneCode = e.detail.value;
+    },
+    async getCode() {
+      let that = this;
+      if (that.phoneNumber.length == 11) {
+        this.timeOutCode--;
+        setInterval(() => {
+          this.timeOutCode--;
+          if (this.timeOutCode == 0) {
+            this.timeOutCode = 60;
+          }
+          this.$apply();
+        }, 1000);
+        let code = await core.senduserauth(that.phoneNumber);
+      } else {
+        tools.loading("手机有误");
+        return;
+      }
+    },
+    async bindphone() {
+      let that = this;
+      let app = wepy.$instance;
+      let bindphone = await core.Submitauth(that.phoneNumber, that.phoneCode);
+      if (bindphone.isok) {
+        wx.setStorageSync("isbindPhone", true);
+        tools.goBack(1);
+      } else {
+        tools.showModal(bindphone.Msg,false);
+      }
+    }
+  };
+  //生命钩子层
+  onShow() {
+    tools.setPageSkin(this);
+  }
+  //自定义方法层
+}
+</script>

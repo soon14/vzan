@@ -1,0 +1,73 @@
+<style lang="less">
+    .dev-wrap {
+        padding: 30rpx;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='dev-wrap'>
+        <repeat for="{{dev.list}}" index="devIndex">
+            <comDev :show.sync="dev.type" :current.sync="item" :devIndex.sync="devIndex" :show.sync="showMore" />
+        </repeat>
+        <view class="loding w-100 f fc-h" style="margin:50rpx 0" wx:if="{{dev.loadall==false}}">
+            <text class="loading-icon" />
+            <text class="c999 f26 ml20">正在加载中...</text>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_dev from "@/components/com_dev"
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class indexDev extends wepy.page {
+        config = {
+            navigationBarTitleText: "发展历程",
+            navigationBarBackgroundColor: "#fff",
+            // 引入min组件
+        };
+        //第二步：声明组件
+        components = {
+            comDev: com_dev
+        };
+        data = {
+            showMore: true,
+            dev: {
+                list: [],
+                pageindex: 1,
+                pagesize: 10,
+                ispost: false,
+                loadall: false
+            },
+        };
+        async onLoad(options) {
+            let type = _get(options, 'type', '')
+            this.dev = tools.resetArray(this.dev)
+            await core.GetDevelopmentDataList(this.dev, this)
+            // let mess = await this.getFields('#dev-content')
+            // console.log(mess)
+            this.dev.type = type
+            this.$apply()
+        };
+        onReachBottom() {
+            core.GetDevelopmentDataList(this.dev, this)
+        }
+        getFields(selector) {
+            wx.createSelectorQuery().select(selector).fields({
+                dataset: true,
+                size: true,
+                scrollOffset: true,
+                properties: ['scrollX', 'scrollY'],
+                computedStyle: ['margin', 'backgroundColor']
+            }, function(res) {
+              
+                console.log(res)
+            }).exec()
+        }
+    }
+</script>

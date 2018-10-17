@@ -1,0 +1,90 @@
+<style lang="less">
+  .com-bottomnav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #E6E6E6;
+    height: 100rpx;
+    z-index: 3;
+
+  }
+
+  .bo-img {
+    width: 50rpx;
+    height: 50rpx;
+  }
+
+  .b8b8 {
+    color: #b8b8b8;
+  }
+  .f56 {
+      font-size: 56rpx;
+  }
+</style>
+<template>
+  <view class='com-bottomnav tc f bg-w'>
+    <view class="f1 f fv fc-h fc b8b8" wx:for="{{navList}}" wx:key="{{index}}" @tap="goPage({{index}})">
+      <view class="dzicon {{item.select ? item.selectedIcon + ' skin_txt' : item.icon + ' b8b8'}} f56" style="line-height: 1;" />
+      <text class="f20 {{item.select ? 'skin_txt' : 'b8b8'}}" style="font-weight:bold" >{{item.title}}</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    tools
+  } from "../lib/core.js"
+  export default class com_bottomBar extends wepy.component {
+    methods = {
+        goPage(index) {
+            //复位
+            this.navList[0].select = false
+            this.navList[1].select = false
+            this.navList[2].select = false
+            //选择
+            var currNavTab = this.navList[index]
+            currNavTab.select = true
+            tools.goRedirecto('/' + currNavTab.pagePath)
+        }
+    };
+    data = {
+      navList: [
+          {
+            title: '首页',
+            icon: 'icon-shouye1',
+            selectedIcon: 'icon-shouyetianchong',
+            select: false,
+            pagePath: 'pages/home/shop-detail/index'
+          },
+          {
+            title: '商城',
+            icon: 'icon-shangcheng',
+            selectedIcon: 'icon-_shangchengtianchong',
+            select: false,
+            pagePath: 'pages/selected/selected-index/index'
+          },
+          {
+            title: '我的',
+            icon: 'icon-wode',
+            selectedIcon: 'icon-_wodetianchong',
+            select: false,
+            pagePath: 'pages/my/my-index/index'
+          }
+      ]
+    }
+   
+   onLoad() {
+       var pageStack = getCurrentPages()
+       var currentPage = pageStack[pageStack.length - 1]
+       console.log(currentPage)
+       this.navList.forEach((val) => {
+           if (val.pagePath == currentPage.route) {
+               val.select = true
+           }
+       })
+   }
+
+  }
+</script>

@@ -1,0 +1,150 @@
+<style lang="less">
+.show-shop-category {
+  .item {
+    min-height: 88rpx;
+    padding: 10rpx 20rpx;
+  }
+  .com-scroll-container {
+    .com-scroll {
+      height: 92vh;
+      width: 35%;
+      position: fixed;
+      left: 0;
+      top: 8vh;
+      background-color: #f0f2f5;
+    }
+    .scroll-list {
+      background-color: #f0f2f5;
+    }
+    .scroll-item {
+      width: 100%;
+      min-height: 88rpx;
+      padding: 10rpx 20rpx;
+    }
+    .active {
+      background-color: #fff;
+      // border-left: 3px solid #FF6F30;
+    }
+    .left-line {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      background-color: #3FD481;
+      width: 3px; 
+    } 
+    .right-content {
+      margin-top: 8vh;
+      margin-left: 35%;
+      height: 92vh;
+    }
+    .top-bar {
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+      height: 8vh;
+      background: #fff;
+      position: fixed;
+      width: 100%;
+      top: 0;
+    }
+  }
+}
+</style>
+<template>
+  <view class="show-shop-category">
+    <view wx:if="{{showFirst}}" class="bg-w">
+      <view class="f30 c666 bbeee item f fc">请选择店铺类型</view>
+      <view class="mt10 list c333">
+        <view class="item f fc" wx:for="{{sourceList}}" wx:key="{{index}}" @tap="agentTap({{item.Name}}, {{item.Id}})">
+          {{item.Name}}
+        </view>
+      </view>
+    </view>
+    <view class="com-scroll-container" wx:if="{{!showFirst}}">
+      <view class="f30 top-bar pl20 f fc c666">请选择店铺类型</view>
+      <scroll-view scroll-y class="com-scroll">
+        <view class="scroll-list">
+          <view wx:for="{{sourceList}}" wx:key="{{index}}" class="scroll-item rel f fc pl20 c333 {{index == activeIndex ? 'active' : ''}}"
+            @tap="inputData({{index}})">
+            {{item.Name}}
+            <view class="left-line abs" wx:if="{{index == activeIndex}}"></view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="right-content bg-w">
+        <view class="scroll-list bg-w">
+          <view wx:for="{{currentList}}" wx:key="{{index}}" class="scroll-item f fc pl20 c333" @tap="agentTap({{item.Name}}, {{item.Id}})">
+            {{item.Name}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import addr from "@/lib/addr";
+import { http, tools, core } from "@/lib/core";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "选择店铺类型"
+  };
+
+  data = {
+    showFirst: true,
+    sourceList: [],
+    activeIndex: 0,
+    currentList: []
+  };
+
+  methods = {
+    agentTap(msg, id) {
+      var sendData = {
+        name: msg,
+        categoryId: id
+      };
+      tools.cacheGlobalData('shop-category', sendData)
+      tools.goBack()
+    },
+    inputData(currIndex) {
+      var parentId = this.sourceList[currIndex].Id
+      this.activeIndex = currIndex;
+      this.getStoreCategoryC(parentId)
+    },
+  };
+
+  async initSecondList() {
+     var parentId = this.sourceList[0].Id
+     this.getStoreCategoryC(parentId)
+  }
+
+  async getStoreCategoryC(parentId) {
+      wx.showLoading({
+          title: '加载中'
+      })
+      var result = await core.GetStoreCategory({
+          isFirstType: 3,
+          parentId
+      })
+      tools.handleResult(result, (res) => {
+          console.log(res)
+          this.currentList = res.list
+      }, (err) => {
+        tools.showModalCancle(err.Msg);
+      })
+      wx.hideLoading()
+      this.$apply()
+  }
+
+  onLoad(query) {
+    var isOpenSecond = query.isOpenSecond;
+    this.sourceList = tools.cacheGlobalData('categoryList');
+    if (isOpenSecond == "0") {
+        this.showFirst = true
+    } else {
+        this.showFirst = false
+        this.initSecondList()
+    }
+  }
+
+}
+</script>

@@ -1,0 +1,164 @@
+<style>
+.topbg {
+  padding-top: 0;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="">
+    <view class="topbg">
+      <view class="tab-type f fc">
+        <view class="f1" wx:for="{{orderType}}" @tap="changeOrderType({{index}})">
+          <text class="{{orderTypeIndex==item.orderType?'sel':''}}">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="item-group" wx:for="{{vm.groups}}" wx:for-item="itemgroup">
+      <view class="f fc item" wx:for="{{vm.list}}" wx:for-index="orderindex" wx:if="{{item.groupId==itemgroup}}" @tap="navOrderList({{orderindex}})">
+        <view class="ico54 {{iconList[item.icon]}}"></view>
+        <view class="f1 pl30">{{item.name}}</view>
+        <view class="num" wx:if="{{item.count>0}}">{{item.count}}</view>
+        <view class="dzicon icon-jiantou"></view>
+      </view>
+    </view>
+    <view class="h45"></view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core } from "../lib/core";
+// import
+//第一步： 引入组件文件
+
+export default class order extends wepy.page {
+  config = {
+    navigationBarTitleText: "订单",
+    // 引入min组件
+    usingComponents: {}
+  };
+  //第二步：声明组件
+  components = {};
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+
+    orderType: [
+      {
+        name: "普通订单",
+        type: "normal",
+        orderType: 0
+      },
+      {
+        name: "砍价",
+        type: "bargain",
+        orderType: 1
+      },
+      {
+        name: "拼团",
+        type: "group",
+        orderType: 2
+      },
+      {
+        name: "预约",
+        type: "yuyue",
+        orderType: 3
+      },
+      {
+        name: "团购",
+        type: "entgroup",
+        orderType: 4
+      }
+    ],
+    orderTypeIndex: 0,
+    vm: {
+      list: [],
+      groups: 0
+    },
+    iconList: {
+      "0": "ico-task", //全部订单
+      "1": "ico-task__7", //7天订单
+      "2": "ico-task__1", //今日订单
+      "30": "", //状态-进行中
+      "31": "", //状态-成功
+      "32": "", //状态-失败
+      "40": "ico-daifahuo", //待发货
+      "41": "ico-daishouhuo", //待收货
+      "42": "ico-daiziqu", //待自取
+      "43": "ico-ok", //已收货
+      "50": "ico-payok", //交易成功
+      "51": "ico-task__cancel", //已取消
+      "52": "ico-daifukuan", //待付款
+      "53": "ico-tuikuanzhong", //退款中
+      "54": "ico-ok__yellow", //退款成功
+      "55": "ico-fail__yellow", //退款失败
+      "60": "ico-ok", //已处理
+      "61": "ico-close" //未处理
+    },
+    searchTypeIndex:0,
+    searchValue:"",
+
+  };
+  computed = {};
+  methods = {
+    ShowToast(msg) {
+      let that = this;
+      that.$toast.show = true;
+      that.$toast.msg = msg;
+      setTimeout(() => {
+        that.$toast.show = false;
+        that.$apply();
+      }, 1000);
+    },
+    async changeOrderType(index) {
+      this.orderTypeIndex = index;
+      await this.getPageData();
+    },
+
+    navOrderList(index) {
+      var that = this;
+      var parameter = {
+        orderType: that.orderType[that.orderTypeIndex].orderType,
+        dateType: that.vm.list[index].dateType,
+        state: that.vm.list[index].state
+      };
+      wx.navigateTo({
+        url: "order_list?q=" + JSON.stringify(parameter)
+      });
+    }
+  };
+  events = {};
+  async getPageData() {
+    //wx.showNavigationBarLoading();
+    let that = this;
+    let result = await core.GetOrderCount(
+      //orderType:
+      that.orderTypeIndex,
+      //selType:
+      that.searchTypeIndex,
+      //value:
+      that.searchValue
+    );
+    if (result) {
+      if (result.isok) {
+        that.vm = result.dataObj;
+        that.$apply();
+      }
+    }
+    //wx.hideNavigationBarLoading();
+  }
+  async onLoad() {
+    let that = this;
+  }
+
+  async onShow() {
+    await this.getPageData();
+  }
+}
+</script>

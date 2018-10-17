@@ -1,0 +1,156 @@
+<style lang="less">
+    .location-wrap {
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            .search {
+                padding: 0 30rpx;
+                .content {
+                    width: 100%;
+                    height: 60rpx;
+                    line-height: 60rpx;
+                    padding: 0 20rpx;
+                    background: #eee;
+                    border-radius: 30rpx;
+                    .phcolor {
+                        color: #A1A2A3;
+                    }
+                }
+            }
+            .current-loaction {
+                padding: 0 30rpx;
+                .c-3FD983 {
+                    color: #3FD983
+                }
+            }
+        } // .hot-city {
+        //     margin-top: 200rpx;
+        //     padding: 20rpx 30rpx;
+        //     .title {
+        //         padding: 20rpx 0;
+        //     }
+        //     .city-item {
+        //         width: 200rpx;
+        //         height: 60rpx;
+        //         line-height: 60rpx;
+        //         background-color: #fff;
+        //         text-align: center;
+        //         margin-right: 45rpx;
+        //         margin-bottom: 24rpx;
+        //     }
+        //     .city-item:nth-child(3n) {
+        //         margin-right: 0;
+        //     }
+        // }
+        .city-list-wrap {
+            margin-top: 200rpx;
+            .city-item {
+                .title {
+                    padding: 20rpx 0 20rpx 30rpx;
+                }
+                .list {
+                    .item {
+                        border-bottom: 1px solid #eee;
+                    }
+                    .item:last-child {
+                        border: none;
+                    }
+                }
+            } // .city-item:first-child .title {
+            //     padding: 0 0 20rpx 30rpx;
+            // }
+        }
+    }
+</style>
+<template leng="wxml">
+    <view class="location-wrap">
+        <view class="header">
+            <view class="search f fc fj w-100 h100 bg-w">
+                <input value="" placeholder-class="phcolor" placeholder="请输入城市名称" class="content f26 c666 tc" @confirm="search" />
+            </view>
+            <view class="current-loaction f fc h100 bg-w">
+                <view class="f1">
+                    <text>广州市</text>
+                    <text class="c666 f20 ml20">GPS定位</text>
+                </view>
+            </view>
+        </view>
+        <!-- <view class="hot-city">
+                                <view class="title">热门城市</view>
+                                <view class="f fc fw">
+                                    <view class="city-item">北京</view>
+                                    <view class="city-item">上海</view>
+                                    <view class="city-item">广州</view>
+                                    <view class="city-item">杭州</view>
+                                    <view class="city-item">深圳</view>
+                                    <view class="city-item">武汉</view>
+                                </view>
+                            </view> -->
+        <view class="city-list-wrap">
+            <repeat for="{{areaList}}" item="province" key="index">
+                <view class="city-item">
+                    <view class="title c666">{{province.Name}}</view>
+                    <view class="list pl30 bg-w">
+                        <repeat for="{{province.Children}}" item="city" index="cityIndex" key="cityIndex">
+                            <view class="item hl100" @tap="chooseCity({{index}},{{cityIndex}})">{{city.Name}}</view>
+                        </repeat>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <comWait :isShow.sync="showWait" />
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import com_wait from "@/components/com_wait";
+    export default class Location extends wepy.page {
+        config = {
+            navigationBarTitleText: "选择城市",
+        };
+        components = {
+            comWait: com_wait,
+        };
+        data = {
+            areaList: [],
+            showWait: true,
+            isHome:false,
+        };
+        methods = {
+            chooseCity(pageIndex, index) {
+                let cityCode = this.areaList[pageIndex].Children[index].Code;
+                let cityName = this.areaList[pageIndex].Children[index].Name;
+                let cityParam={
+                    cityCode,
+                    cityName,
+                }
+                wx.setStorageSync("cityParams",cityParam);
+                this.isHome=="true"? tools.goTabBar("../home-index/index"):tools.goRedirecto("../shop-list/index");
+               // tools.goTabBar(url);
+            }
+        };
+        onLoad(option) {
+            console.log("onLoad")
+            this.isHome =option.isHome;
+            this.GetCityList();
+        };
+        async GetCityList() {
+            this.showWait = true;
+            let data = await core.getAreaList();
+            tools.handleResult(data, (res) => {
+                this.areaList = res;
+                console.log(res);
+            })
+            this.showWait = false;
+            this.$apply();
+        }
+        onReady() {}
+    }
+</script>

@@ -1,0 +1,408 @@
+<style lang="less">
+.my-shop {
+  .wh150 {
+    width: 150rpx;
+    height: 150rpx;
+    background: rgba(217, 216, 217, 1);
+    border-radius: 12rpx;
+  }
+  .p30 {
+    padding: 30rpx;
+  }
+  .btn-dredge {
+    width: 114rpx;
+    height: 44rpx;
+    background: rgba(255, 111, 48, 1);
+    border-radius: 22rpx;
+    line-height: 44rpx;
+    margin-left: 47rpx;
+  }
+  .mt28 {
+    margin-top: 28rpx;
+  }
+  .content {
+    flex-wrap: wrap;
+    min-height: 160rpx;
+    text {
+      line-height: 1;
+    }
+  }
+  .wheight160 {
+    height: 160rpx;
+    flex-shrink: 0;
+    width: 250rpx;
+  }
+  .height160 {
+    height: 140rpx;
+    flex-shrink: 0;
+    width: 250rpx;
+  }
+  .vertical-line {
+    height: 72rpx;
+    width: 1px;
+    right: 0;
+    top: 50%;
+    margin-top: -36rpx;
+    background: #dbdbdb;
+  }
+  .icon-circle {
+    width: 64rpx;
+    height: 64rpx;
+    background: rgba(254, 141, 92, 1);
+    border-radius: 50%;
+  }
+  .label {
+    width: 64rpx;
+    height: 34rpx;
+    background: #ff6f30;
+    border-radius: 17rpx;
+    line-height: 34rpx;
+    right: -70rpx;
+    top: -8rpx;
+  }
+  .corange {
+    background-color: #fe8d5c;
+  }
+  .cblue {
+    background-color: #7ea8fc;
+  }
+  .cgreen {
+    background-color: #b0d247;
+  }
+  .cyellow {
+    background-color: #fcbf7e;
+  }
+  .canvas-hidden {
+    position: absolute;
+    top: -9999px;
+    z-index: 9999;
+  }
+  padding-bottom: 10rpx;
+}
+</style>
+<template>
+  <view class="my-shop">
+    <!--头部-->
+    <view class="bg-w f p30 {{platStore.Aid == 0 ? 'fc' : 'flex-start'}}">
+      <image class="wh150 mr30" src="{{avator}}" mode="aspectFill"></image>
+      <view class="f fv fg1">
+        <text class="f30 c333">{{platStore.Name}}</text>
+        <view class="mt28 f" wx:if="{{platStore.AppState == -1}}" @tap="openUpWxapp">
+          <text class="c666">未开通独立小程序</text>
+          <button class="btn-dredge cfff f20 tc">开通</button>
+        </view>
+        <view class="mt28 f" wx:if="{{platStore.AppState == 0}}">
+          <text class="c666">审核中</text>
+        </view>
+        <view class="mt28 f" wx:if="{{platStore.AppState == 1}}">
+          <text class="c666">已开通</text>
+        </view>
+      </view>
+    </view>
+    <!--平台数据-->
+    <view class="plaform-data">
+      <view class="pl30 pr30 mt30 lh15 f fj fc c333 f26">
+        <text>平台数据</text>
+        <view class="f fc" @tap="viewMore">
+          <text class="mr10">查看更多</text>
+          <text class="f24 dzicon icon-arrow-right"></text>
+        </view>
+      </view>
+      <view class="content mt20 bg-w f">
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{platStore.StorePV}}</text>
+          <text class="f26 c666 mt25">浏览量</text>
+          <view class="abs vertical-line"></view>
+        </view>
+        <view class=" wheight160 f fv fc rel">
+          <text class="f60 c333 mt25">{{platStore.FavoriteCount}}</text>
+          <text class="f26 c666 mt25">收藏数</text>
+          <view class="abs vertical-line"></view>
+        </view>
+        <view class=" wheight160 f fv fc">
+          <text class="f60 c333 mt25">{{platStore.StoreUV}}</text>
+          <text class="f26 c666 mt25">累计访客</text>
+        </view>
+      </view>
+    </view>
+    <!--店铺管理-->
+    <view class="shop-manage">
+      <view class="pl30 pr30 mt30 lh15 f fj fc c333 f26">
+        <text>店铺管理</text>
+      </view>
+      <view class="content mt20 bg-w f pt20 pb20">
+        <view class="height160  f fv fc jc" @tap="viewMyShop">
+          <view class="icon-circle corange f fc jc">
+            <text class="dzicon icon-shop_dianpu cfff"></text>
+          </view>
+          <text class="f26 c666 mt20">查看店铺</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="editShop">
+          <view class="icon-circle corange f fc jc">
+            <text class="dzicon icon-shezhi cfff"></text>
+          </view>
+          <text class="f26 c666 mt20">编辑店铺</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle cblue f fc jc rel">
+            <text class="dzicon icon-yonghudianji cfff"></text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">客户管理</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle cblue f fc jc rel">
+            <text class="dzicon icon-yuyuegoumai_Reservations cfff"></text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">商品管理</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle cblue f fc jc rel">
+            <text class="dzicon icon-Recommend5 cfff f30"></text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">商品发布</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle cblue f fc jc rel">
+            <text class="dzicon icon-zhuanyebaniconkuozhan_Order cfff"></text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">订单管理</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle cyellow f fc jc rel">
+            <text class="dzicon icon-wodeyouhuiquan cfff"></text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">优惠券</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle corange f fc jc cfff rel">
+            <text>核</text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">到店核销</text>
+        </view>
+      </view>
+    </view>
+    <!--店铺管理-->
+    <view class="shop-manage">
+      <view class="pl30 pr30 mt30 lh15 f fj fc c333 f26">
+        <text>店铺推广</text>
+      </view>
+      <view class="content mt20 bg-w f pt20 pb20">
+        <view class="height160  f fv fc jc" @tap="shareShop">
+          <view class="icon-circle corange f fc jc">
+            <text class="dzicon icon-Scavenging_saoma- cfff"></text>
+          </view>
+          <text class="f26 c666 mt20">店铺码</text>
+        </view>
+        <view class="height160  f fv fc jc">
+          <button class="icon-circle corange f fc jc" open-type="share">
+            <text class="dzicon icon-zhuanfa2 cfff"></text>
+          </button>
+          <text class="f26 c666 mt20">分享好友</text>
+        </view>
+        <view class="height160  f fv fc jc" @tap="expect" wx:if="{{0}}">
+          <view class="icon-circle rel cgreen f fc jc">
+            <text class="dzicon icon-Smallprogram_xiaochengxu cfff"></text>
+            <view class="abs label tc f20 cfff">高级</view>
+          </view>
+          <text class="f26 c666 mt20">小程序码</text>
+        </view>
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+    <comCanvasMask wx:if="{{renderShop}}" canvasId="canvas-shop2" :isShow.sync="renderShop">
+      <canvas slot="canvas666" id="canvasShop" canvas-id="canvas-shop" style="width:{{canvasWidth}}px; height:{{canvasHeight}}px; margin: 60rpx 50rpx;"></canvas>
+    </comCanvasMask>
+    <canvas id="canvasShop2" class="canvas-hidden" canvas-id="canvas-shop2" style="width:{{canvasWidth * 3}}px; height:{{canvasHeight * 3}}px; margin: 60rpx 50rpx;"></canvas>
+  </view>
+</template> 
+<script>
+  import wepy from "wepy"; 
+  import {
+    tools,
+    http,
+    core
+  } from "@/lib/core";
+  import com_wait from "@/components/com_wait";
+  import com_canvasMask from '@/components/com_canvasMask';
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "我的店铺"
+    };
+
+    data = {
+      platStore: {},
+      avator: "",
+      isWait: false,
+      cardId: 0,
+      renderShop: false,
+      canvasHeight: 0,
+      canvasWidth: 0,
+      pixelRatio: 0
+    };
+
+    components = {
+      comWait: com_wait,
+      comCanvasMask: com_canvasMask
+    };
+
+    methods = {
+      async shareShop() {
+        var src = ''
+        var pagePath = 'pages/home/shop-detail/index'
+        this.isWait = true
+        this.renderShop = true;
+        if (this.platStore.AppState == 1) {
+          src = await this.getShopAppQrCode()
+        } else {
+          src = await this.getShopPlatQrCode(pagePath)
+        }
+        if (src) {
+          await core.drawCanvasShop(this.platStore.Name, src, this.canvasWidth, this.canvasHeight)
+          await core.drawCanvasShop(this.platStore.Name, src, this.canvasWidth * 3, this.canvasHeight * 3, 'canvas-shop2', 3)
+        } 
+        this.isWait = false
+        this.$apply()
+      },
+      editShop() {
+        tools.goNewPage(
+          "../edit-shop/index?isModifyMode=开启" + "&myCardId=" + this.cardId
+        );
+      },
+      expect() {
+        wx.showToast({
+          icon: "none",
+          title: "高级功能暂未开放，敬请期待"
+        });
+      },
+      viewMore() {
+        tools.goNewPage("../data-radar/index");
+      },
+      viewMyShop() {
+        tools.goNewPage(
+          "../../home/shop-detail/index?storeId=" +
+          this.platStore.Id +
+          "&title=我的店铺"
+        );
+      },
+      async openUpWxapp() {
+        wx.showLoading({
+          title: "提交中",
+          mask: true
+        });
+        var result = await core.applyStoreApp();
+        tools.handleResult(
+          result,
+          async res => {
+            wx.hideLoading();
+            await tools.showModalCancle("提交成功");
+            await this.getStoreDetailC({
+              myCardId: this.cardId,
+              type: 1
+            });
+            this.$apply()
+          },
+          () => {
+            wx.hideLoading();
+          }
+        );
+      }
+    };
+
+    async getShopAppQrCode() {
+       var qrCode 
+       var result = await core.getStoreCodeImg(this.platStore.Id)
+       tools.handleResult(result, res => {
+         qrCode = res
+       }, (err) => {
+         tools.freeToast(err.Msg, 'none')
+       })
+       return qrCode || false
+    }
+
+    async getShopPlatQrCode(path) {
+       var qrCode 
+       var result = await core.getStoreCodeImg(this.platStore.Id, path)
+       tools.handleResult(result, res => {
+         qrCode = res
+       }, (err) => { 
+         tools.freeToast(err.Msg, 'none')
+       })
+       return qrCode || false
+    }
+
+
+    async onShow() {
+      var vm = this;
+      var cardId = tools.cacheGlobalData("modify");
+      if (cardId) {
+        vm.isWait = true;
+        await vm.getStoreDetailC({
+          myCardId: cardId,
+          type: 1 
+        });
+        vm.isWait = false;   
+        tools.cacheGlobalData("modify", '')
+        vm.$apply();
+      }
+    }
+ 
+    async initCanvasHW() {
+      var systemInfo = await tools.getSystemInfo()
+      var screenWidth = systemInfo.screenWidth * systemInfo.pixelRatio
+      var screenHeight = systemInfo.screenHeight * systemInfo.pixelRatio
+      this.pixelRatio = systemInfo.pixelRatio
+      this.canvasWidth = Math.floor(tools.getRelativeValue(750, 500, screenWidth) / this.pixelRatio)
+      this.canvasHeight = Math.floor(tools.getRelativeValue(1334, 607, screenHeight) / this.pixelRatio)
+      this.$apply()
+    }
+
+    async onLoad(query) {
+      this.cardId = query.myCardId;
+      var vm = this;
+      if (this.cardId) {
+        vm.isWait = true;
+        await vm.getStoreDetailC({
+          myCardId: this.cardId,
+          type: 1 
+        }); 
+        vm.isWait = false;
+        vm.initCanvasHW()
+        vm.$apply();
+      } else {
+        tools.goBack(1);
+      }
+    }
+ 
+    async getStoreDetailC(obj) {
+      var vm = this;
+      var result = await core.getStoreDetail(obj);
+      tools.handleResult(result, res => {
+        vm.platStore = res.platStore;
+        vm.avator = res.platStore.Banners.split(",")[0];
+      });
+    }
+
+    onShareAppMessage() {
+      return {
+        title: this.platStore.Name,
+        path: "pages/home/shop-detail/index?storeId=" +
+          this.platStore.Id +
+          "&title=" +
+          this.platStore.Name + 
+          '&enterFormShare=开启',
+        imageUrl: this.avator,
+        success: function (res) {
+          console.log(res);
+          //core.wxToast("分享成功");
+        }
+      };
+    }
+  }
+
+</script>

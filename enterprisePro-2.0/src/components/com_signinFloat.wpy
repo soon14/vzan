@@ -1,0 +1,140 @@
+<style lang="less">
+    .masking {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 99;
+        background-color: rgba(0, 0, 0, 0.5);
+        .signin-wrap {
+            width: 560rpx;
+            border-radius: 8rpx;
+            padding-bottom: 40rpx;
+            .close {
+                top: -100rpx;
+                right: 0;
+            }
+            &>image {
+                position: absolute;
+                top: -52rpx;
+                width: 560rpx;
+                height: 328rpx;
+            }
+            .signin-day {
+                top: 174rpx;
+                left: 50%;
+                transform: translateX(-50%);
+                min-width: 240rpx;
+                height: 44rpx;
+                line-height: 44rpx;
+                background-color: #000;
+                color: #fff;
+                text-align: center;
+                letter-spacing: 4rpx;
+                white-space: nowrap;
+                padding: 0 20rpx;
+                border-radius: 22rpx;
+            }
+            .date-list {
+                width: 518rpx;
+                margin-top: 316rpx;
+                &::before {
+                    position: absolute;
+                    top: 28rpx;
+                    left: 0;
+                    content: "";
+                    width: 100%;
+                    height: 1px;
+                    background-color: #EBAF79;
+                }
+                .date-item {
+                    // margin-right: 28rpx;
+                    .integral {
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        -webkit-transform: translate(-50%, -50%);
+                        font-size: 18rpx;
+                        color: #D89300;
+                    }
+                    .date {
+                        padding-top: 10rpx;
+                    }
+                } // .date-item:last-child {
+                //     margin-right:0;
+                // }
+            }
+            .signin-btn {
+                width: 230rpx;
+                height: 60rpx;
+                line-height: 60rpx;
+                border-radius: 30rpx;
+                color: #000;
+                text-align: center;
+                background-color: rgba(255, 213, 48, 1);
+                margin-top: 30rpx;
+            }
+            .signed-btn {
+                width: 230rpx;
+                height: 60rpx;
+                line-height: 60rpx;
+                border-radius: 30rpx;
+                color: #666;
+                text-align: center;
+                background-color: rgba(255, 213, 48, 0.5);
+                margin-top: 30rpx;
+            }
+        }
+    }
+</style>
+<template>
+    <view class="masking w-100 h-100 f fv fc fc-h">
+        <view class="signin-wrap bg-w rel f fv fc">
+            <view class="close abs dzicon icon-zhuanyebaniconkuozhan_Close cfff f60" @tap="closeSigninMask"></view>
+            <image src="http://j.vzan.cc/miniapp/img/enterprise/sign-in-bg.png" mode="aspectFill"></image>
+            <view class="signin-day abs f28">已连续签到<text style="color:#FFD530">{{comUserSignIn.ConnectDay}}</text>天</view>
+            <view class="date-list rel f fc fj">
+                <repeat for="{{comUserSignIn.listPlayCardLog}}" key="{{index}}">
+                    <view class="date-item f fv fc">
+                        <view class="rel">
+                            <image style="width:50rpx;height:50rpx;" src="{{item.Played?'http://j.vzan.cc/miniapp/img/enterprise/sign-in.png':'http://j.vzan.cc/miniapp/img/enterprise/signed-in.png'}}" mode="aspectFill"></image>
+                            <text class="abs integral" wx:if="{{!item.Played}}">+{{item.Points}}</text>
+                        </view>
+                        <text class="date c666 f20">{{item.dateStr}}</text>
+                    </view>
+                </repeat>
+            </view>
+            <view class="f fc fc-h">
+                <view class="signin-btn f30" @tap="clickSignin" wx:if="{{!comUserSignIn.TodayPlayCard}}">签到</view>
+                <view class="signed-btn f30" wx:if="{{comUserSignIn.TodayPlayCard}}">今天已签到</view>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../lib/core.js";
+    export default class com_singinFloat extends wepy.component {
+        props = {
+            comUserSignIn: {
+                type: Object,
+                default: {},
+            },
+            comSigninRules: {
+                type: Object,
+                default: {},
+            }
+        }
+        data = {}
+        methods = {
+            closeSigninMask() {
+                this.$emit("closeMask");
+            },
+            clickSignin() {
+                this.$emit("signin")
+            }
+        }
+    }
+</script>

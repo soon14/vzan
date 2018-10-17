@@ -1,0 +1,148 @@
+<style lang="less">
+.my-coupon {
+  padding-bottom: 20rpx;
+  .coupon-item {
+    margin-top: 24rpx;
+    width: 690rpx;
+    height: 170rpx;
+    background: url("http://j.vzan.cc/miniapp/img/platformPro/plat_coupon_bg.png")
+      no-repeat;
+    background-size: 100%;
+    .left {
+      width: 162rpx;
+    }
+    .right {
+      width: 526rpx;
+      .title {  
+        margin-left: 59rpx;
+      }
+      .btn-use {
+        width: 120rpx;
+        height: 60rpx;
+        border: 1px solid #ff6f30;   
+        border-radius: 30rpx;
+        line-height: 60rpx;
+        color: #ff6f30;  
+      }
+      .disabled {
+        border: 1px solid #D9D8D9!important; 
+        color: #ccc!important;
+      }
+    }
+  }
+  .mask-qrcode {
+    position: fixed;
+    width: 100%; 
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    .card {
+      width: 490rpx;
+      height: 536rpx;
+      border-radius: 10rpx;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%); 
+      .qrcode {
+          width:264rpx;
+          height:272rpx;
+          margin-top: 55rpx;
+          background-color: #ff6f30;
+      }
+      .tips {
+          margin: 40rpx 0;
+      }
+      .line-gray {
+          width: 100%;
+          height: 1px;
+          background-color: #eee;
+      }
+      .btn-not-use {
+          width: 100%;
+          height: 100rpx;
+          line-height: 100rpx;
+      }
+    }
+  }
+  .null-data {
+      margin-top: 481rpx;
+  } 
+}
+</style>
+<template>
+  <view class="my-coupon f fv fc">
+      <view class="null-data tc pr30" wx:if="{{couponList.length == 0}}">
+        暂无数据
+      </view>
+      <view class="coupon-item f c333 f26" wx:for="{{couponList}}" wx:key="{{index}}">
+          <view class="left f fv fc jc pw30">
+              <block wx:if="{{item.CouponWay == 0}}">
+                <text>￥<text class="f40">{{item.Money_fmt}}</text></text>
+              </block>
+              <block wx:if="{{item.CouponWay == 1}}">
+                <text class="f40">{{item.Money_fmt}}折</text>
+              </block>
+             <view class="c666 f20 mt5 tc">{{item.LimitMoney == 0 ? '任意金额商品' : '满' + item.LimitMoneyStr}}可用</view>
+          </view>
+          <view class="right f fc fj">
+              <view class="f fv">
+                <view class="title">{{item.CouponName}}</view>
+                <view class="title c666 f20 mt15">{{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}</view>
+              </view>
+              <button class="btn-use tc mr30 f24 {{item.CanUse ? '' : 'disabled'}}" @tap="goHome" disabled="{{!item.CanUse}}">使用</button>
+          </view>
+      </view>
+       <!-- <view class="coupon-item f c333 f26">
+          <view class="left f fc jc">
+              <view class="f fv">
+                  <text class="">满1000</text>
+                  <text class="">减50</text>
+              </view>
+          </view>
+          <view class="right f fc fj">
+              <text class="title">安防群优选满减券</text>
+              <button class="btn-use tc mr30 f24">使用</button>
+          </view>
+      </view> -->
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { http, tools, core } from "@/lib/core";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "优惠券"
+  };
+
+  data = {
+    couponList: [],
+    pageIndex: 1,
+    loadMore: false,
+    loadAll: false,
+    count: 0
+  }
+
+  methods = {
+    goHome() {
+      wx.reLaunch({
+        url: '/pages/selected/selected-index/index'
+      })
+    }
+  }
+
+  async onLoad() {
+    wx.showLoading()
+    var result = await core.getMyCouponList({
+      pageIndex: this.pageIndex
+    })
+    wx.hideLoading()
+    if (result.isok) {
+      this.couponList = result.postdata
+    } else {
+      tools.showModalCancle(result.msg)
+    }
+    this.$apply()
+  }
+}
+</script>

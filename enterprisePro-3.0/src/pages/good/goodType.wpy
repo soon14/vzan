@@ -1,0 +1,208 @@
+<style lang="less">
+    .t-search {
+        width: 100%;
+        height: 100rpx;
+        background: #ebebeb;
+        padding: 20rpx 30rpx;
+        .search {
+            width: 100%;
+            height: 60rpx;
+            background: #fff;
+            padding: 16rpx 30rpx;
+            color: #C5C4CC;
+        }
+    }
+    .t-first {
+        width: 200rpx;
+        height: 92vh;
+        float: left;
+        .t-firstname {
+            height: 100rpx;
+            line-height: 100rpx;
+            padding: 0 30rpx;
+            text-align: center;
+            border-bottom: 1px solid #f1f1f1;
+        }
+    }
+    .t-sec {
+        width: 520rpx;
+        height: 92vh;
+        float: right;
+        .pt40 {
+            padding-top: 40rpx;
+            padding-bottom: 30rpx;
+        }
+        .sec {
+            width: 154rpx;
+            height: 54rpx;
+            text-align: center;
+            line-height: 54rpx;
+            font-size: 24rpx;
+            background: #fff;
+            margin-bottom: 20rpx;
+        }
+        .imgItem {
+             width: 170rpx;
+            font-size: 26rpx;
+            color: #666;
+            margin-bottom: 20rpx;
+        }
+        .imgItem>image {
+            width: 150rpx;
+            height: 150rpx;
+            margin-bottom:14rpx;
+            background-image: url('http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png');
+            background-size: cover;
+        }
+    }
+    .sel {
+        background: #f7f7f7;
+        color: #000;
+    }
+    .selnone {
+        background: #fff;
+        color: #666;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <view class="t-search">
+            <view class="search f fc" @tap="pathSear">
+                <text class="dzicon icon-sousuo_rearch f50" />
+                <text class="ml10 f26">搜索商品名称</text>
+            </view>
+        </view>
+        <!-- 大类 -->
+        <scroll-view scroll-y class="t-first">
+            <view class="t-firstname" @tap="selallFirst({{tIndex}})">全部</view>
+            <repeat for="{{vm}}" index="tIndex">
+                <view class="t-firstname line line1  {{typeIndex==tIndex?'skin_bg':'selnone'}}" @tap="selChange({{tIndex}})">{{item.FirstGoodType.name}}</view>
+            </repeat>
+        </scroll-view>
+        <!-- 小类 -->
+        <scroll-view scroll-y class="t-sec" wx:if="{{style!=5}}">
+            <view class="f fv">
+                <view class="f pt40">
+                    <text class="f1">{{vm[typeIndex].FirstGoodType.name}}</text>
+                    <view class="f fc f24 c666" @tap="selallType({{typeIndex}})">
+                        <text>查看更多</text>
+                        <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f38" />
+                    </view>
+                </view>
+                <view class="f fw fj" wx:if="{{vm[typeIndex].SecondGoodTypes.length}}">
+                    <repeat for="{{vm[typeIndex].SecondGoodTypes}}" item="second">
+                        <view class="sec line line1" @tap="seloneType({{second}})">{{second.name}}</view>
+                    </repeat>
+                </view>
+                <wxc-abnor type="DATA" wx:else></wxc-abnor>
+            </view>
+        </scroll-view>
+        <scroll-view scroll-y class="t-sec" wx:if="{{style==5}}" >
+            <view class="f fv">
+                <view class="f pt40">
+                    <text class="f1">{{vm[typeIndex].FirstGoodType.name}}</text>
+                    <view class="f fc f24 c666" @tap="selallType({{typeIndex}})">
+                        <text>查看更多</text>
+                        <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f38" />
+                    </view>
+                </view>
+                <view class="f fw" wx:if="{{vm[typeIndex].SecondGoodTypes.length}}">
+                    <repeat for="{{vm[typeIndex].SecondGoodTypes}}" item="second">
+                        <view class='imgItem f fv fc' @tap="seloneType({{second}})">
+                            <image  src="{{second.Img}}" />
+                            <text class='line line1'>{{second.name}}</text>
+                        </view>
+                    </repeat>
+                </view>
+                <wxc-abnor type="DATA" wx:else></wxc-abnor>
+            </view>
+        </scroll-view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+    } from "../../lib/core";
+    import _get from "../../lib/lodash.get.js"
+    // import
+    //第一步： 引入组件文件
+    export default class goodType extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+                "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+            },
+            navigationBarTitleText: "分类"
+        };
+        //第二步：声明组件
+        components = {};
+        props = {};
+        data = {
+            currentSkin: {},
+            vm: {},
+            typeIndex: 0,
+            style: 0,
+        }
+        methods = {
+            pathSear() {
+                tools.goNewPage("/pages/good/goodSearch")
+            },
+            selChange(index) {
+                this.typeIndex = index
+                this.$apply()
+            },
+            async seloneType(item) {
+                let _g = wepy.$instance.globalData
+                _g.showBIG = false
+                _g.goodCat[this.pageIndex] = []
+                _g.goodCat[this.pageIndex].push(item)
+                await tools.goBack(1)
+            },
+            async selallType(index) {
+                let _g = wepy.$instance.globalData
+                let array = this.vm[index].SecondGoodTypes
+                if (array.length == 0) {
+                    tools.showModal("暂无数据，请切换其他试试",false)
+                    return;
+                }
+                _g.showBIG = false
+                _g.goodCat[this.pageIndex] = []
+                _g.goodCat[this.pageIndex] = array
+                await tools.goBack(1)
+            },
+            async selallFirst(index) {
+                let array = []
+                let _vm = this.vm
+                let _g = wepy.$instance.globalData
+                for (let i = 0, len = _vm.length; i < len; i++) {
+                    array.push(_vm[i].FirstGoodType)
+                }
+                _g.showBIG = true
+                _g.goodCat[this.pageIndex] = []
+                _g.goodCat[this.pageIndex] = array
+                await tools.goBack(1)
+            },
+        }
+        async onLoad(options) {
+            let ids = _get(options, "ids", 0)
+            this.style = _get(options, "style", 0)
+            this.pageIndex = _get(options, "index", 0)
+            await tools.setPageSkin(this);
+            await this.info(ids)
+            this.$apply()
+        }
+        async info(ids) {
+            let _g = await core.getGoodType(ids)
+            if (_g.isok) {
+                this.vm = _g.dataObj
+                this.$apply()
+            }
+        }
+    }
+</script>

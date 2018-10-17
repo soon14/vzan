@@ -1,0 +1,40 @@
+<!--pages/orderList/orderList.wxml-->
+
+<block wx:for="{{postdata}}" wx:for-item="this" wx:if="{{postdata.length!=0}}">
+  <block wx:for="{{this.orderList}}">
+    <view class="all" id="{{item.Id}}" bindtap="navtoOrderinfo">
+      <!-- 第一行 -->
+      <view class="line1">
+        <view style="display:flex;align-items:center">
+          <text>{{item.BuyMode==1?'微信支付':'储值支付'}}</text>
+          <text class="eatcondition" wx:if="{{item.OrderTypeStr=='外卖'}}">{{item.OrderTypeStr}}</text>
+        </view>
+        <text>{{item.StateTitle}}</text>
+      </view>
+      <!-- 第二行 -->
+      <view class="orderinfo">
+        <view style="margin:30rpx 0 0 0">{{item.GoodsDtlName}}</view>
+      </view>
+      <!-- 第三行 -->
+      <view class="line1" style="margin-top:12rpx">
+        <text style="font-size:24rpx;color:#999">{{item.CreateDate}}</text>
+        <view style="display:flex;align-items:center">
+          <text style="color:#FF535F;font-size:20rpx">￥</text>
+          <text style="color:#FF535F;font-size:32rpx">{{item.BuyPrice}}</text>
+        </view>
+      </view>
+      <!-- 第四行 -->
+      <view class="line4" hidden="{{item.StateTitle=='已完成'}}">
+        <!-- <view class="line4btn"  hidden="{{item.StateTitle=='已取消'||item.StateTitle=='待接单'}}" >确认付款</view> -->
+        <view class="line4btn" wx:if="{{item.StateTitle=='待付款'}}" catchtap="gotoPay" id="{{item.cityMorderId}}">确认付款</view>
+        <view class="line4btn" wx:if="{{item.StateTitle=='待送餐'}}" catchtap="cancelpayMoeny" id="{{item.Id}}">申请退款</view>
+        <view class="line4btn " style="margin-left:30rpx;" catchtap="cancelOrder" id="{{item.Id}} " data-pid="{{index}}" wx:if="{{item.StateTitle=='待付款'}}">取消订单</view>
+        <view class="line4btn " style="margin-left:30rpx;" catchtap="cancelpayMoeny" id="{{item.Id}} " data-pid="{{index}}" wx:if="{{item.StateTitle=='待接单'&&item.OrderTypeStr=='外卖'}}">申请退款</view>
+        <view class="line4btn " style="margin-left:30rpx;" catchtap="orderisOk" id="{{item.Id}} " data-pid="{{index}}" wx:if="{{item.StateTitle=='待确认送达'&&item.OrderTypeStr=='外卖'}}">确认送达</view>
+      </view>
+    </view>
+  </block>
+</block>
+
+
+<view wx:if="{{postdata.length==0}}" class='tea t32 c999 mtop40'>订单空空如也~</view>

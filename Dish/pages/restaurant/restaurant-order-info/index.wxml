@@ -1,0 +1,319 @@
+<block wx:if="{{glo_is_load}}">
+  <view class="glo_load_view">
+    <text class="iconfont icon-loading animated infinite rotate mr5"></text>
+    <text>正在努力加载</text>
+  </view>
+</block>
+<block wx:else>
+  <!-- 店内订单进度 -->
+  <view class="order-progress" wx:if="{{dish_data.dish_info.dish_diannei_tips_show==1 &&oinfo.order_type == 1 && oinfo.order_status!=3 && oinfo.is_ziqu==0}}">
+    <view class="order-pro-tips" wx:if="{{oinfo.order_action_list.pay==true && oinfo.order_jiucan_type==1}}">下单付款后，订单才能下送后厨</view>
+    <view class="order-pro-tips" wx:if="{{oinfo.order_action_list.pay==true && oinfo.order_jiucan_type==2}}">请您用完餐后及时进行付款哦</view>
+    <view class="order-pro-box">
+      <view class="order-pro-item">
+        <view class="order-pro-ico iconfont icon-unfold"></view>
+        <view>选菜</view>
+      </view>
+      <view class="order-pro-item">
+        <view class="order-pro-ico iconfont icon-unfold"></view>
+        <view>下单</view>
+      </view>
+      <view class="order-pro-item {{oinfo.order_action_list.pay==true?'active':''}}">
+        <view class="order-pro-ico iconfont icon-unfold"></view>
+        <view>付款</view>
+      </view>
+      <view class="order-pro-item no-arrows {{oinfo.order_action_list.comment==true?'active':''}}">
+        <view class="order-pro-ico iconfont icon-unfold"></view>
+        <view>评价</view>
+      </view>
+      <view class="order-pro-item no-arrows {{oinfo.order_action_list.yes_comment==true?'active':''}}">
+        <view class="order-pro-ico iconfont icon-unfold"></view>
+        <view>完成</view>
+      </view>
+    </view>
+  </view>
+  <view class="my-code mb10" wx:if="{{oinfo.order_type == 1 && oinfo.is_ziqu==0}}">
+    <view class="my-i">排号:{{oinfo.order_haoma}}</view>
+    <view class="my-i">桌号:{{oinfo.order_table_id}}</view>
+  </view>
+
+  <!-- 外卖、自提 -->
+  <view class="order-state-box" wx:if="{{oinfo.order_action_list.comment==true && oinfo.order_type==1}}">
+    <view class="order-state-cont">
+      <view class="order-state-tit">待评价</view>
+      <view class="order-state-tips">亲，对本次服务还满意吗</view>
+    </view>
+    <view class="order-state-ico">
+      <text class="iconfont icon-camerafill"></text>
+    </view>
+  </view>
+
+  <!-- 退款 进度 -->
+  <!--<view class="refund-progress arrowR">退款进度： 等待商家审核</view>-->
+
+  <!-- 外卖 -->
+  <!--<view class="order-o-msg">
+    <view class="order-msg-item gridXb">
+      <view class="take-out-ico iconfont icon-locationfill"></view>
+      <view class="take-out-info">
+        <view><text>{{oinfo.consignee}}</text> <text> {{oinfo.mobile}}</text></view>
+        <view class="take-out-address">{{oinfo.province}}{{oinfo.city}}{{oinfo.area}}{{oinfo.address}}</view>
+      </view>
+    </view>
+    <view class="order-msg-item gridXb d-info-box">
+      <view class="">UU跑腿:</view>
+      <view class="distribution-info">骑手 马小跳</view>
+      <view class="d-info-ico iconfont icon-dianhua"></view>
+    </view>
+  </view>-->
+  <!-- 自提 -->
+  <view class="order-o-msg" wx:if="{{oinfo.is_ziqu==1}}">
+    <view class="order-msg-item gridXb pickedup-address-box" bindtap="get_location_bind">
+      <view class="">自提点:</view>
+      <view class="pickedup-address">{{dish_data.dish_info.dish_address}}</view>
+      <view class="pickedup-ico iconfont icon-daohang"></view>
+    </view>
+    <view class="order-msg-item gridXb pickedup-info">
+      <view class="pickedup-info-tiem">取货时间：{{oinfo.ziqu_time}}</view>
+      <view class="pickedup-info-tiem">提货人：{{oinfo.ziqu_username}} {{oinfo.ziqu_userphone}}</view>
+    </view>
+
+  </view>
+
+  <view class="ord-info tc" wx:if="{{oinfo.order_type == 2 && oinfo.pay_status==1}}">
+    <view class="od-fan">
+      <image src="{{oinfo.dish_logo}}" mode="aspectFill" class="top-od-img"></image>
+      <view class="grey f12">{{oinfo.dish_name}}</view>
+      <view class="mt10 topmsg-btn">
+        <button size="mini" type="primary" hover-class="none">{{oinfo.peisong_status_text}}</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="ress-c mb10">
+    <view class="ress-msg">
+      <image class="ress-c-logo" src="{{oinfo.dish_logo}}" mode="acpectFill" />
+      <view class="ress-cl vertical-2 f1">{{oinfo.dish_name}}</view>
+    </view>
+    <view class="ress-c-g">
+      <block wx:for="{{oinfo.glist}}" wx:for-item="gitem">
+        <view class="ress-g-i">
+          <image class="ress-goods-img" src="{{gitem.goods_img}}" mode="aspectFill" />
+          <view class="ress-g-msg">
+            <view class="ress-g-n">
+              <view class="lineText2">{{gitem.goods_name}}</view>
+              <view class="ress-g-price">￥{{gitem.goods_price}}</view>
+            </view>
+            <view class="ress-g-n">
+              <view class="ress-g-attr lineText">{{gitem.goods_attr}}</view>
+              <view class="ress-g-num">× {{gitem.goods_number}}</view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <view class="ress-c-o">
+      <view class="ress-c-o-i" wx:if="{{oinfo.order_type == 2||oinfo.is_ziqu == 1}}">
+        <view>餐盒费</view>
+        <view>+￥{{oinfo.dabao_fee}}</view>
+      </view>
+      <view class="ress-c-o-i" wx:if="{{oinfo.order_type == 2}}">
+        <view>配送费</view>
+        <view>+￥{{oinfo.shipping_fee}}</view>
+      </view>
+      <view class="ress-c-o-i" wx:if="{{oinfo.huodong_shou_jiner > 0}}">
+        <view>新用户立减</view>
+        <view class="red">-￥{{oinfo.huodong_shou_jiner}}</view>
+      </view>
+      <view class="ress-c-o-i" wx:if="{{oinfo.huodong_quan_jiner > 0}}">
+        <view>优惠券</view>
+        <view class="red">-￥{{oinfo.huodong_quan_jiner}}</view>
+      </view>
+      <view class="ress-c-o-i" wx:if="{{oinfo.huodong_manjin_jiner > 0}}">
+        <view>满减</view>
+        <view class="red">-￥{{oinfo.huodong_manjin_jiner}}</view>
+      </view>
+    </view>
+    <view class="total-box gridXt">总计：
+      <text class="red">￥{{oinfo.order_amount}}</text>
+    </view>
+  </view>
+
+
+  <view class="od-box">
+    <!--配送信息-->
+    <block wx:if="{{oinfo.order_type == 2}}">
+      <view class="od-tit gridXb">
+        <text class="iconfont icon-deliver"></text> 配送信息
+      </view>
+      <view class="ord-info">
+        <view class="od-fan">
+          <view class="flex">
+            <view class="fan-i lineText grey">收货人</view>
+            <view class="sub ml15">{{oinfo.consignee}}</view>
+          </view>
+          <view class="flex">
+            <view class="fan-i lineText grey">手机号码</view>
+            <view class="sub ml15">{{oinfo.mobile}}</view>
+          </view>
+          <view class="flex">
+            <view class="fan-i lineText grey">配送地址</view>
+            <view class="sub ml15">
+              {{oinfo.province}}{{oinfo.city}}{{oinfo.area}}{{oinfo.address}}
+            </view>
+          </view>
+          <view class="flex" wx:if="{{oinfo.peisong_open==1}}">
+            <view class="fan-i lineText grey">配送方式</view>
+            <view class="sub ml15">{{oinfo.peisong_type==1?'商家配送':'达达配送'}}</view>
+          </view>
+          <view class="flex" wx:if="{{oinfo.peisong_open==1}}">
+            <view class="fan-i lineText grey">配送骑手</view>
+            <view class="sub ml15">{{oinfo.peisong_user_name}}
+              <text class="green ml10" bindtap="bind_call_phone">{{oinfo.peisong_user_phone}}</text>
+            </view>
+          </view>
+          <view class="flex" wx:if="{{oinfo.peisong_open==1}}">
+            <view class="fan-i lineText grey">配送状态</view>
+            <view class="sub ml15">{{oinfo.peisong_status_text}}</view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <!--订单信息 start-->
+    <view class="od-tit gridXb">订单信息</view>
+    <view class="ord-info">
+      <view class="od-fan">
+        <view class="flex">
+          <view class="fan-i lineText grey">订单号码</view>
+          <view class="sub ml15">{{oinfo.order_sn}}</view>
+        </view>
+        <view class="flex">
+          <view class="fan-i lineText grey">订单时间</view>
+          <view class="sub ml15">{{oinfo.ctime}}</view>
+        </view>
+        <view class="flex">
+          <view class="fan-i lineText grey">支付方式</view>
+          <view class="sub ml15">{{oinfo.pay_name}}</view>
+        </view>
+        <view class="flex">
+          <view class="fan-i lineText grey">支付状态</view>
+          <view class="sub ml15">{{oinfo.order_status_txt}}</view>
+        </view>
+        <view class="flex">
+          <view class="fan-i lineText grey">备注信息</view>
+          <view class="sub ml15">{{oinfo.post_info||'无'}}</view>
+        </view>
+        <view class="flex">
+          <view class="fan-i lineText grey">发票信息</view>
+          <view class="sub ml15">{{oinfo.fapiao_text}}</view>
+        </view>
+      </view>
+    </view>
+    <!--订单信息 end-->
+    <view class="order-contact gridXt" bindtap="call_phone_bind">
+      <text class="iconfont icon-dianhua"></text>联系商家</view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="order-bottom-box tips-show">
+    <!-- 店内支付按钮 -->
+    <view class="order-bottom-pay">
+      <view>订单金额：
+        <text class="red">{{oinfo.settlement_total_fee}}</text>
+      </view>
+      <view>
+        <block wx:if="{{oinfo.order_type==1 && oinfo.order_jiucan_type==2 && oinfo.pay_status==0 && oinfo.is_ziqu==0}}">
+          <button class="order-mini-btn" bindtap="add_order_goods_bind">添加菜品</button>
+        </block>
+        <!--<button class="order-mini-btn" wx:if="{{oinfo.order_action_list.tuikuan}}">申请退款</button>-->
+        <button class="order-mini-btn btn-fill" bindtap="go_select_paytype_bind" wx:if="{{oinfo.order_action_list.pay}}">立即支付</button>
+        <button class="order-mini-btn btn-fill" bindtap="order_go_comment_bind" wx:if="{{oinfo.order_action_list.comment}}">立即评价</button>
+        <button class="order-mini-btn btn-fill" wx:if="{{oinfo.order_action_list.yes_comment}}">已完成</button>
+        <button class="order-mini-btn btn-fill" wx:if="{{oinfo.order_status==3}}">已取消</button>
+      </view>
+    </view>
+
+    <view class="order-bottom-tips lineText" wx:if="{{oinfo.order_action_list.pay && oinfo.pay_end_time>0}}">
+      <text class="iconfont icon-tixingtishi"></text> {{oinfo.pay_end_time_text}}</view>
+    <view class="order-bottom-tips lineText" wx:if="{{oinfo.pay_status==1 && oinfo.is_ziqu==1}}">
+      <text class="iconfont icon-tixingtishi"></text>
+      <block wx:if="{{oinfo.ziqu_time=='立即取货'}}">
+        请您及时到店自取，如果超时将不支持退款
+      </block>
+      <block wx:if="{{oinfo.ziqu_time!='立即取货'}}">
+        请您在{{oinfo.ziqu_time}}之前到店自取商品，如果超时将不支持退款
+      </block>
+    </view>
+    <!-- <view class="order-bottom">
+      <button class="order-mini-btn btn-grey">取消订单</button>
+      <button class="order-mini-btn btn-fill">立即支付</button>
+      <button class="order-mini-btn">申请退款</button>
+      <button class="order-mini-btn">取消申请</button>
+      <button class="order-mini-btn">确认收货</button>
+      <button class="order-mini-btn">立即评价</button>
+      <button class="order-mini-btn">删除订单</button>
+    </view> -->
+
+
+  </view>
+
+
+  <!--<view class="od-f">
+    <button type="primary" hover-class="none" class="od-f-btn" bindtap="go_dish_info_bind" id="{{oinfo.dish_id}}">返回门店</button>
+  </view>-->
+  <form bindsubmit="order_payConfirm" report-submit="true">
+    <view class='payModeBox ' wx:if="{{select_pay_type}}">
+      <view class='payModeBg' bindtap="go_select_paytype_bind"></view>
+      <!--选择支付方式  -->
+      <view class='payModeModal bounce  '>
+        <view class='modalHead'>
+          <view class='headTip'>选择付款方式</view>
+          <view>
+            <text class=''>￥</text>
+            <text class='cost'>{{oinfo.settlement_total_fee}}</text>
+          </view>
+        </view>
+        <radio-group class="radioGroup" name="dish_pay_type">
+          <block wx:for="{{dish_data.dish_info.pay_typelist}}" wx:for-index="p_idx" wx:for-item="p_item">
+            <label class="radioCell" wx:if="{{p_idx!=4}}">
+              <radio value="{{p_idx}}" checked="{{p_idx==1?true:false}}" />
+              <text>{{p_item}}</text>
+            </label>
+
+            <label class="radioCell " wx:if="{{p_idx==4}}">
+              <radio value="{{p_idx}}" checked="{{p_idx==1?true:false}}" />
+              <view class='dc'>
+                <text class='cardPay'>{{p_item}}</text>
+                <text class='ramainTit'>（余额</text>
+                <text class='carValIcon c888'>￥</text>
+                <text class='carValCount c888'>{{dish_data.dish_info.user_card_account}}</text>
+                <text class='ramainTit'>）</text>
+              </view>
+              <view class='cardVal'>
+                <block wx:if="">
+                  <button class='goCharge'>去充值</button>
+                </block>
+              </view>
+            </label>
+          </block>
+        </radio-group>
+        <button hover-class='none' class='confirmBtn' formType="submit" disabled="{{btn_submit_disabled}}" loading="{{submitIsLoading}}">确认支付</button>
+      </view>
+
+    </view>
+  </form>
+
+  <view class='payModeBox hidden'>
+    <view class='payModeBg'></view>
+    <!--确认使用会员卡支付  -->
+    <view class='cardPayConBox '>
+      <view class='confirmTip'>确认使用会员卡余额支付吗？</view>
+      <view class='btnBox'>
+        <button class='btn cancelBtn'>取消</button>
+        <button class='btn conAgainBtn'>确认支付</button>
+      </view>
+    </view>
+
+  </view>
+
+</block>

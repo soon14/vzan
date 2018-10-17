@@ -1,0 +1,318 @@
+<style lang="less">
+  .l-hear {
+    width: 750rpx;
+    height: 100rpx;
+    line-height: 100rpx;
+    position: fixed;
+    top: 0;
+    left: 0;
+    font-size: 32rpx;
+    background: #f7f7f7;
+  }
+  /* 订单号 */
+  .l-num {
+    font-size: 26rpx;
+    background: #fff;
+    height: 100rpx;
+    line-height: 100rpx;
+    padding: 0 20rpx;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .p-price {
+    color: #f20033;
+  }
+  .l-item {
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #f5f5f5;
+    .l-img {
+      width: 160rpx;
+      height: 160rpx;
+      padding: 40rpx 20rpx;
+    }
+    .l-content {
+      height: 160rpx;
+      margin-right: 20rpx;
+    }
+  }
+  /* <!-- 底部总计 --> */
+  .l-bottom {
+    line-height: 100rpx;
+    background: #fff;
+    padding: 0 20rpx;
+    border-bottom: 44rpx solid #f7f7f7;
+  }
+  .l-btn {
+    width: 140rpx;
+    height: 54rpx;
+    text-align: center;
+    line-height: 54rpx;
+    color: #fff;
+    background: #218cd7;
+    font-size: 22rpx;
+    border-radius: 8rpx;
+  }
+  .inline-block {
+    display: inline-block;
+    text-align: center;
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class='{{currentSkin}}'>
+    <!-- 全部订单 待付款 待收货 已完成 -->
+    <tab :list.sync="header" scroll="1" :scrollLeft.sync="offsetLeft" :activeIndex.sync="currentIndex" isFixed="1" :specialWidth="defW" onClickAfter="changeState" bgColor="#f7f7f7"></tab>
+    <view style='height:100rpx;'></view>
+    <!-- 产品详情 -->
+    <view class='f fv' wx:if="{{vm_olt.list!=0}}">
+      <repeat for="{{vm_olt.list}}" item="this">
+        <view class='l-num f fc fj'>
+          <text class="c999">订单编号：{{this.orderNum}}</text>
+          <text class="p-price">{{this.StateRemark}}</text>
+        </view>
+        <repeat for="{{this.goodList}}">
+          <view class='l-item f fc'>
+            <image mode='aspectFill' src='{{item.SpecImg||item.goodsMsg.img}}' class="l-img" @tap='checkDetail({{item.FoodGoodsId}})' lazy-load="true" />
+            <view class='l-content f fv f1 fj'>
+              <view class="f fc">
+                <text class="f1 f32 line line1">{{item.goodsMsg.name}}</text>
+                <text class="skin_txt" wx:if="{{this.state==3&&item.IsCommentting==false}}" @tap.stop="pathValue({{this.orderId}},{{item}})">评论</text>
+              </view>
+              <text class='c666 line line1' wx:if="{{item.SpecInfo!='undefined'}}">{{item.SpecInfo}}</text>
+              <view class='f fc fj'>
+                <wxc-price class="p-price">{{item.priceStr}}</wxc-price>
+                <text>x{{item.Count}}</text>
+              </view>
+            </view>
+          </view>
+        </repeat>
+        <!-- 底部总计 -->
+        <view class='l-bottom f fc fj'>
+          <view class='f fc'>
+          </view>
+          <view class="f fc ph20">
+            <view class='l-btn skin_bg' id="{{this.citymorderId}}" wx:if="{{this.StateRemark=='待付款'}}" @tap='goPay' data-pid="{{this.orderId}}">去付款</view>
+            <view class='l-btn skin_bg' id="{{this.citymorderId}}" wx:if="{{this.StateRemark=='待收货'}}" @tap='confirm' data-pid="{{this.orderId}}">确认收货</view>
+            <view class='l-btn skin_bg' style='margin-left:14rpx' id="{{this.citymorderId}}" wx:if="{{(this.state == 2 || this.state == 3) && this.hasDelivery}}" @tap='checkLogistics' data-goodlist="{{this.goodList}}" data-pid="{{this.orderId}}">物流信息</view>
+            <view class='l-btn skin_bg' style='margin-left:14rpx' id="{{this.citymorderId}}" wx:if="{{this.state == 3 && this.hasDelivery && this.isCustomerServices}}" @tap='toAfterSale' data-pid="{{this.orderId}}">申请售后</view>
+            <form bindsubmit="formSubmit" report-submit="true">
+              <button formType="submit" class='l-btn skin_bg' style='margin-left:14rpx' id="{{this.citymorderId}}" wx:if="{{(this.state >= 13 && this.state < 19)}}" @tap.stop='toReturnGoodDetail' data-pid="{{this.orderId}}">退货详情</button>
+            </form>
+            <view class='l-btn skin_bg' style='margin-left:14rpx' @tap='checkOrder({{this.orderId}})'>查看详情</view>
+          </view>
+        </view>
+      </repeat>
+      <view class="loding w-100 f fc-h" style="padding:30rpx 0" wx:if="{{vm_olt.showloading&&vm_olt.loadall==false}}">
+        <text class="loading-icon"></text>
+        <text class="c999 f26 ml20">正在加载中...</text>
+      </view>
+    </view>
+    <wxc-abnor type="ORDER" wx:else></wxc-abnor>
+    <wxc-loadmore is-end="{{true}}" text="到底了～" icon="{{true}}" wx:if="{{vm_olt.list!=0&&vm_olt.loadall&&vm_olt.ispost==false}}"></wxc-loadmore>
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+  </view>
+</template>
+ 
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    pay,
+    tools
+  } from "../../lib/core";
+  import Tab from "@/components/com_tab";
+  import _get from "../../lib/lodash.get.js"
+  // import
+  //第一步： 引入组件文件
+  export default class orderList extends wepy.page {
+    config = {
+      navigationBarTitleText: "订单列表",
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+        "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+        "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+      },
+      enablePullDownRefresh: true
+    };
+    //第二步：声明组件
+    components = {
+      tab: Tab
+    };
+    //mixins = [Enterprise];
+    data = {
+      offsetLeft: 0,
+      currentIndex: 0,
+      defW: {
+        width: "300",
+        index: 4
+      },
+      header: [{
+          title: "全部订单",
+          state: 10
+        },
+        {
+          title: "待付款",
+          state: 0
+        },
+        {
+          title: "待发货",
+          state: 1
+        },
+        {
+          title: "待收货",
+          state: 2
+        },
+        {
+          title: "已完成/退款/退货",
+          state: 3
+        },
+        {
+          title: "退货中",
+          state: 15
+        },
+        {
+          title: "待评价",
+          state: -1000
+        }
+      ],
+      currentSkin: {},
+      vm_olt: {
+        pageindex: 1,
+        pagesize: 10,
+        list: [],
+        ispost: false,
+        loadall: false,
+        state: 10,
+        showloading: false
+      },
+      condition: 0,
+      toast: {}
+    };
+    computed = {};
+    methods = {
+      //评价
+      pathValue(orderid, _g) {
+        let _vm = {
+          item: _g,
+          orderid,
+          goodType: 0
+        };
+        this.$preload("vm", _vm);
+        this.$navigate("/pages/good/goodValue");
+      },
+      // 查看订单详情
+      checkOrder(id) {
+        tools.goNewPage("../good/goodOlt?dbOrder=" + id + "&check=true");
+      },
+      //查看商品详情
+      checkDetail(id) {
+        tools.pathGood(id, "buy", true)
+      },
+      //查看物流
+      checkLogistics(e) {
+        var dataset = e.currentTarget.dataset;
+        var orderId = dataset.pid;
+        var goodList = dataset.goodlist;
+        tools.goNewPage("../my/myLogistics?orderId=" + orderId + "&imgUrl=" + goodList[0].SpecImg + "&count=" + goodList.length);
+      },
+      //申请售后
+      toAfterSale(e) {
+        var dataset = e.currentTarget.dataset;
+        var orderId = dataset.pid;
+        tools.goNewPage("../my/afterSale/serveType?orderId=" + orderId);
+      },
+      //退货详情
+      toReturnGoodDetail(e) {
+        var dataset = e.currentTarget.dataset;
+        var orderId = dataset.pid;
+        tools.goNewPage("../my/afterSale/appealResult?orderId=" + orderId);
+      },
+      //确认收货
+      async confirm(e) {
+        let vm = {
+          orderId: e.currentTarget.dataset.pid,
+          state: 3
+        };
+        let showModal = await tools.showModal("是否确认收货？");
+        if (showModal.confirm) {
+          let state = await core.oltState(vm);
+          if (state.isok == 1) {
+            tools.ShowToast("收货成功", this);
+            this.vm_olt = tools.resetArray(this.vm_olt);
+            await core.minOlt(this);
+          } else {
+            tools.showModal(state.msg, false);
+          }
+        }
+      },
+      // 微信二次付款
+      async goPay(e) {
+        wx.showNavigationBarLoading();
+        let oradid = e.currentTarget.id;
+        let dbOrder = e.currentTarget.dataset.pid;
+        let newparam = {
+          orderid: oradid,
+          type: 1
+        };
+        let wxinfo = await pay.PayOrder(newparam);
+        if (wxinfo != '' && wxinfo.errMsg.includes("requestPayment:ok")) {
+          tools.loading("支付成功");
+          setTimeout(resTime => {
+            tools.goRedirecto("../good/goodOlt?dbOrder=" + dbOrder);
+          }, 1000);
+        } else {
+          tools.loading("取消支付");
+        }
+        wx.hideNavigationBarLoading()
+      },
+      formSubmit(e) {
+        core.formId(e.detail.formId);
+      }
+    };
+    // 查看不同状态
+    async changeState(state) {
+      await tools.showLoading();
+      this.vm_olt = tools.resetArray(this.vm_olt)
+      this.vm_olt.state = state;
+      await core.minOlt(this);
+      wx.hideLoading();
+      wx.pageScrollTo({
+        scrollTop: 0
+      });
+    }
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      let state = _get(options, "state", 10)
+      for (let i = 0, len = this.header.length; i < len; i++) {
+        if (this.header[i].state == options.state) {
+          this.currentIndex = i;
+          if (i == 4) this.offsetLeft = 130
+        }
+      }
+      this.vm_olt.state = options.state;
+      this.$apply();
+    }
+    onShow() {
+      tools.showLoading();
+      core.minOlt(this);
+      wx.hideLoading();
+    }
+    async onReachBottom() {
+      this.vm_olt.showloading = true;
+      await core.minOlt(this);
+      this.vm_olt.showloading = false;
+      this.$apply();
+    }
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      this.vm_olt = tools.resetArray(this.vm_olt)
+      core.minOlt(this);
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+        wx.hideNavigationBarLoading();
+      }, 1000);
+    }
+  }
+</script>

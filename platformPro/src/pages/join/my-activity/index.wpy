@@ -1,0 +1,137 @@
+<style lang="less">
+.my-activity {
+  .null-data {
+    margin-top: 481rpx;
+  }
+  .info-label {
+    .active {
+      color: #3fd682; // font-weight: bold;
+      border-bottom: 5rpx solid #3fd682;
+      padding-bottom: 10rpx;
+    }
+  }
+  .line-fuck {
+    height: 1px;
+    width: 100%;
+    background-color: #eee;
+  }
+}
+</style>
+
+<template> 
+    <view>
+        <view class="my-activity">
+            <view class="line-fuck"></view>
+            <view class="null-data tc pr30" wx:if="{{totalCount == 0}}">
+                暂无数据
+            </view>
+            <repeat> 
+                <comInfoItem :infoList.sync="infoList" isRegister2="1" jumpPath="../../classify/classify-details/index" :isMyPublishOrFavorite="myPublishOrFavorite" :onClickDelAfter="deleteMsg"></comInfoItem>
+            </repeat>
+            <comLoading :isShowLoading.sync="loadMore" :isShowBottom.sync="loadAll" />
+            <comWait wx:if="{{showWait}}"  />
+        </view>
+    </view>
+</template> 
+
+<script> 
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import addr from "@/lib/addr";
+import com_infoItem from "@/components/com_infoItem";
+import com_loading from "@/components/com_loading";
+import com_wait from "@/components/com_wait";
+export default class Index extends wepy.page {
+  config = { 
+    navigationBarTitleText: "我的动态"
+  };
+  components = {
+    comInfoItem: com_infoItem,
+    comLoading: com_loading,
+    comWait: com_wait
+  };
+  data = {
+    myPublishOrFavorite: true,
+    infoList: [],
+    showWait: false,
+    myCardId: 0,
+    loadMore: false,
+    loadAll: false,
+    pageIndex: 1,
+    totalCount: 0
+  };
+ 
+
+  events = {};
+  async onLoad(option) {
+    this.myCardId = option.myCardId;
+    if (!this.myCardId) {
+      tools.goBack(1);
+      return;
+    }
+    this.showWait = true;
+    await this.GetInfoList();
+    this.showWait = false;
+    this.$apply();
+  }
+
+   //获取帖子列表
+  async GetInfoList() {
+    let data = await core.getMyActivity(this.myCardId, this.pageIndex);
+    tools.handleResult(data, res => {
+      this.totalCount = res.totalCount;
+      let dataList = res.list;
+      if (dataList.length > 0) {
+        for (let i = 0, l = dataList.length; i < l; i++) {
+          dataList[i].DzBtnText = dataList[i].IsDzed ? "取消" : "赞";
+        }
+        this.infoList = this.infoList.concat(dataList);
+        this.pageIndex > 1 && dataList.length < 10 && (this.loadAll = true)
+      } else {
+        this.pageIndex > 1 && (this.loadAll = true)
+      }
+    }, (err) => {
+        tools.showModalCancle(err.Msg);
+      });
+  }
+
+  async onReachBottom() {
+    if (this.totalCount > 10 && !this.LoadAll) {
+      this.loadMore = true;
+      this.pageIndex++;
+      await this.GetInfoList();
+      this.loadMore = false;
+      this.$apply();
+    }
+  }
+
+  async deleteMsg(id) {
+    console.log(id, "删除");
+    var option = {
+      Id: id,
+      myCardId: this.myCardId
+    };
+    var result = await core.delMyFavoriteOrMyMsg(option);
+    tools.handleResult(result, async res => {
+      wx.showToast({
+        icon: "success",
+        title: "删除成功"
+      }); 
+      this.showWait = true;
+      this.resetData()
+      await this.GetInfoList();
+      this.showWait = false;
+      this.$apply()
+    }, (err) => {
+        tools.showModalCancle(err.Msg);
+      });
+  }
+
+  resetData() {
+    this.loadMore = false,
+    this.loadAll = false,
+    this.pageIndex = 1
+    this.infoList = []
+  }
+}
+</script>

@@ -1,0 +1,187 @@
+
+<style lang="less">
+  .c-form {
+    font-size: 30rpx;
+    background-color: #ffffff;
+    &__title {
+      width: 100%;
+      height: 100rpx;
+      line-height: 100rpx;
+      text-align: center;
+      color: #333;
+      .form-line {
+        width: 30rpx;
+        height: 4rpx;
+        background: #333;
+      }
+    }
+    &__main {
+      text {
+        height: 88rpx;
+        line-height: 88rpx;
+        padding-left: 10rpx;
+      }
+      input {
+        height: 77rpx;
+        line-height: 77rpx;
+        padding-left: 20rpx;
+        font-size: 26rpx;
+        color: #333;
+        border-radius: 6rpx;
+      }
+    }
+    button {
+      width: 100%;
+      height: 88rpx;
+      line-height: 88rpx;
+      font-size: 34rpx;
+      text-align: center;
+    }
+  }
+  .bd-f7 {
+    border-bottom: 1px solid #f7f7f7;
+  }
+  .bg-f7 {
+    background: #f7f7f7;
+  }
+  .c-mainForm {
+    padding: 20rpx 40rpx;
+  }
+  .c-formBtn {
+    padding-top: 40rpx;
+    padding-bottom: 20rpx;
+  }
+  .br-dc {
+    border: 1px solid #dcdcdc;
+  }
+  .bd-dc {
+    border-bottom: 1px solid #dcdcdc;
+  }
+</style>
+<!-- form -->
+
+<template>
+  <form @submit="sumbitFormFuc({{currentCom.title}})" report-submit="true">
+    <view class="c-form">
+      <view class='c-form__title f fc fc-h bd-f7' name="{{currentCom.name}}" hidden="{{currentCom.title==''}}">
+        <text class="form-line" wx:if="{{currentCom.formstyle==1}}" />
+        <text class='f32 mw10 t-b'>{{currentCom.title}}</text>
+        <text class="form-line" wx:if="{{currentCom.formstyle==1}}" />
+      </view>
+      <!-- 判断输入框 -->
+      <view class="c-mainForm">
+        <repeat for="{{currentCom.items}}" index='formIndex'>
+          <!-- 姓名 -->
+          <view class='c-form__main fv' wx:if="{{item.type=='text'}}">
+            <text class="f26 t-b">{{item.name}}</text>
+            <input @input="inputFy({{formIndex}})" value="{{vm.name[formIndex]}}" class="w-100 {{currentCom.formstyle==1?'bd-dc':''}} {{currentCom.formstyle==2?'bg-f7':''}} {{currentCom.formstyle==3?'br-dc':''}}" type='{{item.type}}' placeholder='{{item.placeholder}}'
+              placeholder-class='c99 f24' name="{{item.name}}" />
+          </view>
+          <!-- 号码 -->
+          <view class='c-form__main fv' wx:if="{{item.type=='number'}}">
+            <text class="f26 t-b">{{item.name}}</text>
+            <input @input="inputFp({{formIndex}})" value="{{vm.phone[formIndex]}}" class="w-100 {{currentCom.formstyle==1?'bd-dc':''}} {{currentCom.formstyle==2?'bg-f7':''}} {{currentCom.formstyle==3?'br-dc':''}}" type='{{item.type}}' placeholder='{{item.placeholder}}'
+              placeholder-class='c99 f24' name="{{item.name}}" />
+          </view>
+          <!-- 代理产品 -->
+          <view class='c-form__main fv' wx:if="{{item.type=='radio'}}">
+            <text class="f26 t-b">{{item.name}}</text>
+            <picker class='w-100' @change="pickFunc({{formIndex}})" range="{{item.array}}" value="{{vm.pickIndex[formIndex]}}">
+              <input value='{{item.array[vm.pickIndex[formIndex]]}}' class="w-100 {{currentCom.formstyle==1?'bd-dc':''}} {{currentCom.formstyle==2?'bg-f7':''}} {{currentCom.formstyle==3?'br-dc':''}}" type='text' placeholder='{{item.name}}' placeholder-class='c99 f24'
+                disabled name="{{item.name}}" />
+            </picker>
+          </view>
+          <!-- 时间 -->
+          <view class='c-form__main fv' wx:if="{{item.type=='date'}}">
+            <text class="f26 t-b">{{item.name}}</text>
+            <input value="{{vm.pickTime[formIndex]}}" placeholder="请选择时间" class="w-100 {{currentCom.formstyle==1?'bd-dc':''}} {{currentCom.formstyle==2?'bg-f7':''}} {{currentCom.formstyle==3?'br-dc':''}}" type='text' placeholder='请选择时间' placeholder-class='c99 f24'
+              disabled @tap='showData({{formIndex}})' name="{{item.name}}" />
+            <comPicker @closeData.user="closeData" wx:if="{{vm.showPicker[formIndex]}}" :vm.sync="vm.time" :formIndex.sync="formIndex" />
+          </view>
+        </repeat>
+        <view class="c-formBtn">
+          <button class='skin_bg' formType="submit">提交</button>
+        </view>
+      </view>
+    </view>
+  </form>
+</template>
+
+
+<script>
+  import wepy from "wepy";
+  import {
+    core
+  } from "../lib/core";
+  import {
+    timeTools
+  } from "@/lib/utils.js"
+  import com_pickerTime from "../components/com_pickerTime";
+  export default class com_form extends wepy.component {
+    components = {
+      comPicker: com_pickerTime
+    };
+    data = {
+      vm: {
+        time: {},
+        name: {},
+        phone: {},
+        pickIndex: {},
+        pickTime: {},
+        showPicker: {},
+      },
+    };
+    methods = {
+      inputFy(index, e) {
+        this.vm.name[index] = e.detail.value;
+        this.$apply();
+      },
+      inputFp(index, e) {
+        this.vm.phone[index] = e.detail.value;
+        this.$apply();
+      },
+      pickFunc(index, e) {
+        this.vm.pickIndex[index] = parseInt(e.detail.value);
+        this.$apply();
+      },
+      // 表单提交，提交真是姓名和手机号码
+      async sumbitFormFuc(name, e) {
+        core.formId(e.detail.formId);
+        for (let key in e.detail.value) {
+          let formItem = e.detail.value[key]
+          if (formItem == "") {
+            this.$emit("ShowToast", "信息未填写完整");
+            return;
+          }
+        }
+        let info = await core.formRequest(JSON.stringify(e.detail.value), name);
+        if (info.isok) {
+          this.$emit("ShowToast", "提交成功");
+          Object.assign(this.vm, {
+            name: '',
+            phone: '',
+            pickIndex: {},
+            pickTime: {},
+          })
+          this.$apply();
+        } else {
+          this.$emit("ShowToast", "提交失败");
+        }
+      },
+      showData(index) {
+        this.vm.showPicker[index] = true;
+        this.timeConfig();
+      },
+      closeData(_p, index) {
+        this.vm.pickTime[index] = _p
+        this.vm.showPicker[index] = false;
+        this.$apply()
+      }
+    };
+    // 获取当前时间
+    timeConfig() {
+      this.vm.time = timeTools.formTimeSpan()
+      this.$apply();
+    }
+  }
+</script>

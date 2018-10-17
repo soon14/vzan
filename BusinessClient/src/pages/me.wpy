@@ -1,0 +1,153 @@
+<style>
+.img-circle__photo {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 6rpx;
+  /* background-color: #ccc; */
+  margin: 0 auto;
+}
+.headbg {
+  background-color: #fe536f;
+  color: #fff;
+  padding: 20rpx 0 40rpx 0;
+}
+.me-name {
+  padding-top: 20rpx;
+}
+.btn-logout {
+  width: 90%;
+  margin: 40rpx auto;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view>
+    <block>
+      <view class="tc headbg">
+        <image class='img-circle__photo' src="https://j.vzan.cc/dz/content/newhome/image/s-gj.png"></image>
+        <view class="f30 me-name">{{currentStore.XcxName}}</view>
+      </view>
+      <view class="item-group">
+        <navigator url='me_setting'>
+          <view class="f fc item">
+            <view class="f1">设置</view>
+            <view class="dzicon icon-jiantou"></view>
+          </view>
+        </navigator>
+        <view class="f fc item" @tap="clearCache">
+          <view class="f1">清除缓存</view>
+
+        </view>
+        <button bindtap="setDisabled" type="warn" class="btn-logout" bindtap="logout">退出登陆</button>
+      </view>
+    </block>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core } from "../lib/core";
+// import
+//第一步： 引入组件文件
+
+export default class me extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的",
+    // 引入min组件
+    usingComponents: {}
+  };
+  //第二步：声明组件
+  components = {};
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    currentStore: {}
+  };
+  computed = {};
+  methods = {
+    ShowToast(msg) {
+      let that = this;
+      that.$toast.show = true;
+      that.$toast.msg = msg;
+      setTimeout(() => {
+        that.$toast.show = false;
+        that.$apply();
+      }, 1000);
+    },
+    clearCache() {
+      wx.clearStorageSync();
+      wx.showToast({
+        title: "清除成功",
+        icon: "success",
+        duration: 1000
+      });
+      setTimeout(() => {
+        wx.reLaunch({
+          url: "/pages/index"
+        });
+      }, 1000);
+    },
+    async logout() {
+      wx.showModal({
+        title: "提示",
+        content: "退出登陆后，需要重新绑定手机，确定退出吗？",
+        success: function(res) {
+          if (res.confirm) {
+            core.Logout().then(function(result) {
+              if (result) {
+                if (result.isok) {
+                  try {
+                    wx.clearStorageSync();
+                    wx.reLaunch({
+                      url: "/pages/index"
+                    });
+                  } catch (e) {}
+                } else {
+                  wx.showModal({
+                    title: "提示",
+                    content: result.Msg,
+                    success: function(res) {}
+                  });
+                }
+              }
+            });
+          }
+        }
+      });
+      // var result = await core.Logout();
+      // if (result) {
+      //   if (result.isok) {
+      //     try {
+      //       wx.clearStorageSync();
+      //       wx.reLaunch({
+      //         url: "/pages/index"
+      //       });
+      //     } catch (e) {}
+      //   } else {
+      //     wx.showModal({
+      //       title: "提示",
+      //       content: result.Msg,
+      //       success: function(res) {}
+      //     });
+      //   }
+      // }
+    }
+  };
+  events = {};
+  async onLoad() {
+    let that = this;
+  }
+
+  onShow() {
+    try {
+      this.currentStore = wx.getStorageSync("currentStore") || {};
+    } catch (e) {}
+  }
+}
+</script>

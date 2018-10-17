@@ -1,0 +1,89 @@
+<!--index.wxml-->
+<import src="/template/bottom.wxml" />
+
+<view class='f fv fv-full bg'>
+  <view class='f1 rel'>
+    <!--没有手机号，但同意获取手机号-->
+    <view class='f fv abs fv-full w-full' wx:if="{{!phoneAuth}}">
+      <view class='f1 nodata'>
+        <image src='/img/bg_bindphonetip.png'></image>
+      </view>
+      <view class='btn-begincreate'>
+        <button open-type='getPhoneNumber' bindgetphonenumber="getPhoneNumber" class='btn'>
+          <image src='/img/btn_bindphone.png' bindtap='getUserPhone'></image>
+        </button>
+      </view>
+    </view>
+
+    <!--没有数据时-->
+    <view class='f fv abs fv-full w-full' wx:elif="{{phoneAuth&&!hasData}}">
+      <view class='f1 nodata'>
+        <image src='/img/bg1.png'></image>
+      </view>
+      <view class='btn-begincreate'>
+        <navigator open-type='navigate' url='../index/pageset' hover-class='none'>
+          <image src='/img/begincreate.png'></image>
+        </navigator>
+      </view>
+    </view>
+    <!--页面-->
+    <view class='f fv abs fv-full w-full ' wx:elif="{{phoneAuth&&hasData}}">
+      <view class='p10 pagelist f1'>
+        <view class='page-item bg-w' wx:for="{{vm.list}}">
+          <view class='f fc' bindtap='viewPage' data-id='{{item.id}}'>
+            <image src='{{item.imgurl}}' mode='aspectFill' class='page-img'></image>
+            <view class='f1'>
+              <view class='page-name'>
+                <text>{{item.content.pageTitle}}</text>
+              </view>
+              <view class='page-des line line1'>{{item.des}}</view>
+              <view class='page-time'>{{item.updatetime_fmt}}</view>
+            </view>
+          </view>
+
+          <view class='f page-actions'>
+            <view class='f1'>
+              <button class='btn f1' open-type='share' data-model="{{item}}">
+                <image src='/img/ii8.png' class='ii8'></image> 分享
+              </button>
+            </view>
+            <view class='f1' data-id="{{item.id}}" bindtap='showPageQRCode'>
+              <image src='/img/ii9.png' class='ii9'></image>二维码</view>
+            <view class='f1' bindtap='editPage' data-id="{{item.id}}">
+              <image src='/img/ii10.png' class='ii10'></image>编辑</view>
+              <view class='f1' bindtap='delPage' data-id="{{item.id}}" data-index="{{index}}">
+              <image src='/img/ii13.png' class='ii10'></image>删除</view>
+          </view>
+        </view>
+        <view class='emptyData' wx:if="{{vm.isPost}}">
+          正在加载中，请稍后...
+        </view>
+        <!--按钮-->
+        <view class='btn-addnew f fc fc-h'>
+          <navigator open-type='navigate' url='/pages/index/pageset' hover-class='none'>
+            <view>＋</view>
+            <view>制作新页面</view>
+          </navigator>
+        </view>
+      </view>
+    </view>
+
+  </view>
+  <!--二维码弹出层-->
+  <view class='pop-qrcode' wx:if="{{popQRCodeShow}}">
+    <view class='h-full'>
+      <view class='rel share-wrap'>
+        <image src='/img/btn-close.png' class='pop-qrcode-close' bindtap='closeQRCodePop'></image>
+        <canvas canvas-id='shareCanvas' class='sharebg' disable-scroll='true'></canvas>
+      </view>
+      <view class='action-btns f fc'>
+        <view class='f1' bindtap='saveQRCode'>
+          <image src='/img/btn_shareout.png' mode='aspectFill'></image>
+        </view>
+      </view>
+    </view>
+  </view>
+  <!--/二维码弹出层-->
+
+  <template is="bottom" wx:if="{{phoneAuth}}" />
+</view>

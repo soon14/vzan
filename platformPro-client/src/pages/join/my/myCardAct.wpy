@@ -1,0 +1,252 @@
+<style lang="less">
+.my-card-act {
+  .nav {
+    height: 100rpx;
+    .nav-item {
+      line-height: 100rpx;
+    }
+    .nav-actvie {
+      color: #333;
+    }
+  }
+  .other {
+    border-bottom: 1px solid #eee;
+    &:last-child {
+      border-bottom: none;
+    }
+    .comment {
+      margin: 30rpx 0;
+    }
+    .avator {
+      width: 50rpx;
+      height: 50rpx;
+      border-radius: 50%;
+      background-color: #d9d8d9;
+    }
+  }
+  .other-msg {
+    margin-bottom: 20rpx;
+    &:last-child {
+      margin-bottom: 0;
+    }
+    .other-msg-item {
+    }
+  } 
+  .null-data {
+    margin-top: 481rpx;
+  }
+}
+</style> 
+<template leng="wxml">
+  <view class="my-card-act">
+    <view class="nav f f26 c666 bg-w">
+      <view class="nav-item fg1 tc {{activeTabIndex == 0 ? 'nav-actvie t-b' : ''}}" @tap="tapNav(0)">谁看过我</view>
+      <view class="nav-item fg1 tc {{activeTabIndex == 1 ? 'nav-actvie t-b' : ''}}" @tap="tapNav(1)">谁赞过我</view>
+      <view class="nav-item fg1 tc {{activeTabIndex == 2 ? 'nav-actvie t-b' : ''}}" @tap="tapNav(2)">谁关注我</view>
+      <view class="nav-item fg1 tc {{activeTabIndex == 3 ? 'nav-actvie t-b' : ''}}" @tap="tapNav(3)">谁私聊我</view>
+    </view>
+    <!-- 谁看过我 -->
+    <view class="f fv pl30 pt20 c666 " wx:if="{{activeTabIndex == 0}}">
+      <view class="null-data tc pr30" wx:if="{{actList[0].count == 0}}">
+        暂无数据
+      </view>
+      <view wx:else>
+        <repeat for="{{actList[0].list}}" key="index" index="index" item="item">
+          <view class="other-msg mt20 pr30">
+            <view class="lh15 f24 mb20">
+              {{item.AddTimeStr}}
+            </view>
+            <view class="other-msg-item bg-w"  @tap="goDetail({{item.UserId}})">
+              <comNameCard :cardModal.sync="item.MyCardModel" :onFollowAfter="toFollow" :listIndex.sync="activeTabIndex" :itemIndex="index"/>
+            </view>
+          </view>
+        </repeat>
+      </view>
+
+    </view>
+    <!-- 谁赞过我 -->
+    <view class="f fv pl30 pt20 c666 " wx:if="{{activeTabIndex == 1}}">
+      <view class="null-data tc pr30" wx:if="{{actList[1].count == 0}}">
+        暂无数据
+      </view>
+      <view wx:else>
+        <repeat for="{{actList[1].list}}" key="index" index="index" item="item">
+          <view class="other-msg mt20 pr30">
+            <view class="lh15 f24 mb20">
+              {{item.AddTimeStr}}
+            </view>
+            <view class="other-msg-item bg-w"  @tap="goDetail({{item.UserId}})">
+              <comNameCard :cardModal.sync="item.MyCardModel" :onFollowAfter="toFollow" :listIndex.sync="activeTabIndex"  :itemIndex="index"/>
+            </view>
+          </view>
+        </repeat>
+      </view>
+    </view>
+    <!-- 谁关注我 -->
+    <view class="f fv pl30 pt20 c666 " wx:if="{{activeTabIndex == 2}}">
+      <view class="null-data tc pr30" wx:if="{{actList[2].count == 0}}">
+        暂无数据
+      </view>
+      <view wx:else>
+        <repeat for="{{actList[2].list}}" key="index" index="index" item="item">
+          <view class="other-msg mt20 pr30">
+            <view class="lh15 f24 mb20">
+              {{item.AddTimeStr}}
+            </view>
+            <view class="other-msg-item bg-w" @tap="goDetail({{item.UserId}})">
+              <comNameCard :cardModal.sync="item.MyCardModel" :onFollowAfter="toFollow" :listIndex.sync="activeTabIndex" :itemIndex="index" />
+            </view>
+          </view>
+        </repeat>
+      </view>
+    </view>
+    <!-- 谁私聊我 -->
+    <view class="f fv c666" wx:if="{{activeTabIndex == 3}}">
+      <view class="pl30 null-data tc pr30" wx:if="{{actList[3].count == 0}}">
+        暂无数据
+      </view>
+      <view wx:else class="pl30 bg-w">
+        <view class="other mt20 pr30" wx:for="{{actList[3].list}}" wx:key="{{index}}" @tap="goContact(
+          {{item.ImMessage.fuserId}},
+          {{item.ImMessage.CardImgUrl}},
+          {{item.ImMessage.CardName}}
+          )">
+          <view class="f fj fc f20">
+            <view class="f fc jc">
+              <image class="mr15 avator" src="{{item.ImMessage.CardImgUrl}}"></image>
+              <text>{{item.ImMessage.CardName}}</text>
+            </view>
+            <text>{{item.ImMessage.sendDate}}</text>
+          </view>
+          <view class="comment ellipsisLine2">
+            {{item.ImMessage.msg}}
+          </view>
+        </view>
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}"/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import com_nameCard from "@/components/com_nameCard";
+import { tools, http, core } from "@/lib/core";
+import addr from "@/lib/addr";
+const app = wepy.$instance;
+import comWait from "@/components/com_wait";
+export default class myCardAct extends wepy.page {
+  config = {
+    navigationBarBackgroundColor: "#fff",
+    navigationBarTitleText: "名片动态",
+    enablePullDownRefresh: false
+  };
+
+  components = {
+    comNameCard: com_nameCard,
+    comWait
+  };
+
+  data = {
+    isWait: false,
+    activeTabIndex: 0,
+    cardId: 0,
+    mappingArr: [3, 1, 2, 4],
+    pageIndexList: [1, 1, 1, 1],
+    actList: [
+      {
+        count: 0,
+        list: []
+      },
+      {
+        count: 0,
+        list: []
+      },
+      {
+        count: 0,
+        list: []
+      },
+      {
+        count: 0,
+        list: []
+      }
+    ],
+    pageindex: 1
+  };
+
+  methods = {
+    tapNav(index) {
+      this.activeTabIndex = index;
+    },
+    goDetail(userId) {
+      tools.goNewPage(
+        "../../connected/connected-detail/index?someoneId=" + userId
+      );
+    },
+    goContact(userId, avatorUrl, name) {
+      tools.goNewPage(
+        "../../connected/private-letter/index?userid=" +
+          userId +
+          "&avator=" +
+          avatorUrl +
+          "&name=" +
+          name
+      );
+    }
+  };
+
+  onLoad(query) {
+    var vm = this;
+    vm.cardId = query.cardId;
+    vm.activeTabIndex = query.index;
+  }
+
+  watch = {
+    async activeTabIndex(newValue, oldValue) {
+      this.isWait = true;
+      var result = await this.getActData(newValue);
+      this.actList[newValue] = result.dataObj;
+      console.log(this.actList[newValue]);
+      this.isWait = false;
+      this.$apply();
+    }
+  };
+
+  async getActData(index) {
+    var vm = this;
+    var userInfo = await core.getUserInfo();
+    var aid = await core.getAid();
+    var type = vm.mappingArr[index];
+    var pageindex = vm.pageIndexList[index];
+    return http.post(addr.GetOtherFavoriteList, {
+      userid: userInfo.Id,
+      actiontype: type,
+      mycardid: vm.cardId,
+      aid: aid,
+      datatype: 3,
+      pageindex: pageindex,
+      pagesize: 5,
+      type: 0, //谁看过我，
+      sessionKey: userInfo.loginSessionKey,
+      appid: app.globalData.appid
+    });
+  }
+
+  //组件关注的回调
+  toFollow(itemIndex, listIndex) {
+    var objectId = 0;
+    var item = this.actList[listIndex].list[itemIndex];
+    var cardId = item.MyCardModel.Id;
+    this.isWait = true;
+    core.addDynamic(
+      2,
+      cardId,
+      function() {
+        item.MyCardModel.IsFollow = true;
+        this.isWait = false;
+        console.log("follow success", "我的卡片动态");
+      },
+      this
+    );
+  }
+}
+</script>

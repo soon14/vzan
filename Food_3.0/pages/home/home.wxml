@@ -1,0 +1,154 @@
+<!--pages/home/home.wxml-->
+<import src="/template/template.wxml" />
+
+<!-- 头部 -->
+<view class='bgimg posre cfff'>
+  <text class='posa vertical-1 t48 store-name' bindtap='gostoreinfo'>{{food.FoodsName}}</text>
+  <view class='posa store-price'>
+    <!--判断是商家配送还是达达配送-->
+    <text wx:if="{{food.DistributionWay==1}}">起送价￥{{food.OutSideStr}}  | </text>
+    <text wx:if="{{food.DistributionWay==1}}">配送费￥{{food.ShippingFeeStr}}  </text>
+    <text wx:if="{{food.DistributionWay==2}}"> 达达配送 </text>
+  </view>
+  <view class='posa store-state t24 flex-row'>
+    <block wx:for="{{item}}">
+      <view class='store-item'>{{item}}</view>
+    </block>
+  </view>
+  <image src='{{food.Logo}}' mode='aspectFill' class='posa store-logo' bindtap='gostoreinfo'></image>
+  <view class='posa store-outsent t20'>{{food.GiveWays}}</view>
+  <text class='posa t24 store-tipn'>1种优惠</text>
+  <text class='posa t20 store-getstore' catchtap='navigation'>到店</text>
+  <text class='posa t20 store-phone' catchtap='makePhoneCall'>电话</text>
+  <view class='posa t24 store-notice'>
+    <view animation="{{animationData}}">{{food.Notice}}</view>
+  </view>
+</view>
+<!-- 轮播图 -->
+<swiper indicator-dots autoplay interval="5000" duration="1000" class='mtop30 swiper borra16 h260' wx:if="{{sliderImgs.length>0}}">
+  <block wx:for="{{sliderImgs}}">
+    <swiper-item>
+      <image src="{{item}}" class="w1005 borra16 h260" mode='aspectFill' bindtap='previewImage' id="{{index}}" />
+    </swiper-item>
+  </block>
+</swiper>
+<!-- 入口 -->
+<view class="flex-row mtop20 {{entryCount>5?'ti-1':''}}">
+  <block wx:for="{{typeIcon}}" wx:if="{{item.condition}}">
+    <form bindsubmit="commintformid" class="{{entryCount>5?'ti':''}}" report-submit="true">
+      <button class="btn flex-columnc {{entryCount>5?'':'marle34'}}" id="{{item.id}}" formType="submit" catchtap='doSomething' wx:if="{{islogin==true}}">
+        <image src='{{item.iconPath}}' class='h110 w110 mtop20'></image>
+        <text class='t26 fontmin l50'>{{item.txt}}</text>
+      </button>
+
+      <button class="btn flex-columnc {{entryCount>5?'':'marle34'}}" id="{{item.id}}" formType="submit" catchtap="{{item.id==3||item.id==5?'doSomething':''}}" open-type="{{item.id==1||item.id==2||item.id==4||item.id==6||item.id==7?'getUserInfo':''}}" bindgetuserinfo="{{item.id==1||item.id==2||item.id==4||item.id==6||item.id==7?'getUserInfo':''}}"
+        wx:if="{{islogin==false}}">
+        <image src='{{item.iconPath}}' class='h110 w110 mtop20'></image>
+        <text class='t26 fontmin l50'>{{item.txt}}</text>
+      </button>
+
+    </form>
+  </block>
+</view>
+<!-- 优惠券 -->
+<view class='flex-rowsb pale16 pari20 mtop58' wx:if="{{couponList.length>0}}">
+  <view class='flex-rowc'>
+    <view class='coupon-redpoint'></view>
+    <text class='fontblod t28'>店铺优惠券</text>
+  </view>
+  <view class='flex-rowc'>
+    <text class='t26 c666 marri8' bindtap='go_mycoupon'>我的优惠券</text>
+    <image src='/image/a9.png' class='w18h18'></image>
+  </view>
+</view>
+<template is="couponList-x" data="{{couponList}}" />
+
+
+
+
+
+
+<!-- 拼团 -->
+<view class='flex aic pale16 pari20 mtop58' wx:if="{{goodslist.length>0}}">
+  <view class='coupon-redpoint'></view>
+  <text class='fontblod t28'>拼团活动</text>
+</view>
+
+<view class='flex-columnc'>
+  <block wx:for="{{goodslist}}">
+    <view class='w710 flex mtop20 bgcfff'>
+      <image src='{{item.good.ImgUrl}}' class='w240 h240 marri20' mode='aspectFill'></image>
+      <view class='flex-column jussb flex1 padt14 marri20'>
+        <text class='t32 fontmin vertical-2'>{{item.good.GoodsName}}</text>
+        <text class='c999 t22 mtop30'>已团{{item.good.EntGroups.GroupsNum}}件</text>
+        <view class='flex-rowsb'>
+          <text class='cf0033 t38 group-price'>{{item.good.discountGroupPrice/100}}</text>
+          <button class='btn group-click t28 cfff w120 h50' catchtap='go_groupinfo' data-groupid="{{item.good.EntGroups.EntGoodsId}}" wx:if="{{islogin==true}}">去开团</button>
+          <button class='btn group-click t28 cfff w120 h50' open-type="getUserInfo" bindgetuserinfo="getUserInfo" wx:if="{{islogin==false}}">去开团</button>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>
+<view class='h100 flex-rowc t28 c999' wx:if="{{isall&&goodslist.length>0}}">已加载完毕....</view>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 分享图片 -->
+<view style='position:fixed;z-index:3;top:1vh;'>
+  <view id="{{index}}" class='{{showCanvas?"share_Canvas_none":"share_Canvas"}}'>
+    <!-- <view class='Canvas_cancle' bindtap='onCancle'>
+      <image mode='aspectFit' src='/image/a19.png' class='w64h64'></image>
+    </view> -->
+    <canvas style='width:100%;height:75%;z-index:2' canvas-id="firstCanvas">
+    </canvas>
+    <view class='bg' bindtap='onCancle'></view>
+    <view class="canvas_bottom_btn t26 cfff">
+      <view class='canvas_save' bindtap='canvasToTempFilePath' id="0">
+        <view class='canvas_img'>
+          <image mode='aspectFit' src='/image/a42.png' class='w50h50'></image>
+        </view>
+        <text>保存</text>
+      </view>
+      <view class='canvas_save' style='margin-left:4%' bindtap='canvasToTempFilePath' id="1">
+        <view class='canvas_img'>
+          <image mode='aspectFit' src='/image/a43.png' class='w50h50'></image>
+        </view>
+        <text>发朋友圈</text>
+      </view>
+      <view class='canvas_save'>
+        <button class='canvas_img' open-type="share">
+          <image mode='aspectFit' src='/image/a44.png' class='w42h50'></image>
+        </button>
+        <text>分享给朋友</text>
+      </view>
+      <view class='canvas_save'>
+        <view class='canvas_img' bindtap='onCancle'>
+          <image mode='aspectFit' src='/image/a51.png' class='w50h50'></image>
+        </view>
+        <text class='line-height:normal'>取消</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 水印 -->
+<template is="AgentConfig" data="{{AgentConfig}}" />

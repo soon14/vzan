@@ -1,0 +1,196 @@
+<style lang="less">
+  .my-coupon {
+    padding-bottom: 30rpx;
+    .coupon-item {
+      margin-top: 24rpx;
+      width: 690rpx;
+      height: 170rpx;
+      background: url("http://j.vzan.cc/miniapp/img/platformPro/plat_coupon_bg.png") no-repeat;
+      background-size: 100%;
+      .left {
+        width: 162rpx;
+      }
+      .right {
+        width: 526rpx;
+        .title {
+          margin-left: 59rpx;
+        }
+        .btn-use {
+          width: 120rpx;
+          height: 60rpx;
+          border: 1px solid #ff6f30;
+          border-radius: 30rpx;
+          line-height: 60rpx;
+          color: #ff6f30;
+        }
+        .disabled {
+          border: 1px solid #D9D8D9 !important;
+          color: #ccc !important;
+        }
+      }
+    }
+    .mask-qrcode {
+      position: fixed;
+      width: 100%;
+      top: 0; 
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.3);
+      .card {
+        width: 490rpx;
+        height: 536rpx;
+        border-radius: 10rpx;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        .qrcode {
+          width: 264rpx;
+          height: 272rpx;
+          margin-top: 55rpx;
+          background-color: #fff;
+        }
+        .tips {
+          margin: 40rpx 0;
+        }
+        .line-gray {
+          width: 100%;
+          height: 1px;
+          background-color: #eee;
+        }
+        .btn-not-use {
+          width: 100%;
+          height: 100rpx;
+          line-height: 100rpx;
+        }
+      }
+    }
+    .null-data { 
+      margin-top: 481rpx;
+    } 
+  } 
+
+</style>
+<template>
+  <view class="my-coupon f fv fc">
+    <view class="null-data tc pr30" wx:if="{{nullData}}">
+      暂无数据
+    </view>
+    <view class="shop-coupon-list" wx:for="{{couponInfo}}" wx:key="{{itemIndex}}" wx:for-index="itemIndex">
+      <view class="shop-name cblue mt30 c666">{{item.StoreName}}</view>
+      <view class="coupon-item f c333 f26" wx:for="{{item.couponloglist}}" wx:key="{{index}}" wx:for-item="coupon">
+        <view class="left f fv fc jc pw30">
+          <block wx:if="{{coupon.CouponWay == 0}}">
+            <text>￥<text class="f40">{{coupon.Money_fmt}}</text></text>
+          </block>
+          <block wx:if="{{coupon.CouponWay == 1}}">
+            <text class="f40">{{coupon.Money_fmt}}折</text>
+          </block>
+          <view class="c666 f20 mt5 tc">{{coupon.LimitMoney == 0 ? '任意金额商品' : '满' + coupon.LimitMoneyStr}}可用</view>
+        </view>
+        <view class="right f fc fj">
+          <view class="f fv">
+            <view class="title">{{coupon.CouponName}}</view>
+            <view class="title c666 f20 mt15">{{coupon.StartUseTimeStr}} - {{coupon.EndUseTimeStr}}</view>
+          </view>
+          <button class="btn-use tc mr30 f24 {{coupon.CanUse ? '' : 'disabled'}}" @tap="toUse({{itemIndex}})" disabled="{{!coupon.CanUse}}">使用</button>
+        </view>
+      </view>
+      <!-- <view class="coupon-item f c333 f26">
+        <view class="left f fc jc">
+          <view class="f fv">
+            <text class="">满1000</text>
+            <text class="">减50</text>
+          </view>
+        </view>
+        <view class="right f fc fj">
+          <text class="title">安防群优选满减券</text>
+          <button class="btn-use tc mr30 f24">使用</button>
+        </view>
+      </view> -->
+    </view>
+    <comWait wx:if="{{isWait}}" />
+    <view class="mask-qrcode f26" wx:if="{{openMask}}">
+      <view class="card bg-w f fv fc">
+        <image class="qrcode" src="{{currentShopCouponQrCodeLink}}" @tap="previewImage"></image>
+        <text class="c666 tips">点击后，长按小程序码去使用</text>
+        <view class="line-gray"></view>
+        <view class="btn-not-use tc c333" @tap="showMask">
+          暂不使用
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    http,
+    tools,
+    core
+  } from "@/lib/core";
+  import com_wait from "@/components/com_wait";
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "优惠劵"
+    };
+
+    data = {
+      pageIndex: 1,
+      isWait: false,
+      openMask: false,
+      currentShopCouponQrCodeLink: "",
+      couponInfo: [{
+        AId: 0,
+        StoreId: 0,
+        StoreName: "",
+        couponloglist: []
+      }],
+      nullData: true
+    };
+
+    components = {
+      comWait: com_wait
+    };
+
+    methods = {
+      showMask() {
+        this.currentShopCouponQrCodeLink = "";
+        this.openMask = !this.openMask;
+      },
+      toUse(index) {
+        var aid = this.couponInfo[index].AId
+        tools.goNewPage('../../home/shop-detail/shoppingMall?aid=' + aid)
+      },
+      previewImage() {
+        tools.preViewShow(this.currentShopCouponQrCodeLink);
+      }
+    };
+
+    async onLoad() {
+      await this.getMyCouponListC();
+    }
+
+    async getMyCouponListC() {
+      this.isWait = true;
+      core
+        .getMyCouponList({
+          pageIndex: this.pageIndex
+        })
+        .then(result => {
+          if (result.isok) {
+            this.couponInfo = result.postdata;
+            if (
+              this.couponInfo.length > 0
+            ) {
+              this.nullData = false;
+            }
+          } else {
+            tools.showModalCancle(result.msg);
+          }
+          this.isWait = false;
+          this.$apply();
+        });
+    }
+  }
+
+</script>

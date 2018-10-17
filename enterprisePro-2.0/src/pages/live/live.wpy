@@ -1,0 +1,434 @@
+<style lang="less">
+    page {
+        background: #796ecc;
+    }
+    .live {
+        video {
+            width: 100%;
+            height: 82vh;
+            display: block;
+        }
+        .scroll {
+            width: 100%;
+            height: 200rpx;
+            padding: 0 20rpx;
+            .sc-item {
+                margin-right: 20rpx;
+                padding: 20rpx 0;
+                image {
+                    width: 180rpx;
+                    height: 180rpx;
+                }
+                .sc-ab {
+                    position: absolute;
+                    left: 0;
+                    bottom: 0;
+                    background: #000;
+                    opacity: 0.4;
+                    padding: 10rpx;
+                }
+            }
+        }
+        .l-mask {
+            .l-cancle {
+                position: absolute;
+                top: 0;
+                right: 20rpx;
+                color: #fff;
+                z-index: 3;
+            }
+            .l-main {
+                width: 100%;
+                margin-top: 70rpx;
+                image {
+                    width: 250rpx;
+                    height: 250rpx;
+                }
+                .l-price {
+                    color: #fa6bbf;
+                }
+                .l-count {
+                    text {
+                        width: 66rpx;
+                        height: 58rpx;
+                        line-height: 58rpx;
+                        text-align: center;
+                        font-size: 42rpx;
+                        background-color: #7d7dda;
+                        color: #fff;
+                    }
+                    input {
+                        width: 100rpx;
+                        text-align: center;
+                        color: #fa6bbf;
+                    }
+                }
+            }
+            .l-title {
+                color: #b2aaf3;
+                margin: 20rpx 0;
+            }
+            .l-sel {
+                width: 150rpx;
+                height: 83rpx;
+                line-height: 83rpx;
+                text-align: center;
+                color: #fff;
+            }
+        }
+    }
+    .bg7d {
+        background-color: #7d7dda;
+    }
+    .bgfa {
+        background-color: #fa6bbf;
+    }
+    .l-btn {
+        width: 275rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+        text-align: center;
+        color: #fff;
+        font-size: 32rpx;
+        background-color: #7d7dda;
+    }
+    .l-shop {
+        width: 102rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+        margin-left: 10rpx;
+        background-color: #7d7dda;
+        text-align: center;
+        color: #fff;
+        font-size: 50rpx;
+    }
+    .scroll-ab {
+        position: absolute;
+        bottom: 10rpx;
+        left: 0;
+    }
+    .c928 {
+        color: #928de3;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="live">
+        <view wx:if="{{showhide}}">
+            <video custom-cache="{{false}}" controls poster="{{vm_live.cover}}" src="{{vm_live.playurl}}" />
+            <scroll-view scroll-x>
+                <view class="scroll f">
+                    <repeat for="{{vm}}" index="parentIndex">
+                        <view class="sc-item rel" @tap="showMask({{item.id}})">
+                            <image mode='aspectFill' src='{{item.img_fmt}}' />
+                            <wxc-price icon="sub" class="f26 cfff sc-ab">{{item.priceStr}}</wxc-price>
+                        </view>
+                    </repeat>
+                </view>
+            </scroll-view>
+        </view>
+        <view class="l-mask" wx:if="{{showhide==false}}">
+            <view class="dzicon icon-zhuanyebaniconkuozhan_Close f50 l-cancle" @tap="hide"/>
+            <view class="w-100 f fv pw20">
+                <view class='l-main f'>
+                    <image mode='aspectFill' src='{{vm_sec.selImg}}' @tap="showImg({{vm_sec.selImg}})" />
+                    <view class='f fv fj f1 cfff ml20'>
+                        <text class='f32 line line1'>{{vm_sec.name}}</text>
+                        <view class='f fc fj'>
+                            <wxc-price icon="sub" class="f36 l-price">{{vm_sec.itemPrice}}</wxc-price>
+                            <view class="f fc l-count">
+                                <text @tap.stop="less">-</text>
+                                <input disabled value="{{vm_sec.totalCount}}" />
+                                <text @tap.stop="add">+</text>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+                <repeat wx:if="{{vm_sec.pickspecification!=''}}">
+                    <repeat for="{{vm_sec.pickspecification}}" item="this" index="parentindex">
+                        <view class='w-100 l-title'>{{this.name}}</view>
+                        <scroll-view scroll-x>
+                            <view class="w100 f">
+                                <repeat for="{{this.items}}" index="childindex">
+                                    <view class="mr10 f">
+                                        <text class="l-sel {{item.sel?'bgfa':'bg7d'}}" @tap.stop="choose({{parentindex}},{{childindex}})">{{item.name}}</text>
+                                    </view>
+                                </repeat>
+                            </view>
+                        </scroll-view>
+                    </repeat>
+                </repeat>
+                <view wx:else class='f fv fc fc-h f-sa c666' style="height:470rpx;">
+                    <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/no_pro.png' style="width:200rpx;height:180rpx;" />
+                    <text class='c928 f26 mt10'>请把我加入购物车吧</text>
+                </view>
+                <view class='f fc mt40'>
+                    <form report-submit="true" @submit="goShop('shop')">
+                        <button class="btn l-btn" formType="submit">加入购物车</button>
+                    </form>
+                    <form report-submit="true" @submit="goShop('buy')">
+                        <button class="btn l-btn ml10" formType="submit">立即购买</button>
+                    </form>
+                    <view class='dzicon icon-gouwuche l-shop' @tap="navShop"></view>
+                </view>
+                <scroll-view scroll-x class="scroll-ab">
+                    <view class="scroll f">
+                        <repeat for="{{vm}}" index="parentIndex">
+                            <view class="sc-item rel" @tap="showMask({{item.id}})">
+                                <image mode='aspectFill' src='{{item.img_fmt}}' />
+                                <wxc-price icon="sub" class="f26 cfff sc-ab">{{item.discountPricestr}}</wxc-price>
+                            </view>
+                        </repeat>
+                    </view>
+                </scroll-view>
+            </view>
+        </view>
+    </view>
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import addr from "../../lib/addr.js";
+    import _get from "../../lib/lodash.get.js";
+    import {
+        core,
+        pro,
+        tools,
+        http
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class live extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            },
+            navigationBarBackgroundColor: "#796ecc",
+            navigationBarTitleText: "",
+            navigationBarTextStyle: "white"
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm_live: {},
+            vm: {}, //第一层商品数据
+            showhide: true,
+            vm_sec: {}, //第二层商品数据
+            toast: {},
+        };
+        computed = {};
+        methods = {
+            showImg(img) {
+                tools.preViewShow(img)
+            },
+            navShop() {
+                this.$navigate("../good/goodShopCar")
+            },
+            async showMask(id) {
+                let app = wepy.$instance
+                let vipInfo = _get(app.globalData, 'vipInfo', '')
+                if (vipInfo == '') {
+                    vipInfo = await core.getVipInfo()
+                }
+                http.get(addr.GetGoodInfo, {
+                    pid: id,
+                    version: 2,
+                    levelid: vipInfo.levelid,
+                    appid: app.globalData.appid,
+                }).then(_g => {
+                    let _pro = _g.msg
+                    if (_pro.pickspecification) {
+                        _pro.pickspecification = JSON.parse(_pro.pickspecification);
+                        for (let j = 0, key = _pro.pickspecification.length; j < key; j++) {
+                            for (let k = 0, l = _pro.pickspecification[j].items.length; k < l; k++) {
+                                _pro.pickspecification[j].items[k].sel = false;
+                            }
+                        }
+                    }
+                    _pro.selImg = _pro.img_fmt
+                    _pro.specInfo = "";
+                    _pro.specId = "";
+                    _pro.totalCount = 1;
+                    _pro.itemPrice = _pro.priceStr
+                    this.vm_sec = _pro;
+                    this.showhide = false;
+                    this.$apply()
+                })
+            },
+            hide() {
+                this.showhide = true;
+            },
+            async add() {
+                let _add = await pro.addPro(this.vm_sec, "good", this);
+                if (_add) {
+                    this.price = _add.price;
+                    this.vm_sec.totalCount = _add.count;
+                    this.vm_sec.danMaiPrice = parseFloat((_add.price).mul(_add.count)).toFixed(2);
+                    this.$apply();
+                }
+            },
+            async less() {
+                let good = this.vm_sec
+                if (good.totalCount == 1) {
+                    tools.ShowToast("亲,不要再减啦", this)
+                    return;
+                }
+                let _less = await pro.lessPro(good, this);
+                if (this.price) {
+                    good.totalCount = _less;
+                    good.danMaiPrice = parseFloat((this.price).mul(_less)).toFixed(2);
+                    this.vm_sec = good
+                    this.$apply();
+                }
+            },
+            async choose(p, c) {
+                this.vm_sec = await pro.choosePro(this.vm_sec, p, c, "good");
+                this.$apply()
+            },
+            /**
+             * display：
+             * 1.shop添加购物车
+             * 2.buy前往订单页
+             */
+            goShop(display, e) {
+                let goodVm = this.vm_sec;
+                core.formId(e.detail.formId);
+                let specTemp = goodVm.GASDetailList.find(f => f.id == goodVm.specId);
+                if (goodVm.pickspecification.length) {
+                    if (goodVm.specId == "") {
+                        tools.loading("请选择商品规格");
+                        return;
+                    }
+                    if (specTemp == undefined) {
+                        tools.loading("未选择完");
+                        return;
+                    }
+                    if (goodVm.stockLimit) {
+                        if (goodVm.totalCount > specTemp.stock) {
+                            tools.loading("库存不足");
+                            return;
+                        } else {
+                            this.goMethod(display);
+                        }
+                    } else {
+                        this.goMethod(display);
+                    }
+                } else {
+                    if (goodVm.stockLimit) {
+                        if (goodVm.totalCount > goodVm.stock) {
+                            tools.loading("库存不足");
+                            return;
+                        } else {
+                            this.goMethod(display);
+                        }
+                    } else {
+                        this.goMethod(display);
+                    }
+                }
+            }
+        };
+        async onLoad(options) {
+            let pageIndex = Number(options.pageIndex) || 0;
+            let comIndex = Number(options.comIndex) || 0;
+            this.liveInfo(pageIndex, comIndex);
+        }
+        async liveInfo(p, c) {
+            let app = wepy.$instance
+            let pageInfo = _get(app.globalData, 'pages', '')
+            if (pageInfo == '') {
+                pageInfo = await core.getPageSetting();
+            }
+            let _g = pageInfo.pages;
+            let url = _g[p].coms[c].vzliveurl;
+            let ids = [];
+            _g[p].coms[c].items.forEach(function(o, i) {
+                ids.push(o.id);
+            });
+            ids = ids.join(",");
+            Promise.all([this.goodLst(ids), this.goodLive(url, _g, p, c)])
+        }
+        goodLst(ids) {
+            if (ids) {
+                let app = wepy.$instance
+                http.post(addr.GetGoodsByids, {
+                    ids,
+                    levelid: app.globalData.vipInfo.levelid,
+                    goodShowType: ""
+                }).then(_gInfo => {
+                    if (_gInfo.isok) {
+                        this.vm = _gInfo.msg;
+                        this.$apply();
+                        tools.setPageTitle(_gInfo.msg[0].name || '')
+                    } else {
+                        tools.showModal(_gInfo.msg, false);
+                    }
+                })
+            }
+        }
+        goodLive(url, _g, p, c) {
+            let result = /https?:\/\/vzan.com\/live\/tvchat-(\d+).*/gi.exec(url);
+            if (!result) {
+                tools.showModal("播放地址不正确", false)
+                return;
+            }
+            let tpid = result[1];
+            http.post(addr.live, {
+                tpid: tpid
+            }).then(livePlay => {
+                if (livePlay) {
+                    if (livePlay.isok) {
+                        livePlay.dataObj.cover == "" ? (livePlay.dataObj.cover = _g[p].coms[c].img) : (livePlay.dataObj.cover = livePlay.dataObj.cover);
+                        this.vm_live = livePlay.dataObj;
+                        this.vm_live.pageIndex = p
+                        this.vm_live.comIndex = c
+                        this.vm_live.title = _g[p].coms[c].des
+                        this.$apply();
+                    } else {
+                        tools.showModal("主播暂时不在", false)
+                    }
+                }
+            })
+        }
+        // 添加购物车
+        async goMethod(display) {
+            let _pro = this.vm_sec;
+            let record = 0;
+            display == "shop" ? record = 0 : record = 1;
+            let para = {
+                pid: _pro.id,
+                specId: _pro.specId,
+                SpecInfo: _pro.specInfo,
+                count: _pro.totalCount,
+                record: record,
+                isgroup: "",
+                img: _pro.selImg || _pro.img
+            };
+            let shopInfo = await core.addShopCar(para);
+            if (shopInfo.isok == 1) {
+                if (display == "shop") {
+                    tools.loading(shopInfo.msg, 'success');
+                } else {
+                    let _g = await pro.orderPro(_pro, 'good')
+                    _g.cartid = shopInfo.cartid;
+                    this.$preload("vm_order", _g);
+                    this.$navigate("../good/goodOrder");
+                }
+            } else {
+                tools.showModal(shopInfo.msg, false);
+            }
+        }
+        onShareAppMessage() {
+            return {
+                title: this.vm_live.title,
+                path: "/pages/live/live?pageIndex=" + this.vm_live.pageIndex + "&comIndex=" + this.vm_live.comIndex,
+                imageUrl: this.vm_live.cover,
+                success: function(res) {
+                    tools.loading("转发成功", 'success')
+                }
+            };
+        }
+    }
+</script>

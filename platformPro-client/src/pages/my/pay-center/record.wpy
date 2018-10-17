@@ -1,0 +1,78 @@
+<style lang="less">
+.record {
+    border-top: 1px solid #eee;
+    .item {
+        &:last-child {
+            border-bottom: none;
+        }
+        height: 100rpx;
+        .circle {
+            height: 34rpx;
+            width: 34rpx;
+            border-radius: 50%;
+            line-height: 34rpx;
+        }
+    }
+    .bg-blue {
+        background: #7EA8FC;
+    }
+    .null-data {
+      margin-top: 481rpx;
+    } 
+}
+</style>
+<template>
+  <view class="record">
+    <view class="null-data tc pr30" wx:if="{{recordList.length == 0}}">
+      暂无数据 
+    </view>  
+    <view class="list bg-w pl30">
+        <view class="item bbeee f fj fc pr30" wx:for="{{recordList}}" wx:key="{{index}}">
+            <view class="f fc">
+                <view wx:if="{{item.Type == 0}}" class="circle f20 bgFF6F30 cfff tc mr20">充</view>
+                <view wx:else class="circle f20 bg-blue cfff tc mr20 dzicon icon-zhuanyebaniconkuozhan_Shopping"></view>
+                <view class="f fv c333 f26">
+                    <text>{{item.Type == 0 ? '充值：' : '消费：'}} {{item.ChangeMoneyStr}}元</text>
+                    <text class="c666 mt8 f20">{{item.CreateDateStr}}</text>
+                </view> 
+            </view>
+            <text>{{item.Type == 0 ? '+' : '-'}} {{item.ChangeMoneyStr}} 元</text>
+        </view> 
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { http, tools, core } from "@/lib/core";
+import com_wait from '@/components/com_wait';
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "账单记录"
+  };
+
+
+  components = {
+      comWait: com_wait
+  }
+  
+  data = {
+      recordList: [],
+      isWait: false
+  }
+
+  onLoad() {
+      this.getSaveMoneySetUserLogListC()
+  }
+
+  async getSaveMoneySetUserLogListC() {
+      this.isWait = true
+      var result = await core.getSaveMoneySetUserLogList()
+      result.isok 
+        ? (this.recordList = result.saveMoneyUserLogList)
+        : tools.showModalCancle(result.msg)
+      this.isWait = false
+      this.$apply()
+  }
+}
+</script>

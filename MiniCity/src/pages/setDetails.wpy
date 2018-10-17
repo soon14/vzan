@@ -1,0 +1,188 @@
+<style lang="less">
+view {
+  box-sizing: border-box;
+}
+page {
+  background-color: #f7faf8;
+}
+.phcolor {
+  color: #b2b2b2;
+}
+.setDetils-box {
+  padding: 30rpx 30rpx 0 30rpx;
+  .content {
+    padding: 0 30rpx;
+    .phone {
+      .icon {
+        image {
+          width: 24rpx;
+          height: 34rpx;
+        }
+      } 
+      .input {
+        border-bottom: 1rpx solid #f5f5f5;
+      }
+    }
+    .psw {
+      .icon {
+        image {
+          width: 28rpx;
+          height: 32rpx;
+        }
+      }
+    }
+  }
+  .btn-box {
+    margin-top: 88rpx;
+    .btn {
+      width: 470rpx;
+      height: 88rpx;
+      line-height: 88rpx;
+      color: #fff;
+      border-radius: 50rpx;
+      background-color: #34c658;
+      box-shadow: 0 0 10rpx #34c658;
+    }
+  }
+}
+</style>
+
+<template >
+    <view class="setDetils-box">
+        <view class="content bg-w">
+            <view class="phone f fc h100" >
+                <view class="icon h-full f fc fc-h"><image src="../img/icon_phone.png" /></view>
+                <view class="input f30 ml30 w-full h-full f fc" style="">
+                    <input style="width:385rpx;" placeholder-class="phcolor" type="number"  placeholder="输入您的手机号码" bindinput="getPhoneValue"/>
+                    <view class="f1 tc f28 c-9ba9cd" wx:if="{{!getting}}" @tap="getCode">获取验证码</view>
+                    <view class="f1 tc f28 cb2" wx:if="{{getting}}">{{getText}}</view>
+                </view>
+            </view>
+            <view class="psw f fc h100" >
+                <view class="icon h-full f fc fc-h"><image src="../img/icon_psw.png" /></view>
+                <view class="input f30 ml30 w-full h-full f fc" >
+                    <input style="width:385rpx;" placeholder-class="phcolor" type="number" placeholder="输入您的验证码" bindinput="getCodeValue"/>
+                </view>
+            </view>
+        </view>
+        <view class="btn-box f fc-h">
+            <view class="btn tc f30" @tap="bindPhone">立即绑定</view>
+        </view>
+    </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { core, http } from "../lib/core";
+import addr from "../lib/addr";
+export default class setDetails extends wepy.page {
+  config = {
+    navigationBarTitleText: "绑定手机号"
+  };
+
+  data = {
+    getting: false,
+    getText: "重新获取(59s)",
+    userInfo: "",
+    appid: "",
+    phoneValue: {
+      phoneNum: "",
+      msgCode: ""
+    }
+  };
+  methods = {
+    getCode() {
+      var num = this.phoneValue.phoneNum;
+      if (num != "") {
+        this.GetMsgCode(num);
+      } else {
+        core.showModal("请填写手机号");
+      }
+    },
+    getPhoneValue(e) {
+      var num = e.detail.value;
+      this.phoneValue.phoneNum = num;
+    },
+    getCodeValue(e) {
+      var code = e.detail.value;
+      this.phoneValue.msgCode = code;
+    },
+    //绑定手机号
+    bindPhone() {
+      var phone = this.phoneValue.phoneNum;
+      var code = this.phoneValue.msgCode;
+      var userId = this.userInfo.userid;
+      var appid = this.appid;
+      if (phone != "" && code != "") {
+        http
+          .post(addr.SaveUserPhone, {
+            userId: userId,
+            appId: appid,
+            phone: phone,
+            actionType: 1,
+            submitAuthCode: code
+          })
+          .then(data => {
+            console.log(data);
+            if (data.isok) {
+              core.showToast("绑定成功", "success", 1200);
+              setTimeout(() => {
+                wx.reLaunch({
+                  url: "./index"
+                });
+              }, 1000);
+            } else {
+              core.showModal(data.Msg);
+            }
+          });
+      } else {
+        core.showModal("请填写完整信息");
+      }
+    }
+  };
+
+  events = {};
+  async onLoad() {
+    //获取全局appid
+    var app = wepy.$instance;
+    this.appid = app.globalData.appid;
+    var user = await core.getUserInfo();
+    this.userInfo = user;
+  }
+  //获取验证码倒计时
+  countDown() {
+    this.getting = true;
+    var second = 60;
+    var timer = null;
+    var that = this;
+    timer = setInterval(function() {
+      second--;
+      that.getText = "重新获取(" + second + "s)";
+      that.$apply();
+      //console.log(second);
+      if (second < 1) {
+        clearInterval(timer);
+        that.getting = false;
+        that.$apply();
+      }
+    }, 1000);
+  }
+  //获取验证码
+  GetMsgCode(value) {
+    http
+      .get(addr.GetMsgCode, {
+        appId: this.appid,
+        userId: this.userInfo.userid,
+        phone: value
+      })
+      .then(data => {
+        console.log(data);
+        if (data.isok) {
+          this.countDown();
+        } else {
+          core.showModal(data.Msg);
+        }
+      });
+  }
+}
+</script>

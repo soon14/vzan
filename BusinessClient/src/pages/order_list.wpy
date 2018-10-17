@@ -1,0 +1,842 @@
+<style>
+.order-item {
+  margin-top: 20rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #f2f2f2;
+}
+
+.order-item__head {
+  padding: 35rpx 20rpx;
+}
+
+.order-item__state {
+  color: #53a3fe;
+}
+
+.w150 {
+  width: 150rpx;
+}
+
+.order-item__content {
+  padding: 0 0 30rpx 20rpx;
+  border-bottom: 1rpx solid #f2f2f2;
+  border-top: 1rpx solid #f2f2f2;
+}
+
+.order-item__group {
+  border-top: 1rpx solid #f2f2f2;
+  line-height: 42rpx;
+  padding-right: 20rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+}
+
+.gooditem {
+  border-bottom: 1rpx solid #f2f2f2;
+}
+
+.order-item__group:first-child {
+  border: 0;
+}
+
+.order-item__group .c333 {
+  word-break: break-all;
+  word-wrap: normal;
+}
+
+.order-item_action {
+  text-align: right;
+  padding: 30rpx 0;
+}
+
+.order-item_action .btn-plain {
+  margin-right: 20rpx;
+}
+
+.ico40 {
+  vertical-align: middle;
+  margin-right: 10rpx;
+}
+
+.page-head {
+  background-color: #fe536f;
+  color: #fff;
+}
+
+.tab-type {
+  word-break: keep-all;
+  white-space: nowrap;
+}
+
+.tab-type .sel {
+  border-bottom-color: #fff;
+}
+
+.tab-type > view {
+  display: inline-block;
+  margin-right: 20px;
+}
+
+.search-type {
+  width: 140rpx;
+  border-radius: 6rpx;
+  background-color: #f5f5f5;
+  position: absolute;
+  left: 0;
+  top: 102%;
+  z-index: 999;
+}
+
+.search-type > view {
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-top: 1px solid #fff;
+}
+
+.search-type > view:first-child {
+  border-top: 0;
+  color: #333333;
+  font-size: 28rpx;
+}
+
+.yuyue-edit {
+  padding-top: 0;
+}
+
+.textbox-remark {
+  border-radius: 6rpx;
+  border: 1rpx solid #ebebeb;
+  padding: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.label-grouptype {
+  border: 1px solid #fe536f;
+  border-radius: 6rpx;
+  padding: 1rpx 5rpx;
+  font-size: 24rpx;
+  color: #fe536f;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="">
+    <view class="topbg">
+      <view class="f search rel">
+        <view class="search-type" wx:if="{{searchTypeShow}}">
+          <view wx:for="{{searchType}}" @tap.stop="chooseSearchType({{index}})">{{item.name}}</view>
+        </view>
+        <view class="search-filter f fc" @tap.stop="toggleSearchType">
+          <view class="">
+            {{searchType[searchTypeIndex].name}}
+          </view>
+          <text class="dzicon icon-down"></text>
+        </view>
+        <view class="f fc search-input f1">
+          <view class="dzicon icon-sousuo"></view>
+          <input type="text" class="f1" value="{{searchValue}}" @input="inputKeyword" bindconfirm="searchOrder"></input>
+        </view>
+      </view>
+      <scroll-view scroll-x="true" class="mt20">
+        <view class="tab-type f fc">
+          <view class="f1" wx:for="{{stateList[orderType]}}" @tap="changeOrderState({{item.state}},{{item.name}})">
+            <text class="{{item.state==state?'sel':''}}">{{item.name}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class=''>
+      <block wx:for="{{vm.list}}" wx:for-index="index1">
+        <!--普通订单-->
+        <view class='order-item' wx:for="{{item}}" wx:for-item="orderitem" wx:if="{{orderType==0}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.CreateDateStr}}</view>
+            <view class="order-item__state">{{orderitem.StateStr}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单号：</view>
+                <view class="c333 f1">{{orderitem.OrderNum}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单商品：</view>
+                <view class="c333 f1">
+
+                  <view class="gooditem" wx:for="{{orderitem.goodsCarts}}" wx:for-item="unitgood">
+                    <view class="gooditem-name">
+                      <text wx:if="{{unitgood.goodsMsg.StockNo}}">(货号：{{unitgood.goodsMsg.StockNo}})</text>{{unitgood.goodsMsg.name}}</view>
+                    <view class="f c999">
+                      <view class="f1">￥{{unitgood.goodsMsg.priceStr}} {{unitgood.goodsMsg.unit}}{{unitgood.SpecInfo}}</view>
+                      <view>x{{unitgood.Count}}</view>
+                    </view>
+                  </view>
+
+                </view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单金额：</view>
+                <view class="c333 f1">￥{{orderitem.GoodsMoney}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">优惠金额：</view>
+                <view class="c333 f1">￥{{orderitem.ReducedPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">实收金额：</view>
+                <view class="c333 f1">￥{{orderitem.BuyPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">支付方式：</view>
+                <view class="c333 f1">{{orderitem.BuyModeStr}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">配送方式：</view>
+                <view class="c333 f1">{{orderitem.GetWayStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">送货地址：</view>
+                <view class="c333 f1">{{orderitem.Address}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货人：</view>
+                <view class="c333 f1">{{orderitem.AccepterName}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货电话：</view>
+                <view class="c333 f1">{{orderitem.AccepterTelePhone}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单备注：</view>
+                <view class="c333 f1">{{orderitem.Message||""}}</view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==1}}">
+            <view class="btn-plain btn-plain__blue" @tap="updateOrderState({{orderitem.Id}},-2,{{orderitem.State}})">
+              <view class="ico40 ico-refund"></view>退款</view>
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},2,{{orderitem.State}},{{orderitem.AccepterName}},{{orderitem.AccepterTelePhone}},{{orderitem.Address}})">
+              <view class="ico40 ico-car__small"></view>发货</view>
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==8}}">
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},3,{{orderitem.State}})">
+              <view class="ico40 ico-car__small"></view>确认收货</view>
+
+          </view>
+        </view>
+        <!--/普通订单-->
+        <!--砍价-->
+        <view class='order-item' wx:for="{{item}}" wx:for-item="orderitem" wx:if="{{orderType==1}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.CreateOrderTimeStr}}</view>
+            <view class="order-item__state">{{orderitem.StateStr}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单号：</view>
+                <view class="c333 f1">{{orderitem.OrderId}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">砍价商品：</view>
+                <view class="c333 f1">
+                  {{orderitem.BName}}
+                </view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">原价：</view>
+                <view class="c333 f1">￥{{orderitem.OriginalPrice}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">底价：</view>
+                <view class="c333 f1">￥{{orderitem.FloorPrice}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">购买价：</view>
+                <view class="c333 f1">￥{{orderitem.CurrentPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">支付方式：</view>
+                <view class="c333 f1">{{orderitem.PayTypeStr}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">送货地址：</view>
+                <view class="c333 f1">{{orderitem.AddressDetail}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货人：</view>
+                <view class="c333 f1">{{orderitem.AddressUserName}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货电话：</view>
+                <view class="c333 f1">{{orderitem.TelNumber}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">备注留言：</view>
+                <view class="c333 f1">{{orderitem.Remark||""}}</view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==7}}">
+            <view class="btn-plain btn-plain__blue" @tap="updateOrderState({{orderitem.Id}},2,{{orderitem.State}})">
+              <view class="ico40 ico-refund"></view>退款</view>
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},6,{{orderitem.State}})">
+              <view class="ico40 ico-car__small"></view>发货</view>
+          </view>
+        </view>
+        <!--/砍价-->
+
+        <!--拼团订单-->
+        <view class='order-item' wx:for="{{item}}" wx:for-item="orderitem" wx:if="{{orderType==2}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.CreateDateStr}}</view>
+            <view class="order-item__state">{{orderitem.StateStr}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单号：</view>
+                <view class="c333 f1">{{orderitem.OrderNum}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单商品：</view>
+                <view class="c333 f1">
+
+                  <view class="gooditem" wx:for="{{orderitem.goodsCarts}}" wx:for-item="unitgood">
+                    <view class="gooditem-name">
+                      <text wx:if="{{unitgood.goodsMsg.StockNo}}">(货号：{{unitgood.goodsMsg.StockNo}})</text>{{unitgood.goodsMsg.name}}</view>
+                    <view class="f c999">
+                      <view class="f1">￥{{unitgood.goodsMsg.priceStr}} {{unitgood.goodsMsg.unit}}{{unitgood.SpecInfo}}</view>
+                      <view>x{{unitgood.Count}}</view>
+                    </view>
+                  </view>
+
+                </view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单金额：</view>
+                <view class="c333 f1">￥{{orderitem.GoodsMoney}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">优惠金额：</view>
+                <view class="c333 f1">￥{{orderitem.ReducedPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">实收金额：</view>
+                <view class="c333 f1">￥{{orderitem.BuyPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">支付方式：</view>
+                <view class="c333 f1">{{orderitem.BuyModeStr}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">配送方式：</view>
+                <view class="c333 f1">{{orderitem.GetWayStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">送货地址：</view>
+                <view class="c333 f1">{{orderitem.Address}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货人：</view>
+                <view class="c333 f1">{{orderitem.AccepterName}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货电话：</view>
+                <view class="c333 f1">{{orderitem.AccepterTelePhone}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单备注：</view>
+                <view class="c333 f1">{{orderitem.Remark||""}}</view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==1&&orderitem.GroupState==2}}">
+            <view class="btn-plain btn-plain__blue" @tap="updateOrderState({{orderitem.Id}},-2,{{orderitem.State}})">
+              <view class="ico40 ico-refund"></view>退款</view>
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},2,{{orderitem.State}})">
+              <view class="ico40 ico-car__small"></view>发货</view>
+          </view>
+        </view>
+        <!--/拼团订单-->
+
+        <!--预约订单-->
+        <view class='order-item' wx:for="{{item}}" wx:for-index="index2" wx:for-item="orderitem" wx:if="{{orderType==3}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.showtime}}</view>
+            <view class="order-item__state">{{orderitem.state==1?"未处理":"已处理"}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">预约产品：</view>
+                <view class="c333 f1">{{orderitem.remark.goods.name||""}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">预约详情：</view>
+                <view class="c333 f1">
+                  <view wx:for="{{orderitem.formdatajson}}" class="f">
+                    <view class="c999">{{index}}：</view>
+                    <view>{{item}}</view>
+                  </view>
+                </view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.state==2}}">
+            <view class="f">
+              <view class="w150 c666">处理备注：</view>
+              <view class="c333 f1">
+                <view class="tl">
+                  {{orderitem.remark.operationremark||""}}
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.state==1}}">
+            <view class="btn-plain btn-plain__red" @tap="chuliyuyue({{index1}},{{index2}})">
+              <view class="ico30 ico-clock__on"></view> 处理预约</view>
+          </view>
+        </view>
+        <!--/预约订单-->
+
+        <!--团购-->
+        <view class='order-item' wx:for="{{item}}" wx:for-item="orderitem" wx:if="{{orderType==4}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.CreateDateStr}}</view>
+            <view class="order-item__state">{{orderitem.StateStr}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单号：</view>
+                <view class="c333 f1">{{orderitem.OrderNo}}</view>
+                <view>
+                  <text class='label-grouptype'>{{orderitem.IsGroup?"拼团":"单买"}}</text>
+                </view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">团购名称：</view>
+                <view class="c333 f1">
+                  {{orderitem.GroupName}}
+                </view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">下单金额：</view>
+                <view class="c333 f1">￥{{orderitem.BuyPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">购买数量：</view>
+                <view class="c333 f1">{{orderitem.BuyNum}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">支付方式：</view>
+                <view class="c333 f1">{{orderitem.PayType==1?"储值支付":"微信支付"}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">送货地址：</view>
+                <view class="c333 f1">{{orderitem.Address||""}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货人：</view>
+                <view class="c333 f1">{{orderitem.UserName||""}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货电话：</view>
+                <view class="c333 f1">{{orderitem.Phone||""}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">备注留言：</view>
+                <view class="c333 f1">{{orderitem.Note||""}}</view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==0&&(orderitem.PState==2||orderitem.PState==3)}}">
+            <view class="btn-plain btn-plain__blue" @tap="updateOrderState({{orderitem.Id}},-2,{{orderitem.State}})">
+              <view class="ico40 ico-refund"></view>退款</view>
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},1,{{orderitem.State}})">
+              <view class="ico40 ico-car__small"></view>发货</view>
+          </view>
+
+        </view>
+        <!--/团购-->
+      </block>
+    </view>
+    <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+    <view class="h45"></view>
+    <!--修改预约-->
+    <view class="pop-mask" wx:if="{{yuyueEditShow}}">
+      <view class="pop-body rel yuyue-edit">
+        <view class="pop-body__wrap">
+          <view>
+            <view class="tc f30 c333 t-b">备注</view>
+            <view class="mt60">
+              <textarea @input="inputRemark" value="{{yuyueremark}}" class="textbox-remark" placeholder="填入您的处理备注" />
+            </view>
+          </view>
+          <view class="pop-body__bottom f fc-h">
+            <view class="btn btn-cancel" @tap="hideYuyueEdit">取消</view>
+            <view class="btn btn-ok" @tap="saveYuyueEdit">确定</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import baseMixin from "../mixins/base";
+// import
+//第一步： 引入组件文件
+
+export default class order_list extends wepy.page {
+  config = {
+    navigationBarTitleText: "",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    yuyueEditShow: false,
+    stateList: {
+      //普通订单
+      "0": [
+        { state: -999, name: "全部" },
+        { state: 1, name: "待发货" },
+        { state: 2, name: "待收货" },
+        { state: 3, name: "交易成功" },
+        { state: 8, name: "待自取" },
+        { state: -4, name: "退款成功" },
+        { state: -3, name: "退款失败" },
+        { state: -2, name: "退款中" },
+        { state: -1, name: "已取消" },
+        { state: -0, name: "待付款" }
+      ],
+
+      //砍价 砍价订单状态：-1 已取消,5 待付款,6待收货,7待发货,8交易成功
+      "1": [
+        { state: -999, name: "全部" },
+        { state: -1, name: "已取消" },
+        { state: 5, name: "待付款" },
+        { state: 6, name: "待收货" },
+        { state: 7, name: "待发货" },
+        { state: 8, name: "交易成功" }
+      ],
+      //拼团
+      "2": [
+        { state: -999, name: "全部" },
+        { state: 1, name: "待发货" },
+        { state: 2, name: "待收货" },
+        { state: 3, name: "交易成功" },
+        { state: 8, name: "待自取" },
+        { state: 30, name: "拼团中" },
+        { state: 31, name: "拼团成功" },
+        { state: 32, name: "拼团失败" }
+      ],
+      //预约 预约订单状态 1:未处理  2:已处理
+      "3": [
+        { state: -999, name: "全部" },
+        { state: 1, name: "未处理" },
+        { state: 2, name: "已处理" }
+      ],
+      //团购 团购订单状态：-2：拼团失败，2：拼团中，0：待发货，1：待收货，-1：已收货
+      "4": [
+        { state: -999, name: "全部" },
+        { state: 2, name: "拼团中" },
+        { state: -2, name: "拼团失败" },
+        { state: 0, name: "待发货" },
+        { state: 1, name: "待收货" },
+        { state: -1, name: "已收货" }
+      ]
+    },
+    orderTypeList: [
+      { name: "普通订单", type: "normal", orderType: 0 },
+      { name: "砍价", type: "bargain", orderType: 1 },
+      { name: "拼团", type: "group", orderType: 2 },
+      { name: "预约", type: "yuyue", orderType: 3 },
+      { name: "团购", type: "entgroup", orderType: 4 }
+    ],
+    vm: JSON.parse(JSON.stringify(vm)),
+    searchType: [
+      { name: "订单号", id: 0 },
+      { name: "商品名", id: 1 },
+      { name: "手机号", id: 2 },
+      { name: "收货人", id: 3 }
+    ],
+    searchTypeShow: false,
+    searchTypeIndex: 0,
+    searchValue: "",
+    //查询参数
+    orderType: 0,
+    dateType: 0,
+    state: -999,
+    yuyueremark: "",
+    index1: -1,
+    index2: -1
+  };
+  computed = {};
+  methods = {
+    toggleSearchType() {
+      this.searchTypeShow = !this.searchTypeShow;
+    },
+    chooseSearchType(index) {
+      this.searchTypeIndex = index;
+      this.searchTypeShow = false;
+    },
+    inputKeyword(e) {
+      this.searchValue = e.detail.value;
+    },
+    async searchOrder(e) {
+      this.vm = JSON.parse(JSON.stringify(vm));
+      await this.loadMore();
+    },
+    async changeOrderState(state, name) {
+      let that = this;
+      this.vm = JSON.parse(JSON.stringify(vm));
+      this.state = state;
+      this.$apply();
+      await this.loadMore();
+      wx.setNavigationBarTitle({
+        title: that.orderTypeList[that.orderType].name + "-" + name
+      });
+    },
+    updateOrderState(orderId, state, oldState, name, tel, addr) {
+      let that = this;
+      if (state == 2) {
+        wx.navigateTo({
+          url:
+            "deliver?orderid=" +
+            orderId +
+            "&oldState=" +
+            oldState +
+            "&state=" +
+            state +
+            "&name=" +
+            name +
+            "&tel=" +
+            tel +
+            "&addr=" +
+            addr +
+            "&orderType=" +
+            that.orderType
+        });
+        return;
+      }
+
+      wx.showModal({
+        title: "提示",
+        content: "修改后订单状态不能撤销，确定修改吗？",
+        success: function(res) {
+          if (res.confirm) {
+            core
+              .UpdteOrderState(that.orderType, orderId, state, oldState, "")
+              .then(function(result) {
+                if (result) {
+                  if (result.isok) {
+                    that.reload();
+                  }
+                  that.ShowToast(result.Msg);
+                }
+              });
+          } else if (res.cancel) {
+          }
+        }
+      });
+    },
+    chuliyuyue(idx1, idx2) {
+      this.yuyueEditShow = true;
+      this.index1 = idx1;
+      this.index2 = idx2;
+    },
+    hideYuyueEdit() {
+      this.yuyueEditShow = false;
+    },
+    inputRemark(e) {
+      this.yuyueremark = e.detail.value;
+    },
+    async saveYuyueEdit() {
+      let that = this;
+      if (this.index1 == -1 || this.index2 == -1) {
+        this.ShowToast("请选择要处理的预约");
+        return;
+      }
+      let yuyueModel = this.vm.list[this.index1.toString()][
+        this.index2.toString()
+      ];
+
+      let result = await core.UpdteOrderState(
+        that.orderType,
+        yuyueModel.id,
+        2,
+        yuyueModel.state,
+        that.yuyueremark
+      );
+
+      if (result) {
+        if (result.isok) {
+          that.yuyueEditShow = false;
+          that.reload();
+        }
+        that.ShowToast(result.Msg);
+      }
+    }
+  };
+  events = {};
+  async onLoad(options) {
+    let that = this;
+
+    var q = options.q;
+    if (!q) return;
+    q = JSON.parse(q);
+    that.orderType = q.orderType;
+    that.dateType = q.dateType;
+    that.state = q.state;
+    let orderState = that.stateList[that.orderType];
+    let stateName = "";
+    if (orderState) {
+      let orderStateItem = orderState.find(p => p.state == q.state);
+      if (orderStateItem) {
+        stateName = orderStateItem.name;
+      }
+    }
+    if (q.orderType == 3) {
+      that.searchType = [
+        { name: "商品名", id: 1 },
+        { name: "手机号", id: 2 },
+        { name: "收货人", id: 3 }
+      ];
+    }
+    wx.setNavigationBarTitle({
+      title: that.orderTypeList[q.orderType].name + "-" + stateName
+    });
+
+    that.$apply();
+  }
+  async onShow() {
+    //await this.loadMore();
+    await this.reload();
+  }
+  //上拉加载更多
+  async onReachBottom() {
+    await this.loadMore();
+  }
+  async loadMore() {
+    var that = this;
+
+    if (that.vm.ispost || that.vm.loadall) return;
+    //wx.showNavigationBarLoading();
+    let result = await core.GetOrderList(
+      that.orderType,
+      that.searchType[that.searchTypeIndex].id,
+      that.searchValue,
+      that.vm.pageindex,
+      that.vm.pagesize,
+      that.state,
+      that.dateType
+    );
+    console.log(result);
+    if (result) {
+      if (result.isok) {
+        that.vm.ispost = false;
+        let key = "vm.list[" + that.vm.pageindex + "]";
+        if (result.dataObj.length >= that.vm.pagesize) {
+          that.vm.pageindex += 1;
+        } else {
+          that.vm.loadall = true;
+        }
+
+        if (that.orderType == 3) {
+          if (result.dataObj) {
+            result.dataObj.forEach(p => {
+              if (p.formdatajson) {
+                if (
+                  Object.prototype.toString.call(p.formdatajson) ==
+                  "[object String]"
+                ) {
+                  p.formdatajson = JSON.parse(p.formdatajson);
+                }
+              }
+              if (p.remark) {
+                if (
+                  Object.prototype.toString.call(p.remark) == "[object String]"
+                ) {
+                  p.remark = JSON.parse(p.remark);
+                }
+              }
+            });
+          }
+        }
+        that.setData({
+          [key]: result.dataObj,
+          "vm.pageindex": that.vm.pageindex,
+          "vm.loadall": that.vm.loadall
+        });
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+    //that.$apply();
+    //wx.hideNavigationBarLoading();
+  }
+  //下拉刷新
+  async onPullDownRefresh() {
+    await this.reload();
+  }
+  async reload() {
+    this.vm = JSON.parse(JSON.stringify(vm));
+
+    await this.loadMore();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 300);
+  }
+}
+</script>

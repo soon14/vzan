@@ -1,0 +1,51 @@
+<template name="shopcart">
+  <view class="p-fbot w100 z-5 bgff sku" wx:if="{{showModalStatus}}" animation="{{animationData}}">
+    <view class="p-re h150nl">
+      <image src="{{msg.img}}" mode="aspectFill" class='w200nl h200nl p-ab-48 p-img'></image>
+      <view class="h150nl flex-c-sb c66 p243-l">
+        <view class="flex-r cff7 m10-t">
+          <text class='pr-price f32 p-price'>{{discountTotal}}</text>
+          <text wx:if="{{msg.discount!=100}}" class='fprice f26 m20-l'>￥{{oldprice}}</text>
+        </view>
+        <text wx:if="{{msg.stockLimit==true&&pickspecification.length!=0}}" class='f26 ccc'>库存{{stock}}件</text>
+        <text wx:if="{{pickspecification.length!=0}}" class='f26 ccc'>{{specInfo}}</text>
+      </view>
+    </view>
+    <!-- 各项属性值 -->
+    <view class="flex-c p30-t m20-w">
+      <scroll-view scroll-y class='w100' style='max-height:600rpx'>
+        <block wx:for="{{pickspecification}}" wx:for-item="this" wx:for-index="parentindex" wx:if="{{pickspecification.length!=0}}">
+          <text class='m30-b sku-name'>{{this.name}}</text>
+          <view class="flex-r-w m30-h bd-f5">
+            <block wx:for="{{this.items}}" wx:for-index="childindex">
+              <text class="sku-value {{item.sel?'btn_sel':'btn-nor'}}" bindtap="chooseFunc" data-parentindex="{{parentindex}}" data-childindex="{{childindex}}">{{item.name}}</text>
+            </block>
+          </view>
+        </block>
+        <!-- 数量 -->
+        <view class="m30-t flex-r-c-sb">
+          <text>数量</text>
+          <!-- 数量按钮 -->
+          <view class="flex-r-c f40">
+            <view class="count center" bindtap="lessFunc">-</view>
+            <input value="{{totalCount}}" disabled style="font-size:28rpx;" class="count center" />
+            <view class="count center" bindtap="addFunc">+</view>
+          </view>
+        </view>
+        <view class='h45'></view>
+      </scroll-view>
+    </view>
+    <!-- 确定按钮 -->
+    <form bindsubmit="addShopCartFunc" report-submit="true" wx:if="{{addshop}}">
+      <button class="btn w100 h100-l center f34 btn_sel br0" formType="submit">确定</button>
+    </form>
+
+    <!-- 提交模拟formId -->
+    <form bindsubmit="addShopCartFunc" report-submit="true" wx:if="{{gobuy==true}}">
+      <button class="btn w100 h100-l center f34 btn_sel br0" formType="submit" wx:if="{{clientTel!='未绑定'}}">立即购买</button>
+      <button class="btn w100 h100-l center f34 btn_sel br0" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber" wx:if="{{clientTel=='未绑定'}}">立即购买</button>
+    </form>
+
+  </view>
+  <view class="bg_show" wx:if="{{showModalStatus}}" catchtap="hiddenShow"></view>
+</template>

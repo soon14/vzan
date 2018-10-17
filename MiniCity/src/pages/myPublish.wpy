@@ -1,0 +1,195 @@
+
+<style lang="less">
+  view {
+    box-sizing: border-box;
+  }
+  page {
+    background-color: #f7faf8;
+  }
+  .no-content {
+    height: 190rpx;
+    position: relative;
+    .bg-line {
+      width: 550rpx;
+      border-bottom: 1rpx solid #ededed;
+    }
+    .text {
+      z-index: 3;
+      background: #f7faf8;
+      display: block;
+      padding: 0 40rpx;
+    }
+  }
+</style>
+ 
+<template>
+  <view>
+    <view>
+      <repeat for="{{list}}" item="infoItem" index="index">
+        <comInfoItem :info.sync="infoItem" :comIndex.sync="index" :comUser.sync="userInfo" :isMyPublish.sync="isMyPublish" :type.sync="type"></comInfoItem>
+      </repeat>
+    </view>
+    <view class="no-content tc f fc fc-h" wx:if="{{!isLoading}}">
+      <view class="bg-line abs"></view>
+      <text class="text c-c6c8cc f24 abs">{{errText}}</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http
+  } from "@/lib/core";
+  import addr from "@/lib/addr";
+  import com_infoItem from "@/components/com_infoItem";
+  export default class myfb extends wepy.page {
+    config = {
+      navigationBarTitleText: "我的发布"
+      // enablePullDownRefresh: true
+    };
+    components = {
+      comInfoItem: com_infoItem,
+    };
+    data = {
+      userInfo: {},
+      isMyPublish: true,
+      upData: false,
+      isOnPull: false,
+      isDel: false,
+      isLoading: true,
+      errText: "",
+      pageIndex: 1,
+      pageSize: 5,
+      list: [],
+      type: 0
+    };
+    methods = {
+    };
+    events = {};
+    async onLoad(option) {
+      wx.hideShareMenu();
+      this.userInfo = await core.getUserInfo();
+      this.type = option.type;
+      if (this.type == 0) {
+        this.getMsgByUserId();
+        core.setPageTitle("我的发布");
+      } else if (this.type == 1) {
+        core.setPageTitle("我的收藏");
+        this.getListMyFavoriteMsg();
+      }
+    }
+    // onPullDownRefresh() {
+    //   wx.showNavigationBarLoading();
+    //   this.pageIndex=1;
+    //   this.isOnPull = true;
+    //   if (this.type == 0) {
+    //     this.getMsgByUserId();
+    //   } else if (this.type == 1) {
+    //     this.getListMyFavoriteMsg();
+    //   }
+    //   wx.stopPullDownRefresh();
+    //   wx.hideNavigationBarLoading();
+    // }
+    //获取我的发布
+    async getMsgByUserId() {
+      var app = wepy.$instance;
+      var userInfo = await core.getUserInfo();
+      core.loading();
+      http
+        .post(addr.GetMsgByUserId, {
+          appId: app.globalData.appid,
+          userId: userInfo.userid,
+          pageIndex: this.pageIndex,
+          pageSize: this.pageSize
+        })
+        .then(data => {
+          wx.hideLoading();
+          if (data.isok) {
+            if (data.dataObj.list.length == 0) {
+              //无的情况
+              if (this.pageIndex == 1) {
+                this.errText = "暂无发布内容";
+                //core.showToast("暂无发布内容","none",1500)
+              } else if (this.pageIndex > 1) {
+                this.errText = "我是有底线的";
+                //core.showToast("已加载所有内容","none",1500)
+              }
+              this.isLoading = false;
+            } else if (this.pageIndex >= 1 && data.dataObj.list.length > 0) {
+              this.list = this.list.concat(data.dataObj.list);
+            }
+            this.$apply();
+          }
+        });
+    }
+    //获取我的收藏
+    async getListMyFavoriteMsg() {
+      var app = wepy.$instance;
+      var userInfo = await core.getUserInfo();
+      core.loading();
+      http
+        .post(addr.GetListMyFavoriteMsg, {
+          appId: app.globalData.appid,
+          userId: userInfo.userid,
+          pageIndex: this.pageIndex,
+          pageSize: this.pageSize
+        })
+        .then(data => {
+          wx.hideLoading();
+          if (data.isok) {
+            if (data.dataObj.list.length == 0) {
+              //无收藏的情况
+              if (this.pageIndex == 1) {
+                this.errText = "暂无收藏内容";
+              } else if (this.pageIndex > 1) {
+                this.errText = "我是有底线的";
+              }
+              this.isLoading = false;
+            } else if (this.pageIndex >= 1 && data.dataObj.list.length > 0) {
+              this.list = this.list.concat(data.dataObj.list);
+            }
+          }
+          this.$apply();
+        });
+    }
+    onReachBottom() {
+      this.loadMore();
+    }
+    //上拉加载更多
+    loadMore() {
+      if (this.isLoading) {
+        this.pageIndex++;
+        if (this.type == 0) {
+          this.getMsgByUserId();
+        } else if (this.type == 1) {
+          this.getListMyFavoriteMsg();
+        }
+      }
+    }
+    //分享
+    onShareAppMessage(e) {
+        var index = e.target.dataset.index;
+        var id = e.target.dataset.id;
+        var title = this.list[index].msgDetail;
+        var imgUrl = this.list[index].imgList[0] ? this.list[index].imgList[0] : "";
+        var app = wepy.$instance;
+        var that = this;
+        return {
+          title: title,
+          imageUrl: imgUrl,
+          path: "/pages/classifyDetails?msgId=" + id,
+          success: function(res) {
+            core.addMsgViewFavoriteShare(app.globalData.appid, id, 2);
+            that.list[index].ShareCount++;
+            that.$apply();
+            core.showToast("分享成功", "success", 1000);
+          },
+          fail: function(res) {
+            console.log(res);
+          }
+        };
+    }
+  }
+</script>

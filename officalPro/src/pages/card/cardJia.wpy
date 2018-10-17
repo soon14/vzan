@@ -1,0 +1,147 @@
+<style lang="less">
+    page {
+        background: #f6f6f6;
+    }
+    .card {
+        width: 100%;
+        .card-lst {
+            padding: 0 30rpx;
+            width: 100%;
+            .card-item {
+                width: 100%;
+                .card-time {
+                    width: 100%;
+                    font-size: 24rpx;
+                    color: #999;
+                    padding: 30rpx 0 20rpx 0;
+                }
+                .card-main {
+                    width: 100%;
+                    background: #fff;
+                    border-radius: 5rpx;
+                    .card-info {
+                        padding: 30rpx;
+                        image {
+                            width: 110rpx;
+                            height: 110rpx;
+                            border-radius: 50%;
+                        }
+                    }
+                    .card-btn {
+                        width: 100%;
+                        height: 100rpx;
+                        line-height: 100rpx;
+                        border-top: 1px solid #eee;
+                        >view {
+                            width: 50%;
+                        }
+                        >view:first-child {
+                            border-right: 1px solid #eee;
+                        }
+                    }
+                }
+            }
+            .lst-none {
+                width: 100%;
+                height: 100vh;
+                line-height: 100vh;
+                text-align: center;
+                color: #d9d8d9;
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='card'>
+        <!-- 名片列表 -->
+        <view class='card-lst'>
+            <repeat for="{{vmEmp.list}}">
+                <view class='card-item'>
+                    <view class='card-time f fj'>
+                        <text>{{item.UpdateTime}}</text>
+                        <text>{{item.Source}}</text>
+                    </view>
+                    <view class='card-main'>
+                        <view class='card-info f fc fj' @tap="goCard({{item.Id}})">
+                            <view class='f fv'>
+                                <text class='f32 c333 t-b'>{{item.Name}}</text>
+                                <view class='f24 c666 f fv'>
+                                    <text class='mt20'>{{item.DepartMentName}}{{item.Job}}</text>
+                                    <text class='mt20'>{{item.Phone}}</text>
+                                </view>
+                            </view>
+                            <image mode='aspecFill' src='{{item.Avatar}}' />
+                        </view>
+                        <view class='card-btn f fc'>
+                            <view class='f fc-h c999' @tap.stop="goChat({{item}})">
+                                <text class='dzicon icon-pinglun1 mr20 f34' />
+                                <text>私聊</text>
+                            </view>
+                            <view class='f fc-h c999' @tap.stop="phone({{item.Phone}})">
+                                <text class='dzicon icon-dianhua3 mr20 f34' />
+                                <text>电话</text>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+            <view class="lst-none" wx:if="{{vmEmp.list.length==0&&vmEmp.loadall}}">暂无数据</view>
+            <view class="loding w-100 f fc-h" style="margin:20rpx 0" wx:if="{{vmEmp.loadall==false}}">
+                <text class="loading-icon" />
+                <text class="c999 f26 ml20">正在加载中...</text>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class cardJia extends wepy.page {
+        config = {
+            navigationBarTitleText: "名片夹",
+            navigationBarBackgroundColor: "#fff",
+            // 引入min组件
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vmEmp: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 9,
+            },
+        };
+        methods = {
+            goCard(id) {
+                tools.goNewPage("./cardDlt?id=" + id)
+            },
+            goChat(item) {
+                let vm = {
+                    id: item.UserId,
+                    name: item.Name,
+                    img: item.Avatar || item.HeadImgUrl,
+                }
+                core.gochat(vm)
+            },
+            phone(num) {
+                tools.makePhone(num)
+            },
+        }
+        onLoad() {
+            this.vmEmp = tools.resetArray(this.vmEmp)
+            core.GetMyListEmployee(this.vmEmp, this)
+        }
+        onReachBottom() {
+            core.GetMyListEmployee(this.vmEmp, this)
+        }
+    }
+</script>

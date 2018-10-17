@@ -1,0 +1,191 @@
+<style lang="less">
+    .shopCar {
+        width: 100%;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 3;
+        .shop-bg {
+            width: 100%;
+            height: 100vh;
+        }
+        .shop-main {
+            width: 100%;
+            background: #fff;
+            .good-info {
+                width: 100%;
+                padding: 30rpx 30rpx 0 30rpx;
+                image {
+                    width: 170rpx;
+                    height: 170rpx;
+                    border-radius: 5rpx;
+                    margin-right: 30rpx;
+                }
+                >view {
+                    height: 170rpx;
+                }
+            }
+            .good-lst {
+                width: 100%;
+                height: 500rpx;
+                .good-spec {
+                    padding: 50rpx 30rpx 0 30rpx;
+                    .spec-item {
+                        >text {
+                            font-size: 24rpx;
+                            padding: 10rpx 35rpx;
+                            border-radius: 25rpx;
+                            margin-right: 30rpx;
+                        }
+                        .spec-sel {
+                            background: #ff3838;
+                            color: #fff;
+                        }
+                        .spec-none {
+                            background: #eee;
+                            color: #333;
+                        }
+                    }
+                }
+            }
+            .shop-num {
+                width: 100%;
+                padding: 30rpx;
+                .shop-set {
+                    height: 60rpx;
+                    >text {
+                        width: 69rpx;
+                        height: 60rpx;
+                        text-align: center;
+                        line-height: 60rpx;
+                        font-size: 24rpx;
+                        color: #666;
+                    }
+                    .bor {
+                        border-top-left-radius: 5rpx;
+                        border-bottom-left-radius: 5rpx;
+                    }
+                    .bor2 {
+                        border-top-right-radius: 5rpx;
+                        border-bottom-right-radius: 5rpx;
+                    }
+                    >input {
+                        width: 106rpx;
+                        height: 60rpx;
+                        border-top: 1px solid #666;
+                        border-bottom: 1px solid #666;
+                        border-left: 1px solid #666;
+                        text-align: center;
+                        min-height: 0;
+                        font-size: 26rpx;
+                        font-weight: bold;
+                    }
+                }
+            }
+            .shop-btn {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                text-align: center;
+                background: #ff3838;
+                color: #fff;
+            }
+        }
+    }
+    .good-show {
+        visibility: visible;
+        transform: translateY(0);
+        transition: all 0.4s ease-in-out;
+    }
+    .good-none {
+        visibility: hidden;
+        transform: translateY(100%);
+        transition: all 0.4s ease-in-out;
+    }
+    .shop-CarNone {
+        visibility: hidden;
+        background: rgba(0, 0, 0, 0);
+        transition: all 0.4s ease-in-out;
+    }
+    .shop-CarShow {
+        visibility: visible;
+        background: rgba(0, 0, 0, 0.4);
+        transition: all 0.4s ease-in-out;
+    }
+</style>
+<template>
+    <view class="{{shopMask?'shop-CarShow':'shop-CarNone'}} shopCar f fv f-end">
+        <view class="shop-bg"  @tap='hide'/>
+        <view class="shop-main {{shopMask?'good-show':'good-none'}}">
+            <view class='good-info f'>
+                <image src='{{vm.specImg}}' @tap="preImg({{vm.specImg}})" />
+                <view class='f fv f-end f1'>
+                    <view class='f fc'>
+                        <text class='f30 t-b cff3'>￥{{vm.danMaiPrice}}</text>
+                        <text class='f24 ml20' style="text-decoration: line-through;color:#a1a2a3">￥{{vm.yuanJiaPrice}}</text>
+                    </view>
+                    <text class='f24 c333 mt30' wx:if="{{vm.StockLimit}}">库存{{vm.stock_new}}件</text>
+                </view>
+                <view class='dzicon icon-guanbi f32' style='color:#a1a2a3;width:50rpx;height:50rpx' @tap='hide' />
+            </view>
+            <scroll-view scroll-y class="good-lst">
+                <repeat for="{{vm.PickSpec}}" item='pickParent' index='parentIndex'>
+                    <view class='good-spec'>
+                        <view class='t-b c333'>{{pickParent.Name}}</view>
+                        <view class='spec-item f fw'>
+                            <repeat for="{{pickParent.items}}" item='pickChild' index='childIndex'>
+                                <text class="mt30 {{pickChild.sel?'spec-sel':'spec-none'}}" @tap='choose({{parentIndex}},{{childIndex}})'>{{pickChild.Name}}</text>
+                            </repeat>
+                        </view>
+                    </view>
+                </repeat>
+            </scroll-view>
+            <view class='shop-num f fc'>
+                <text class='f24 c333 f1'>购买数量</text>
+                <view class='shop-set f fc'>
+                    <text class='dzicon icon-jianhao bor' @tap='less' style="border:1px solid {{vm.count==1?'#d9d8d9':'#666'}}; border-right:none;color:{{vm.count==1?'#d9d8d9':'#666'}}" />
+                    <input type='number' value='{{vm.count}}' @input="setNum" />
+                    <text class='dzicon icon-jiahao1 bor2' @tap='add' style='border:1px solid #666;' />
+                </view>
+            </view>
+            <form class='f1' report-submit="true" @submit="goMode">
+                <button formType="submit" class='shop-btn f30 t-b'>确定</button>
+            </form>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        tools,
+        core,
+    } from "@/lib/core.js"
+    export default class com_goodShop extends wepy.component {
+        methods = {
+            hide() {
+                this.$emit('hideMask')
+            },
+            choose(p, c) {
+                this.$emit("chooseSpec", p, c)
+            },
+            add() {
+                this.$emit("add")
+            },
+            less() {
+                this.$emit("less")
+            },
+            setNum(e) {
+                let num = Number(e.detail.value)
+                this.$emit("setNum", num)
+            },
+            goMode(e) {
+                core.formId(e.detail.formId)
+                this.$emit('goShop')
+            },
+            preImg(img) {
+                tools.preViewShow(img)
+            },
+        }
+    }
+</script>

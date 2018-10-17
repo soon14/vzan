@@ -1,0 +1,155 @@
+<style>
+.shop {
+  background-color: #fff;
+}
+.shop:first-child {
+  margin-top: 0;
+}
+.shop-image {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 100%;
+}
+.shop-name {
+  font-size: 30rpx;
+}
+.radio {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #aaa;
+  border-radius: 100%;
+  position: relative;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+.radio:before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  background-color: #fff;
+  border-radius: 100%;
+  z-index: 1;
+  content: "";
+}
+.radio.sel {
+  border-color: #fe536f;
+}
+.radio.sel:before {
+  background-color: #fe536f;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="">
+    <view class="tc c666 p30">
+      本小程序只可管理已授权的专业版小程序
+    </view>
+    <view class="f fc p20 shop mt20" wx:for="{{vm.list}}" @tap="chooseStore({{index}})">
+      <image src="https://j.vzan.cc/dz/content/newhome/image/s-gj.png" class="shop-image"></image>
+      <view class="shop-name ml20 f1">{{item.XcxName}}</view>
+      <view class="radio {{item.Id==currentStore.Id?'sel':''}}"></view>
+    </view>
+    <view wx:if="{{vm.list.length==0&&vm.loadall}}" class="tc c666 p30">
+      <view>您还没有专业版小程序</view>
+      <view>请先开通模版后再使用本小程序进行管理</view>
+      <view class="mt20" style="color:red;">
+        <navigator url="/pages/me" open-type="switchTab">切换账号</navigator>
+      </view>
+    </view>
+    <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+  </view>
+</template>
+
+<script>
+//第一步： 引入组件文件
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import baseMixin from "../mixins/base";
+
+export default class store extends wepy.page {
+  config = {
+    navigationBarTitleText: "切换店铺",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  mixins = [baseMixin];
+  //第二步：声明组件
+  components = {};
+  data = {
+    vm: JSON.parse(JSON.stringify(vm)),
+    currentStore: {}
+  };
+  computed = {};
+  methods = {
+    chooseStore(index) {
+      var that = this;
+      try {
+        wx.setStorageSync("currentStore", that.vm.list[index]);
+        that.currentStore = that.vm.list[index];
+        setTimeout(() => {
+          wx.reLaunch({
+            url: "/pages/index"
+          });
+        }, 1000);
+      } catch (e) {
+        that.ShowToast("切换失败，请重试");
+      }
+    }
+  };
+  events = {};
+  async onLoad() {
+    let that = this;
+    await this.reload();
+  }
+  async onShow() {}
+  async getPageData() {
+    var that = this;
+    //wx.showNavigationBarLoading();
+    let result = await core.GetStoreList();
+    if (result) {
+      if (result.isok) {
+        that.vm.list = result.dataObj || [];
+        that.vm.loadall = true;
+
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+    that.$apply();
+    //wx.hideNavigationBarLoading();
+  }
+  async onPullDownRefresh() {
+    await this.reload();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+  async reload() {
+    let userInfo = await core.getUserInfo();
+    if (userInfo) {
+      if (!userInfo.TelePhone) {
+        wx.reLaunch({
+          url: "/pages/login"
+        });
+        return;
+      }
+    }
+    await this.getPageData();
+    this.vm = JSON.parse(JSON.stringify(vm));
+    await this.getPageData();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 300);
+  }
+}
+</script>

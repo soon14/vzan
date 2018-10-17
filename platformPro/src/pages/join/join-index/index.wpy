@@ -1,0 +1,505 @@
+<style lang="less">
+.join-index {
+  .top {
+    .card {
+      height: 175rpx;
+      .avator {
+        height: 135rpx;
+        width: 135rpx;
+        background-color: #d9d8d9;
+        border-radius: 50%;
+        overflow: hidden;
+      }
+
+      .register {
+        color: rgba(255, 111, 48, 1);
+      }
+      .btn-card {
+        width: 201rpx;
+        height: 62rpx;
+        border-top-left-radius: 31rpx;
+        border-bottom-left-radius: 31rpx;
+        line-height: 62rpx;
+      }
+    } 
+  } 
+  .activity {
+    width: 100%; 
+    min-height: 157rpx;
+  } 
+  .red-point { 
+    width: 12rpx;
+    height: 12rpx;  
+    background: rgba(255, 111, 48, 1);
+    border-radius: 50%;
+    right: -8rpx;
+    top: -4rpx;
+  } 
+  .h142 {
+    height: 142rpx;
+  }
+  .tab-item {
+    border-right: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    &:nth-child(2n) {
+      border-right: none;
+    }
+    &:nth-child(3) {
+      border-bottom: none;
+    }
+    &:nth-child(4) {
+      border-bottom: none;
+    }
+  }
+  .lh09 {
+    line-height: 0.9;
+  }
+
+  .bubble:after,
+  .bubble:before {
+    bottom: 100%;
+    left: 50%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .bubble:after {
+    border-color: rgba(136, 183, 213, 0);
+    border-bottom-color: #ff8376;
+    border-width: 12rpx;
+    margin-left: -12rpx;
+  }
+
+  .bubble-size {
+    padding: 20rpx;
+    width: 300rpx;
+    background-color: #ff8376;
+    border-radius: 12rpx;
+    top: 120rpx;
+    left: -70rpx;
+  }
+  .f62 {
+    font-size: 62rpx;
+  }
+  .hl1 {
+    line-height: 1;
+  }
+
+  .shake_ {
+    animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+  .lh12 {
+    line-height: 1.4;
+  }
+
+  @keyframes shake {
+    10%,
+    90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    20%,
+    80% {
+      transform: translate3d(2px, 0, 0);
+    }
+    30%,
+    50%,
+    70% {
+      transform: translate3d(-4px, 0, 0);
+    }
+    40%,
+    60% {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
+}
+</style>
+<template leng="wxml">
+  <view class="join-index">
+    <view class="top">
+      <view class="card bg-w f flex-start pl30 fc">
+        <view class="f fc hl1">
+          <image class="avator mr30" mode="aspectFill" wx:if="{{avatorUrl}}" src="{{avatorUrl}}">
+          </image>
+          <view class="avator mr30" wx:else>
+            <open-data type="userAvatarUrl"></open-data>
+          </view>
+          <view class="profile rel">
+            <view class="t-b c333 f34 ib w-100">
+              <text wx:if="{{nickName}}">{{nickName}}</text><open-data type="userNickName"  wx:else></open-data>
+            </view>
+            <text wx:if="{{phone}}" class="phone c666 f26 ib w-100 mt20">{{showPhone}}</text>
+            <button wx:else class="phone register c666 f26 ib mt20" open-type="getUserInfo" bindgetuserinfo="authUserInfo2Register">点击成为会员</button>
+            <view class="bubble bubble-size f24 abs lh12 cfff {{ shake ? 'shake_' : ''}}" wx:if="{{registerTips}}" @tap="switchTips">
+              亲爱的客官，如果您想体验更多功能，请先注册成为会员哦~<text class="dzicon icon-hua_flower3"></text>
+            </view>
+          </view>
+        </view>
+        <!-- <view class="btn-card bg-green f26 cfff">
+                    <text class="dzicon icon-mine_wode ml25 f32" ></text> <text class="ml20">我的名片</text>
+                </view> -->
+      </view>
+      <view class="tab f fg1 bg-w c333 mt20 fw">
+        <view class="f fv jc fc f26 wp50 h142 tab-item" @tap="goMycard">
+          <text class="dzicon lh09 icon-mingpian f50 color-light-green"></text>
+          <text class="mt5">我的名片</text>
+        </view>
+        <view class="f fv jc fc f26 wp50 h142 tab-item" @tap="goMyShop">
+          <text class="dzicon icon-shop_dianpu f44 color-light-green"></text>
+          <text class="mt5">{{isNotShopExist ? '免费入驻' : '我的店铺'}}</text>
+        </view>
+        <view class="f fv jc fc f26 wp50 h142  tab-item" @tap="goMyActivity">
+          <text class="dzicon icon-wodepingjia f40 color-light-green"></text>
+          <text class="mt5">我的动态</text>
+        </view>
+        <view class="f fv jc fc f26 wp50 h142  tab-item" @tap="goMyConnect">
+          <text class="dzicon icon-fenxiaozhongxin f40 color-light-green"></text>
+          <text class="mt5">我的人脉</text>
+        </view>
+      </view>
+    </view>
+    <view class="bg-w mt20 activity c333 f fg1">
+      <view class="f fv jc fc f26 w-100" @tap="goMyCardAct(0)">
+        <text class="dzicon icon-liulanliang f60 colorD9D8D9 rel">
+          <text class="abs red-point" wx:if="{{NewData.ViewData}}"></text>
+        </text>
+        <text class="mt8">谁看过我</text>
+      </view>
+      <view class="f fv jc fc f26 w-100" @tap="goMyCardAct(1)">
+        <text class="dzicon icon-zhuanyebanicon_zan f62 colorD9D8D9 rel">
+          <text class="abs red-point" wx:if="{{NewData.DzData}}"></text>
+        </text>
+        <text class="mt8">谁赞过我</text>
+      </view>
+      <view class="f fv jc fc f26 w-100" @tap="goMyCardAct(2)">
+        <text class="dzicon icon-follow_guanzhu f60 colorD9D8D9 rel">
+          <text class="abs red-point" wx:if="{{NewData.FollowData}}"></text>
+        </text>
+        <text class="mt8">谁关注我</text>
+      </view>
+      <view class="f fv jc fc f26 w-100" @tap="goMyCardAct(3)">
+        <text class="dzicon icon-fenxiaozhongxin f60 colorD9D8D9 rel">
+          <text class="abs red-point" wx:if="{{NewData.SiXinData || hasNewMsg}}"></text>
+        </text>
+        <text class="mt8">谁私信我</text>
+      </view>
+    </view>
+    <button class="btn-big cfff bg-green mt30 block-center f30 bigShadow" @tap="goRadarData">数据雷达</button>
+    <view class="bg-w mt30 activity c333 f fg1 fw pt20 pb20">
+      <view class="f fv jc fc f26 wp25" @tap="goMyFavoriteShop">
+        <text class="dzicon icon-five-star f32 cfff circle-sm bg-orange"></text>
+        <text class="mt8">店铺收藏</text>
+      </view>
+      <view class="f fv jc fc f26 wp25" @tap="goMyComment">
+        <text class="dzicon icon-wodeyuyuedan f32 cfff circle-sm bg-yellow"></text>
+        <text class="mt8">发帖评论</text>
+      </view>
+      <!-- 先不弄 -->
+      <view class="f fv jc fc f26 wp25" @tap="goMyCoupon">
+        <text class="dzicon icon-zhuanyebaniconkuozhan_coupon f30 cfff circle-sm bg-lightyellow"></text>
+        <text class="mt8">优惠券</text>
+      </view>
+      <view class="f fv jc fc f26 wp25" @tap="goMyFavorite">
+        <text class="dzicon icon-five-star f32 cfff circle-sm bg-orange"></text>
+        <text class="mt8">收藏动态</text>
+      </view>
+      <view class="f fv jc fc f26 wp25 mt25" @tap="goMyOrder">
+        <text class="dzicon icon-zhuanyebaniconkuozhan_summary1 f32 cfff circle-sm bg-lightgreen"></text>
+        <text class="mt8">我的订单</text>
+      </view>
+      <view class="f fv jc fc f26 wp25 mt25" @tap="goMyAddress">
+        <text class="dzicon icon-shouhuodizhi f32 cfff circle-sm"  style="background-color: #7EA8FC;"></text>
+        <text class="mt8">收货地址</text>
+      </view>
+    </view>
+    <comJoinLoading wx:if="{{isWait}}" />
+    <comIllegal :isShowIllegal.sync="isShowIllegal"/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { http, tools, core } from "@/lib/core";
+import addr from "@/lib/addr";
+import com_joinLoading from "@/components/com_joinLoading";
+import com_illegal from "@/components/com_illegal";
+const app = wepy.$instance;
+export default class joinIndex extends wepy.page {
+  config = {
+    navigationBarBackgroundColor: "#fff",
+    navigationBarTitleText: "我的",
+    enablePullDownRefresh: true
+  };
+
+  data = {
+    isWait: false,
+    phone: false,
+    avatorUrl: "",
+    nickName: "",
+    isPerfect: false,
+    aid: 0,
+    cardId: 0,
+    HiddenPhone: -1,
+    NewData: {
+      DzData: false,
+      FollowData: false,
+      SiXinData: false,
+      ViewData: false
+    },
+    isNotShopExist: false,
+    userId: 0,
+    registerTips: false,
+    shake: false,
+    isShowIllegal: false,
+    hasNewMsg: false
+  };
+
+  components = {
+    comJoinLoading: com_joinLoading,
+    comIllegal: com_illegal
+  };
+
+  handleShake() {
+    this.registerTips = true;
+    this.shake = true;
+    setTimeout(() => {
+      this.shake = false;
+      this.$apply();
+    }, 820);
+  }
+
+  methods = {
+    goMyOrder() {
+      tools.goNewPage('../../shoppingCarts/my-order/index')
+    },
+    switchTips() {
+      this.registerTips = !this.registerTips;
+    },
+    goMycard() {
+      if (this.phone) {
+        this.handleNewpage(
+          this.isPerfect,
+          "../my/myCard",
+          "../my/updateCard?imgUrl=" + this.avatorUrl
+        );
+        return;
+      }
+      this.handleShake();
+    },
+    goMyConnect() {
+      if (this.phone) {
+        this.handleNewpage(
+          this.isPerfect,
+          "../my-follow/index?cardId=" + this.cardId,
+          "../my/updateCard?imgUrl=" + this.avatorUrl
+        );
+        return;
+      }
+      this.handleShake();
+    },
+    goMyCoupon() {
+      this.handleNewpage(
+        this.phone,
+        "../my-coupon/index?cardId=" + this.cardId,
+        () => {
+          this.handleShake();
+        }
+      );
+    },
+    goMyCardAct(index) {
+      var vm = this;
+      this.handleNewpage(
+        this.phone,
+        "../my/myCardAct?index=" + index + "&cardId=" + vm.cardId,
+        () => {
+          this.handleShake();
+        }
+      );
+    },
+    goMyShop() {
+      var sucPath = this.isNotShopExist
+        ? "../edit-shop/index?myCardId=" + this.cardId
+        : "../my-shop/index?myCardId=" + this.cardId;
+      this.handleNewpage(this.phone, sucPath, () => {
+        this.handleShake();
+      });
+    },
+    goMyActivity() {
+      this.handleNewpage(
+        this.phone,
+        "../my-activity/index?myCardId=" + this.cardId,
+        () => {
+          this.handleShake();
+        }
+      );
+    },
+    goMyFavorite() {
+      this.handleNewpage(
+        this.phone,
+        "../favorite-activity/index?userId=" + this.userId,
+        () => {
+          this.handleShake();
+        }
+      );
+    },
+    goMyComment() {
+      this.handleNewpage(
+        this.phone,
+        "../my-comment/index?cardId=" + this.cardId,
+        () => {
+          this.handleShake();
+        }
+      );
+    },
+    goRadarData() {
+      this.handleNewpage(this.phone, "../data-radar/index", () => {
+        this.handleShake();
+      });
+    },
+    goMyFavoriteShop() {
+      this.handleNewpage(
+        this.phone,
+        "../favorite-shop/index?cardId=" + this.cardId,
+        () => {
+          this.handleShake();
+        }
+      );
+    },
+    goMyAddress() {
+      tools.goNewPage('../../shoppingCarts/my-order/my-address')
+    }
+  };
+
+  async onPullDownRefresh() {
+    this.setData({
+      'hasNewMsg': tools.cacheGlobalData("hasNewMsg")
+    })
+    wx.showNavigationBarLoading();
+    await this.getCard();
+    wx.hideNavigationBarLoading();
+    wx.stopPullDownRefresh();
+  }
+
+  authUserInfo2Register(e) {
+    if (!("userInfo" in e.detail)) {
+      wx.showToast({
+        title: "请先授权",
+        icon: "none",
+        duration: 1000
+      });
+      return;
+    }
+    console.log(e.detail.userInfo, "来自微信的用户信息");
+    app.globalData.userInfo = e.detail.userInfo;
+    tools.goNewPage("../bindPhone/register");
+  }
+  /**
+   * 通过标记控制页面跳转
+   * @param {Boolean} flag
+   * @param {Sting} successPath 成功跳转的路径
+   * @param {Sting} errorPath 失败跳转的路径
+   * @param {Function} failCb 失败后的回调
+   */
+  handleNewpage(flag, successPath, errorPath, failCb) {
+    if (flag) {
+      tools.goNewPage(successPath);
+    } else {
+      if (typeof errorPath === "string") {
+        tools.goNewPage(errorPath);
+      }
+      if (typeof errorPath === "function") {
+        failCb = errorPath;
+        failCb.call(this);
+      }
+    }
+  }
+
+  onLoad() {
+    tools.checkVaildCard(this)
+  }
+
+  onShow() {
+    this.setData({
+      'hasNewMsg': tools.cacheGlobalData("hasNewMsg")
+    })
+    console.log(this.hasNewMsg, '私信数据')
+    //移除之前的验证注册缓存
+    tools.cacheGlobalData("check-register", null);
+    console.log(wepy.$instance.globalData["check-register"], "全局数据");
+    this.getCard();
+  }
+
+  async getCard() {
+    var vm = this;
+    vm.isWait = true;
+    var userInfo = await core.getUserInfo();
+
+    //mark down the user ID for favorite activity
+    vm.userId = userInfo.Id;
+
+    //获取权限表aid
+    var aid = await core.getAid();
+
+    http
+      .post(addr.GetMyCard, {
+        appid: app.globalData.appid,
+        myuserid: userInfo.Id,
+        userid: userInfo.Id,
+        aid: aid,
+        sessionKey: userInfo.loginSessionKey
+      })
+      .then(async res => {
+        console.log(res);
+        var json = res.dataObj;
+        vm.avatorUrl = json.ImgUrl;
+        vm.nickName = json.Name;
+        vm.cardId = json.Id;
+        vm.HiddenPhone = json.HiddenPhone;
+        vm.NewData = json.NewData;
+        vm.phone = json.Phone;
+        console.log(vm.phone, "判断注册会员的依据");
+        vm.isPerfect = json.Address ? true : false;
+        await this.checkStoreExist();
+      });
+  }
+
+  onHide() {
+    this.registerTips = false;
+  }
+
+  computed = {
+    showPhone() {
+      return this.phone
+        ? this.HiddenPhone == -1 ? this.encrypt(this.phone) : this.phone
+        : false;
+    }
+  };
+
+  encrypt(val) {
+    var valList = String(val).split(""),
+      cryptIndexs = [3, 4, 5, 6],
+      i = 0,
+      index;
+    while ((index = cryptIndexs[i++])) {
+      valList[index] = "*";
+    }
+    return valList.join("");
+  }
+
+  async checkStoreExist() {
+    var vm = this;
+    var result = await core.getStoreDetail({
+      myCardId: this.cardId,
+      type: 1
+    });
+    console.log(result);
+    if (!result.isok && result.Msg == "店铺不存在") {
+      vm.isNotShopExist = true;
+    }
+    vm.isWait = false;
+    vm.$apply();
+  }
+}
+</script>

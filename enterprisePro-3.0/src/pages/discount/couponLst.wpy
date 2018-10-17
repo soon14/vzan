@@ -1,0 +1,114 @@
+<style lang="less">
+    .cpl-head {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        background: #fff;
+        font-size: 32rpx;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5;
+    }
+    .cpl-btn {
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        text-align: center;
+        color: #fff;
+        font-size: 28rpx;
+        height: 80rpx;
+        line-height: 80rpx;
+    }
+</style>
+<template>
+    <view class="{{currentSkin}}">
+        <view class="cpl-head f fc fsa">
+            <repeat for="{{couponState}}">
+                <view class="{{item.value==vmMycoupon.state?'skin-bfoot':''}}" @tap="change({{index}})">{{item.name}}</view>
+            </repeat>
+        </view>
+        <view style="height:100rpx;"></view>
+        <repeat>
+            <comCoup :vm.sync="vmMycoupon" @useCoupon.user="useCoupon"></comCoup>
+        </repeat>
+        <view style="height:100rpx;"></view>
+        <navigator open-type='navigate' hover-class='none' class='skin_bg cpl-btn' url='/pages/discount/couponCenter'>领券中心</navigator>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import com_coup from "../../components/com_coup"
+    import {
+        core,
+        tools
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class couponLst extends wepy.page {
+        config = {
+            navigationBarTitleText: "我的优惠券",
+            enablePullDownRefresh: true,
+        };
+        components = {
+            comCoup: com_coup
+        };
+        data = {
+            currentSkin: {},
+            couponState: [{
+                    name: "未使用",
+                    value: 0,
+                    sel: true
+                },
+                {
+                    name: "已使用",
+                    value: 1,
+                    sel: false
+                },
+                {
+                    name: "已过期",
+                    value: 2,
+                    sel: false
+                }
+            ],
+            vmMycoupon: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 10,
+                state: 0,
+                goodsId: "",
+                goodsInfo: "",
+                listname: "mycoupon",
+            },
+        }
+        methods = {
+            change(index) {
+                this.vmMycoupon = tools.resetArray(this.vmMycoupon)
+                this.vmMycoupon.state = index
+                core.getCoup("", this)
+            },
+            useCoupon() {
+                tools.goLaunch("/pages/index/index")
+            }
+        }
+        async onLoad() {
+            await tools.setPageSkin(this)
+            core.getCoup("", this)
+        }
+        onReachBottom() {
+            core.getCoup("", this)
+        }
+        onPullDownRefresh() {
+            this.vmMycoupon = tools.resetArray(this.vmMycoupon)
+            wx.showNavigationBarLoading()
+            core.getCoup("", this)
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

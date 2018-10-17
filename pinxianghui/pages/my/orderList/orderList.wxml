@@ -1,0 +1,59 @@
+<!--pages/my/orderList/orderList.wxml-->
+<!-- 头部 -->
+<view class='h100'></view>
+<scroll-view scroll-x class='header fnw w-full'>
+  <view class='fnw c t32'>
+    <block wx:for="{{header}}">
+      <text class="{{headerType==index?'h_choose':'c666'}} ml40 fs" id="{{index}}" data-id="{{item.id}}" data-state='{{item.state}}' data-groupState='{{item.groupState}}' data-commentState='{{item.commentState}}' bindtap='changeType'>{{item.content}}</text>
+    </block>
+  </view>
+</scroll-view>
+
+<!-- 订单列表 -->
+<view class='f-cc mt250' wx:if="{{orderList.length==0}}">
+  <image src='/image/emptybg.png' class='w450 mb36' mode='widthFix'></image>
+  <text class='ccc t30'>没有相关数据哦</text>
+</view>
+<view wx:else>
+  <block wx:for="{{orderList}}" wx:if="{{item.groupDetail}}">
+    <!-- 店铺 -->
+    <view class='h88 mt10 bgcfff fsb padl20 bg_bottom_line'>
+      <view class='f'>
+        <image src='{{item.storeInfo.logo}}' class='w44h44 mr10' mode='aspectFill'></image>
+        <text class='t30 c333'>{{item.storeInfo.storeName}}</text>
+      </view>
+      <text class='cf0033 t28'>{{item.orderDetail.lastState}}</text>
+    </view>
+    <!-- 商品 -->
+    <view class='h220 f padl20 bgcfff c bg_bottom_line' data-orderid='{{item.orderDetail.id}}' data-storeid='{{item.goods.storeId}}' bindtap='orderinfo_nt'>
+      <image src='{{item.goods.img}}' class='w180h180 mr20' mode='aspectFill'></image>
+      <view class='f-c jsb f1 w-full h170'>
+        <text class='t28 c333 f-B l28 vertical-2 mb10 l40'>{{item.goods.name}}</text>
+        <view>
+          <text class='c666 t22' wx:if="{{item.specification}}">{{item.specification.name}}</text>
+          <view class='fsb'>
+            <text class='cf0033 f-B t26'>￥{{item.specification.price/100 || item.goods.priceStr}}</text>
+            <text class='c666 t26'>x{{item.orderDetail.count}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class='f fe pt20 bgcfff c1212 t26 pr20'>实付￥{{item.orderDetail.moneyStr}}</view>
+    <!-- 底部按钮 -->
+    <view class='f c fe padl20 bgcfff h94'>
+      <view class='f'>
+        <!-- <button class='btn-1 btn_css btn_css_2' wx:if="{{item.orderDetail.state>1}}">查看物流</button> -->
+        <!-- <button class='btn-1 btn_css btn_css_2 ml20' wx:if="{{item.orderDetail.state==4}}">删除订单</button> -->
+        <view wx:if="{{item.orderDetail.payState!=0}}">
+          <view class='f'>
+            <!-- <button class='btn-1 btn_css btn_css_2 ml20' data-groupid='{{item.groupDetail.id}}' data-storeid='{{item.goods.storeId}}' bindtap='pintuaninfo_nt'>拼团详情</button>  -->
+            <button class='btn-1 btn_css btn_css_2 ml20' data-orderid='{{item.orderDetail.id}}' data-storeid='{{item.goods.storeId}}' bindtap='orderinfo_nt'>订单详情</button>
+          </view>
+        </view>
+        <button class='btn-1 btn_css btn_css_2 ml20' wx:if="{{item.orderDetail.state==2||item.orderDetail.state==3}}" data-storeid='{{item.goods.storeId}}' data-orderid='{{item.orderDetail.id}}' bindtap='confirm_getGood'>确认收货</button>
+        <button class='btn-1 btn_css btn_css_1 ml20' wx:if="{{item.groupDetail.state==0&&item.orderDetail.payState==1&&item.orderDetail.state>0}}" data-groupid='{{item.groupDetail.id}}' data-storeid='{{item.goods.storeId}}' bindtap='pintuaninfo_nt'>邀请好友</button>
+        <button class='btn-1 btn_css btn_css_1 ml20' wx:if="{{item.orderDetail.payState==0&&item.orderDetail.state>-1}}" data-orderid='{{item.orderDetail.id}}' data-storeid='{{item.goods.storeId}}' bindtap='payinfo_nt'>去支付</button>
+      </view>
+    </view>
+  </block>
+</view>

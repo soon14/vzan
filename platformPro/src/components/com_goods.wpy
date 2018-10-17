@@ -1,0 +1,73 @@
+<style lang="less">
+    .optimizing-mall {
+        //height: 100vh;
+        //background-color: #fff;
+        border-top: 1px solid #eee;
+        .goods-item {
+            width: 100%;
+            border-bottom: 1px solid #eee;
+            padding: 30rpx 30rpx 30rpx 0rpx;
+            .goods-pto {
+                &>image {
+                    width: 224rpx;
+                    height: 232rpx;
+                    background-color: #ccc;
+                }
+            }
+        }
+        .goods-item:last-child {
+            border: none;
+        } 
+    }
+</style>
+<template leng="wxml">
+    <view class="optimizing-mall bg-w pl30">
+        <repeat for="{{comGoodsList}}" key="index"> 
+            <view class="goods-item f " @tap="jumpGoodsDetail({{index}})">
+                <view class="goods-pto mr30">
+                    <image class="fs" src="{{item.Img}}" mode="aspectFill"></image>
+                </view>
+                <view class="goods-info w-full f fv fj">
+                    <view class="line line2 c333 f26">{{item.Name}}</view>
+                    <view>
+                        <view class="colorFF6F30 f30 t-b">￥{{item.Price}}<text class="f22" wx:if="{{item.Unit!=''}}">/{{item.Unit}}</text></view>
+                        <view class="f20 c666 mt8">已售 {{item.VirtualSalesCount+item.SalesCount}}</view>
+                    </view>
+                </view>
+            </view>
+        </repeat>
+        <view wx:if="{{isEmpty}}" style="width:100%;height:400rpx;line-height:400rpx;background-color:#f7f7f7;text-align">暂无内容</view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    export default class com_goods extends wepy.component {
+        props = {
+            comGoodsList: {
+                type: Array,
+                default: [],
+            },
+            onClickGoodsItem: {
+                type: String,
+                default: "",
+            },
+            isEmpty:{
+                type:Boolean,
+                default:false,
+            }
+        };
+        methods = {
+            jumpGoodsDetail(index) {
+                // tools.goNewPage("/pages/selected/goods-details/index");
+                let parent = this.$parent || null;
+                let goodsId = this.comGoodsList[index].Id;
+                this.onClickGoodsItem && typeof parent[this.onClickGoodsItem] === "function" && parent[this.onClickGoodsItem](goodsId);
+            }
+        }
+    }
+</script>

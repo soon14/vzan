@@ -1,0 +1,92 @@
+<!--pages/restaurant/restaurant-invoice/index.wxml-->
+<view class="flexC invoice-content" wx:if="{{this_show_type==0}}">
+
+  <view class="sub">
+    <!-- 没有收货 -->
+    <view class="noInvoiceMsg" wx:if="{{this_address_data==null}}">
+      <view class="tc">
+        <view class="noInvoice-ico green">
+          <text class="iconfont icon-locationfill"></text>
+        </view>
+        <view>没有收货地址</view>
+        <view class="f10">点击下方按钮新增</view>
+      </view>
+    </view>
+    <!-- 发票信息 -->
+    <radio-group>
+      <view>
+        <view class="mt10 mb5 ml15">收货地址</view>
+        <block wx:for="{{this_address_data}}">
+          <view class="invoice-item gridXb flex">
+            <label class="sub flex" bindtap="select_fapiao_bind" data-id="{{item.id}}">
+              <radio name="fapiao_id" class="mr5" wx:if="{{isUserSetting==0}}"></radio>
+              <view class="sub mr10">
+                <view class="lineText">
+                  <text>{{item.consignee}}</text>
+                  <text class="ml5">{{item.u_sex==1?'先生':'女士'}}</text>
+                  <text class="ml5">{{item.mobile}}</text>
+                </view>
+                <view class="grey f12">{{item.address}}{{item.buchong}}</view>
+              </view>
+            </label>
+            <view class="bianji" bindtap="fapiao_edit_bind" id="{{item.id}}">
+              <text class="iconfont icon-write grey"></text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </radio-group>
+  </view>
+  <view class='fapiao_add_bind'>
+    <button class="green addAdress f16" style='background-color:#E03029' data-id='0' bindtap="fapiao_add_bind">手动添加</button>
+    <button class="green addAdress f16" style='background-color:#0FC317' data-id='1' bindtap="fapiao_add_bind">微信添加</button>
+  </view>
+</view>
+
+<form bindsubmit="fapiao_formSubmit" report-submit="true">
+  <view wx:if="{{this_show_type==1}}">
+    <view class="flex invoice-item gridXb mt10">
+      <view class="adress-leftTit">联系人</view>
+      <view class="sub ml15">
+        <view class="gridXb mb10">
+          <input name="consignee" class="add-userName" placeholder="姓名" placeholder-class="grey" value="{{this_fapiao_info?this_fapiao_info.consignee:''}}" maxlength='5'></input>
+        </view>
+        <view>
+          <text bindtap="chang_fapiao_leixing_bind" class="title-tag {{this_fapiao_leixing==1?'green':'grey'}}">先生</text>
+          <text bindtap="chang_fapiao_leixing_bind" class="title-tag {{this_fapiao_leixing==2?'green':'grey'}}">女士</text>
+        </view>
+      </view>
+    </view>
+    <view class="flex invoice-item gridXb">
+      <view>电 话</view>
+      <view class="sub ml10">
+        <input type="number" name="mobile" placeholder="手机号码" value="{{this_fapiao_info?this_fapiao_info.mobile:''}}"></input>
+      </view>
+    </view>
+    <view class="flex invoice-item gridXb" bindtap="choose_addresss_bind">
+      <view>地 址</view>
+      <view class="sub ml10 arrowR right-more grey">
+        {{this_address_str}}
+        <input name="address" style="display:none" value="{{this_address_str}}"></input>
+        <input name="u_lat" style="display:none" value="{{this_u_lat}}"></input>
+        <input name="u_lng" style="display:none" value="{{this_u_lng}}"></input>
+      </view>
+    </view>
+    <view class="flex invoice-item gridXb">
+      <view class="ads-detailTit">补充说明</view>
+      <view class="sub ml15">
+        <view class="gridXb mb10">
+          <textarea class="add-detailAds" name="buchong" placeholder="详细地址（如门牌号）" placeholder-class="grey" placeholder-style='line-height:78rpx;' value="{{this_fapiao_info?this_fapiao_info.buchong:''}}"></textarea>
+        </view>
+      </view>
+    </view>
+
+    <view class="flex btn-box">
+      <button class="sub f16" type="warn" bindtap="quxiao_add_bind">取消</button>
+      <block wx:if="{{this_edit_type == 'edit'}}">
+        <button class="sub f16" type="warn" bindtap="delete_fapiao_bind">删除</button>
+      </block>
+      <button class="sub f16" type="primary" formType="submit">保存</button>
+    </view>
+  </view>
+</form>

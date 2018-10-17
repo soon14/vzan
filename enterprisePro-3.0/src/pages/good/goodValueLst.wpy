@@ -1,0 +1,293 @@
+<style lang="less">
+  .v-sel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #fff;
+    width: 100%;
+    height: 88rpx;
+    line-height: 88rpx;
+    font-size: 32rpx;
+    .v-head {
+      width: 50%;
+      text-align: center;
+    }
+  }
+  .v-main {
+    width: 100%;
+    padding: 10rpx 0;
+    .v-item {
+      background: #fff;
+      padding: 20rpx;
+      margin-bottom: 20rpx;
+    }
+    .v-user {
+      image {
+        width: 60rpx;
+        height: 60rpx;
+        border-radius: 50%;
+      }
+    }
+    .v-pro {
+      width: 100%;
+      height: 150rpx;
+      background: #f8f8f8;
+      margin-top: 30rpx;
+      image {
+        width: 150rpx;
+        height: 150rpx;
+      }
+    }
+    .v-comImg {
+      width: 230rpx;
+      height: 230rpx;
+      margin-right: 5rpx;
+      margin-bottom: 20rpx;
+    }
+    .v-like {
+      width: 150rpx;
+      height: 50rpx;
+      line-height: 50rpx;
+    }
+    .bd-f5 {
+      border: 1px solid #c6c8cc;
+    }
+    .c6c6 {
+      color: #C6C8CC
+    }
+    .v-replay{
+      padding:30rpx 0;
+      font-size:30rpx;
+      color:#999;
+    }
+  }
+  .bd-f1 {
+    border-bottom: 1px solid #f1f1f1;
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="{{currentSkin}}">
+    <view class="v-sel f">
+      <repeat for="{{sel}}">
+        <view class="v-head {{item.id==currentId?'skin-bfoot':'bd-f1'}}" @tap="selChange({{item.id}})">{{item.name}}</view>
+      </repeat>
+    </view>
+    <view style="height:88rpx"></view>
+    <view class="v-main" wx:if="{{vm.list[1].length!=0}}">
+      <repeat for="{{vm.list}}" item="_g">
+        <repeat for="{{_g}}">
+          <view class="v-item" wx:if="{{item.Hidden==false}}">
+            <view class="v-user f fc f1">
+              <image mode="aspectFill" src="{{item.HeadImgUrl||'http://j.vzan.cc/content/city/images/voucher/10.jpg'}}" />
+              <text class="ml20 f30" wx:if="{{item.Anonymous==false}}">{{item.NickName||''}}</text>
+              <text class="ml20 f30" wx:else>匿名</text>
+            </view>
+            <view class="f fc c999 f24" style="margin:30rpx 0">
+              <text>{{item.AddTimeStr}}</text>
+              <text class="ml10 line line1">{{item.GoodsSpecification}}</text>
+            </view>
+            <view class="f30" style="margin-bottom:20rpx;">{{item.Comment}}</view>
+            <view class="w-100 f fw" wx:if="{{item.CommentImgs.length}}">
+              <repeat for="{{item.CommentImgs}}" item="_img">
+                <image class="v-comImg" mode="aspectFill" src="{{_img.filepath}}" @tap="showimg({{item.CommentImgs}},{{index}})" />
+              </repeat>
+            </view>
+            <view class="v-pro f" @tap="pathPro({{item.GoodsId}},{{item.Type}})">
+              <image mode="aspectFill" src="{{item.GoodsImg}}"  />
+              <view class="ml20 f1 fv f fj ph10">
+                <text class="f30 line line1">{{item.GoodsName}}</text>
+                <view class="f fc skin_txt">
+                  <text class="f30">￥{{item.GoodsPrice}}</text>
+                  <text class="f24 ml20">{{item.PraiseStr}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="v-replay" wx:if="{{item.Replay!=null}}">掌柜回复:  {{item.Replay}}</view>
+            <view class="w-100 f f-end {{item.Replay!=null?'':'mt30'}}">
+              <view class="f fc fc-h v-like {{item.UserPoints?'skin-br':'bd-f5'}}" @tap="getPoint({{item.Id}})">
+                <view class="dzicon icon-dianzan_love f42 {{item.UserPoints?'skin_txt':'c6c6'}}" />
+                <view class="f24 {{item.UserPoints?'skin_txt':'c6c6'}}">{{item.Points}}</view>
+              </view>
+            </view>
+          </view>
+        </repeat>
+      </repeat>
+    </view>
+    <wxc-abnor type="DATA" wx:else></wxc-abnor>
+    <view class="loding w-100 f fc-h" style="padding:30rpx 0" wx:if="{{vm.showloading&&vm.loadall==false}}">
+      <text class="loading-icon"></text>
+      <text class="c999 f26 ml20">正在加载中...</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools
+  } from "../../lib/core";
+  import _get from "../../lib/lodash.get.js"
+  //第一步： 引入组件文件
+  export default class goodValueLst extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index",
+        'wxc-abnor': '../../packages/@minui/wxc-abnor/dist/index',
+      },
+    };
+    //第二步：声明组件
+    components = {};
+    props = {};
+    data = {
+      sel: [{
+        id: -1,
+        name: "全部",
+      }, {
+        id: 1,
+        name: "有图",
+      }],
+      currentSkin: {},
+      vm: {
+        pageindex: 1,
+        pagesize: 10,
+        ispost: false,
+        loadall: false,
+        list: [],
+        sel: -1,
+        goodsid: 0,
+        showloading: false
+      },
+      currentId: -1,
+      showpoint: false
+    };
+    computed = {};
+    methods = {
+      pathPro(id, type) {
+        switch (type) {
+          // 普通
+          case 0:
+            tools.pathGood(id, "buy", true)
+            break;
+              case 1:
+            tools.goNewPage("/pages/group2/group2?id=" + id)
+            break;
+            //砍价
+          case 2:
+            tools.goNewPage("/pages/bargain/bargain?id=" + id)
+            break;
+           case 3:
+            tools.goNewPage("/pages/group/group?id=" + id)
+            break;
+        }
+      },
+      showimg(item, index) {
+        let img = item[index].filepath
+        let array = []
+        for (let i = 0, len = item.length; i < len; i++) {
+          array.push(item[i].filepath)
+        }
+        tools.preViewShow(img, array)
+      },
+      async getPoint(id) {
+        let state = 0
+        let point = await core.pointValue(id)
+        if (point.isok) {
+          let vm = await tools.resetArray(this.vm)
+          if (this.type == 'user') {
+            await this.valueInfo(vm)
+          } else {
+            await this.goodValue(vm, this.goodsid)
+          }
+        }
+      },
+      async selChange(id) {
+        if (this.currentId != id) {
+          await tools.showLoading()
+          let vm = await tools.resetArray(this.vm)
+          vm.sel = id
+          if (this.type == 'user') {
+            await this.valueInfo(vm)
+          } else {
+            await this.goodValue(vm, this.goodsid)
+          }
+          await tools.onPageScroll()
+          this.currentId = Number(id)
+          this.$apply()
+          wx.hideLoading()
+        }
+      }
+    }
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      let type = _get(options, "type", '')
+      let goodsid = _get(options, "id", 0)
+      if (type == 'user') {
+        await this.valueInfo(this.vm)
+      } else {
+        await this.goodValue(this.vm, goodsid)
+      }
+      this.goodsid = goodsid
+      this.type = type
+      this.$apply()
+    }
+    async valueInfo(vm) {
+      await tools.setPageTitle("我的评价")
+      if (vm.ispost || vm.loadall)
+        return
+      if (!vm.ispost)
+        vm.ispost = true
+      let _g = await core.getGoodsValue(vm)
+      if (_g.isok) {
+        let obj = _g.dataObj
+        vm.ispost = false
+        vm.count = _g.dataObj.count
+        for (let i = 0, len = obj.list.length; i < len; i++) {
+          obj.list[i].GoodsPrice = parseFloat(obj.list[i].GoodsPrice.div(100)).toFixed(2)
+        }
+        vm.list[vm.pageindex] = obj.list
+        obj.list.length < vm.pagesize ? vm.loadall = true : vm.pageindex += 1
+        this.vm = vm
+        this.$apply()
+      } else {
+        tools.showModal(_g.Msg,false)
+      }
+    }
+    async goodValue(vm, goodsid) {
+      await tools.setPageTitle("商品评价")
+      vm.goodsid = goodsid
+      if (vm.ispost || vm.loadall)
+        return
+      if (!vm.ispost)
+        vm.ispost = true
+      let _g = await core.getShowGoodValue(vm)
+      if (_g.isok) {
+        let obj = _g.dataObj
+        vm.ispost = false
+        vm.count = _g.dataObj.count
+        for (let i = 0, len = obj.list.length; i < len; i++) {
+          obj.list[i].GoodsPrice = parseFloat(obj.list[i].GoodsPrice.div(100)).toFixed(2)
+        }
+        vm.list[vm.pageindex] = obj.list
+        obj.list.length < vm.pagesize ? vm.loadall = true : vm.pageindex += 1
+        this.vm = vm
+        this.$apply()
+      } else {
+        tools.showModal(_g.Msg,false)
+      }
+    }
+    async onReachBottom() {
+      this.vm.showloading = true
+      if (this.type == 'user') {
+        await this.valueInfo(this.vm)
+      } else {
+        await this.goodValue(this.vm, this.goodsid)
+      }
+      this.vm.showloading = false
+      this.$apply()
+    }
+  }
+</script>

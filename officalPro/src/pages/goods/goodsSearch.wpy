@@ -1,0 +1,184 @@
+<style lang="less">
+    .goods {
+        width: 100%;
+        .search {
+            z-index: 2;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            padding: 0 30rpx;
+            background: #fff;
+            >input {
+                height: 80rpx;
+                background: #eee;
+                padding: 0 20rpx;
+            }
+            >view {
+                color: #a1a2a3;
+                background: #eee;
+                width: 80rpx;
+                height: 80rpx;
+                text-align: center;
+                line-height: 80rpx;
+            }
+            >text {
+                color: #a1a2a3;
+                background: #eee;
+                width: 120rpx;
+                height: 80rpx;
+                text-align: center;
+                line-height: 80rpx;
+            }
+        }
+        .his-title {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            padding: 0 30rpx;
+        }
+        .history {
+            width: 100%;
+            padding-left: 30rpx;
+            >text {
+                padding: 10rpx;
+                background: #eee;
+                font-size: 26rpx;
+                margin-right: 30rpx;
+                margin-bottom: 20rpx;
+                flex-shrink: 0;
+            }
+        }
+        .nomore {
+            width: 100%;
+            text-align: center;
+            height: 70vh;
+            line-height: 70vh;
+            color: #a1a2a3;
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="goods">
+        <view class='search f fc'>
+            <input class="f1" placeholder='请输入关键字' value="{{vm.search}}" placeholder-style='color:#a1a2a3;font-size:26rpx' @input="search"  @confirm="goConfirm" confirm-type="搜索" type="text" />
+            <view class='dzicon icon-guanbi f26' wx:if="{{vm.search}}" @tap.stop="clear" />
+            <text wx:if="{{vm.search}}" @tap="goConfirm">搜索</text>
+        </view>
+        <view style='height:90rpx;' />
+        <view class="his-title f fc fj" wx:if="{{search.length&&vm.list.length==0}}">
+            <text>搜索记录</text>
+            <view class="f fc" @tap="clearStorage">
+                <text class="dzicon icon-lajixiang f30" style="color:#a1a2a3;" />
+                <text class="f24 c666 ml10">清空</text>
+            </view>
+        </view>
+        <view class="history f fc fw" wx:if="{{search.length&&vm.list.length==0}}">
+            <repeat for="{{search}}">
+                <text @tap="selHistory({{item}})">{{item}}</text>
+            </repeat>
+        </view>
+        <repeat>
+            <comGoodLst :vm.sync="vm" :false.sync='false' :true.sync="true" />
+        </repeat>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_goodlst from "@/components/com_goodLst";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class goodsSearch extends wepy.page {
+        config = {
+            navigationBarTitleText: "搜索",
+             navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+            }
+        };
+        components = {
+            comGoodLst: com_goodlst
+        };
+        data = {
+            vm: {
+                ids: "",
+                list: [],
+                search: "",
+                pricesort: "",
+                isFirstType: "",
+                saleCountSort: "",
+                pageindex: 1,
+                pagesize: 10,
+                ispost: false,
+                loadall: false,
+                noGoodlst: false,
+            },
+            _sarray: [],
+            search: [],
+        }
+        methods = {
+            //重新输入
+            clear() {
+                let _his = wx.getStorageSync('search')
+                this.vm = tools.resetArray(this.vm)
+                if (_his == '') {
+                    core.GetGoodsList(this.vm, this)
+                }
+                this.vm.loadall = true
+                this.search = _his
+                this.$apply()
+            },
+            //清除缓存
+            clearStorage() {
+                this.search = []
+                this.$apply()
+                wx.clearStorage()
+            },
+            //选择历史记录
+            selHistory(item) {
+                this.vm = tools.resetArray(this.vm)
+                this.vm.search = item
+                core.GetGoodsList(this.vm, this)
+                this.$apply()
+            },
+            search(e) {
+                let search = e.detail.value
+                this.vm.search = search
+                this.$apply()
+            },
+            goConfirm() {
+                let _v = this.vm
+                _v.list = []
+                _v.pageindex = 1
+                _v.pagesize = 10
+                _v.loadall = false
+                _v.ispost = false
+                core.GetGoodsList(_v, this)
+                this._sarray.push(_v.search)
+                this.$apply()
+                wx.setStorageSync("search", this._sarray)
+            }
+        }
+        onLoad() {
+            let _v = wx.getStorageSync("search")
+            if (_v == '') {
+                core.GetGoodsList(this.vm, this)
+            }else{
+                  this.vm.loadall = true
+            }
+            this.search = _v
+            this.$apply()
+        }
+        onReachBottom() {
+            core.GetGoodsList(this.vm, this)
+        }
+    }
+</script>

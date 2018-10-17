@@ -1,0 +1,75 @@
+<style lang="less">
+view {
+  box-sizing: border-box;
+}
+page{background-color:#f7faf8;}
+.set-box{
+    .set{
+        padding: 0 30rpx;
+        image{
+            width:16rpx;
+            height:28rpx;
+        }
+    }
+}
+</style> 
+
+<template >
+    <view class="set-box mt20">
+        <view class="set h100 bg-w f fc fj cb2" @tap="gotoDetails">
+            <view class="f28" wx:if="{{!isPhone}}">绑定手机号</view>
+            <view class="f28"  wx:if="{{isPhone}}">{{phone}}</view>
+            <view class="f fc">
+                <text class="c-9ba9cd mr20" wx:if="{{isPhone}}">修改</text>
+                <view class="dzicon icon-jiantou c-c6c8cc f50"></view>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+import wepy from 'wepy';
+import { core, http } from "../lib/core";
+import addr from "../lib/addr";
+export default class setting extends wepy.page {
+    config = {
+        navigationBarTitleText:"设置",
+    };
+
+    data = {
+        phone:"",
+        isPhone:false,
+    };
+    methods = {
+        gotoDetails:function () {
+            wx.navigateTo({
+                url: 'setDetails',
+            })
+        }
+    };
+
+    events = {};
+    onLoad() {
+        this.checkBindPhone();
+    };
+    async checkBindPhone(){
+        var app = wepy.$instance;
+        var user = await core.getUserInfo();
+        core.loading();
+        http.post(addr.GetCityStoreUserPhone,{
+            appId:app.globalData.appid,
+            userId:user.userid,
+        }).then(data=>{
+            wx.hideLoading();
+            //console,log(data)
+            if(data.isok){
+                this.phone  = data.dataObj.phone;
+                this.isPhone =data.dataObj.phone!=''?true:false;
+            }else{
+                core.showModal(dara.Msg)
+            }
+            this.$apply();
+        })
+    }
+}
+</script>

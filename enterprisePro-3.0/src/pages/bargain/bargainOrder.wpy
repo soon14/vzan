@@ -1,0 +1,312 @@
+<style lang="less">
+    .g-address {
+        width: 100%;
+        height: 250rpx;
+        color: #fff;
+        padding: 0 20rpx;
+    }
+    .g-goods {
+        width: 100%;
+        background: #fff;
+        .g-total {
+            height: 105rpx;
+            border-bottom: 1px solid #f5f5f5;
+            margin: 0 20rpx;
+        }
+    }
+    .p-price {
+        color: #ff4422;
+    }
+    .g-mode {
+        width: 100%;
+        background: #fff;
+        margin-top: 20rpx;
+        .g-dis {
+            height: 100rpxx;
+            line-height: 100rpx;
+            border-bottom: 1px solid #f5f5f5;
+            padding: 0 20rpx;
+        }
+    }
+    .g-add::before {
+        font-size: 28rpx;
+        content: "+";
+    }
+    .g-less::before {
+        font-size: 28rpx;
+        content: "-";
+    }
+    .pay-btn {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        z-index: 3;
+        background: #fff;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+    }
+    .pay-button {
+        width: 300rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+        text-align: center;
+        color: #fff;
+        font-size: 36rpx;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='{{currentSkin}}'>
+        <!-- address -->
+        <view class="g-address f fv fc-h skin_bg" @tap="addressModel">
+            <view class='w-100 f fc fj f32'>
+                <view class="f fc fj">
+                    <text>收货人：{{vm_goods.address.userName}}</text>
+                    <text>{{vm_goods.address.telNumber}}</text>
+                </view>
+                <view class='dzicon icon-jiantou f50 ml20'></view>
+            </view>
+            <view class='mt20' wx:if="{{vm_goods.address!=''}}">{{vm_goods.address.provinceName}}{{vm_goods.address.cityName}}{{vm_goods.address.countyName}}{{vm_goods.address.detailInfo}}</view>
+        </view>
+        <view class="g-goods">
+            <view class="g-total f fc fj">
+                <text class='f30'>购物清单</text>
+                <view>
+                    <text class='c666'>共{{vm_goods.totalCount}}件</text>
+                    <text class='c666 ml10'>小计</text>
+                    <wxc-price class="p-price f32">{{vm_goods.totalPrice}}</wxc-price>
+                </view>
+            </view>
+            <repeat>
+                <comItem :currentCom.sync="vm_goods.list"></comItem>
+            </repeat>
+        </view>
+        <!-- 选项 -->
+        <view class="g-mode">
+            <view class="g-dis f fc fj">
+                <text class="f32">配送方式</text>
+                <text class="c666 mr20">商家配送</text>
+            </view>
+            <view class="g-dis f fc fj">
+                <text class="f32">支付方式</text>
+                <picker value="{{payIndex}}" range="{{vm_goods.payArray}}" @change="payMode">
+                    <view class='f fc c666'>
+                        <text>当前选择:{{vm_goods.payArray[payIndex]}}</text>
+                        <text class='dzicon icon-jiantou f50'></text>
+                    </view>
+                </picker>
+            </view>
+            <view class="g-dis f fc fj">
+                <text class="f32">留言说明</text>
+                <input class="ml20 f1 c666 tr" placeholder="注意防摔、尽快发货" @input="setMess" value='{{vm_goods.message}}' />
+            </view>
+        </view>
+        <view class="g-mode">
+            <view class="g-dis f fc fj">
+                <text class="f32">商品总额</text>
+                <wxc-price class="c666 f32 g-add">{{vm_goods.originalPrice}}</wxc-price>
+            </view>
+            <view class="g-dis f fc fj" wx:if="{{barShow==false}}">
+                <text class="f32">折扣优惠</text>
+                <wxc-price class="c666 f32 g-less">{{vm_goods.lessPrice}}</wxc-price>
+            </view>
+            <view class="g-dis f fc fj">
+                <text class="f32">快递运费</text>
+                <wxc-price class="c666 f32 g-add">{{vm_goods.fee}}</wxc-price>
+            </view>
+        </view>
+        <!-- 底部按钮 -->
+        <view style="height:150rpx;width:100%;"></view>
+        <view class="pay-btn f fc fj">
+            <view class="ml20">
+                <text class='f30'>应付：</text>
+                <wxc-price class="p-price f32">{{vm_goods.totalPrice}}</wxc-price>
+            </view>
+            <!-- 提交模拟formId -->
+            <form @submit="payRequest('1')" report-submit="true">
+                <button class="pay-button skin_bg" formType="submit">{{vm_goods.payArray[payIndex]}}</button>
+            </form>
+        </view>
+    </view>
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import com_goodItem from "../../components/com_goodItem";
+    import {
+        core,
+        pay,
+        tools,
+    } from "../../lib/core";
+    import _get from "../../lib/lodash.get.js"
+    // import
+    //第一步： 引入组件文件
+    export default class bargainOrder extends wepy.page {
+        config = {
+            navigationBarTitleText: "订单确认",
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index"
+            }
+        };
+        //第二步：声明组件
+        components = {
+            comItem: com_goodItem,
+        };
+        //mixins = [Enterprise];
+        data = {
+            currentSkin: {},
+            vm_goods: {},
+            payIndex: 0, //1微信支付,2储值支付
+            goIndex: 0,
+            toast: {},
+            _index: -1,
+        };
+        computed = {};
+        methods = {
+            /************************************订单页事件**************************************************/
+            // 选择支付方式
+            payMode(e) {
+                this.payIndex = Number(e.detail.value);
+            },
+            // 选择配送模式
+            async addressModel() {
+                let addInfo = await tools.chooseAddress()
+                if (addInfo.errMsg == "chooseAddress:fail auth deny") {
+                    await tools.showModal("授权后才可使用,请点击右上角‘关于小程序’进行相关设置", false)
+                } else {
+                    if (addInfo.errMsg === 'chooseAddress:fail cancel') {
+                        return;
+                    }
+                    this.vm_goods.address = addInfo
+                    this.$apply()
+                    this.feePay(addInfo)
+                }
+            },
+            setMess(e) {
+                this.vm_goods.message = e.detail.value;
+                this.$apply()
+            },
+            // 支付
+            async payRequest(index, e) {
+                let vm_goods = this.vm_goods
+                let address = _get(vm_goods, 'address', '')
+                core.formId(e.detail.formId);
+                let buyMode = this.payIndex + 1;
+                // 砍价
+                if (address) {
+                    if (this._index == index) {
+                        return;
+                    }
+                    if (buyMode == 2) {
+                        let showModal = await tools.showModal("是否使用储值支付")
+                        if (showModal.confirm) {
+                            this.orderInfo(index)
+                        }
+                    } else {
+                        this.orderInfo(index)
+                    }
+                } else {
+                    tools.showModal("请选择地址", false);
+                }
+                this.$apply()
+            },
+        };
+        async onLoad(options, _order) {
+            await tools.setPageSkin(this);
+            this.orderConfig(options, _order)
+        }
+        async orderInfo(index) {
+            wx.showNavigationBarLoading();
+            let vm_goods = this.vm_goods
+            let buyMode = this.payIndex + 1;
+            let vm = {
+                buid: vm_goods.buid,
+                address: JSON.stringify(vm_goods.address),
+                Remark: vm_goods.message,
+                PayType: buyMode
+            };
+            let addBarInfo = await core.addBarOrder(vm)
+            if (addBarInfo.isok) {
+                this.total = vm_goods.totalPrice
+                this.buyMode = buyMode
+                if (vm_goods.totalPrice == '0.00' && typeof(vm_goods.totalPrice) == 'string') {
+                    this.xwPay()
+                    return;
+                }
+                buyMode == 1 ? this.wxPay(addBarInfo) : this.xwPay()
+                this._index = index
+            } else {
+                this._index = -1
+                wx.hideNavigationBarLoading()
+                tools.showModal(addBarInfo.msg, false);
+            }
+        }
+        //页面配置
+        async orderConfig(options, _order) {
+            let carId = 0
+            let _g = _get(_order.preload, "vm_order")
+            _g.address = await core.getAddress(this);
+            _g.message = ""; //初始化获取留言
+            _g.payArray = ["微信支付", "储值支付"]; //支付方式
+            _g.lessPrice = (Number(_g.originalPrice).sub(Number(_g.totalPrice))).toFixed(2); //折扣优惠
+            _g.totalPrice = (Number(_g.totalPrice).add(Number(_g.fee))).toFixed(2)
+            this.vm_goods = _g
+            this.$apply()
+            this.feePay()
+        }
+        // 微信支付
+        async wxPay(data) {
+            let newparam = {
+                orderid: data.orderId,
+                type: 1
+            };
+            this.vm_goods.payMode = "微信支付"
+            let wxpay = await pay.PayOrder(newparam);
+            if (wxpay != '' && wxpay.errMsg.includes("requestPayment:ok")) {
+                tools.loading("支付成功");
+                this.goWhere()
+            } else {
+                await pay.deleteLastFormId()
+                tools.loading("取消支付");
+                setTimeout(() => {
+                    tools.goRedirecto("../bargain/bargainList")
+                }, 1000);
+            }
+        }
+        //储值支付
+        xwPay() {
+            tools.loading("支付成功");
+            this.vm_goods.payMode = "储值支付"
+            this.goWhere()
+        }
+        goWhere() {
+            setTimeout(resTime => {
+                this.$preload('vm_order', this.vm_goods);
+                this.$navigate("../bargain/barSuccess");
+            }, 1000);
+        }
+        //运费
+        async feePay(addInfo) {
+            let g = this.vm_goods
+            let vm = {
+                province: _get(addInfo, 'provinceName', ""),
+                city: _get(addInfo, 'cityName', ""),
+                build: g.buid,
+            }
+            let fee = await core.GetBargainFreightFee(vm)
+            if (fee) {
+                if (fee.canpay) {
+                    this.vm_goods.fee = parseFloat(fee.fee.div(100)).toFixed(2)
+                    this.vm_goods.totalPrice = parseFloat(Number(g.originalPrice).add(Number(this.vm_goods.fee))).toFixed(2)
+                    this.$apply()
+                } else {
+                    tools.showModal("不在配送范围，请重新选择地址", 'false')
+                }
+            }
+        }
+    }
+</script>

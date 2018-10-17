@@ -1,0 +1,430 @@
+<import src="../../../../script/wxParse/wxParse.wxml" />
+<view wx:if="{{!ispost}}" class="main">
+  <view class="f fv main-wrap">
+    <view class="tab f fc">
+      <view class="f1 tab-item " wx:for="{{tab}}" bindtap="changeTab" data-index="{{index}}">
+        <view class="{{index==tabSelectedIndex?'sel':''}}">{{item.name}}</view>
+      </view>
+    </view>
+    <view class="f1 rel" style="overflow-y:scroll;-webkit-overflow-scrolling: touch;height:86vh;">
+      <view class="f1-wrap">
+        <view hidden="{{tabSelectedIndex!==0}}" class="rel" style='height:100%;'>
+          <!--如果开启二级分类-->
+          <view wx:if="{{goodTypes.length>0}}" class="f h-full abs w-full">
+            <view class="level1">
+              <view wx:for="{{goodTypes}}" wx:if="{{item.fId==0}}" class="{{ptypeSelectedId==item.id?'sel':''}}" bindtap="scrollToType" data-id="{{item.id}}">{{item.name}}</view>
+              <view class='h100'></view>
+            </view>
+            <scroll-view scroll-y class="f1 pl20 level2-scroll" scroll-into-view="{{scrollToId}}">
+              <block wx:for="{{goodTypes}}" wx:if="{{item.fId==0}}" wx:for-index="index">
+                <view class="level1-name" id="ptype-{{item.id}}">{{item.name}}</view>
+                <view class="level2">
+                  <view class="{{chileItem.sel?'sel':''}}" wx:for="{{item.children}}" wx:for-item="chileItem" wx:for-index="index2" bindtap="chooseType" data-id="{{chileItem.id}}" data-fid='{{chileItem.fId}}' data-sel="{{chileItem.sel}}">{{chileItem.name}}</view>
+                </view>
+              </block>
+              <view class='h100'></view>
+            </scroll-view>
+          </view>
+
+
+          <view class="edit-list" hidden="{{!show_edit_typelist}}">
+            <view class="bg-w">
+              <view wx:if="{{goodTypes.length>0}}">
+                <view class="f fc fc-h head">
+                  <view class="f1" bindtap="change_edit_type_list" data-type="0">
+                    <text class="{{edit_type_list==0?'sel':''}}">大类</text>
+                  </view>
+                  <view class="f1" bindtap="change_edit_type_list" data-type="1">
+                    <text class="{{edit_type_list==1?'sel':''}}">小类</text>
+                  </view>
+                </view>
+                <!--大类列表-->
+                <view class="" hidden="{{edit_type_list==1}}">
+                  <view class="edit-list-item f fc" wx:for="{{goodTypes}}" wx:if="{{item.fId==0}}">
+                    <view class="f1">{{item.name}}</view>
+                    <view class="f fc">
+                      <view class="edit-list-btn blue" bindtap="del_good_type" data-id="{{item.id}}">删除</view>
+                      <view class="edit-list-btn blue" bindtap="update_good_type" data-id="{{item.id}}" data-name="{{item.name}}" data-fid="{{item.fId}}">修改</view>
+                      <view class="edit-list-btn red" bindtap="add_type" data-id="0" data-name="" data-fid="{{item.id}}">+小类</view>
+                    </view>
+                  </view>
+                </view>
+                <!--小类列表-->
+                <view class="" hidden="{{edit_type_list==0}}">
+                  <block wx:for="{{goodTypes}}" wx:if="{{item1.fId==0}}" wx:for-item="item1" wx:for-index="index1">
+                    <view class="edit-list-item f fc" wx:for="{{item1.children}}" wx:for-item="item2">
+                      <view class="f1">{{item2.name}}</view>
+                      <view class="f fc">
+                        <view class="edit-list-btn blue" bindtap="del_good_type" data-id="{{item2.id}}">删除</view>
+                        <view class="edit-list-btn blue" bindtap="update_good_type" data-id="{{item2.id}}" data-name="{{item2.name}}" data-fid="{{item2.fId}}">修改</view>
+                      </view>
+                    </view>
+                  </block>
+
+                </view>
+              </view>
+
+            </view>
+            <view class="h140" />
+            <view class="f foot-btns z-4">
+              <view class="btn-edit" bindtap="edit_typelist">关闭</view>
+              <view class="f1 btn-ok" bindtap="add_type" wx:if="{{edit_type_list==0}}" data-id="0" data-name="" data-fid="0">
+                <text wx:if="{{goodTypes.length>0}}">新增大类</text>
+                <text wx:else>新增分类</text>
+              </view>
+              <view class="f1 btn-ok" bindtap="add_type" wx:if="{{edit_type_list==1&&goodTypes.length>0}}" data-id="0" data-name="" data-fid="{{firstLevelId}}">新增小类</view>
+            </view>
+          </view>
+          <view class="h140" />
+          <view class="f foot-btns">
+            <!-- <view class="btn-edit" bindtap="edit_typelist">编辑分类</view> -->
+            <view class="f1 btn-ok" bindtap="choose_type_ok">确认选择</view>
+          </view>
+        </view>
+        <!--详情-->
+        <view hidden="{{tabSelectedIndex!==1}}" class="p20 bg-w">
+          <view class="form-label">商品名称</view>
+          <input type="text" class="form-input" value="{{p.name}}" bindinput="input_p_name" maxlength="100" placeholder="请输入产品名称" placeholder-class="ccc" />
+
+          <view class="form-label">商品主图</view>
+          <view class="p-imgs">
+            <!--有图-->
+            <view class="p-img" wx:if="{{p.img}}">
+              <image class="img" src="{{p.img}}" mode="scaleToFill" />
+              <view class="del" bindtap="del_p_img" />
+            </view>
+            <!--无图-->
+            <view class="p-img add" wx:else>
+              <view class="f fc fc-h" bindtap="choose_p_img">
+                <view>
+                  <view class="camera" />
+                  <!-- <view class="f22 c999 mt10">1/1</view> -->
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="form-label">商品轮播图</view>
+          <view class="p-imgs">
+            <view class="p-img" wx:for="{{p.imgAlbumList}}">
+              <image class="img" src="{{item}}" mode="scaleToFill" />
+              <view class="del" bindtap="del_p_slideimg" data-index="{{index}}" />
+            </view>
+
+            <view class="p-img add">
+              <view class="f fc fc-h" bindtap="choose_slideimg">
+                <view>
+                  <view class="camera" />
+                  <view class="f22 c999 mt10">{{p.imgAlbumList.length}}/9</view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+
+          <view class="form-label">商品库存</view>
+          <view class="f fc">
+            <input type="number" value="{{p.stock}}" bindinput="input_p_stock" class="form-input w-small" disabled="{{!p.stockLimit||attrTable_fmt.length>0}}" placeholder="请输入商品库存" placeholder-class="ccc" />
+            <view class="pl20 rel">
+              <checkbox-group>
+                <label>
+                  <checkbox color="#fe536f" checked="{{p.stockLimit}}" /> 限制库存
+                </label>
+              </checkbox-group>
+              <view style="position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;" bindtap="click_p_stockLimit" />
+            </view>
+          </view>
+
+          <view class="form-label">虚拟销量</view>
+          <view class="f fc">
+            <input type="number" class="form-input w-small" value="{{p.virtualSales}}" bindinput="input_p_virtualSalesCount" placeholder="" placeholder-class="ccc" />
+            <view class="pl20">
+              <!-- <view class="ccc">当前实际销量：{{p.salesCount}}</view> -->
+            </view>
+          </view>
+
+          <!-- <view class="form-label">原价</view>
+          <view class="f fc">
+            <input type="digit" class="form-input w-small" value="{{p.originalPrice}}" bindinput="input_p_originalPrice" placeholder="请设置原价" placeholder-class="ccc" />
+
+          </view> -->
+
+          <view class="form-label">商品价格</view>
+          <view class="f fc">
+            <input type="digit" class="form-input w-small" value="{{p.price}}" bindinput="input_p_price" disabled="{{!canSetPrice}}" placeholder="请设置产品价格" placeholder-class="ccc" />
+            <view class="pl20">
+              <view class="btn-set" bindtap="click_set_attr">设置规格</view>
+            </view>
+          </view>
+
+
+
+          <view>
+            <text class="ccc">设置规格时将取规格最小价格</text>
+          </view>
+          <view class="form-label">返现金额</view>
+          <view class="f fc">
+            <input type="digit" class="form-input w-small" value="{{p.groupPrice}}" bindinput="input_p_groupPrice" placeholder="请设置返现金额" placeholder-class="ccc" />
+          </view>
+          <view>
+            <text class="ccc">返现金额不能高于产品价格</text>
+          </view>
+          <view class="form-label">商品单位</view>
+          <view class="f fc">
+            <input type="text" class="form-input w-small" value="{{p.unit}}" bindinput="input_p_unit" placeholder="请设置产品单位" placeholder-class="ccc" />
+          </view>
+
+          <!-- <view class="form-label">商品重量</view>
+          <view class="f fc">
+            <input type="digit" class="form-input w-small" value="{{p.Weight}}" bindinput="input_p_Weight" placeholder="请输入产品重量" placeholder-class="ccc" />
+            <view class="ml20">kg</view>
+          </view> -->
+
+
+
+
+          <view class='f fc fc-h'>
+            <view class="form-label f1">商品详情</view>
+            <view class='btn-link' bindtap="editContent" data-id="{{p.id}}">点击编辑详情</view>
+          </view>
+          <view class="p-info">
+            <template is="wxParse" data="{{wxParseData:descriptionNodes.nodes}}" />
+          </view>
+          <view class="h140" />
+          <view class="f foot-btns">
+            <view class="btn-edit" bindtap="cancel">取消</view>
+            <view class="f1 btn-ok" bindtap="save">保存</view>
+          </view>
+        </view>
+        <!--规格-->
+        <view hidden="{{tabSelectedIndex!==2}}">
+
+          <view class="attr-selected">
+            <view class="head f">
+              <view class="w1 b-r-b">规格</view>
+              <view class="f1 b-r-b">规格值</view>
+              <view class="w3 b-b" />
+            </view>
+            <view class="row f" wx:for="{{pickspecification_fmt}}">
+              <view class="w1 c666 b-r-b line line1">{{item.name}}</view>
+              <view class="f1 b-r-b line line1">{{item.childrenNames}}</view>
+              <view class="w3 b-b f fc fc-h">
+                <view class="del" bindtap="remove_attr" data-index="{{index}}">删除</view>
+              </view>
+            </view>
+
+            <view class="btns">
+              <view class="btn-auto" wx:if="{{attrTable_fmt.length>0}}" bindtap="show_batch_modal">批量设置数值</view>
+              <view class="btn-auto" bindtap="show_attr_modal"> 选择规格</view>
+            </view>
+          </view>
+
+          <!--规格组合-->
+          <view class="mt20">
+            <view class="attr-selected">
+              <view class="head f">
+                <view class="f1 b-r-b">规格组合</view>
+                <view class="w-187 b-r-b">单买价</view>
+                <view class="w-187 b-r-b">返现</view>
+                <view class="w-187 b-r-b">库存</view>
+                <view class="w-187 b-r-b">图片</view>
+              </view>
+              <view class="row f" wx:for="{{attrTable_fmt}}">
+                <view class="f1 c666 b-r-b line line1">{{item.name}}</view>
+                <view class="w-187 b-r-b f fc fc-h">
+                  <input class="price" type="digit" placeholder="0.00" bindinput="inputAttrPrice" value="{{item.price}}" data-index="{{index}}" />
+                </view>
+                <view class="w-187 b-r-b f fc fc-h">
+                  <input class="price" type="digit" placeholder="0.00" bindinput="inputAttrGroupPrice" value="{{item.groupPrice}}" data-index="{{index}}" />
+                </view>
+                <view class="w-187 b-r-b f fc fc-h">
+                  <input class="price" type="number" bindinput="inputAttrStock" placeholder="" value="{{item.stock}}" disabled="{{!p.stockLimit}}" data-index="{{index}}" />
+                </view>
+                <view class="w-187 b-r-b f fc fc-h" bindtap="pickImg" data-index="{{index}}">
+                  <image class="attr-img" wx:if="{{item.imgUrl}}" src="{{item.imgUrl}}" />
+                  <view class="photo" wx:else/>
+                </view>
+              </view>
+
+            </view>
+          </view>
+          <view class="h140" />
+          <view class="f foot-btns">
+            <view class="btn-edit" bindtap="eidt_attrlist">编辑规格</view>
+            <view class="f1 btn-ok" bindtap="saveTemp">保存，并返回商品详情</view>
+          </view>
+
+          <!--编辑规格-->
+          <view class="edit-list" hidden="{{!show_edit_attrlist}}">
+            <view class="bg-w">
+              <view wx:if="{{goodAttrList.length>0}}">
+                <view class="f fc fc-h head">
+                  <view class="f1" bindtap="change_edit_attr_list" data-tabindex="0">
+                    <text class="{{edit_attr_list==0?'sel':''}}">规格</text>
+                  </view>
+                  <view class="f1" bindtap="change_edit_attr_list" data-tabindex="1">
+                    <text class="{{edit_attr_list==1?'sel':''}}">规格值</text>
+                  </view>
+                </view>
+                <!--规格列表-->
+                <view class="" hidden="{{edit_attr_list==1}}">
+                  <view class="edit-list-item f fc" wx:for="{{goodAttrList}}" wx:if="{{item.fId==0}}">
+                    <view class="f1">{{item.name}}</view>
+                    <view class="f fc">
+                      <view class="edit-list-btn blue" bindtap="del_good_attr" data-id="{{item.id}}">删除</view>
+                      <view class="edit-list-btn blue" bindtap="update_good_attr" data-id="{{item.id}}" data-name="{{item.name}}" data-fid="{{item.fId}}">修改</view>
+                      <view class="edit-list-btn red" bindtap="add_attr" data-id="0" data-name="" data-fid="{{item.id}}">+规格值</view>
+                    </view>
+                  </view>
+                </view>
+                <!--规格值列表-->
+                <view class="" hidden="{{edit_attr_list==0}}">
+                  <block wx:for="{{goodAttrList}}" wx:if="{{item1.fId==0}}" wx:for-item="item1" wx:for-index="index1">
+                    <view class="edit-list-item f fc" wx:for="{{item1.children}}" wx:for-item="item2">
+                      <view class="f1">{{item2.name}}</view>
+                      <view class="f fc">
+                        <view class="edit-list-btn blue" bindtap="del_good_attr" data-id="{{item2.id}}">删除</view>
+                        <view class="edit-list-btn blue" bindtap="update_good_attr" data-id="{{item2.id}}" data-name="{{item2.name}}" data-fid="{{item2.fId}}">修改</view>
+                      </view>
+                    </view>
+                  </block>
+
+                </view>
+              </view>
+              <view wx:else>
+                <view>没有规格，请先创建规格</view>
+              </view>
+            </view>
+            <view class="h140" />
+            <view class="f foot-btns z-4">
+              <view class="btn-edit" bindtap="eidt_attrlist">关闭</view>
+              <view class="f1 btn-ok" bindtap="add_attr" wx:if="{{edit_attr_list==0}}" data-id="0" data-name="" data-fid="0">新增规格</view>
+              <view class="f1 btn-ok" bindtap="add_attr" wx:if="{{edit_attr_list==1&&goodAttrList.length>0}}" data-id="0" data-name="" data-fid="{{firstAttrId}}">新增规格值</view>
+            </view>
+          </view>
+
+        </view>
+        <view hidden="{{tabSelectedIndex!==3}}" />
+        <view hidden="{{tabSelectedIndex!==4}}" />
+      </view>
+    </view>
+  </view>
+
+  <!-- <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore> -->
+  <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}" />
+  <!--弹出窗-->
+  <!--批量设置-->
+  <view class="mask-win" hidden="{{!show_batch}}">
+    <view class="mask" bindtap="hide_batch_modal" />
+    <view class="edit" style="height:500rpx;">
+      <view class="p20">
+        <view class="head">批量设置价格及库存</view>
+        <view class="f fc fc-h p20 tc">
+          <view class="f1">价格</view>
+          <view class="f1">返现</view>
+          <view class="f1">库存</view>
+        </view>
+        <view class="f fc fc-h">
+          <view class="f1">
+            <input type="digit" class="input" value="{{batchPrice}}" bindinput="input_batch_price" placeholder="请输入价格" placeholder-class="ccc" />
+          </view>
+          <view class="f1 ml20">
+            <input type="digit" class="input" value="{{batchGroupPrice}}" bindinput="input_batch_group_rice" placeholder="请输入返现" placeholder-class="ccc" />
+          </view>
+          <view class="f1 ml20">
+            <input type="number" disabled="{{!p.stockLimit}}" class="input" value="{{batchStock}}" bindinput="input_batch_stock" placeholder="请输入库存" placeholder-class="ccc" />
+          </view>
+        </view>
+      </view>
+      <view class="f foot-btns">
+        <view class="f1 btn-edit" bindtap="hide_batch_modal">取消</view>
+        <view class="f1 btn-ok" bindtap="input_batch_ok">确认</view>
+      </view>
+    </view>
+  </view>
+
+  <!--选择规格-->
+  <view class="mask-win" hidden="{{!show_attr}}">
+    <view class="mask" bindtap="hide_attr_modal" />
+    <view class="edit" style="min-height:370rpx;max-height:940rpx;overflow-y: scroll;-webkit-overflow-scrolling: touch;">
+      <view wx:for="{{goodAttrList}}" class="pl20" wx:for-index="index" wx:if="{{item.fId==0}}">
+        <view class="form-label mt20">{{item.name}}</view>
+        <view class="p-attr">
+          <view class="{{child.sel?'sel':''}}" wx:if="{{item.children}}" bindtap="choose_attr" wx:for="{{item.children}}" wx:for-item="child" wx:for-index="index2" data-index="{{index}}" data-indexs="{{index2}}">{{child.name}}</view>
+        </view>
+      </view>
+      <view class="h140" />
+      <view class="f foot-btns">
+        <view class="btn-edit" bindtap="hide_attr_modal">取消</view>
+        <view class="f1 btn-ok" wx:if="{{attr_pick_nums>0}}" bindtap="choose_attr_ok">确认</view>
+        <view class="f1 btn-ok__disable" wx:else>确认</view>
+      </view>
+    </view>
+  </view>
+
+  <!--添加分类-->
+  <view class="mask-win" hidden="{{!show_addtype}}">
+    <view class="mask" bindtap="hide_addtype" />
+    <view class="edit" style="min-height:450rpx;">
+      <view class="p20">
+        <view class="tc">分类名称</view>
+        <view class="mt20 f fc-h" hidden="{{goodTypeModel.fId<=0}}">
+          <picker class="form-input w400 tc" bindchange="bindGoodTypePickerChange" value="{{goodTypeModel.selindex}}" range="{{firstLevel}}" range-key="name">
+            <view>
+              所属大类：{{firstLevel[goodTypeModel.selindex].name}}
+            </view>
+          </picker>
+        </view>
+        <view class="mt20 f fc-h">
+          <input type="text" class="form-input w400 tc" maxlength="10" bindinput="input_type_name" value="{{goodTypeModel.name}}" placeholder="请输入分类名称" />
+        </view>
+      </view>
+
+      <view class="f foot-btns z-5">
+        <view class="btn-edit" bindtap="hide_addtype">取消</view>
+        <view class="f1 btn-ok" wx:if="{{canSaveType}}" bindtap="add_good_type_ok">确认</view>
+        <view class="f1 btn-ok__disable" wx:else>确认</view>
+      </view>
+    </view>
+  </view>
+  <!--添加规格-->
+  <view class="mask-win" hidden="{{!show_addattr}}">
+    <view class="mask" bindtap="hide_addattr" />
+    <view class="edit" style="min-height:450rpx;">
+      <view class="p20">
+        <view class="tc" wx:if="{{attrModel.fId<=0}}">规格名称</view>
+        <view class="tc" wx:else>规格值名称</view>
+
+
+        <view class="mt20 f fc-h" hidden="{{attrModel.fId<=0}}">
+          <picker class="form-input w400 tc" bindchange="bindGoodAttrPickerChange" value="{{attrModel.selindex}}" range="{{cal.firstAttr(goodAttrList)}}" range-key="name">
+            <view>
+              所属规格：{{cal.firstAttr(goodAttrList)[attrModel.selindex].name}}
+            </view>
+          </picker>
+        </view>
+        <view class="mt20 f fc-h">
+          <input type="text" class="form-input w400 tc" maxlength="10" bindinput="input_attr_name" value="{{attrModel.name}}" />
+        </view>
+      </view>
+
+      <view class="f foot-btns z-5">
+        <view class="btn-edit" bindtap="hide_addattr">取消</view>
+        <view class="f1 btn-ok" wx:if="{{canSaveAttr}}" bindtap="add_good_attr_ok">确认</view>
+        <view class="f1 btn-ok__disable" wx:else>确认</view>
+      </view>
+    </view>
+  </view>
+
+</view>
+
+
+<wxs module="cal">
+  var firstAttr = function(goodAttrList) {
+    return goodAttrList.filter(function(t) {
+      return t.fId == 0;
+    });
+  }
+
+  module.exports.firstAttr = firstAttr;
+</wxs>

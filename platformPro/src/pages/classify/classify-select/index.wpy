@@ -1,0 +1,98 @@
+<style lang="less">
+    page {
+        background-color: #fff;
+    }
+    .imgNavSwp-box {
+        background-color: rgba(255, 255, 255, 1);
+        .item {
+            box-sizing: border-box;
+            padding-bottom: 60rpx;
+            box-sizing: border-box;
+            height: auto!important;
+        }
+        .imgNav {
+            display: inline-block; 
+            width: 25%;
+            image {
+                width: 110rpx;
+                height: 110rpx;
+                border-radius: 50%;
+            }
+        }
+    }
+</style>
+
+<template leng="wxml">
+    <view>
+        <view class="f26 tc pt10" wx:if="{{source==='信息发布'}}">选择您要发布的信息分类</view>
+        <!-- 图片分类导航 -->
+        <view class="imgNavSwp-box rel mt40">
+            <swiper indicator-dots="{{imgNavSwp.isDots}}" indicator-color="#D9D8D9" indicator-active-color="#a1a2a3" style="height:900rpx;">
+                <repeat for="{{imgNavSwp.imgNav}}" item="imgNav" index="imgNavIndex">
+                    <swiper-item class="f fw item">
+                        <repeat for="{{imgNav}}" item="item" index="index">
+                            <view class="imgNav mt40 f fv fc tc" @tap="jumpPage({{imgNavIndex}},{{index}})">
+                                <image src="{{item.MaterialPath}}" mode="aspectFill" />
+                                <view class="tc w-100 mt15 f24"><text class="pw20 line line1">{{item.Name}}</text></view>
+                            </view>
+                        </repeat>
+                    </swiper-item>
+                </repeat>
+            </swiper>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import addr from "@/lib/addr";
+    export default class Select extends wepy.page {
+        config = {};
+        data = {
+            imgNavSwp: {
+                appid: "",
+                isDots: true,
+                imgNav: []
+            },
+            source: "",
+            pageItemNum: 16,
+        };
+        methods = {
+            jumpPage(pageIndex, i) {
+                let classifyName = this.imgNavSwp.imgNav[pageIndex][i].Name;
+                let classifyId = this.imgNavSwp.imgNav[pageIndex][i].Id;
+                let url = this.source === "信息发布" ? "../classify-publish/index?name=" + classifyName + "&id=" + classifyId : "../classify-single/index?title=" + classifyName + "&id=" + classifyId;
+                tools.goNewPage(url);
+            },
+        };
+        events = {};
+        onLoad(option) {
+            this.source = option.source;
+            tools.setPageTitle(this.source);
+            this.GetMsgTypeList();
+        }
+        //获取分类
+        GetMsgTypeList() {
+            let app = wepy.$instance;
+            //addr.GetMsgTypeList
+            http.get(addr.GetMsgTypeList, {
+                appId: app.globalData.appid,
+                pageSize: 1000,
+            }).then(data => {
+                if (data.isok) {
+                    console.log(data.dataObj.list);
+                    this.imgNavSwp.imgNav = core.resetMsgTypeList(data.dataObj.list, this.pageItemNum);
+                    this.imgNavSwp.isDots = this.imgNavSwp.imgNav.length > 1 ? true : false;
+                    this.$apply();
+                } else {
+                    tools.showModal(data.Msg);
+                }
+            })
+        }
+    }
+</script>

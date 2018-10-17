@@ -1,0 +1,83 @@
+<view class="{{showshareCard?'h-full overh':''}}">
+  <view class='search-bar f'>
+    <input type='text' bindinput='inputkw' placeholder='搜索商品' placeholder-class='input-placeholder' class="f1" style='z-index:0'></input>
+    <view class='search' bindtap='search'>搜索</view>
+  </view>
+  <view class='type-bar'>
+    <scroll-view class='' scroll-x="{{true}}" style='background-color:#fff;'>
+      <view class='type-list  f'>
+        <view class='{{selectedTypeId==0?"on":""}}' bindtap='pickType' data-type="0">全部</view>
+        <view class='{{selectedTypeId==item.id?"on":""}}' bindtap='pickType' data-type="{{item.id}}" wx:for="{{categoryList}}" wx:if="{{item.fId==0}}">{{item.name}}</view>
+      </view>
+    </scroll-view>
+  </view>
+  <view style='background-color:#fff;font-size:24rpx;padding:10rpx;margin-top:10rpx;line-height:1.5;color:#666;'>
+    提示：第一次发布产品默认审核通过，编辑产品需要先下架，下架后上架需要平台重新审核
+  </view>
+  <view class='p-list'>
+    <block wx:for="{{vm.list}}" wx:for-index="index1">
+
+      <view class='p-item' wx:for="{{item}}" wx:for-item="subItem">
+        <view class='f p-item__top'>
+          <view class='pr'>
+            <image src="{{subItem.img}}"></image>
+
+            <view class='p-state green' wx:if="{{subItem.state==1&&subItem.auditState==1}}">已上架</view>
+            <view class='p-state red' wx:else>{{subItem.auditStateStr}}</view>
+          </view>
+          <view class='ml20 f1 f fv fj padt4'>
+            <view class='vertical-2 p-name t28 c333'>
+              {{subItem.name}}
+            </view>
+            <view class='t22 c666 f fsb'>
+              <view>销量:{{subItem.sales}}</view>
+              <view>虚拟销量：{{subItem.virtualSales}}</view>
+              <view>库存：{{subItem.stockLimit?subItem.stock:"不限库存"}}</view>
+            </view>
+            <view class='p-price'>
+              ￥{{subItem.priceStr}}
+            </view>
+          </view>
+        </view>
+        <view class='f btns-bar'>
+          <view class='f1'>
+            <view class='btns btn-red' bindtap='getCode' data-id="{{subItem.id}}" data-indexf="{{index1}}" data-indexs='{{index}}'>商品码</view>
+          </view>
+          <view class='f'>
+            <view class='btns btn-blue' bindtap='editGoods' data-indexf='{{index1}}' data-indexs='{{index}}' wx:if="{{subItem.state==0}}">编辑</view>
+            <view class='btns btn-red ml20' bindtap='updateGoods' data-indexf='{{index1}}' data-indexs="{{index}}">
+              {{subItem.state==0?"上架":"下架"}}
+            </view>
+            <view class='btns btn-black ml20' bindtap='deleteGoods' data-indexf='{{index1}}' data-indexs="{{index}}">删除</view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view class='data-empty' wx:if="{{vm.ispost==false&&vm.loadall}}">已加载全部数据</view>
+  </view>
+</view>
+<view class="p-add" bindtap="addnew">
+  <view class='ma ma-addGood'></view>
+</view>
+
+<!-- canvas -->
+<view wx:if="{{showshareCard}}">
+  <view class='bg3'></view>
+  <text class='dzicon icon-3 cancel-modal cfefe' style='position: absolute' bindtap='hideshare_card'></text>
+  <view class='new-sm-basecss-1 f-c jsb'>
+    <canvas class='h5005' canvas-id="gshare_Card"></canvas>
+    <view class='cavas_btn f-c jsa'>
+      <view class='fsa'>
+        <button class='btn-1 canvas_basebtncss mounset bgb415' bindtap='save_goodImg' wx:if="{{AlbumUnset==false}}">保存到相册</button>
+        <button class='btn-1 canvas_basebtncss mounset bgb415' open-type='openSetting' wx:if="{{AlbumUnset==true}}">保存到相册</button>
+        <button class='btn-1 canvas_basebtncss mounset bgf0033'>云打印</button>
+      </view>
+      <view class='t28 tc ml30' style='color:#02A0E9' bindtap='open_document'>商品码打印及使用方法</view>
+    </view>
+  </view>
+</view>
+
+<view class='toast' wx:if="{{$toast&&$toast.show}}">
+  <view class='toast-mask' wx:if="{{$toast.mask}}"></view>
+  <view class='toast-msg'>{{$toast.msg}}</view>
+</view>

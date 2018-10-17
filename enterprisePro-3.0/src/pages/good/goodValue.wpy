@@ -1,0 +1,475 @@
+<style lang="less">
+  .v-info {
+    width: 100%;
+    height: 110rpx;
+    background: #fff;
+    padding: 0 20rpx;
+    image {
+      width: 68rpx;
+      height: 68rpx;
+    }
+    .ml40 {
+      margin-left: 40rpx;
+    }
+  }
+  .v-input {
+    width: 100%;
+    padding: 20rpx 0 20rpx 20rpx;
+    background: #fff;
+    border-top: 1rpx solid #f7f7f7;
+    textarea {
+      width: 100%;
+      height: 140rpx;
+      margin-right: 20rpx
+    }
+    .v-load {
+      width: 100%;
+      font-size: 0;
+      .v-loadImg {
+        width: 160rpx;
+        height: 150rpx;
+        margin-right: 20rpx;
+        margin-bottom: 20rpx;
+        image {
+          width: 160rpx;
+          height: 150rpx;
+        }
+        .v-closebg {
+          border-radius: 35rpx;
+          background: #d8d8d8;
+          position: absolute;
+          top: -15rpx;
+          right: -10rpx;
+          line-height: 1;
+        }
+        .v-close {
+          font-size: 35rpx;
+          color: #fff;
+        }
+      }
+      .v-upload {
+        width: 160rpx;
+        height: 150rpx;
+        border: 2px dotted #999;
+        .icon-Photo_zhaopian {
+          font-size: 50rpx;
+          color: #999;
+        }
+      }
+    }
+  }
+  .v-same {
+    width: 100%;
+    height: 100rpx;
+    background: #fff;
+    padding: 0 20rpx;
+    margin-top: 20rpx;
+  }
+  .v-select {
+    width: 100%;
+    background: #fff;
+    padding: 0 20rpx;
+  }
+  .bd {
+    border-bottom: 1rpx solid #f7f7f7
+  }
+  .v-btn {
+    width: 100%;
+    height: 88rpx;
+    text-align: center;
+    line-height: 88rpx;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+  }
+  .v-mask {
+    width: 100%;
+    .v-bg {
+      width: 100%;
+      height: 100vh;
+      background: #000000;
+      opacity: 0.4;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 3;
+    }
+    .v-main {
+      position: fixed;
+      top: 200rpx;
+      left:50%;
+      margin-left:-260rpx;
+      width: 520rpx;
+      height: 480rpx;
+      background: #fff;
+      z-index: 4;
+      .icon-Choice_xuanze {
+        font-size: 140rpx;
+        opacity: 0.3;
+        margin-top: 10rpx;
+      }
+      .v-mbtn {
+        width: 260rpx;
+        height: 68rpx;
+        text-align: center;
+        line-height: 68rpx;
+        margin-top: 60rpx;
+      }
+    }
+    .icon-zhuanyebaniconkuozhan_Close {
+      font-size: 95rpx;
+      color: #fff;
+      position: fixed;
+      bottom: 350rpx;
+      z-index: 4;
+      left:50%;
+      margin-left: -45rpx;
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="{{currentSkin}}">
+    <!-- 评论 -->
+    <view class="v-info f fc">
+      <image mode="aspectFill" src="{{_pro.item.SpecImg||_pro.item.goodsMsg.img}}" />
+      <view class="f fc ml40">
+        <view class="f fc" @tap="proChange(1)">
+          <text class="dzicon f40 {{selPro[1]?'icon-hua_flower':'icon-hua_flower3'}} {{selPro[1]?'skin_txt':'c999'}}" />
+          <text class="ml20  {{selPro[1]?'skin_txt':'c999'}}">好评</text>
+        </view>
+        <view class="f fc ml40 ml10" @tap="proChange(2)">
+          <text class="dzicon f40 {{selPro[2]?'icon-hua_flower1':'icon-hua_flower2'}} {{selPro[2]?'skin_txt':'c999'}}" />
+          <text class="ml20 c999 {{selPro[2]?'skin_txt':'c999'}}">中评</text>
+        </view>
+        <view class="f fc ml40 ml10" @tap="proChange(3)">
+          <text class="dzicon f40 {{selPro[3]?'icon-hua_flower1':'icon-hua_flower2'}} {{selPro[3]?'skin_txt':'c999'}}" />
+          <text class="ml20 c999 {{selPro[3]?'skin_txt':'c999'}}">差评</text>
+        </view>
+      </view>
+    </view>
+    <view class="v-input">
+      <textarea placeholder="宝贝满足你的期待吗？说说你的使用心得，分享给想买的他们吧" placeholder-class="c999" @input="messChange" value="{{vm.message}}" />
+      <view class="v-load f fw">
+        <repeat for="{{vm.img}}" index="i">
+          <view class="v-loadImg rel">
+            <image mode="aspectFill" src="{{item}}" @tap="preView({{vm.img}},{{index}})" />
+            <view class="v-closebg">
+              <view class="dzicon icon-iconset0127 v-close" @tap.stop="deleteImg({{i}})" />
+            </view>
+          </view>
+        </repeat>
+        <view class="v-upload f fv fc fc-h" @tap="chooseImg">
+          <text class="dzicon icon-Photo_zhaopian" />
+          <text class="f22 c999" wx:if="{{vm.img.length==0}}">上传凭据</text>
+          <text class="f22 c999" wx:else>{{vm.img.length}}/8</text>
+        </view>
+      </view>
+    </view>
+    <view class="v-same f fc">
+      <text class="dzicon f50 {{selName?'icon-Choice_xuanze':'icon-Unselected_weixuanze'}} {{selName?'skin_txt':'c999'}}" @tap="nameChange" />
+      <text class="c333 f1 ml20">匿名</text>
+      <text class="c999">你的评价能帮助其他小伙伴哦</text>
+    </view>
+    <view class="v-same f fc bd">
+      <text class="dzicon icon-shangdian_shop f42 c999" />
+      <text class="c333 f1 ml20">店铺评分</text>
+    </view>
+    <!-- 星星评分 -->
+    <view class="v-select f fv">
+      <view class='f fc ph20'>
+        <text class="c333">描述相符</text>
+        <view class="f1">
+          <repeat for="{{star[1]}}" index="starIndex">
+            <text class="dzicon {{item.icon}} f50 {{item.sel?'skin_txt':'c999'}}" style="margin-left:30rpx;" @tap="starChange(1,{{starIndex}})" />
+          </repeat>
+        </view>
+        <text class="c999">{{txt[1].name}}</text>
+      </view>
+      <view class='f fc ph20'>
+        <text class="c333">物流服务</text>
+        <view class="f1">
+          <repeat for="{{star[2]}}" index="starIndex">
+            <text class="dzicon {{item.icon}} f50 {{item.sel?'skin_txt':'c999'}}" style="margin-left:30rpx;" @tap="starChange(2,{{starIndex}})" />
+          </repeat>
+        </view>
+        <text class="c999">{{txt[2].name}}</text>
+      </view>
+      <view class='f fc ph20'>
+        <text class="c333">服务态度</text>
+        <view class="f1">
+          <repeat for="{{star[3]}}" index="starIndex">
+            <text class="dzicon {{item.icon}} f50 {{item.sel?'skin_txt':'c999'}}" style="margin-left:30rpx;" @tap="starChange(3,{{starIndex}})" />
+          </repeat>
+        </view>
+        <text class="c999">{{txt[3].name}}</text>
+      </view>
+    </view>
+    <view style="height:110rpx"></view>
+    <view class="v-btn skin_bg" @tap="postValue">提交</view>
+    <!-- 弹窗 -->
+    <view class="v-mask f fc-h" wx:if="{{showMask}}">
+      <view class="v-bg"></view>
+      <view class="v-main f fv fc">
+        <view class="dzicon icon-Choice_xuanze skin_txt" />
+        <view class="f fv fc mt30">
+          <text class="f36 t-b">感谢您的评价</text>
+          <text class="c666 mt20">我们会努力做的更好</text>
+        </view>
+        <view class="v-mbtn skin-br" @tap="pathGo">查看我的评价</view>
+      </view>
+      <view class="dzicon icon-zhuanyebaniconkuozhan_Close" @tap="hideMask" />
+    </view>
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+  } from "../../lib/core";
+  import addr from "../../lib/addr.js"
+  import _get from "../../lib/lodash.get.js"
+  // import
+  //第一步： 引入组件文件
+  export default class goodValue extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+      },
+      navigationBarTitleText: "发表评价"
+    };
+    //第二步：声明组件
+    components = {};
+    props = {};
+    data = {
+      star: [{
+          sel: false,
+          icon: "icon-chaping_Negativecomment",
+        },
+        {
+          sel: false,
+          icon: "icon-chaping_Negativecomment",
+        }, {
+          sel: false,
+          icon: "icon-chaping_Negativecomment",
+        },
+        {
+          sel: false,
+          icon: "icon-chaping_Negativecomment",
+        }, {
+          sel: false,
+          icon: "icon-chaping_Negativecomment",
+        }
+      ],
+      vm: {
+        img: [],
+        message: ""
+      },
+      toast: {},
+      currentSkin: {},
+      selPro: [],
+      txt: {},
+      _pro: {},
+      sel: false,
+      selName: false,
+      showMask: false,
+      array: []
+    };
+    computed = {};
+    methods = {
+      deleteImg(index) {
+        this.vm.img.splice(index, 1)
+        this.$apply()
+      },
+      pathGo() {
+        tools.goRedirecto("/pages/good/goodValueLst?type=user")
+      },
+      hideMask() {
+        this.showMask = false
+        tools.goBack(1)
+        this.$apply()
+      },
+      preView(item, index) {
+        let img = item[index]
+        tools.preViewShow(img, item)
+      },
+      nameChange() {
+        this.selName = !this.selName
+        this.$apply()
+      },
+      messChange(e) {
+        this.vm.message = e.detail.value
+        this.$apply()
+      },
+      //评价商品
+      proChange(kIndex) {
+        let index = Number(kIndex)
+        let _g = this.selPro
+        if (_g.length) {
+          for (let i = 0, len = _g.length; i < len; i++) {
+            _g[i] = false
+          }
+        }
+        _g[index] = true
+        this.selPro = _g
+        this.$apply()
+      },
+      //选择图片
+      async chooseImg() {
+        if (this.vm.img.length >= 8) {
+          tools.showModal("最多只能上传8张",false)
+          return
+        }
+        let _img = await tools.chooseImg()
+        let tempImg = _img.tempFilePaths;
+        if (tempImg.length + this.vm.img.length > 8) {
+          tools.showModal("最多只能上传8张",false)
+          return
+        }
+        await this.uploadService(tempImg)
+      },
+      // 评分星星
+      async starChange(index, starIndex) {
+        let array = []
+        let currentIndex = Number(index)
+        let star = this.star[currentIndex]
+        for (let j = 0, len = star.length; j < len; j++) {
+          star[j].sel = false
+          star[j].icon = "icon-chaping_Negativecomment"
+        }
+        for (let i = 0; i <= starIndex; i++) {
+          star[i].sel = true
+          star[i].icon = "icon-haoping_goodcomment"
+          let find = star.find(f => f.sel == true)
+          array.push(find)
+        }
+        this.txt[currentIndex] = await this.showTxt(array.length)
+        this.star[currentIndex] = star
+        this.$apply()
+      },
+      // 提交评论
+      async postValue() {
+        let _pra = 0
+        let praise = await this.praChange(this.selPro)
+        let _p = await this.paraNeed(this._pro, praise)
+        if (_p.logis == 0) {
+          tools.ShowToast("请对描述做出评价", this)
+          return;
+        }
+        if (_p.service == 0) {
+          tools.ShowToast("请对物流做出评价", this)
+          return;
+        }
+        if (_p.desc == 0) {
+          tools.ShowToast("请对服务做出评价", this)
+          return;
+        }
+        let _v = await core.postValue(_p)
+        if (_v.isok) {
+          let that = this
+          tools.showLoading()
+          this.vm.message = ''
+          setTimeout(() => {
+            that.showMask = true
+            that.$apply()
+            wx.hideLoading()
+          }, 1000);
+        } else {
+          tools.ShowToast("评价失败,请重试", this)
+        }
+      }
+    }
+    async uploadService(tempImg) {
+      for (let i = 0, len = tempImg.length; i < len; i++) {
+        let _g = await tools.uploadImg(tempImg, i)
+        if (_g.errMsg == 'uploadFile:ok') {
+          let _v = JSON.parse(_g.data)
+          this.array.push(_v.msg)
+        } else {
+          tools.showModal("上传失败",false)
+        }
+      }
+      this.vm.img = this.array
+      this.$apply()
+    }
+    async onLoad(options, data) {
+      await tools.setPageSkin(this);
+      this.selPro[1] = true
+      this._pro = _get(data.preload, "vm")
+      this.$apply()
+      this.showStar()
+    }
+    // 星星评价
+    showStar() {
+      wx.setStorageSync("star1", this.star)
+      wx.setStorageSync("star2", this.star)
+      wx.setStorageSync("star3", this.star)
+      this.star[1] = wx.getStorageSync("star1")
+      this.star[2] = wx.getStorageSync("star2")
+      this.star[3] = wx.getStorageSync("star3")
+      this.$apply()
+    }
+    showTxt(length) {
+      let txt = {}
+      txt.length = length
+      switch (length) {
+        case 1:
+          txt.name = "非常差"
+          break;
+        case 2:
+          txt.name = "差"
+          break;
+        case 3:
+          txt.name = "一般"
+          break;
+        case 4:
+          txt.name = "好"
+          break;
+        case 5:
+          txt.name = "非常好"
+          break;
+      }
+      return txt;
+    }
+    // 转换评价
+    praChange(_g) {
+      let _show = 0
+      if (_g[1]) {
+        _show = 2
+      } else if (_g[2]) {
+        _show = 1
+      } else {
+        _show = 0
+      }
+      return _show
+    }
+    //所需参数
+    paraNeed(_pro, praise) {
+      let anon = 0
+      this.selName ? anon = 1 : anon = 0;
+      let img = this.vm.img.join(",")
+      let _p = {
+        orderid: _get(_pro, "orderid"),
+        goodsid: _get(_pro.item, "FoodGoodsId"),
+        praise: praise,
+        logis: _get(this.txt[2], "length", 0),
+        service: _get(this.txt[3], "length", 0),
+        desc: _get(this.txt[1], "length", 0),
+        goodstype: _get(_pro, "goodType"),
+        anon,
+        comment: this.vm.message,
+        imgurl: img,
+        spec: _get(_pro.item, "SpecInfo", ""),
+        img: _get(_pro.item.goodsMsg, "img"),
+        price: _get(_pro.item, "priceStr")
+      }
+      return _p
+    }
+  }
+</script>

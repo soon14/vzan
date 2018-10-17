@@ -1,0 +1,489 @@
+<!-- 技师列表 -->
+<!-- <import src="/template/template.wxml" /> -->
+
+
+
+<!-- 水印 -->
+<template name="AgentConfig">
+  <view class="bgcf7 t20 flex-columnc c999 fontnor ptop40 pbottom40 mtop60" wx:if="{{AgentConfig.IsOpenAdv==1}}">
+    <image src="{{AgentConfig.LogoImgUrl}}" style='max-width:80rpx;margin-bottom:12rpx;' mode='widthFix'></image>
+    <view class="mtop8" wx:if="{{AgentConfig.isdefaul==1}}">{{AgentConfig.LogoText}}</view>
+    <view class="mtop6" wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[0]}}</view>
+    <view class="mtop6" wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[2]}}</view>
+
+    <view wx:if="{{AgentConfig.QrcodeId>0&&AgentConfig.OpenExtension==0}}" style='text-align:center;' bindtap='navo_webview'>
+      <view class='btn-promote'>我也要做小程序</view>
+    </view>
+  </view>
+</template>
+
+
+<template name="couponList-x">
+  <!-- 优惠券列表 -->
+  <scroll-view scroll-x class='mtop20'>
+    <view class='flexnowrap pale30'>
+      <block wx:for="{{couponList}}">
+        <view class='flex'>
+          <view class='coupon-left flex-rowc' style="width:230rpx;{{item.CanGet?'':'filter: grayscale(100%)'}}">
+            <text class='counpon-price cfff t70' wx:if="{{item.CouponWay==0}}">{{item.Money_fmt}}</text>
+            <text class='cfff t70 counpon-discount' wx:else>{{item.Money_fmt}}</text>
+          </view>
+          <view class='coupon-right flex-rowsb padl20'>
+            <view class='flex-column flex1'>
+              <text class='t30'>{{item.CouponName}}</text>
+              <view class='t26 c999'>
+                <text wx:if="{{item.LimitMoney>0}}">满{{item.LimitMoney/100}}元可使用</text>
+                <text wx:if="{{item.LimitMoney==0}}">无门槛</text>
+                <text wx:if="{{item.ValType==0}}">{{item.StartUseTimeStr}}-{{item.EndUseTimeStr}}</text>
+                <text wx:if="{{item.ValType==1}}">领券次日开始{{item.ValDay}}天内有效</text>
+                <text wx:if="{{item.ValType==2}}">领券当日开始{{item.ValDay}}天内有效</text>
+              </view>
+            </view>
+            <view class="get-couponbtn  {{item.CanGet?'':'coupon-blackbg'}}" bindtap="{{item.CanGet?'getcoupon':''}}" data-couponid="{{item.Id}}">领取</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</template>
+
+<template name="couponList-y">
+  <!-- 优惠券列表 -->
+  <view class='pale30 mtop40'>
+    <block wx:for="{{couponList}}">
+      <view class='flex'>
+        <view class="coupon-left flex-rowc" style="width:330rpx;{{state!=1&&state!=2?'':'filter: grayscale(100%)'}}" wx:if="{{state!=3}}">
+          <text class='counpon-price cfff t70' wx:if="{{item.CouponWay==0}}">{{item.Money_fmt}}</text>
+          <text class='cfff t70 counpon-discount' wx:else>{{item.Money_fmt}}</text>
+        </view>
+        <view class="coupon-left flex-rowc" style="width:330rpx;{{item.CanGet?'':'filter: grayscale(100%)'}}" wx:if="{{state==3}}">
+          <text class='counpon-price cfff t70' wx:if="{{item.CouponWay==0}}">{{item.Money_fmt}}</text>
+          <text class='cfff t70 counpon-discount' wx:else>{{item.Money_fmt}}</text>
+        </view>
+        <view class='coupon-right flex-rowsb padl20 w1005 marri30 mbottom30'>
+          <view class='flex-column t26 c999'>
+            <text class='t30'>{{item.CouponName}}</text>
+            <text wx:if="{{item.LimitMoney>0}}">满{{item.LimitMoney/100}}元可使用</text>
+            <text wx:if="{{item.LimitMoney==0}}">无门槛</text>
+            <view wx:if="{{state==3}}">
+              <text wx:if="{{item.ValType==0}}">{{item.StartUseTimeStr}}-{{item.EndUseTimeStr}}</text>
+              <text wx:if="{{item.ValType==1}}">领券次日开始{{item.ValDay}}天内有效</text>
+              <text wx:if="{{item.ValType==2}}">领券当日开始{{item.ValDay}}天内有效</text>
+            </view>
+            <view wx:if="{{state!=3}}">
+              <text>{{item.StartUseTimeStr}}-{{item.EndUseTimeStr}}</text>
+            </view>
+          </view>
+          <view wx:if="{{ismyCoupon==true}}">
+            <view class=' get-couponbtn' bindtap='go_home' wx:if="{{state==0}}" data-couponid="{{item.CouponId}}">去使用</view>
+            <view class=' get-couponbtn coupon-blackbg' wx:if="{{state==1}}">已使用</view>
+            <view class=' get-couponbtn coupon-blackbg' wx:if="{{state==2}}">已过期</view>
+          </view>
+          <view class="get-couponbtn {{item.CanGet?'':'coupon-blackbg'}}" bindtap="{{item.CanGet?'getcoupon':''}}" wx:if="{{ismyCoupon==false}}" data-couponid="{{item.Id}}">领取</view>
+        </view>
+      </view>
+    </block>
+  </view>
+</template>
+
+
+<!-- 店铺公告弹窗 -->
+<template name='show-storenotice-modal'>
+  <view class='bg' wx:if="{{shownotice}}"></view>
+  <view class='bgcfff notice-modal' wx:if="{{shownotice}}">
+    <image src='/image/a39.png' class='notice-modal-icon' mode="widthFix"></image>
+    <view class='posre e'>
+      <scroll-view class='notice-modal-scroll mtop100' scroll-y>
+        <text class='t26 c666'>{{food.Notice}}</text>
+      </scroll-view>
+    </view>
+    <image src='/image/a19.png' class='w80h80 notice-modal-cancel' bindtap='shownotice'></image>
+  </view>
+</template>
+
+<!-- 商品详情弹窗 -->
+<template name='show-goodinfo-modal'>
+  <view class='bg' wx:if="{{showgoodinfo}}"></view>
+  <view class='goodinfo-modal' wx:if="{{showgoodinfo}}">
+    <image src='{{goodinfo.url}}' class='w550' style='max-height:600rpx' bindtap='previewGoodimg' data-url="{{goodinfo.url}}"></image>
+    <text class='fontmin t32 c333 mtop36 mbottom36 marle30'>{{goodinfo.name}}</text>
+    <view class='posre'>
+      <scroll-view scroll-y class='goodinfo-modal-scroll marle34 '>
+        <text>{{goodinfo.introduction}}</text>
+      </scroll-view>
+      <image src='/image/a19.png' class='w80h80 posa goodinfo-modal-cancel' bindtap='showgoodinfo'></image>
+    </view>
+  </view>
+</template>
+
+
+<!-- 选择地址提示框 -->
+<template name="show-chooselocal-modal">
+  <view class='bg' wx:if="{{chooseLocal}}"></view>
+  <view class='chooselocal-modal' wx:if="{{chooseLocal}}">
+    <image src='/image/a40.png' class='w310h310 mtop40'></image>
+    <text class='t24 c666'>请先选择收货地址</text>
+    <view bindtap='chooseLocation' class='chooselocal-modal-btn t28 tea mtop20'>前往选择</view>
+  </view>
+</template>
+
+
+<!-- 选择有规则商品 -->
+<template name='show-chooselabels-modal'>
+  <view class='bg' wx:if="{{goodinfoModal}}"></view>
+  <scroll-view scroll-y class='w520 bgcfff show-choosegood-modal' wx:if="{{goodinfoModal}}">
+    <view class='flex'>
+      <image class='w150h150 marri24' src='{{foodinfo.good.ImgUrl}}' mode='aspectFill'></image>
+      <view class='flex-column flex1 w1005'>
+        <text class='fontblod t28'>{{foodinfo.good.GoodsName}}</text>
+        <!-- 标签 -->
+        <view class='flex-row'>
+          <block wx:for="{{foodinfo.labels}}">
+            <view class='modal-labels'>{{item}}</view>
+          </block>
+        </view>
+        <view class='flex-rowsb'>
+          <text class='show-choosegood-modal-price c535f t38'>{{foodinfo.good.modalallprice||foodinfo.good.modalchooseprice||0.00}}</text>
+          <view class='flex aic'>
+            <text class='t28 mal8'>{{foodinfo.good.nowbuynums}}</text>
+            <image src='/image/a17.png' class='w47h47' bindtap='modaladdnums'></image>
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- 规格 -->
+    <block wx:for="{{foodinfo.attrList[0].Value}}" wx:for-item='value' wx:for-index='lineid'>
+      <text class='c1212 t28 mtop36'>{{value.AttrName}}</text>
+      <view class='flex-row'>
+        <block wx:for="{{value.SpecList}}">
+          <view class="t26 marri18 lables-minw {{item.ischoose? 'modal-chooselables': 'modal-unchooselables'}}" data-lineid='{{lineid}}' data-index='{{index}}' data-specid='{{item.Id}}' data-specname='{{item.SpecName}}' data-attrname='{{value.AttrName}}' bindtap='chooselabels'>{{item.SpecName}}</view>
+        </block>
+      </view>
+    </block>
+    <view class='cfff t36 bg535f h80 flex-rowc br8 mtop50' bindtap='addgood_modalsure'>确定</view>
+  </scroll-view>
+  <image src='/image/a19.png' class='w80h80 posa show-choosegood-modal-cancel' bindtap='cancelchoosegood' wx:if="{{goodinfoModal}}"></image>
+</template>
+
+
+<!-- 底部购物车 -->
+<template name='bottom-shopcart'>
+  <view class='h100'></view>
+  <view class='h100 bottom-shopcart z2'>
+    <view class='flex aic pale24 posre w1005 flex1'>
+      <view class='bottom-shopcart-point cfff tea'>{{shopcartlength}}</view>
+      <image src='/image/a18.png' class='w68h68 marri24' bindtap='showshopcartmodal'></image>
+      <view class='flex-column'>
+        <text class='t32 c535f fontblod'>￥{{alldiscountprice}}</text>
+        <!--修改配送费的价格显示-->
+        <view class='flex-rowsb t20 c999'>
+          <text wx:if="{{food.DistributionWay==2&&shopType==1}}">配送费：￥{{ShippingFeeStr}}</text>
+          <text wx:if="{{food.DistributionWay==1&&shopType==1}}">配送费：￥{{food.ShippingFeeStr}}</text>
+          <text class='marle30' wx:if="{{shopType==1}}">餐具费：￥{{dishwarefee||0.00}}</text>
+        </view>
+      </view>
+    </view>
+    <button class='btn bgcb835 cfff t32 w260' bindtap='gotopay'>去结算</button>
+  </view>
+</template>
+
+<!-- 购物车弹窗 -->
+<template name='show-shopcartList-modal'>
+  <view class='bg' bindtap='showshopcartmodal' wx:if="{{showshopcart}}"></view>
+  <view class="w1005 bgcfff posf" style='bottom:559rpx;' wx:if="{{showshopcart}}">
+    <!-- 购物车标题 -->
+    <view class='h87 flex-rowsb padl24'>
+      <text class='fontblod t32'>购物车</text>
+      <view class='flex aic' bindtap="clearShopcartList">
+        <image src="../../image/a23.png" class='w22h22'></image>
+        <text class='t24 c999 marri12'>清空</text>
+      </view>
+    </view>
+    <scroll-view scroll-y class="bottom-shopcart-modal">
+      <block wx:for="{{shopcartList}}">
+        <view class="flex aic jussb bottom-shopcart-modal-item">
+          <view class="flex-column">
+            <text class='t28 vertical-1'>{{item.goodname}}</text>
+            <text class='ccc t24'>{{item.size}}</text>
+          </view>
+          <view class="flex aic">
+            <text class='c535f t32 bottom-shopcart-modal-price'>{{item.discountprice}}</text>
+            <image src="../../image/a16.png" class='w47h47 marle50' id="{{index}}" data-goodid="{{item.goodid}}" bindtap='shopcartmodal_reduce'></image>
+            <text class='t28 mal12'>{{item.buynums}}</text>
+            <image src="../../image/a17.png" class='w47h47' id="{{index}}" data-goodid="{{item.goodid}}" bindtap='shopcartmodal_add'></image>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
+</template>
+
+<template name='appointment_shopcartList'>
+
+  <!-- 预约点餐订单列表 -->
+  <view class='appointment_shopcartList_modal'>
+    <view class='h69 bobof2 flex-rowsb padl20' wx:if="{{showappointmentlist}}">
+      <text class='t28'>我的菜单</text>
+      <view class='flex aic' bindtap="clearShopcartList">
+        <image src='/image/a23.png' class='w22h22 marri10'></image>
+        <text class='c999 t24'>清空</text>
+      </view>
+    </view>
+    <scroll-view scroll-y style='max-height:430rpx;' wx:if="{{showappointmentlist}}">
+      <block wx:for="{{shopcartList}}">
+        <view class='flex-rowsb h100 bobof2 mal20'>
+          <view class='flex-column'>
+            <text class='t28'>{{item.goodname}}</text>
+            <text class='ccc t24'>{{item.size}}</text>
+          </view>
+          <view class='flex aic'>
+            <text class='show-choosegood-modal-price c535f t30'>{{item.discountprice}}</text>
+            <image src="../../image/a16.png" class='w47h47 marle50' id="{{index}}" data-goodid="{{item.goodid}}" bindtap='shopcartmodal_reduce'></image>
+            <text class='c666 t30 mal20'>{{item.buynums}}</text>
+            <image src="../../image/a17.png" class='w47h47' id="{{index}}" data-goodid="{{item.goodid}}" bindtap='shopcartmodal_add'></image>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
+    <view class='h100 flex flexe aic t30 marri30 c535f appointment_shopcartList_price' wx:if="{{showappointmentlist}}">￥{{alldiscountprice}}</view>
+  </view>
+  <view class='appointment_bottombtn t30 fontblod cfff'>
+    <view class='cf727c bgcfff flex1 pale140 h100 flex-rowc' bindtap='go_appointment' id='0'>到店扫码下单</view>
+    <view class='bgc535f w334 h100 flex-rowc' bindtap='go_appointment' id='1'>提前预约下单</view>
+  </view>
+  <view class='h100'></view>
+  <view class='appointment_shopcartList_point'>{{shopcartlength}}</view>
+  <view class='appointment_shopcartList_icon' catchtap='showappointmentlist'>
+    <text class='dzicon icon-zhuanyebaniconkuozhan_Shopping1 cfff t50'></text>
+  </view>
+  <view class='bg z2 o5' bindtap='showappointmentlist' wx:if="{{showappointmentlist}}"></view>
+</template>
+
+
+<!-- 立减金 -->
+<template name="couTemp">
+  <view class='bg_show' wx:if="{{showReduction}}"></view>
+  <view class='p-f' wx:if="{{showReduction}}">
+    <view class='p-r w570'>
+      <image src='/image/a19.png' class='w64h64 p-ab-r' bindtap='_coupFunc' id="0"></image>
+      <image src='http://j.vzan.cc/miniapp/img/lijianjin/smoneybg1.png' class='w570' mode='widthFix'></image>
+      <text class='t70 p-ab-b' bindtap='_coupFunc' id="1">開</text>
+    </view>
+  </view>
+</template>
+
+
+<!-- 优惠券 -->
+<template name="couponList-updateOrder">
+  <view class='coupon-list'>
+    <view class='coupon-item {{vm.listname=="pickmycoupon"|| vm.listname=="mycoupon"?(item.CanUse?"":"disable"):(vm.listname=="storecoupon"?(item.CanGet?"":"disable"):"")}}' wx:for="{{vm.list}}">
+
+      <view class=' d-flex d-flex-center'>
+        <view class='coupon-left d-flex d-flex-center jusc'>
+          <view class='d-flex cfff' wx:if="{{item.CouponWay==0}}">
+            <view class='t30 ptop24'>￥</view>
+            <view class='t70'>{{item.Money_fmt}}</view>
+          </view>
+          <view wx:else class='d-flex cfff'>
+            <view class='t70'>{{item.Money_fmt}}</view>
+            <view class='t24' style='align-self:flex-end;'>折</view>
+          </view>
+        </view>
+        <view class='coupon-right d-flex d-flex-center padl20' style='width:100%'>
+          <view class='d-flex d-flex-center flex1'>
+            <view class='flex1'>
+              <view class='c333 t30 coupon-name vertical-2 fontblod'>{{item.CouponName}}</view>
+              <view class='t26 c666 mtop10'>
+                <block wx:if="{{item.LimitMoney>0}}">满{{item.LimitMoney/100}}元可用</block>
+                <block wx:if="{{item.LimitMoney==0}}">不限金额</block>
+              </view>
+              <view class='t22 c666 ' wx:if="{{vm.listname=='pickmycoupon'||vm.listname=='mycoupon'}}">
+                {{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}
+              </view>
+              <view wx:else class='t22 c666 '>
+                <block wx:if="{{item.ValType==1}}">领券次日开始{{item.ValDay}}天内有效</block>
+                <block wx:elif="{{item.ValType==2}}">领券当日开始{{item.ValDay}}天内有效</block>
+                <block wx:elif="{{item.ValType==0}}">
+                  {{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}
+                </block>
+              </view>
+            </view>
+            <view>
+              <!--领券中心-->
+              <block wx:if="{{vm.listname=='storecoupon'}}">
+                <view class='btn-getcoupon marri24' bindtap='getCoupon' data-id='{{item.Id}}' wx:if="{{item.CanGet}}">领取</view>
+                <view class='btn-getcoupon marri24 disable' wx:else>已领取</view>
+              </block>
+              <!--我的优惠券-->
+              <block wx:elif="{{vm.listname=='mycoupon'}}">
+
+                <block wx:if="{{item.CanUse}}">
+                  <view class='btn-getcoupon marri24' bindtap='useCoupon' data-id='{{item.Id}}' wx:if="{{item.State==0}}">去使用</view>
+                </block>
+                <block wx:else>
+                  <view class='btn-getcoupon disable marri24'>
+                    <block>{{item.State==1?"已使用":"不可用"}}</block>
+                  </view>
+                </block>
+
+              </block>
+              <!--选择优惠券-->
+              <block wx:elif="{{vm.listname=='pickmycoupon'}}">
+                <block wx:if="{{item.CanUse}}">
+                  <view class='btn-getcoupon marri24' bindtap='useMyCoupon' data-index='{{index}}' data-id='{{item.Id}}' wx:if="{{item.State==0}}">使用</view>
+                </block>
+                <block wx:else>
+                  <view class='btn-getcoupon disable marri24'>不可用</view>
+                </block>
+              </block>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class='tea t28 loading' wx:if="{{vm.ispost}}">加载中...</view>
+    <view class='tea t28 loading' wx:if="{{vm.loadall&&vm.list.length>=0}}">已加载全部优惠券</view>
+    <view class='tea' wx:if="{{vm.loadall&&vm.list.length==0&&vm.listname!='storecoupon'}}">
+      <!-- <navigator open-type='navigate' hover-class='none' class='link' url='storecouponlist'>没有券，去领取</navigator> -->
+    </view>
+  </view>
+</template>
+
+
+
+
+<!-- 预约点餐点击查看菜单 -->
+<template name="show-orderInfo-modal">
+  <view class='bg' wx:if="{{listmodal}}" bindtap='show_listmodal'></view>
+  <view class='w520 bgcfff show-listmodal' wx:if="{{listmodal}}">
+    <text class='h100 l100 t36 fontblod  flex-rowc bobof2'>我的订单</text>
+    <scroll-view scroll-y style='max-height:360rpx'>
+      <block wx:for="{{shopcartList}}" wx:if="{{isshowadd}}">
+        <view class='h100 bobof2 flex-rowsb c666 t26 mal20'>
+          <text class='t30'>{{item.goodname}}</text>
+          <view class='flex aic'>
+            <text class='marri20'>X{{item.buynums}}</text>
+            <text>￥{{item.discountprice}}</text>
+          </view>
+        </view>
+      </block>
+      <block wx:for="{{shopcartList}}" wx:if="{{!isshowadd}}">
+        <view class='h100 bobof2 flex-rowsb c666 t26 mal20'>
+          <text class='t30'>{{item.Name}}</text>
+          <view class='flex aic'>
+            <text class='marri20'>X{{item.Count}}</text>
+            <text>￥{{item.Price}}</text>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
+    <view class='h148 flex-rowsa'>
+      <text class='c666 t30'>小计：{{alldiscountprice}}</text>
+      <view class='w180 h68 flex-rowc cfff t30 bgc535f borra8' bindtap='go_appointmentindex' wx:if="{{isshowadd}}">继续点餐</view>
+    </view>
+  </view>
+</template>
+
+
+<!-- 拼团2.0查看更多弹窗 -->
+<template name="group-showmore-modal">
+  <view class='bg' wx:if="{{showmoregroup}}"></view>
+  <view class='showmore' wx:if="{{showmoregroup}}">
+    <text class='l100 flex-rowc t28 fontblod bobof3'>正在开团</text>
+    <scroll-view scroll-y class='maxh550'>
+      <block wx:for="{{GroupSponsorList}}">
+        <view class='h120 flex aic marle20 marri20 bobof3 jussb'>
+          <view class='flex'>
+            <image src='{{item.UserLogo}}' class='headlogo'></image>
+            <view class='flex-column marle10'>
+              <view class='flex'>
+                <text class='t28'>{{item.UserName}} </text>
+                <text class='t24 c999 marle20'>还差{{item.GroupSize-item.GroupUserList.length}}人</text>
+              </view>
+              <text class='t24 c999'>剩余{{item.endtimeList}}</text>
+            </view>
+          </view>
+          <view class='joingroup flex-rowc btn_sel br0' bindtap='navito_groupgoodinfo' data-goodid="{{item.GoodId}}" data-groupid='{{item.Id}}' data-GID="{{item.Id}}" wx:if="{{item.haveJoin==false}}">去参团</view>
+          <view class='joingroup flex-rowc btn_sel br0' bindtap='navito_joingroupinfo' data-groupid="{{item.Id}}" wx:if="{{item.haveJoin==true}}">查看详情</view>
+        </view>
+      </block>
+    </scroll-view>
+    <text class='c999 t24 l68 flex-rowc'>仅显示最多10个在开团的人</text>
+  </view>
+  <image class='unshowmore' src='/image/a19.png' bindtap='showmore' wx:if="{{showmoregroup}}"></image>
+</template>
+
+
+<!-- 拼团 正在开的团列表 -->
+<template name="groupSponsorList">
+  <view class='bgcfff flex-columnc mbottom18 pbottom40'>
+    <block wx:for="{{GroupSponsorList}}" wx:if="{{index<5}}">
+      <view class='w690 flex-rowc bgfa mtop20 pale16'>
+        <image src='{{item.UserLogo}}' mode='aspectFill' class='w88h88b marri10'></image>
+        <text class='flex1 line1 t32'>{{item.UserName}}</text>
+
+        <view class='flex-column t24'>
+          <text class='cff9a37'>差{{item.GroupSize-item.GroupUserList.length}}人成团</text>
+          <text class='c999'>剩余{{item.endtimeList}}</text>
+        </view>
+
+        <view class='w160 cfff bgf0033 t28 flex-rowc h100' bindtap='navito_joingroupinfo' data-groupid="{{item.Id}}" wx:if="{{item.haveJoin==true}}">查看详情</view>
+        <view class='w160 cfff bgf0033 t28 flex-rowc h100' bindtap='navito_groupgoodinfo' data-goodid="{{item.GoodId}}" data-groupid='{{item.Id}}' data-GID="{{item.Id}}" wx:if="{{item.haveJoin==false}}">去参团</view>
+      </view>
+    </block>
+  </view>
+</template>
+
+<!-- 拼团详情选择规格 -->
+<template name="shopcart">
+  <view class='bg' bindtap='showshopcart' wx:if="{{shopcart}}"></view>
+  <view class='shopcart' wx:if="{{shopcart}}">
+    <view class='flex'>
+      <image src='{{miniappFoodGoods.ImgUrl}}' class='w200 h200 marri20' mode='aspectFill'></image>
+      <view class='flex-column jusc t28 c666'>
+        <view class='flex-rowc'>
+          <text class='shopcart-modal-price cf0033 t30 '>{{miniappFoodGoods.chooseprice}}</text>
+          <text class='lt shopcart-modal-price marle16'>{{miniappFoodGoods.EntGroups.OriginalPriceStr}}</text>
+          <text wx:if="{{isgroup==1&&miniappFoodGoods.EntGroups.HeadDeductStr>0}}" class='t24'>（开团立减{{miniappFoodGoods.EntGroups.HeadDeductStr}}元）</text>
+        </view>
+        <text>库存{{miniappFoodGoods.count}}件</text>
+        <text>{{size}}</text>
+      </view>
+    </view>
+
+    <scroll-view scroll-y style='max-height:30vh'>
+      <block wx:for="{{goodsAttrList}}" wx:for-item='this' wx:for-index='lineid'>
+        <text class='t28'>{{this.AttrName}}</text>
+        <view class='flex-row bobof2 pbottom30'>
+          <block wx:for="{{this.SpecList}}">
+            <view class="t24 tea {{item.ischoose? 'shopcart-labels': 'shopcart-unlabels'}}" data-lineid='{{lineid}}' data-index='{{index}}' data-specid='{{item.Id}}' data-specname='{{item.SpecName}}' data-attrname='{{this.AttrName}}' bindtap='chooselabels'>{{item.SpecName}}</view>
+          </block>
+        </view>
+      </block>
+    </scroll-view>
+
+    <view class='h100 flex flexe t42 aic tea mtop30'>
+      <view class='shopcart-numsbtn' bindtap='shopcartmodal_reduce'>-</view>
+      <text class='t32 w66 shopcart-nums'>{{miniappFoodGoods.nowbuynums}}</text>
+      <view class='shopcart-numsbtn' bindtap='shopcartmodal_add'>+</view>
+    </view>
+
+  </view>
+  <button class='shopcart-btn t34' wx:if="{{shopcart}}" bindtap='gotopay'>立即购买</button>
+</template>
+
+<!-- 拼团须知 -->
+<template name="joingroup-tips">
+  <view class='bg' wx:if="{{showpublic}}"></view>
+  <view class='showmore t28 public' wx:if="{{showpublic}}">
+    <text class='l100 flex-rowc t32 fontblod bobof3'>拼团规则</text>
+    <view class='fontblod mtop30'>1.参与方式</view>
+    <text>开团邀请好友参团或参加别人的团，并在规定时间内成团，未达到拼团人数，钱款将自动原路退还。</text>
+    <view class='fontblod mtop30'>2.拼团成功</view>
+    <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。
+</text>
+    <view class='fontblod mtop30'>3.拼团失败</view>
+    <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+    <image class='unshowmore' style='bottom:16vh' src='/image/a19.png' bindtap='showpublic'></image>
+  </view>
+</template>

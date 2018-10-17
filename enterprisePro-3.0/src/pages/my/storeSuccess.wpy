@@ -1,0 +1,76 @@
+<style lang="less">
+    .orderSuccess {
+        text-align: center;
+        padding-top: 60rpx;
+    }
+    .icon-zhifuchenggong {
+        font-size: 140rpx;
+        color: #09bb07;
+    }
+    .paytime {
+        position: fixed;
+        bottom: 20rpx;
+        text-align: center;
+        width: 100%;
+        font-size: 28rpx;
+        color: #999;
+    }
+    .paymoney {
+        font-size: 80rpx;
+    }
+   
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <view class='orderSuccess'>
+            <text class='dzicon icon-zhifuchenggong'></text>
+            <view class='f34'>支付成功</view>
+            <view class='paymoney'>{{vm.payment_free_fmt}}</view>
+            <view class='tc' style='padding:100rpx'>
+                <button class="skin_bg" @tap='back' style="height:88rpx;line-height:88rpx">完成</button>
+            </view>
+        </view>
+        <view class='paytime'>付款时间：{{vm.payment_time_fmt}}</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,tools
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class storeSuccess extends wepy.page {
+        config = {
+            navigationBarTitleText: "支付详情",
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm: {},
+            currentSkin: {}
+        };
+        methods = {
+            back() {
+                tools.goBack(2)
+            }
+        }
+        async onLoad(options) {
+            let orderid = options.orderid || 0
+            await tools.setPageSkin(this);
+            await this.successInfo(orderid)
+        }
+        async successInfo(orderid) {
+            let _g = await core.payByStoreSuccess(orderid)
+            if (_g.result) {
+                this.vm = _g.obj
+                this.$apply()
+            } else {
+                tools.showModal(_g.msg,false)
+            }
+        }
+    }
+</script>

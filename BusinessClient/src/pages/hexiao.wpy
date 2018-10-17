@@ -1,0 +1,132 @@
+<style>
+.img-circle__photo {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 6rpx;
+  background-color: #ccc;
+  margin: 0 auto;
+}
+
+.me-name {
+  padding-top: 20rpx;
+}
+.topbg {
+  padding-bottom: 20rpx;
+}
+.abs-h-full {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+}
+.btn-scan {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.btn-scan image {
+  width: 240rpx;
+  height: 240rpx;
+}
+.btn-scan view {
+  padding-top: 30rpx;
+}
+.btn-search {
+  width: 80rpx;
+  background-color: #fff;
+  margin-left: 20rpx;
+  border-radius: 6rpx;
+  text-align: center;
+  color: #000;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="f fv abs-h-full">
+    <view class="topbg f">
+      <view class="f f1 search">
+        <view class="f fc search-input f1">
+          <view class="dzicon icon-sousuo"></view>
+          <input type="number" value="{{keyword}}" @input="inputKeyword" class="f1" placeholder="请输入（普通或拼团）订单号"></input>
+        </view>
+
+      </view>
+      <view class="btn-search f fc fc-h" bindtap="searchOrder">搜索</view>
+    </view>
+
+    <view class="f1 rel">
+      <view class="btn-scan" @tap="scan">
+        <image src="https://j.vzan.cc/miniapp/img/business/scan.png" class=""></image>
+        <view class="f32 c666">扫码核销</view>
+      </view>
+
+    </view>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core } from "../lib/core";
+import baseMixin from "../mixins/base";
+// import
+//第一步： 引入组件文件
+
+export default class hexiao extends wepy.page {
+  config = {
+    navigationBarTitleText: "线下核销",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+    }
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    tableNo: "",
+    type: 0,
+    keyword: ""
+  };
+  computed = {};
+  methods = {
+    inputKeyword(e) {
+      this.keyword = e.detail.value;
+    },
+    searchOrder(e) {
+      let that = this;
+      //type=0 提货码，type=1 订单号
+      var kw = that.keyword.replace(/\s/g, "");
+      if (kw.length == 0) {
+        that.ShowToast("请输入订单号");
+        return;
+      }
+      wx.navigateTo({
+        url: "/pages/hexiao_list?type=0&kw=" + kw
+      });
+    },
+    scan() {
+      wx.scanCode({
+        success: res => {
+          console.log(res);
+          if (res.path) {
+            wx.navigateTo({
+              url: "/" + res.path
+            });
+          }
+        }
+      });
+    }
+  };
+  events = {};
+  async onLoad() {}
+
+  async getPageData() {
+    //let result = await core.GetOrderByTableNo(type, this.tableNo);
+  }
+}
+</script>

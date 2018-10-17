@@ -1,0 +1,146 @@
+<style lang="less">
+    .dlt {
+        width: 100%;
+        .dlt-video {
+            width: 100%;
+            position: relative;
+            height: 450rpx;
+        }
+        .dlt-img {
+            width: 100%;
+            height: 450rpx;
+        }
+        .dlt-bg {
+            width: 100%;
+            height: 450rpx;
+            background: #000;
+        }
+        .dlt-play {
+            width: 100rpx;
+            height: 100rpx;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -50rpx;
+            margin-top: -50rpx;
+        }
+        .header {
+            width: 100%;
+            padding: 0 30rpx;
+            .title {
+                width: 100%;
+                padding: 30rpx 0;
+                border-bottom: 1px solid #eee;
+                >text {
+                    width: 568rpx;
+                }
+            }
+            .desc {
+                padding: 30rpx 0;
+            }
+        }
+        .wrap {
+            padding: 30rpx 0;
+        }
+    }
+</style>
+<template>
+    <view class='dlt'>
+        <view wx:if="{{vm.VideoUrl}}">
+            <video id="myVideo" hidden="{{!autoplay}}" objectFit="cover" autoplay="{{autoplay}}" class="dlt-img" src="{{vm.VideoUrl}}" controls @ended="stopVideo"></video>
+            <view hidden="{{autoplay}}" class='dlt-video' @tap="videoPlay">
+                <image class='dlt-img' wx:if="{{vm.ImgUrl}}" src='{{vm.ImgUrl}}' />
+                <view class='dlt-bg' wx:else></view>
+                <image class='dlt-play' mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/videoplay.png' />
+            </view>
+        </view>
+        <image src='{{vm.ImgUrl}}' mode='widthFix' class='w-100' @tap="openImg({{vm.ImgUrl}})" wx:if="{{vm.VideoUrl==''}}" />
+        <view class='header'>
+            <view class='title f fc fj'>
+                <text class='f30 c333'>{{vm.Title}}</text>
+                <button open-type="share" class='f fv c999'>
+                                            <text class='dzicon icon-fenxiang f40' />
+                                            <text class='f24'>分享</text>
+                                        </button>
+            </view>
+            <view class='desc f fv'>
+                <view class='c666'>{{vm.Content2}}</view>
+                <view class='f24 c999 f f1 fc fj mt30'>
+                    <text>{{vm.LastdateStr}}</text>
+                    <text>浏览量 {{vm.ViewCount}}</text>
+                </view>
+            </view>
+        </view>
+        <view style='width:100%;height:24rpx;background:#f6f6f6;' />
+        <view class='wrap'>
+            <repeat>
+                <comRichtxt :currentCom.sync="vm" />
+            </repeat>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_richtxt from "@/components/com_richtxt";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js"
+    export default class newsDlt extends wepy.page {
+        config = {
+            navigationBarTitleText: "",
+            navigationBarBackgroundColor: "#fff",
+            enablePullDownRefresh: true,
+        };
+        //第二步：声明组件
+        components = {
+            comRichtxt: com_richtxt,
+        };
+        data = {
+            vm: {},
+            autoplay: false
+        };
+        methods = {
+            //视频
+            videoPlay() {
+                this.autoplay = true
+                this.$apply()
+                wx.createVideoContext('myVideo').play()
+            },
+            stopVideo(comIndex) {
+                this.autoplay = false
+                this.$apply()
+            },
+            wxParseImgTap(e) {
+                let src = e.currentTarget.dataset.src;
+                tools.preViewShow(src);
+            },
+            openImg(img) {
+                tools.preViewShow(img);
+            }
+        }
+        onLoad(options) {
+            let id = _get(options, "id", "")
+            core.GetCompanyNewsDetail(id, this)
+        }
+        async onPullDownRefresh() {
+            wx.showNavigationBarLoading();
+            await core.GetCompanyNewsDetail(this.vm.Id, this)
+            wx.hideNavigationBarLoading();
+            wx.stopPullDownRefresh();
+        }
+        onShareAppMessage() {
+            let _v = this.vm
+            return {
+                title: _v.Name,
+                path: "/pages/news/newsDlt?id=" + _v.Id,
+                imageUrl: _v.ImgUrl,
+                success: function(res) {
+                    tools.wxShowToast("转发成功")
+                }
+            };
+        }
+    }
+</script>

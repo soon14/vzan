@@ -1,0 +1,385 @@
+<style lang="less">
+    .gOlt-h {
+        background-color: #f20033;
+        color: #fff;
+        padding: 30rpx 20rpx;
+        font-size: 26rpx;
+        line-height: 2;
+    }
+    .gOlt-t {
+        font-size: 30rpx;
+        color: #121212;
+        height: 100rpx;
+        line-height: 100rpx;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .gOlt-info {
+        padding: 20rpx;
+        padding-left: 0;
+    }
+    .gOlt-img {
+        width: 160rpx;
+        height: 160rpx;
+        margin-right: 20rpx;
+    }
+    .jia,
+    .jian {
+        width: 48rpx;
+        height: 48rpx;
+        border-radius: 8rpx;
+        justify-content: center;
+        line-height: normal;
+        font-size: 36rpx;
+        border: 2rpx solid rgba(242, 0, 51, 1);
+    }
+    .jia {
+        color: #fff;
+        background-color: rgba(242, 0, 51, 1);
+    }
+    .jian {
+        color: rgba(242, 0, 51, 1);
+    }
+    .order-num {
+        min-width: 50rpx;
+        justify-content: center;
+        color: #f20033;
+    }
+    .gOlt-m {
+        height: 100rpx;
+        line-height: 100rpx;
+        border-bottom: 1px solid #f0f0f0;
+        padding-right: 20rpx;
+    }
+    .gOlt-m:last-child {
+        border-bottom: 0;
+    }
+    .blank-120 {
+        height: 120rpx;
+    }
+    .bottomBar {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        padding-left: 20rpx;
+    }
+    .bottomBar text {
+        color: rgba(242, 0, 51, 1);
+    }
+    .btn-pay {
+        width: 300rpx;
+        height: 100rpx;
+        background: rgba(239, 0, 0, 1);
+        text-align: center;
+        color: #fff;
+        line-height: 100rpx;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='{{currentSkin}}'>
+        <form @submit="groupPay('1')" report-submit="true">
+            <!--收货地址-->
+            <view class="gOlt-h f skin_bg" @tap='pickAddress'>
+                <view class='f fv fc-h f1 pr20'>
+                    <view class='f fc'>
+                        <view class='f1'>收货人：{{vm_goods.address.userName}}</view>
+                        <view>{{vm_goods.address.telNumber}}</view>
+                    </view>
+                    <view>{{vm_goods.address.provinceName}}{{vm_goods.address.cityName}}{{vm_goods.address.countyName}}{{vm_goods.address.detailInfo}}</view>
+                </view>
+                <view class='dzicon icon-jiantou f60'></view>
+            </view>
+            <!--购物清单-->
+            <view class='pl20 bg-w'>
+                <view class='gOlt-t'>购物清单</view>
+                <view class='f gOlt-info'>
+                    <image src='{{vm_goods.pro.img}}' mode='aspectFill' class="gOlt-img" @tap="preview({{vm_goods.pro.img}})" />
+                    <view class='f1 f fv'>
+                        <view class='f1 line line2 f28'>{{vm_goods.pro.name}}</view>
+                        <view class='f'>
+                            <wxc-price icon="sub" class="f1 f32 cred">{{(vm_goods.isGroup?(vm_goods.pro.DiscountPrice/100):(vm_goods.pro.UnitPrice/100))}}</wxc-price>
+                            <view class='f fc'>
+                                <view class='jian f fc' @tap='reduOne'>－</view>
+                                <view class='order-num  f fc f28' @tap='reduOne'>{{vm_goods.pro.num||1}}</view>
+                                <view class='jia f fc' @tap='plusOne'>＋</view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <!--其他信息-->
+            <view class='pl20 bg-w mt20'>
+                <view class='gOlt-m f fc'>
+                    <view class='f32 f1'>配送方式</view>
+                    <view class='f28 c666'>快递配送</view>
+                </view>
+                <view class='gOlt-m f fc'>
+                    <view class='f32 f1'>支付方式</view>
+                    <view class='f28 c666'>
+                        <picker mode="selector" @change='pickPayType' value="{{payType}}" range='{{payTypeRange}}' range-key='name'>
+                            <view class="picker">
+                                当前选择：{{payTypeRange[payType].name}}
+                            </view>
+                        </picker>
+                    </view>
+                    <view class='dzicon icon-jiantou f47'></view>
+                </view>
+                <view class='gOlt-m f fc'>
+                    <view class='f32'>留言说明</view>
+                    <view class='f28 f1'>
+                        <input maxlength='200' type='text' class='ml20 tr' @blur="inputNote" maxlength="100"></input>
+                    </view>
+                </view>
+            </view>
+            <!--费用计算-->
+            <view class='pl20 bg-w mt20'>
+                <view class='gOlt-m f fc'>
+                    <view class='f32 f1'>商品总额</view>
+                    <view class='f28 cred'>+ ￥{{(vm_goods.pro.payprice*vm_goods.pro.num/100)||""}}</view>
+                </view>
+                <view class='gOlt-m f fc' wx:if="{{vm_goods.HeadDeduct>0&&vm_goods.isGHead==1}}">
+                    <view class='f32 f1'>团长减价</view>
+                    <view class='f28 cred'>- ￥{{vm_goods.HeadDeduct/100}}</view>
+                </view>
+            </view>
+            <view class='blank-120'></view>
+            <view class='bottomBar f fc bg-w'>
+                <view class='f1'>
+                    <text class='f32'>应付：</text>
+                    <wxc-price icon="sub" class="f42 cred">{{shouldPay}}</wxc-price>
+                </view>
+                <button formType='submit' class='btn-pay f34 skin_bg'>去支付</button>
+            </view>
+        </form>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        pay,
+        tools
+    } from "../../lib/core.js";
+    // import
+    //第一步： 引入组件文件
+    export default class groupOrder extends wepy.page {
+        config = {
+            navigationBarTitleText: "订单确认",
+            // 引入min组件
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+            }
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            currentSkin: {},
+            vm_goods: {},
+            payTypeRange: [{
+                    name: "微信支付",
+                    value: 0
+                },
+                {
+                    name: "储值支付",
+                    value: 1
+                }
+            ],
+            payType: 0,
+            shouldPay: 0,
+            toast: {},
+            _index: -1,
+        };
+        methods = {
+            preview(img) {
+                tools.preViewShow(img)
+            },
+            inputNote(e) {
+                this.message = e.detail.value
+                this.$apply()
+            },
+            //选择地址
+            async pickAddress() {
+                let that = this;
+                let addInfo = await tools.chooseAddress()
+                if (addInfo.errMsg == "chooseAddress:ok") {
+                    this.vm_goods.address = addInfo
+                    this.$apply()
+                }
+            },
+            pickPayType(e) {
+                this.payType = e.detail.value
+            },
+            //加1
+            plusOne() {
+                let _d = this.vm_goods;
+                if (_d.pro.num > 999) {
+                    tools.ShowToast("购买数量不能大于999", this)
+                    return;
+                }
+                _d.pro.num += 1;
+                this.vm_goods.pro.num = _d.pro.num
+                this.comPay();
+            },
+            //减1
+            reduOne() {
+                let _d = this.vm_goods;
+                if (_d.pro.num <= 1) {
+                    tools.ShowToast("购买数量不能小于1", this)
+                    return;
+                }
+                _d.pro.num -= 1;
+                this.vm_goods.pro.num = _d.pro.num
+                this.comPay();
+            },
+            /***paytype:
+             * 0是微信支付
+             * 1是储值支付
+             */
+            async groupPay(index, e) {
+                core.formId(e.detail.formId)
+                let _d = this.vm_goods;
+                if (_d.address == undefined || _d.address == '') {
+                    tools.ShowToast("请选择地址", this)
+                    return;
+                }
+                if (this._index == index) {
+                    return;
+                }
+                if (this.payType == 1) {
+                    let showModal = await tools.showModal("确定使用储值支付吗？")
+                    if (showModal.confirm) {
+                        this.payInfoOrder()
+                        this._index = index
+                    } else {
+                        this._index = -1;
+                    }
+                } else {
+                    this.payInfoOrder()
+                    this._index = index
+                }
+                this.$apply()
+            },
+        };
+        async onLoad(options) {
+            await tools.setPageSkin(this)
+            await this.orderInfo(options)
+            this.vm_goods.address = await core.getAddress(this)
+            this.$apply()
+        }
+        //下单  
+        async payInfoOrder() {
+            wx.showNavigationBarLoading();
+            let _d = this.vm_goods;
+            let app = wepy.$instance;
+            let userInfo = await core.getUserInfo();
+            let Jsondata = {
+                appId: app.globalData.appid,
+                groupId: _d.groupId,
+                UserId: userInfo.userid,
+                num: _d.pro.num,
+                isGroup: _d.isGroup, //是否拼团
+                isGHead: _d.isGHead,
+                gsid: _d.gsid,
+                //收货人信息
+                phone: _d.address.telNumber,
+                username: _d.address.userName,
+                addres: _d.address.provinceName + _d.address.cityName + _d.address.countyName + _d.address.detailInfo,
+                note: this.message || "",
+            };
+            let getInfo = await core.addGroup(Jsondata)
+            if (getInfo.isok) {
+                let param = {
+                    order: 3001005,
+                    jsondata: JSON.stringify(getInfo.postdata),
+                    paytype: this.payType
+                }
+                let goPay = await pay.AddOrderNew(param)
+                if (goPay.result) {
+                    param.paytype == 0 ? this.wxPay(goPay.obj, getInfo) : this.xwPay(goPay.obj, getInfo)
+                } else {
+                    tools.showModal(goPay.msg, false)
+                }
+            } else {
+                wx.hideNavigationBarLoading()
+                if (getInfo.msg == "") {
+                    tools.ShowToast(getInfo.postdata.msg, this)
+                } else {
+                    tools.ShowToast(getInfo.msg, this)
+                }
+                return;
+            }
+        }
+        /*****
+         * isGroup是否团购
+         * isGHead是否团长
+         */
+        async orderInfo(options) {
+            let [_gsid, _groupid, _isGroup, _isGHead] = [parseInt(options.gsid) || 0, parseInt(options.groupid) || 0, parseInt(options.isGroup) || 0, parseInt(options.isGHead) || 0]
+            let groupInfo = await core.groupInfo(_groupid)
+            if (groupInfo.isok) {
+                let price = 0;
+                if (_isGroup) {
+                    price = groupInfo.groupdetail.DiscountPrice
+                } else {
+                    price = groupInfo.groupdetail.UnitPrice
+                }
+                this.vm_goods.pro = {
+                    img: groupInfo.groupdetail.ImgUrl,
+                    name: groupInfo.groupdetail.GroupName,
+                    DiscountPrice: groupInfo.groupdetail.DiscountPrice,
+                    UnitPrice: groupInfo.groupdetail.UnitPrice,
+                    num: 1,
+                    payprice: price
+                }
+                this.vm_goods.gsid = _gsid
+                this.vm_goods.isGroup = _isGroup;
+                this.vm_goods.isGHead = _isGHead;
+                this.vm_goods.groupId = _groupid;
+                this.vm_goods.HeadDeduct = groupInfo.groupdetail.HeadDeduct || 0;
+                this.comPay()
+                this.$apply()
+            }
+        }
+        comPay() {
+            var _d = this.vm_goods;
+            var _shouldPay = 0;
+            if (_d.HeadDeduct > 0 && _d.isGHead == 1) {
+                _shouldPay = parseFloat(((_d.pro.payprice * _d.pro.num) - _d.HeadDeduct) / 100).toFixed(2);
+            } else {
+                _shouldPay = parseFloat((_d.pro.payprice * _d.pro.num) / 100).toFixed(2);
+            }
+            this.shouldPay = _shouldPay
+        }
+        // 微信支付
+        async wxPay(oradidp, getInfo) {
+            let newparam = {
+                orderid: oradidp,
+                type: 1
+            };
+            let wxpay = await pay.PayOrder(newparam);
+            if (wxpay != "" && wxpay.errMsg.includes("requestPayment:ok")) {
+                tools.loading("支付成功");
+                let _parameter = '?orderid=' + oradidp + '&gsid=' + getInfo.postdata.gsid + "&paytype=" + this.payType;
+                tools.goRedirecto("../group/groupSuccess" + _parameter)
+                wx.hideNavigationBarLoading()
+            } else {
+                await pay.deleteLastFormId()
+                tools.loading("取消支付");
+                wx.hideNavigationBarLoading()
+                this._index = -1
+                this.$apply()
+            }
+        }
+        //小未储值支付
+        async xwPay(oradidp, getInfo) {
+            tools.loading("支付成功");
+            let _parameter = '?orderid=' + oradidp + '&gsid=' + getInfo.postdata.gsid + "&paytype=" + this.payType;
+            tools.goRedirecto("../group/groupSuccess" + _parameter)
+            wx.hideNavigationBarLoading()
+        }
+    }
+</script>

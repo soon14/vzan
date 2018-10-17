@@ -1,0 +1,124 @@
+<style lang="less">
+    .c-coupLst {
+        width: 100%;
+        padding: 0 30rpx;
+        .c-coupLst-bgNone {
+            background-image: url('http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180927/bdf3f2e6cd2648d5b92609560f419525.png');
+        }
+        .c-coupLst-bgShow {
+            background-image: url('http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180927/058cff7252e54dd6b98087ed21d8c268.png');
+        }
+        .c-coupLst-main-item {
+            width: 100%;
+            height: 230rpx;
+            margin-top: 30rpx;
+            background-size: cover;
+            padding: 30rpx 20rpx 30rpx 40rpx;
+            .c-coupLst-main-item-title {
+                font-size: 36rpx;
+                font-weight: bold;
+            }
+            .c-coupLst-main-item-tip {
+                font-size: 22rpx;
+                color: #FFE5D2;
+            }
+            .c-coupLst-main-item-Lit {
+                font-size: 22rpx;
+                color: #FF7443;
+                background-color: #FFD3B2;
+                padding: 5rpx 20rpx;
+            }
+            .c-coupLst-nouse {
+                color: #666666;
+                background-color: #E1E1E1;
+            }
+            .c-coupLst-canuse {
+                color: #FF7443;
+                background-color: #FFD3B2;
+            }
+            .c-coupLst-main-item-btn {
+                width: 98rpx;
+                height: 36rpx;
+                font-size: 20rpx;
+                border-radius: 18rpx;
+            }
+            .c-btnone {
+                background-color: #a1a2a3;
+                color: #fff;
+            }
+            .c-btnshow {
+                color: #FF7443;
+                background: -webkit-linear-gradient(right, #FFD3B2, #FFC091);
+            }
+        }
+    }
+</style>
+<template>
+    <view class='c-coupLst'>
+        <repeat for="{{vm.list}}">
+            <view class="c-coupLst-main-item f fj {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-coupLst-bgShow':'c-coupLst-bgNone'}}">
+                <view class="f fv fj">
+                    <text class="c-coupLst-main-item-title {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'cfff':'c666'}}">{{item.CouponName}}{{item.Money}}{{item.CouponWay==0?'元':'折'}}</text>
+                    <view>
+                        <text class="c-coupLst-main-item-Lit {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-coupLst-canuse':'c-coupLst-nouse'}}">{{item.LimitMoney=='0'?'无门槛使用':'满'+item.LimitMoney+'元使用'}}</text>
+                    </view>
+                    <text class="f22 {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'cffe':'c999'}}" wx:if='{{item.discountType==1}}'>该优惠券与会员折扣只能享受一种</text>
+                    <text class="f22 {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'cffe':'c999'}}" wx:if="{{vm.listname=='pickmycoupon'||vm.listname=='mycoupon'}}">{{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}</text>
+                    <view wx:else>
+                        <text class="f22 {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'cffe':'c999'}}" wx:if="{{item.ValType==1||item.ValType==2}}">领券{{item.ValType==1?'次日':'当日'}}开始{{item.ValDay}}天内有效</text>
+                        <text class="f22 {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'cffe':'c999'}}" wx:if="{{item.ValType==0}}">{{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}</text>
+                    </view>
+                </view>
+                <view class="f fv fc fj">
+                    <view class="f22 {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'cffe':'c999'}} f fv">
+                        <text>满足条件</text>
+                        <text>即可使用</text>
+                    </view>
+                    <repeat wx:if="{{vm.listname=='storecoupon'}}">
+                        <view class="c-coupLst-main-item-btn f fc fc-h {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-btnshow':'c-btnone'}}" wx:if="{{item.CanGet}}" @tap="getCoupon({{item.Id}})">立即领取</view>
+                        <view class="c-coupLst-main-item-btn f fc fc-h {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-btnshow':'c-btnone'}}" wx:else>已领取</view>
+                    </repeat>
+                    <repeat wx:if="{{vm.listname=='mycoupon'}}">
+                        <view class="c-coupLst-main-item-btn f fc fc-h {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-btnshow':'c-btnone'}}" wx:if="{{item.CanUse}}" @tap='useCoupon'>去使用</view>
+                        <view class="c-coupLst-main-item-btn f fc fc-h {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-btnshow':'c-btnone'}}" wx:else>{{item.State==1?"已使用":"不可用"}}</view>
+                    </repeat>
+                    <repeat wx:if="{{vm.listname=='pickmycoupon'}}">
+                        <view class="c-coupLst-main-item-btn f fc fc-h {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-btnshow':'c-btnone'}}" wx:if="{{item.State==0||item.State==99}}" @tap='useMyCoupon({{index}})'>使用</view>
+                        <view class="c-coupLst-main-item-btn f fc fc-h {{vm.listname=='pickmycoupon'||item.CanGet||item.CanUse?'c-btnshow':'c-btnone'}}" wx:else>不可用</view>
+                    </repeat>
+                </view>
+            </view>
+        </repeat>
+        <!-- 加载状态 -->
+        <view class="loding w-100 f fc-h" style="padding:20rpx 0" wx:if="{{vm.ispost}}">
+            <text class="loading-icon" />
+            <text class="c999 f26 ml20">正在加载中...</text>
+        </view>
+        <!-- 加载完毕 -->
+        <view class="w-100 tc c123 f24 ph20" wx:if="{{vm.loadall&&vm.list.length>=0}}">已加载全部优惠券~</view>
+        <view class="w-100 f fc fc-h c123 f24" style="height:80vh" wx:if="{{vm.loadall&&vm.list.length==0&&vm.listname=='pickmycoupon'}}">
+            <navigator open-type='navigate' hover-class='none' class='link' url='/pages/discount/couponCenter'>没有券，去领取~</navigator>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class com_coup extends wepy.component {
+        methods = {
+            useMyCoupon(index) {
+                this.$emit("useMyCoupon", index)
+            },
+            useCoupon() {
+                this.$emit("useCoupon")
+            },
+            async getCoupon(id) {
+                let coupInfo = await core.getCoupon(id)
+                tools.showModal(coupInfo.msg, false)
+            }
+        }
+    }
+</script>

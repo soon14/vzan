@@ -1,0 +1,165 @@
+<!--pages/shopping/orderInfo/orderInfo.wxml-->
+<import src='/script/template.wxml' />
+
+<!-- <view class='new_header f-sb'>
+  <view class='h340 f-sa'>
+    <view class='f pt20 pb10'>
+      <block wx:for='{{item}}'>
+        <view class='pr mr30'>
+          <image src='/image/ky.png' class='w100h100b' mode='aspectFill'></image>
+        </view>
+      </block>
+    </view>
+    <text class='t38 f-B cfff'>拼团中</text>
+    <view class='f c'>
+      <view class='new_line'></view>
+      <text class='t30 cfff mal20'>分享3次，成团更快</text>
+      <view class='new_line'></view>
+    </view>
+  </view>
+  <view class='h100 w-full fsb pl36 pr24'>
+    <text class='t26 cfff'>距结束还剩余 00:29:53</text>
+    <button class='btn-1 mpunset cf0033 bgcfff pintuan_userbtn'>邀请好友</button>
+  </view>
+</view> -->
+
+<!-- 配送地址  商家配送-->
+<view class='f-c jsb bgcfff m-h180 pt20' wx:if="{{orderInfo.orderDetail.sendway==0}}">
+  <text> </text>
+  <view class='fsb c333 t28 padl61'>
+    <text class='ml16'>收货人：{{orderInfo.orderDetail.consignee}}</text>
+    <text>{{orderInfo.orderDetail.phone}}</text>
+  </view>
+  <view class='f c padl20 mt8 mb20'>
+    <text class='dzicon icon-icon_shouhuodizhi- cde mr20'></text>
+    <text class='t28 c1212'> {{orderInfo.orderDetail.address}}</text>
+  </view>
+  <image src='/image/bottomline.png' class='w-full' mode='widthFix'></image>
+</view>
+<!-- 配送地址  到店自取-->
+<view class='f-c jsb bgcfff m-h180 pt20' wx:if="{{orderInfo.orderDetail.sendway==1}}">
+  <text> </text>
+  <view class='fsb c333 t28 padl61'>
+    <text class='ml16'>收货人：{{orderInfo.orderDetail.consignee}}</text>
+    <text>{{orderInfo.orderDetail.phone}}</text>
+    <!-- <view class='quhuo_btn' bindtap='show_getcode'>取货</view> -->
+  </view>
+  <view class='f c padl20 mt8 mb20'>
+    <text class='dzicon icon-icon_shouhuodizhi- cde mr20'></text>
+    <text class='t28 c1212'> {{orderInfo.orderDetail.address}}</text>
+  </view>
+  <image src='/image/bottomline.png' class='w-full' mode='widthFix'></image>
+</view>
+<view wx:if="{{orderInfo.orderDetail.sendway==2}}"></view>
+<!-- 拼团人员 -->
+<view class='bgcfff h220 mt20 pintuan-info t28'>
+  <view wx:if="{{orderInfo.groupDetail.state==0}}">
+    <text>拼团仅剩<text class='cf0033'>{{orderInfo.groupDetail.endtimeStr || '00:00:00'}}</text>
+    <text>，还剩</text>
+    <text class='cf0033'>{{orderInfo.groupDetail.groupCount-orderInfo.groupDetail.entrantCount}}</text>
+    <text>人</text></text>
+  </view>
+  <view wx:elif="{{orderInfo.groupDetail.state==-1}}">
+    <text>拼团失败，还差<text class='cf0033'>{{orderInfo.groupDetail.groupCount-orderInfo.groupDetail.entrantCount}}</text>人</text>
+  </view>
+  <view wx:elif="{{orderInfo.groupDetail.state==1}}">
+    <text>人数已满，全员确认收货立即返现</text>
+  </view>
+  <view wx:else>
+    <text class='cf0033'>拼单成功，立返{{orderInfo.goodsInfo.groupPrice * orderInfo.orderDetail.count /100}}元</text>
+  </view>
+  <!-- 拼团头像 -->
+  <view class='fsb'>
+    <view class='f jsc'>
+      <block wx:for="{{orderInfo.users}}">
+        <view class='pr mt20 ml20' wx:if="{{index<3}}">
+          <image src='{{item.headImg||item.noneLogo}}' class='w100h100b' mode='aspectFill'></image>
+        </view>
+      </block>
+      <view class='user_showmore' wx:if="{{orderInfo.users.length>4}}" bindtap="showmore_User">...</view>
+    </view>
+    <view wx:if="{{orderInfo.orderDetail.state>0}}">
+      <button class='btn-1 mpunset cfff bgf0033 pintuan_userbtn' wx:if="{{orderInfo.groupDetail.state==0}}" data-groupid='{{orderInfo.groupDetail.id}}' data-storeid='{{orderInfo.goodsInfo.storeId}}' bindtap='pintuaninfo_nt'>邀请好友</button>
+      <button style='border-color:#f20033' class='btn-1 mpunset cf0033 pintuan_userbtn' wx:if="{{orderInfo.groupDetail.state>0}}" data-groupid='{{orderInfo.groupDetail.id}}' data-storeid='{{orderInfo.goodsInfo.storeId}}' bindtap='pintuaninfo_nt'>拼单详情</button>
+    </view>
+  </view>
+</view>
+<!-- 店铺logo -->
+<view class='h88 mt20 padl20 bgcfff fsb' bindtap='storeInfo_nt'>
+  <view class='f'>
+    <image src='{{orderInfo.storeInfo.logo}}' class='w44h44 mr10' mode='aspectFill'></image>
+    <text class='c333 t30'>{{orderInfo.storeInfo.storeName}}</text>
+  </view>
+  <text class='cf0033 t28'>{{orderInfo.orderDetail.lastState}}</text>
+</view>
+<!-- 商品 -->
+<view class='h220 p20 f' bindtap='goodInfo_nt'>
+  <image src='{{orderInfo.goodsInfo.img}}' class='w180h180 mr20' mode='aspectFill'></image>
+  <view class='f-c jsb f1'>
+    <text class='c333 t28 f-B vertical-2 l28'>{{orderInfo.goodsInfo.name}}</text>
+    <view>
+      <text class='c666 t22' wx:if="{{orderInfo.specification}}">{{orderInfo.specification.name}}</text>
+      <view class='f c'>
+        <text class='cf0033 t26 mr10'>现价￥{{orderInfo.specification.price/100 || orderInfo.goodsInfo.priceStr}}</text>
+        <view class='buy-profit' wx:if="{{(orderInfo.specification.groupPrice||orderInfo.goodsInfo.groupPrice)>0}}">拼立返{{orderInfo.specification.groupPrice/100 || orderInfo.goodsInfo.groupPrice/100}}</view>
+      </view>
+    </view>
+  </view>
+</view>
+<view class='bgcfff t32 c1212'>
+  <!-- 数量 -->
+  <view class='h100 fsb l_item'>
+    <text class='c333 t32'>数量</text>
+    <text class='c333 t28'>x{{orderInfo.orderDetail.count}}</text>
+  </view>
+  <!-- 运费 -->
+  <view class='fsb l_item'>
+    <text class='c333 t32'>配送方式</text>
+    <text class='c333 t28'>{{orderInfo.orderDetail.sendwayStr}}</text>
+  </view>
+  <!-- 优惠券 -->
+  <!-- <view class='fsb l_item'>
+    <text class='c333 t32'>可用券</text>
+    <text class='c333 t28'>无</text>
+  </view> -->
+  <!-- 备注 -->
+  <view class='fsb l_item' wx:if="{{orderInfo.orderDetail.buyerRemark}}">
+    <text class='c333 t32'>备注</text>
+    <text class='c333 t28'>{{orderInfo.orderDetail.buyerRemark}}</text>
+  </view>
+</view>
+<!-- 订单的其他信息 -->
+<view class='bgcfff mt20'>
+  <view class='fsb ml20 bg_bottom_line h130'>
+    <view class='f-c t26 c666'>
+      <text wx:if="{{orderInfo.orderDetail.sendway==1}}">取货号码：<text class='c333'>{{orderInfo.orderDetail.receivingNo}}</text></text>
+      <text>订单编号：<text class='c333'>{{orderInfo.orderDetail.outTradeNo}}</text></text>
+      <text>下单时间：<text class='c333'>{{orderInfo.orderDetail.addtimeStr}}</text></text>
+    </view>
+    <view class='mr33 copy_ordernum' bindtap='copy_ordernum'>复制订单号</view>
+  </view>
+  <view class='f-c jsc h130 t26 c666 pl20'>
+    <text>支付方式：<text class='c333'>微信支付</text></text>
+    <text class='mt8'>支付金额：<text class='c333'>￥{{orderInfo.orderDetail.moneyStr}}</text></text>
+  </view>
+</view>
+
+
+
+<!-- 底部按钮 -->
+<template is='bottom_btn' />
+<view class='h100'></view>
+<view class='bottom_action' wx:if="{{(orderInfo.orderDetail.state==2||orderInfo.orderDetail.state==3)&&orderInfo.orderDetail.sendway!=2}}">
+  <!-- <view class='t36 tc cf0033 w285'>查看物流</view> -->
+  <button class='btn mpunset orderinfo_bottom_btn' bindtap='confirm_getGood'>确认收货</button>
+</view>
+
+<!-- 收货二维码 -->
+<view wx:if="{{getCode}}">
+  <view class='bg3'></view>
+  <text class='dzicon icon-3 cfefe getcode-cancle' bindtap='show_getcode'></text>
+  <view class='getcode-modal f-cc'>
+    <image src='/image/ky.png' class='w304 h304' mode='aspectFill'></image>
+    <text class='c666 t28 mt30'>向店主出示该二维码取货</text>
+  </view>
+</view>

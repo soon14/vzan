@@ -1,0 +1,159 @@
+<!--pages/orderList/orderList.wxml-->
+<view class='{{currentSkin}}'>
+  <!-- address -->
+  <view class="w100 h250nl flex-c-jus-c shop_sel cfff p20-w" bindtap="addressGoto">
+    <view class='w100 flex-r-c-sb f32'>
+
+      <view wx:if="{{Address==0||getWay==3}}">请设置收货地址</view>
+
+      <view class='w100 flex-r-c-sb' wx:if="{{Address.length!=0&&getWay==1}}">
+        <text>收货人：{{Address.userName}}</text>
+        <text>{{Address.telNumber}}</text>
+      </view>
+
+      <view wx:if="{{getWay==0}}">
+        <text style="line-height:24rpx;">到店自取</text>
+      </view>
+
+      <view class='dzicon icon-jiantou f50 m20-l'></view>
+    </view>
+    <view class='m20-t' wx:if="{{getWay==0}}">{{Address.storeaddress}}</view>
+    <view class='m20-t' wx:if="{{Address.length!=0&&getWay==1}}">{{Address.provinceName}}{{Address.cityName}}{{Address.countyName}}{{Address.detailInfo}}</view>
+  </view>
+
+
+
+  <view class="bgff">
+    <!-- 购物清单 -->
+    <view class="h102nl flex-r-c-sb bd-f5 m20-w">
+      <text class='f30 c12'>购物清单</text>
+      <view>
+        <text class='c66'>共{{totalCount}}件</text>
+        <text class='c66 m10-l'>小计</text>
+        <text class='cf20'>￥{{totalPrice}}</text>
+      </view>
+    </view>
+
+
+    <block wx:for="{{goods}}">
+      <!-- 商品模板 -->
+      <view class="flex-r-c-sb p20">
+        <image src="{{item.ImgUrl}}" class="w150nl h150nl m20-r" mode="aspectFill"></image>
+        <view class="f1 h150nl f26 flex-c-sb">
+          <text>{{item.Introduction}}</text>
+          <text class="w100 c66" wx:if="{{item.SpecInfo!='undefined'}}">{{item.SpecInfo}}</text>
+          <view class="cf20 flex-r-sb">
+            <view>
+              <text>￥{{item.discountPrice}}</text>
+              <text wx:if="{{item.discount!=100}}" class='fprice ccc'>￥{{item.oldPrice}}</text>
+            </view>
+            <text>x{{item.Count}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 选项 -->
+  <view class="bgff m20-t">
+    <!-- 配送与支付 -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5" wx:if="{{getWay==1}}">
+      <text class="f32 c12">配送方式</text>
+      <picker bindchange="bindPickerFunc" value="{{index}}" range="{{array}}">
+        <view class='flex-r-c c66'>
+          <!-- <text>当前选择:{{array[index]}}</text>
+          <text class='dzicon icon-jiantou f50'></text> -->
+           <text>{{sendWay}}</text>
+        </view>
+      </picker>
+    </view>
+    <view class="flex-r-c-sb p20-w h100-l bd-f5">
+      <text class="f32 c12">支付方式</text>
+      <picker bindchange="changePayFunc" value="{{index1}}" range="{{array1}}">
+        <view class='flex-r-c c66'>
+          <text>当前选择:{{array1[index1]}}</text>
+          <text class='dzicon icon-jiantou f50'></text>
+        </view>
+      </picker>
+    </view>
+    <!-- 留言说明 -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5">
+      <text class="f32 c12">留言说明</text>
+      <input class="center c66" placeholder="注意防摔、尽快发货" bindblur="inputMessage" value='{{messageInput}}' />
+    </view>
+  </view>
+
+  <view class="bgff m20-t">
+
+    <!-- 会员打折 -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5" wx:if="{{vipdiscount!=100}}">
+      <text class="f32 c12">会员打折</text>
+      <text class="c66">{{vipdiscount/10}} 折（商品单价低于0.01不打折）</text>
+    </view>
+    <!-- 商品总额 -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5">
+      <text class="f32 c12">商品总额</text>
+      <text class="c66">+ ￥{{originalPrice}}</text>
+    </view>
+    <!-- 折扣优惠 -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5">
+      <text class="f32 c12">折扣优惠</text>
+      <text class="c66">- ￥{{lessPrice}}</text>
+    </view>
+    <!-- 团长减价 -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5" wx:if="{{isgroup==1}}">
+      <text class="f32 c12">团长减价</text>
+      <text class="c66">- ￥{{headerReducePrice}}</text>
+    </view>
+    <view class="flex-r-c-sb p20-w h100-l bd-f5" wx:if="{{vmMycoupon.list.length>0}}">
+      <text class="f32 c12">优惠券</text>
+      <view class='f28 cf3' bindtap='chooseCoupons'>
+        <view wx:if="{{pickCoupon==null}}">选择卡券</view>
+        <view wx:else class='line1' style='max-width:500rpx;text-align:right;'>{{pickCoupon.CouponName}}： - {{money_coupon}}</view>
+      </view>
+    </view>
+    <!-- 快递运费 -->
+    <!-- <view class="flex-r-c-sb p20-w h100-l bd-f5">
+      <text class="f32 c12">快递运费</text>
+      <text class="c66">+ ￥{{chooseModel[index].sum}}</text>
+    </view> -->
+    <view class="flex-r-c-sb p20-w h100-l bd-f5">
+      <text class="f32 c12">快递运费</text>
+      <text class="c66">+ ￥{{fee}}</text>
+    </view>
+  </view>
+  <!-- 底部按钮 -->
+  <view class='h150nl'></view>
+  <view class="w100 h100-l z-4 flex-r-c-sb bgff p-fbot">
+    <view class="m20-l">
+      <text class='f30 c12'>应付：</text>
+      <!-- <text class='f26 cf20'>￥{{pickCoupon==null?totalPrice:money_cal_fmt}}</text> -->
+       <text class='f26 cf20'>￥{{pickCoupon==null?sumMoney:money_cal_fmt}}</text>
+    </view>
+
+    <!-- 提交模拟formId -->
+    <form bindsubmit="payFunc" report-submit="true">
+      <button class="w300nl h100-l center cfff shop_sel f32 br0" formType="submit" id="{{index1}}">{{array1[index1]}}</button>
+    </form>
+
+  </view>
+
+  <!--优惠券选择层-->
+  <view class='pop-layer {{!couponsShow?"pop-hide":""}}'>
+    <view class='pop-mask' catchtap='chooseCoupons'></view>
+    <view class='rel pop-wrap pop-coupon'>
+      <view class='tc pop-title'>选择卡券</view>
+      <scroll-view class='maxheight600' style='background-color: #f7f6f5' scroll-y="true" bindscrolltolower="reachCouponBottom" wx:if="{{couponsShow}}">
+        <template is="couponList" data="{{vm:vmMycoupon}}" />
+      </scroll-view>
+
+      <view class='d-flex d-flex-center'>
+        <view class='btn-danger f32 flex1' bindtap='notuseCoupon'>不使用卡券</view>
+        <view class='btn-ok f32 flex1' bindtap='pickCouponOK'>关闭</view>
+      </view>
+    </view>
+  </view>
+</view>
+<template is="rejTemp" data="{{showModalUser}}" />
+<import src="/template/couponList.wxml" />
+<import src="/template/template.wxml" />

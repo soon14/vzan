@@ -1,0 +1,325 @@
+<style lang="less">
+    .g-hear {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        background: #fff;
+        font-size: 32rpx;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 3;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .g-lst {
+        width: 100%;
+        .g-main {
+            width: 100%;
+            background: #fff;
+            margin-top: 20rpx;
+            padding: 20rpx;
+            .g-img {
+                width: 240rpx;
+                height: 240rpx;
+            }
+            .g-content {
+                margin-left: 20rpx;
+            }
+            .g-state {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                padding: 0 10rpx;
+                height: 60rpx;
+                line-height: 60rpx;
+                text-align: center;
+                color: #fff;
+                background-color: #ff9a37;
+            }
+        }
+        .g-btn {
+            border-top: 1px solid #f7f7f7;
+            width: 100%;
+            height: 120rpx;
+            line-height: 120rpx;
+            background: #fff;
+            margin-bottom: 20rpx;
+            justify-content: flex-end;
+            padding: 0 20rpx;
+            .g-btnstr {
+                width: 150rpx;
+                height: 66rpx;
+                line-height: 66rpx;
+                text-align: center;
+                border: 1px solid #999;
+                color: #333;
+            }
+            .g-btnShow {
+                width: 150rpx;
+                height: 66rpx;
+                line-height: 66rpx;
+                text-align: center;
+            }
+            .g-share {
+                width: 200rpx;
+                height: 66rpx;
+                line-height: 66rpx;
+                text-align: center;
+                background-color: #fff;
+                font-size: 28rpx;
+                margin-left: 0;
+                margin-right: 0;
+            }
+            .share-btn::after {
+                border: none;
+            }
+        }
+    }
+</style>
+<template>
+    <view class="{{currentSkin}}">
+        <view>
+            <view class="g-hear f fc fsa">
+                <repeat for="{{groupState}}">
+                    <view class="{{item.state==vm.state?'skin-bfoot':''}}" @tap="changeType({{index}})">{{item.name}}</view>
+                </repeat>
+            </view>
+            <view style="height:100rpx;"></view>
+            <view class="g-lst" wx:if="{{vm.list[1].length}}">
+                <repeat for="{{vm.list}}">
+                    <repeat for="{{item}}">
+                        <view class="g-main f">
+                            <view class="g-img rel">
+                                <image mode="aspectFill" src="{{item.goodList[0].SpecImg||item.goodList[0].goodsMsg.img}}" class="g-img" />
+                                <view class="g-state">{{g_showSt[item.state].name}}</view>
+                            </view>
+                            <view class="g-content f1 fj f fv">
+                                <view class="f32">{{item.goodList[0].goodsMsg.name}}</view>
+                                <view class="f fc fj">
+                                    <view class="c666">实付:
+                                        <wxc-price class="f30 cred">{{item.buyPrice}}</wxc-price>
+                                    </view>
+                                    <text class="c666">X{{item.goodList[0].Count}}</text>
+                                </view>
+                            </view>
+                        </view>
+                        <view class="g-btn f fc">
+                            <text class="g-btnstr mr20" wx:if="{{item.getWay == 1 && (item.state == 2 || item.state == 4)}}" @tap.stop="goLogistics({{item.orderId}}, {{item.goodList}})">查看物流</text>
+                            <text class="g-btnstr mr20" wx:if="{{item.groupstate!=0}}" @tap.stop="navOrder({{item.orderId}})">订单详情</text>
+                            <text class="g-btnstr ml20 mr20" wx:if="{{item.state==1}}" @tap.stop="navCheck({{item.groupid}})">参团详情</text>
+                            <text class="g-btnShow skin-br ml20 mr20" wx:if="{{item.state==4&&item.goodList[0].IsCommentting==false}}" @tap.stop="pathValue({{item}})">评论</text>
+                            <button open-type="share" class='g-share btn skin-br share-btn' wx:if="{{item.groupstate==1}}" data-item="{{item}}">邀请小伙伴</button>
+                            <text class="g-btnShow skin-br ml20" wx:if="{{item.state==2}}" @tap.stop="groupConfrim({{item.orderId}},3)">确认收货</text>
+                            <text class="g-btnstr ml20" wx:if="{{item.state==0&&item.groupstate==0}}" @tap.stop="groupConfrim({{item.orderId}},-1)">取消订单</text>
+                            <form class="ml20" @submit="goPay({{item.citymorderId}},{{item.orderId}})" report-submit="true" wx:if="{{item.state==0}}">
+                                <button class='g-share btn skin-br share-btn' formType="submit">立即支付</button>
+                            </form>
+                            <text class="c999 ml20" wx:if="{{item.groupstate==0&&item.state==-1||item.groupstate==0&&item.state==6}}">该拼团已失效</text>
+                            <text class="c999 ml20" wx:if="{{item.groupstate==1&&item.state==-1||item.groupstate==1&&item.state==6}}">该参团已取消</text>
+                        </view>
+                    </repeat>
+                </repeat>
+                <view class="loding w-100 f fc-h" style="padding:30rpx 0" wx:if="{{vm.showloading&&vm.loadall==false}}">
+                    <text class="loading-icon"></text>
+                    <text class="c999 f26 ml20">正在加载中...</text>
+                </view>
+            </view>
+            <wxc-abnor type="DATA" wx:else></wxc-abnor>
+        </view>
+        <wxc-loadmore is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" wx:if="{{vm.list[1]!=null&&vm.list[1].length!=0&&vm.loadall}}"></wxc-loadmore>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        pay,
+        tools
+    } from "../../lib/core.js"
+    export default class group2List extends wepy.page {
+        config = {
+            navigationBarTitleText: "全部拼团",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            }
+        }
+        //第二步：声明组件
+        components = {};
+        data = {
+            currentSkin: {},
+            groupState: [{
+                    name: "全部",
+                    state: 0
+                },
+                {
+                    name: "进行中",
+                    state: 1
+                },
+                {
+                    name: "已成功",
+                    state: 2
+                },
+            ],
+            g_showSt: [{
+                    name: "待付款",
+                },
+                {
+                    name: "未成团",
+                },
+                {
+                    name: "待收货",
+                },
+                {
+                    name: "交易成功",
+                },
+                {
+                    name: "已完成",
+                },
+                {
+                    name: "待发货",
+                },
+                {
+                    name: "订单失效",
+                },
+                {
+                    name: "退款成功",
+                },
+                {
+                    name: "已过期",
+                },
+            ],
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                state: 0,
+                pagesize: 10,
+                pageindex: 1,
+                showloading: false
+            },
+        }
+        methods = {
+            goLogistics(id, goodsList) {
+                if (goodsList && Array.isArray(goodsList) && goodsList.length > 0) {
+                    var count = goodsList.length
+                    var imgUrl = goodsList[0].SpecImg
+                    tools.goNewPage("../my/myLogistics?orderId=" + id + "&imgUrl=" + imgUrl + "&count=" + count);
+                } else {
+                    tools.showFreeToast('当前订单的商品列表为空', 'none')
+                }
+            },
+            pathValue(_g) {
+                _g.goodsMsg = {}
+                _g.SpecImg = _g.goodList[0].SpecImg
+                _g.priceStr = _g.buyPrice
+                _g.goodsMsg.img = _g.goodList[0].SpecImg
+                _g.FoodGoodsId = _g.goodList[0].FoodGoodsId
+                let _vm = {
+                    item: _g,
+                    orderid: _g.orderId,
+                    goodType: 1
+                }
+                this.$preload("vm", _vm)
+                this.$redirect("/pages/good/goodValue")
+            },
+            async changeType(state) {
+                this.vm = tools.resetArray(this.vm)
+                this.vm.state = state
+                tools.showLoading()
+                await core.getEntGroup(this)
+                wx.hideLoading()
+            },
+            //前往订单页
+            navOrder(id) {
+                this.$navigate("../group2/group2Dlt?id=" + id)
+            },
+            //参看参团详情
+            navCheck(id) {
+                this.$navigate("../group2/group2Share?id=" + id)
+            },
+            /**
+             * 确认收货
+             * 取消订单
+             */
+            async groupConfrim(id, state) {
+                let groupSt = Number(state)
+                let content = ""
+                switch (groupSt) {
+                    case -1:
+                        content = "是否取消该订单"
+                        break;
+                    case 3:
+                        content = "是否确认收货"
+                        break;
+                }
+                let showModal = await tools.showModal(content)
+                if (showModal.confirm) {
+                    let vm = {
+                        Id: id,
+                        state: groupSt
+                    }
+                    let update = await core.groupConfrim(vm)
+                    if (update.isok == 1) {
+                        this.vm = tools.resetArray(this.vm)
+                        await tools.loading("收货成功", 'success')
+                        await core.getEntGroup(this);
+                    } else {
+                        tools.showModal(update.msg, false)
+                    }
+                }
+            },
+            // 微信二次付款
+            async goPay(oradid, id, e) {
+                wx.showNavigationBarLoading();
+                core.formId(e.detail.formId);
+                let newparam = {
+                    orderid: oradid,
+                    'type': 1,
+                }
+                let wxInfo = await pay.PayOrder(newparam)
+                if (wxInfo != "" && wxInfo.errMsg.includes("requestPayment:ok")) {
+                    tools.loading("支付成功")
+                    setTimeout(resTime => {
+                        tools.goNewPage("../group2/group2Dlt?id=" + id)
+                    }, 1000)
+                    wx.hideNavigationBarLoading()
+                } else {
+                    tools.loading("取消支付")
+                    wx.hideNavigationBarLoading()
+                }
+            },
+        }
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            core.getEntGroup(this);
+        }
+        async onReachBottom() {
+            this.vm.showloading = true
+            await core.getEntGroup(this)
+            this.vm.showloading = false
+            this.$apply()
+        }
+        onShareAppMessage(res) {
+            if (res.target) {
+                let _g = res.target.dataset.item
+                let vm = {
+                    id: _g.groupid,
+                    name: _g.goodList[0].goodsMsg.name,
+                    img: _g.goodList[0].goodsMsg.img,
+                }
+                return core.group2Share(vm)
+            } else {
+                return {
+                    title: "",
+                    path: "/pages/group2/group2List",
+                    imageUrl: "",
+                    success: function(res) {
+                        tools.loading("转发成功", 'success')
+                    },
+                }
+            }
+        }
+    }
+</script>

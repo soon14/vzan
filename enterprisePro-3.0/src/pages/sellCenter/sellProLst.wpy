@@ -1,0 +1,205 @@
+<style lang="less">
+    .sell-header {
+        width: 100%;
+        height: 200rpx;
+        background: #fff;
+        padding: 32rpx 20rpx 0 20rpx;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    .sell-search {
+        width: 100%;
+        height: 68rpx;
+        background: #f6f6f6;
+        border-radius: 6rpx;
+        padding: 0 20rpx;
+    }
+    .sell-input {
+        width: 100%;
+        height: 68rpx;
+        margin-left: 10rpx;
+    }
+    .sell-classify {
+        width: 100%;
+        margin-top: 35rpx;
+    }
+    .pb30 {
+        padding-bottom: 28rpx;
+    }
+    .sell-list {
+        width: 100%;
+        padding: 20rpx;
+    }
+    .sell-item {
+        width: 345rpx;
+        background: #fff;
+        margin-bottom: 20rpx;
+    }
+    .sell-item>image {
+        width: 345rpx;
+        height: 345rpx;
+    }
+    .sell-price {
+        font-size: 38rpx;
+        color: #f20033;
+    }
+</style>
+<template>
+    <view>
+        <view class='sell-header {{currentSkin}}'>
+            <view class='sell-search f fc'>
+                <view class='dzicon icon-sousuo_rearch f40 ccc'></view>
+                <input class='sell-input' placeholder='请输入您要查询的商品' placeholder-class='ccc' @confirm="search"></input>
+            </view>
+            <view class='sell-classify f fc fsa'>
+                <repeat for="{{priceState}}">
+                    <view class="pb30 {{vm.state==item.id?'skin-bfoot':'c333'}}" @tap="select({{item.id}})">{{item.txt}}</view>
+                </repeat>
+            </view>
+        </view>
+        <view style="height:200rpx" />
+        <view class='sell-list f fw fj' wx:if="{{vm.list[1].length!=0}}">
+            <repeat for="{{vm.list}}" item="pro">
+                <repeat for="{{pro}}">
+                    <view class='sell-item' @tap='navGood({{item.goodsId}})'>
+                        <image mode='aspectFill' src='{{item.goodsImg}}' />
+                        <view class='p10 f fv'>
+                            <text class='line line1'>{{item.goodsName}}</text>
+                            <view class="mt10 f fc fj">
+                                <text class="t-b" style="color:#F20033">￥{{item.goodsPrice}}</text>
+                                <text class='f24 c999'>已售{{item.salesCount}}</text>
+                            </view>
+                        </view>
+                    </view>
+                </repeat>
+            </repeat>
+        </view>
+        <wxc-loadmore is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" wx:if="{{vm.list[1].length!=0&&vm.loadall}}"></wxc-loadmore>
+        <wxc-abnor type="DATA" wx:if="{{vm.list[1].length==0}}"></wxc-abnor>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js";
+    import _get from "../../lib/lodash.get.js";
+    export default class sellProLst extends wepy.page {
+        config = {
+            navigationBarTitleText: "",
+            // 引入min组件
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            },
+        };
+        data = {
+            vm: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 10,
+                search: "",
+                state: 1,
+            },
+            priceState: [{
+                    txt: "最新",
+                    id: 1
+                },
+                {
+                    txt: "价格",
+                    id: 2
+                }
+            ],
+            currentSkin: {}
+        }
+        methods = {
+            async select(index) {
+                await tools.showLoading()
+                this.vm.ispost = false
+                this.vm.loadall = false
+                this.vm.pageindex = 1
+                this.vm.state = index
+                await this.getGoodlst()
+                wx.hideLoading();
+            },
+            async search(e) {
+                await tools.showLoading()
+                this.vm.ispost = false
+                this.vm.loadall = false
+                this.vm.pageindex = 1
+                this.vm.search = e.detail.value
+                await this.getGoodlst()
+                wx.hideLoading();
+            },
+            navGood(id) {
+                tools.pathGood(id, "buy", true, 1)
+            }
+        }
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            let app = wepy.$instance
+            let scene = _get(options, "scene", '')
+            let record = ''
+            let bind = Number(_get(options, 'sale', ''))
+            if (scene) {
+                let _array = [];
+                _array = decodeURIComponent(scene);
+                _array = _array.split("_");
+                record = _array[0]
+                app.globalData.saleId = _array[1]
+            } else {
+                record = _get(options, 'record', '')
+            }
+            this.getGoodlst(bind, record)
+        }
+        async getGoodlst(bind, record) {
+            let vm = this.vm
+            if (vm.ispost || vm.loadall)
+                return
+            if (!vm.ispost)
+                vm.ispost = true
+            let _g = await core.getSaleLst(vm)
+            if (_g.isok) {
+                vm.ispost = false
+                vm.list[vm.pageindex] = _g.obj.SalesmanGoodsList
+                _g.obj.SalesmanGoodsList.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true
+                if (bind == 1) {
+                    let bindRecord = await core.bindSale(_g.obj.SalesmanGoodsList[0].goodsId);
+                    vm.record = bindRecord.obj
+                } else {
+                    vm.record = record
+                }
+                if (record) {
+                    core.bindShip(_g.obj.SalesmanGoodsList[0].goodsId, record);
+                }
+                this.vm = vm
+                this.$apply()
+                tools.setPageTitle("推广商品")
+            } else {
+                tools.showModal(_g.msg, false)
+            }
+        }
+        async onReachBottom() {
+            await tools.showLoading()
+            await this.getGoodlst()
+            wx.hideLoading();
+        }
+        onShareAppMessage() {
+            let that = this
+            return {
+                title: '',
+                path: "/pages/sellCenter/sellProLst?record=" + that.vm.record,
+                imageUrl: '',
+                success: function(res) {
+                    tools.loading("转发成功", 'success');
+                    core.updateRecordId(that.vm.record)
+                }
+            };
+        }
+    }
+</script>

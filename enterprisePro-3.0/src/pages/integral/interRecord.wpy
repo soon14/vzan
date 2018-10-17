@@ -1,0 +1,106 @@
+<style lang="less">
+    page {
+        background: #fff;
+    }
+    .in-main {
+        width: 100%;
+        padding: 0 20rpx;
+        .in-item {
+            width: 100%;
+            border-bottom: 1px solid #f2f2f2;
+            padding: 30rpx 0;
+            image {
+                width: 98rpx;
+                height: 98rpx;
+            }
+            .cee {
+                color: #eebb40
+            }
+        }
+    }
+</style>
+
+<template>
+    <view class="in-main">
+        <repeat for="{{vm.list}}" wx:if="{{vm.list[1].length!=0}}">
+            <repeat for="{{item}}" item="g">
+                <view class="in-item f fc">
+                    <image src="{{imgSrc[g.ordertype]}}" mode='aspectFit' />
+                    <view class="ml20 f1 f fc fj">
+                        <view class="f fv">
+                            <text class="c333 t-b">{{orderType[g.ordertype]}}</text>
+                            <text class="f24 c999 mt10" wx:if="{{g.ordertype!=3}}">消费{{g.buyPriceStr}}元</text>
+                        </view>
+                        <view class="f fv f24">
+                            <text class="ccc">{{g.UpdateDateStr}}</text>
+                            <text class='cee mt10' wx:if="{{g.actiontype==0}}">+{{g.curintegral}}积分</text>
+                            <text class='cee mt10' wx:if="{{g.actiontype==-1}}">-{{g.curintegral}}积分</text>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </repeat>
+        <wxc-abnor type="ORDER" wx:if="{{vm.list[1].length==0}}"></wxc-abnor>
+        <wxc-loadmore is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" wx:if="{{vm.list[1].length!=0&&vm.loadall}}"></wxc-loadmore>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,tools
+    } from "../../lib/core";
+    export default class interRecord extends wepy.page {
+        config = {
+            navigationBarTitleText: "积分记录",
+            // 引入min组件
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            },
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                pageindex: 1,
+                pagesize: 10,
+            },
+           orderType: ["购买商品", "积分兑换", "储值充值","签到积分"],
+            imgSrc: [
+                "http://j.vzan.cc/miniapp/img/enterprise/integral-record-01.png",
+                "http://j.vzan.cc/miniapp/img/enterprise/integral-record-03.png",
+                "http://j.vzan.cc/miniapp/img/enterprise/integral-record-02.png"
+            ],
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            await this.lstInfo();
+        }
+        async lstInfo() {
+            let vm = this.vm
+            if (vm.ispost || vm.loadall)
+                return;
+            if (!vm.ispost)
+                vm.ispost = true
+            let _g = await core.interRecord(vm)
+            if (_g.isok) {
+                vm.ispost = false
+                vm.list[vm.pageindex] = _g.model.listLog
+                _g.model.listLog.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true
+                this.vm = vm
+                this.$apply()
+            }
+        }
+        async onReachBottom() {
+            if (this.vm.loadall != true) {
+                await tools.showLoading()
+            }
+            await this.lstInfo()
+            wx.hideLoading();
+        }
+    }
+</script>

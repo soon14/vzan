@@ -1,0 +1,96 @@
+<import src="/template/groupItem.wxml" />
+<import src="/template/countdown.wxml" />
+<import src="/template/groupList.wxml" />
+<import src="/utils/wxParse/wxParse.wxml" />
+
+<template is="groupItem" data="{{group_item:vm.groupDetail}}" />
+
+<view class='bg-w mt20 groupUserList'>
+  <view class='d-flex d-flex-center rel '>
+    <view class=' flex1' wx:for="{{vm.groupDetail.GroupUserList}}">
+      <view class='user-photo'>
+        <image class='' src='{{item.HeadImgUrl}}' mode='aspectFill'></image>
+        <text class='tuanzhang' wx:if="{{item.IsGroupHeader==1}}">团长</text>
+      </view>
+      <view class='user-name f26'>{{item.NickName}}</view>
+    </view>
+    <view class=' flex1' wx:for="{{vm.groupDetail.NeedNum_fmt}}">
+      <view class='user-photo'>
+        <image class=''></image>
+      </view>
+      <view class='user-name f26'>等待拼团</view>
+    </view>
+    <!--拼团失败-->
+    <view class='groupStateWatermark' wx:if="{{vm.groupDetail.MState==-1}}">
+      <view class='innerWrap d-flex d-flex-center'>
+        <text>拼团失败</text>
+      </view>
+    </view>
+  </view>
+  <!--拼团进行中-->
+  <view wx:if="{{vm.groupDetail.MState==1}}">
+    <view class='group-tip'>
+      还差 {{vm.groupDetail.NeedNum}} 人成团，快去邀请小伙伴吧！
+    </view>
+    <view class='fromTheEnd mt20 rel d-flex d-flex-center'>
+      <view class='bg-vc-line'></view>
+      <view class='f26 c999 tc bg-w' style='position:relative;z-index:2;'>距离结束还有
+        <template is="tpl_countdown" data="{{...fromTheEnd}}" />
+      </view>
+    </view>
+  </view>
+  <!--组团成功-->
+  <view class='mt20'>
+    <view class='group-state d-flex d-flex-center' wx:if="{{vm.groupDetail.MState==2}}">
+      <text class='dzicon icon-zhifuchenggong'></text>
+      <text class='f26 f-b c999 ml20'>组团成功，该团已结束</text>
+    </view>
+    <!--组团失败-->
+    <view class='group-state d-flex d-flex-center' wx:if="{{vm.groupDetail.MState==-1}}">
+      <text class='dzicon icon-shibai'></text>
+      <text class='f26 f-b c999 ml20'>组团失败，该团未在开团24小时内达到规定人数</text>
+    </view>
+  </view>
+</view>
+
+
+<view class='mt20 bg-w groupDes'>
+  <view class='d-flex d-flex-center title'>
+    <view class='flex1 item {{item.sel?"sel":""}}' wx:for="{{tab}}" data-index='{{index}}' bindtap='clickTab'>{{item.name}}</view>
+  </view>
+  <view class='content'>
+    <!--商品详情-->
+    <view wx:if="{{tab[0].sel}}" class='richtext'>
+      <template is="wxParse" data="{{wxParseData:Description.nodes}}" />
+    </view>
+    <!--拼团规则-->
+    <view wx:if="{{tab[1].sel}}">
+      <view class='h3'>1.拼团有效期</view>
+      <text>拼团有效期是自开团起的24小时内，如果距离活动结束时间小于24小时，则已活动时间为准。</text>
+      <view class='h3'>2.拼团成功</view>
+      <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。</text>
+      <view class='h3'>3.拼团失败</view>
+      <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+    </view>
+  </view>
+</view>
+
+
+<view style='height:120rpx;'></view>
+<view class='bg-w d-flex d-flex-center groupBottom'>
+  <navigator open-type='redirect' url='/pages/myGroup/myGroup'>
+    <view class='home'>
+      <view class='dzicon icon-yiwancheng'></view>
+      <view class='f24'>我的拼团</view>
+    </view>
+  </navigator>
+  <!--已开始的状态-->
+  <view class='flex1 d-flex d-flex-center' wx:if="{{vm.groupDetail.MState==1}}">
+    <button open-type="share" class='btnBuyGroup ml20 f32 flex1 d-flex d-flex-center' data-group="{{vm.groupDetail}}">邀请小伙伴</button>
+  </view>
+  <view class='flex1 groupend' wx:if="{{vm.groupDetail.MState==-1||vm.groupDetail.MState==2}}">
+    <text>该团已结束</text>
+  </view>
+</view>
+
+<template is="three_btn" />

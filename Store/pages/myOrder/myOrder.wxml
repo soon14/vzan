@@ -1,0 +1,68 @@
+<!--pages/myOrder/myOrder.wxml-->
+
+<!-- 全部订单 待付款 待收货 已完成 -->
+<view style="height:{{sliderHeight}}px">
+  <view class="header">
+    <view class="header_col" wx:for="{{choose}}" bindtap="changedColor" data-state="{{item.state}}" id="{{index}}">
+      <text style="color:{{condition==index?'#f20033':'black'}}">{{item.title}}</text>
+      <view class="choose_bottom" style="background-color:{{condition==index?'#f20033':''}}"></view>
+    </view>
+  </view>
+  <!-- 全部订单 condition==0 时 -->
+  <block wx:if="{{allList!=null && allList.length>0}}">
+    <block wx:for="{{allList}}" wx:for-item="this" wx:for-index="pindex">
+      <view style="margin:40rpx 0 0 23rpx;font-size:30rpx;color:#111111">{{this.year}}</view>
+      <view class="whencondition0">
+        <!-- 短线条 -->
+        <view class="line0"></view>
+        <view class="condition0">
+          <block wx:for="{{this.orderList}}">
+            <view style="height:30rpx; background-color: #f3f3f3;"></view>
+            <view class="condition0_top" bindtap="navToorderDetail" id="{{item.Id}}">
+              <!-- 长线条 -->
+              <view class="line" wx:if="{{index<this.orderList.length-1}}"></view>
+              <!-- 日期 -->
+              <view class="line1">{{item.OrderDate}}</view>
+              <view class="condition0_top1">
+                <view style="display:flex;align-items:center; justify-content: space-between;" class="classname">
+                  <text style="font-size:32rpx;" wx:if="{{item.StateTitle=='取消订单'}}">订单已取消</text>
+                  <text style="font-size:32rpx;" wx:if="{{item.StateTitle=='未付款'}}">待付款金额</text>
+                  <text style="font-size:32rpx;" wx:if="{{item.StateTitle=='待发货'||item.StateTitle=='待收货'||item.StateTitle=='已收货'||item.StateTitle=='正在配送'}}">已付款金额</text>
+                  <!-- <text style="font-size:32rpx;;" wx:if="{{item.StateTitle=='待收货'}}">已付款金额</text> -->
+                  <text style="font-size:24rpx;" wx:if="{{item.StateTitle!='取消订单'}}">￥</text>
+                  <text style="font-size:32rpx;" wx:if="{{item.StateTitle!='取消订单'}}">{{item.BuyPrice}}</text>
+                </view>
+                <view style="display:flex;color:#666666;font-size:26rpx" class="classname">
+                  <text>共{{item.Count}}件商品</text>
+                  <text style="margin:0 4rpx;">|</text>
+                  <text>{{item.StateTitle}}</text>
+                </view>
+              </view>
+              <image src="{{item.ImgUrl}}" class="img" mode="aspectFill"></image>
+            </view>
+            <!-- 底部状态 -->
+            <view class="condition0_bottom" bindtap="goUrl" id="{{index}}">
+              <view style="display:flex">
+                <!-- <text style="letter-spacing: 2rpx;margin-right:8rpx;">{{item.StateTitle=="未付款"?"下单":item.StateTitle}}时间</text> -->
+                <text>{{item.CreateDate}}</text>
+              </view>
+              <!-- <text style="color:#f20033;" wx:if="{{item.StateTitle=='未付款'}}" bindchange="bindPickerChange">去付款</text>  -->
+              <picker catchchange="bindPickerChange" style='width:400rpx;text-align:right' value="{{index}}" range="{{array}}" wx:if="{{item.StateTitle=='未付款'}}" id="{{index}}">
+                <view style="color:#f20033;">去付款</view>
+                <!-- <view class="picker" wx:if="{{index1!=2}}"> {{array[index1]}} </view> -->
+              </picker>
+              <text style="color:#f20033;" wx:if="{{item.StateTitle=='取消订单'}}">已取消</text>
+              <text style="color:#f20033;" wx:if="{{item.StateTitle=='待发货'}}">待发货</text>
+              <text style="color:#f20033;" wx:if="{{item.StateTitle=='待收货'}}">确认收货</text>
+              <text style="color:#f20033;" wx:if="{{item.StateTitle=='已收货'}}">已收货</text>
+              <text style="color:#f20033;" wx:if="{{item.StateTitle=='正在配送'}}">待收货</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </block>
+  </block>
+  <block wx:else>
+    <view class="bottomdata">{{bottommsg}}</view>
+  </block>
+</view>

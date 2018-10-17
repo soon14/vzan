@@ -1,0 +1,132 @@
+<style lang="less">
+  .select-order {
+    padding-bottom: 88rpx;
+    .mw20 {
+      margin: 0 20rpx;
+    }
+    .order-item {
+      height: 190rpx;
+      margin-bottom: 20rpx;
+      .commodity-avator {
+        width: 150rpx;
+        height: 150rpx;
+        background-color: #eee;
+        flex-basis: auto;
+      }
+      .detail {
+        .f28 {
+          font-size: 28rpx;
+        }
+        .mt6 {
+          margin-top: 6rpx;
+        }
+        width: 67%;
+      }
+    }
+    .btn-confirm {
+      width: 100%;
+      height: 88rpx;
+      line-height: 88rpx;
+      position: fixed;
+      bottom: 0;
+    }
+    .bgD32A7C {
+      background-color: rgb(201, 32, 26);
+    }
+  }
+</style>
+<template>
+  <view class="select-order {{currentSkin}} rel">
+    <view class="order-list">
+      <repeat for="{{goodList}}" index="index" item="item">
+        <view class="order-item bg-w f fc" data-index="{{index}}" @tap="selectGood">
+          <text class="dzicon {{mappingStatus[index] == true ? 'icon-zhifuchenggong skin_txt' : 'icon-kongxinyuan c999'}} f40 mw20">
+                </text>
+          <image class="commodity-avator" src="{{item.goodImgUrl}}" />
+          <view class="detail f fv ml20">
+            <view class="f28 pr20">
+              <text class="line line2">{{item.goodname}}</text>
+            </view>
+            <view class="c999 f22 f fj mt6 mr20">
+              <text>{{item.orderDtl.SpecInfo}}</text> <text>X{{item.orderDtl.Count}}</text>
+            </view>
+            <view class="skin_txt f28 mt6">
+              <text class="f22 t-b">￥</text>{{item.orderDtl.priceStr}} <text class="c999 f24 ml20">￥{{item.orderDtl.originalPriceStr}}</text>
+            </view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <button hover-class="bgD32A7C" class="btn-confirm skin_bg f36 cfff" @tap="toSelectService">确定</button>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http,
+    tools
+  } from "@/lib/core";
+  import addr from "@/lib/addr.js";
+  export default class ServeType extends wepy.page {
+    //基础配置层
+    config = {
+      navigationBarTitleText: "选择订单",
+      usingComponents: {
+      }
+    };
+    data = {
+      currentSkin: "",
+      goodList: [{
+        goodImgUrl: "", //图片路径
+        goodname: "未知数据", //产品名
+        orderDtl: {
+          //产品的各种信息
+          SpecInfo: "" //标签信息
+        },
+        price: "" //价格
+      }],
+      mappingStatus: [], //跟goodList长度一直，均为false，用来映射产品是否被选择，若被选择 则为true。
+      orderid: 0
+    };
+    //自定义方法层
+    methods = {
+      selectGood(e) {
+        var index = e.currentTarget.dataset.index;
+        this.mappingStatus[index] = !this.mappingStatus[index];
+      },
+      toSelectService(e) {
+        var orderList = [];
+        //遍历一下mappingStatus，获取选择的索引
+        for (var i = 0, len = this.mappingStatus.length; i < len; i++) {
+          this.mappingStatus[i] == true &&
+            orderList.push(this.goodList[i]);
+        }
+        if (orderList.length) {
+          wx.setStorageSync("selectList", orderList)
+          tools.goRedirecto("appeal?typeID=1&orderId=" + this.orderid);
+        } else {
+          tools.showModal("请选择已购商品",false);
+        }
+      }
+    };
+    //生命钩子层
+    onShow() {
+      tools.setPageSkin(this);
+    }
+    async onLoad(query) {
+      await tools.showLoading()
+      this.orderid = query.orderId
+      var goodList = wx.getStorageSync('goodList')
+      if (goodList) {
+        this.goodList = goodList;
+        var len = this.goodList.length;
+        while (len--) {
+          this.mappingStatus[len] = false;
+        }
+      }
+      wx.hideLoading();
+      this.$apply();
+    }
+  }
+</script>

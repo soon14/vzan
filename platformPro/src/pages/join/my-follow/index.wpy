@@ -1,0 +1,128 @@
+<style lang="less">
+.my-follow {
+  .other-msg {
+    margin-bottom: 20rpx;
+    &:last-child {
+      margin-bottom: 0;
+    }
+    .other-msg-item {
+    }
+  }
+  .null-data {
+    margin-top: 481rpx;
+  }
+  padding-bottom: 30rpx;
+}
+</style> 
+<template>
+  <view class="my-follow">
+       <!-- 谁赞过我 -->
+    <view class="f fv pl30 pt20 c666 ">
+      <view class="null-data tc pr30" wx:if="{{count == 0}}">
+        暂无数据
+      </view>
+      <view wx:else> 
+        <repeat for="{{list}}" key="index" index="index" item="item">
+          <view class="other-msg mt20 pr30">
+            <view class="lh15 f24 mb20">
+              {{item.AddTimeStr}} 
+            </view>
+            <view class="other-msg-item bg-w"  @tap="goDetail({{item.MyCardModel.UserId}})">
+              <comNameCard :cardModal.sync="item.MyCardModel" :onFollowAfter="toFollow" :listIndex.sync="activeTabIndex"  :itemIndex="index"/>
+            </view>
+          </view>
+        </repeat>
+      </view>
+    </view> 
+    <comLoading :showLoading.sync="loadMore"  :showBottom.sync="loadAll" />
+    <comWait wx:if="{{isWait}}"/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import addr from "@/lib/addr";
+import { http, tools, core } from "@/lib/core";
+import com_nameCard from "@/components/com_nameCard";
+import com_wait from "@/components/com_wait";
+import com_loading from "@/components/com_loading";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的人脉",
+    enablePullDownRefresh: true
+  };
+
+  data = {
+    count: 0,
+    list: [],
+    isWait: false,
+    cardId: 0,
+    processor: null,
+    pageIndex: 1,
+    loadMore: false,
+    loadAll: false
+  };
+
+  components = {
+    comNameCard: com_nameCard,
+    comWait: com_wait,
+    comLoading: com_loading
+  };
+
+  methods = {
+    goDetail(userId) {
+      tools.goNewPage(
+        "../../connected/connected-detail/index?someoneId=" + userId
+      );
+    }
+  };
+
+  async onLoad(query) {
+    this.cardId = query.cardId
+    if (!this.cardId) {
+        tools.goBack()
+        return
+    }
+    //记得补翻参数
+    this.isWait = true;
+    await this.getOtherFavoriteListC();
+    this.isWait = false;
+    this.$apply();
+  }
+
+  async onPullDownRefresh() {
+    wx.showNavigationBarLoading();
+    this.resetData()
+    await this.getOtherFavoriteListC();
+    this.$apply();
+    wx.hideNavigationBarLoading();
+    wx.stopPullDownRefresh();
+  }
+
+  resetData() {
+    this.pageIndex = 1,
+    this.loadMore = false
+    this.loadAll = false
+    this.list = []
+    this.count = 0
+  }
+
+  async getOtherFavoriteListC() {
+    var result = await core.getOtherFavoriteList({
+      type: 1,
+      mycardid: this.cardId,
+      actiontype: 2,
+      pageindex: this.pageIndex
+    });
+    tools.handleResult(result, res => {
+      this.count = res.count
+      this.processor = tools.loadMoreData(this, 8)
+      this.processor.concat_('list', res.list)
+    }, (err) => {
+        tools.showModalCancle(err.Msg);
+      });
+  }
+  onReachBottom() {
+    this.processor.handleReachBottom('count', this.getOtherFavoriteListC)
+  }
+}
+</script>

@@ -1,0 +1,710 @@
+<style lang="less">
+    .pop-hide {
+        height: 0 !important;
+    }
+    .pop-layer {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background-color: rgba(0, 0, 0, 0.5);
+        transition: all 300ms ease both;
+        width: 100%;
+        height: 100%;
+        .pop-mask {
+            position: absolute;
+            z-index: 990;
+            width: 100%;
+            top: 0;
+            bottom: 0;
+        }
+        .pop-wrap {
+            position: absolute;
+            bottom: 0;
+            background-color: #fff;
+            width: 100%;
+            min-height: 300rpx;
+            z-index: 998;
+        }
+        .btn-danger {
+            width: 100%;
+            background-color: #ff5b5b;
+            height: 100rpx;
+            line-height: 100rpx;
+            text-align: center;
+            color: #fff;
+        }
+        .btn-ok {
+            width: 100%;
+            background-color: #fe943d;
+            height: 100rpx;
+            line-height: 100rpx;
+            text-align: center;
+            color: #fff;
+        }
+    }
+    .order {
+        width: 100%;
+        color: #333;
+        .header {
+            width: 100%;
+            height: 155rpx;
+            background: #fff;
+        }
+        .wrap-good {
+            margin-top: 20rpx;
+            background: #fff;
+            .wrap-message {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                padding: 0 30rpx;
+            }
+        }
+        .wrap-coup {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            background: #fff;
+            margin: 24rpx 0;
+            padding: 0 30rpx;
+        }
+        .wrap-order {
+            width: 100%;
+            background: #fff;
+            margin: 24rpx 0;
+            padding: 0 30rpx;
+            font-size: 26rpx;
+        }
+        .wrap-mode {
+            width: 100%;
+            height: 200rpx;
+            background: #fff;
+            padding-left: 30rpx;
+            .mode-weixin {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                padding-right: 30rpx;
+                border-bottom: 1px solid #eee;
+            }
+            .mode-weixin:last-child {
+                border-bottom: none;
+            }
+        }
+        .wrap-btn {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            background: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            >form {
+                width: 209rpx;
+                height: 100rpx;
+                button {
+                    width: 100%;
+                    line-height: 100rpx;
+                    text-align: center;
+                    font-size: 28rpx;
+                }
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='order {{currentSkin}}'>
+        <!-- 用户信息 -->
+        <view class='header' @tap='chooseAddress({{vm_goods.cartid}})'>
+            <view class='f fc' style='height:150rpx; padding: 0 30rpx;'>
+                <text class='f34 c333 t-b f1' wx:if="{{vm_goods.address.modeId==-999}}">请选择配送方式</text>
+                <view class='user-model f fv f1' wx:if="{{vm_goods.address.modeId!=-999}}">
+                    <view class='f fc'>
+                        <text class='f26' style='color:#FF6F30'>[{{vm_goods.address.mode}}]</text>
+                        <text class='f34 t-b c333' style='margin:0 10rpx'>{{vm_goods.address.contact}}</text>
+                        <text class='f34 t-b c333'>{{vm_goods.address.phone}}</text>
+                    </view>
+                    <view class='f26 c666 mt20 line line1'>地址：{{vm_goods.address.address}}</view>
+                </view>
+                <text class='dzicon icon-xiala-copy-right' />
+            </view>
+            <image src='http://j.vzan.cc/dz/content/images/Enterprisepro/order-logo.png' mode='widthFix' class='w-100' style='display:inherit;' />
+        </view>
+        <!-- 商品信息 -->
+        <view class='wrap-good'>
+            <repeat>
+                <comItem :currentCom.sync="vm_goods.list"></comItem>
+            </repeat>
+            <view class='wrap-message f fc'>
+                <text class='f26'>买家留言:</text>
+                <input class="ml20 f1 tr f26" placeholder="选填，给商家留言" placeholder-style='color:#d9d9d9' @blur="setMess" value="{{vm_goods.message}}" maxlength="100" />
+            </view>
+        </view>
+        <!-- 优惠卷 -->
+        <view class='wrap-coup f fc fj' @tap='chooseCoupons' x:if="{{vmMycoupon.list.length>0}}">
+            <text class='f26'>优惠券</text>
+            <view class='f26 c333 fc f'>
+                <text wx:if="{{pickCoupon==null}}">选择优惠券</text>
+                <text wx:else>已使用1张,已抵用￥{{money_coupon}}</text>
+                <text class='dzicon icon-xiala-copy-right' />
+            </view>
+        </view>
+        <!-- 订单信息 -->
+        <view class='wrap-order f fv'>
+            <view class='f fj fc' style='padding-top:40rpx'>
+                <text>商品金额</text>
+                <text class='t-b'>￥{{vm_goods.totalPrice}}</text>
+            </view>
+            <view class='f fj fc' style='padding-top:40rpx'>
+                <text>会员减价</text>
+                <text class='t-b' style='color:#FF3232'>-￥{{vm_goods.vipPrice}}</text>
+            </view>
+            <view class='f fj fc' style='padding-top:40rpx' wx:if="{{isgroup==1||isgroup==3}}">
+                <text>拼团减价</text>
+                <text class='t-b' style='color:#FF3232'>-￥{{vm_goods.joinPrice}}</text>
+            </view>
+            <view class='f fj fc' style='padding-top:40rpx' wx:if="{{isgroup==1&&vm_goods.HeadDeductStr!='0.00'}}">
+                <text>团长减价</text>
+                <text class='t-b' style='color:#FF3232'>-￥{{vm_goods.HeadDeductStr}}</text>
+            </view>
+            <view class='f fj fc' style='padding:40rpx 0;'>
+                <text>运费</text>
+                <text class='t-b' style='color:#FF3232'>+￥{{vm_goods.fee}}</text>
+            </view>
+        </view>
+        <!-- 支付方式 -->
+        <view class='wrap-mode'>
+            <view class='mode-weixin f fc fj' @tap='payMode(1)'>
+                <view class='f fc'>
+                    <text class='dzicon icon-weixin f50' style='color:#22AC38' />
+                    <text style='margin-left:23rpx;'>微信支付</text>
+                </view>
+                <view class='dzicon icon-Choice_xuanze f47' style='color:#FF3232' wx:if="{{payIndex==1}}" />
+            </view>
+            <view class='mode-weixin f fc fj' @tap='payMode(2)'>
+                <view class='f fc'>
+                    <text class='dzicon icon-jinbi f50' style='color:#F9B629' />
+                    <text style='margin-left:23rpx;'>储值支付<text class='c666 ml10'>(￥{{vm_goods.valueMoney}})</text></text>
+                </view>
+                <view class='dzicon icon-Choice_xuanze f47' style='color:#FF3232' wx:if="{{payIndex==2}}" />
+            </view>
+        </view>
+        <view style='height:120rpx' />
+        <!-- 支付按钮 -->
+        <view class='wrap-btn f fc fj'>
+            <view class='f fc f1' style='border-top:1px solid #eee;padding-left:30rpx;'>
+                <text class='f26'>实付款:</text>
+                <text class='t-b f34 ml10' style='color:#FF3232'>￥{{pickCoupon==null? vm_goods.shouldPay:money_cal_fmt}}</text>
+            </view>
+            <form report-submit="true" @submit='payRequest'>
+                <button class="skin_bg" formType="submit">立即支付</button>
+            </form>
+        </view>
+        <!--优惠券选择层-->
+        <view class="pop-layer {{!couponsShow?'pop-hide':''}}">
+            <view class='pop-mask' catchtap='chooseCoupons'></view>
+            <view class='rel pop-wrap pop-coupon'>
+                <view class='tc pop-title ph20'>选择卡券</view>
+                <scroll-view style='max-height: 600rpx;overflow-y: scroll;background-color: #f7f6f5' scroll-y="true" @scrolltolower="reachCouponBottom" wx:if="{{couponsShow}}">
+                    <repeat>
+                        <comCoup :vm.sync="vmMycoupon" @useMyCoupon.user="useMyCoupon"></comCoup>
+                    </repeat>
+                </scroll-view>
+                <view class='f fc'>
+                    <view class='btn-danger f32 f1' @tap='notuseCoupon'>不使用卡券</view>
+                    <view class='btn-ok f32 f1' @tap='pickCouponOK'>关闭</view>
+                </view>
+            </view>
+        </view>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        pay,
+        tools,
+        pro
+    } from "../../lib/core.js";
+    import com_goodItem from "../../components/com_goodItem"
+    import com_coup from "../../components/com_coup"
+    import _get from "../../lib/lodash.get.js"
+    // import
+    //第一步： 引入组件文件
+    export default class group2Order extends wepy.page {
+        config = {
+            navigationBarTitleText: "订单确认",
+            // 引入min组件
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+            }
+        };
+        //第二步：声明组件
+        components = {
+            comItem: com_goodItem,
+            comCoup: com_coup
+        };
+        data = {
+            currentSkin: {},
+            vm_goods: {},
+            toast: {},
+            isgroup: 0,
+            payIndex: 0, //1微信支付,2储值支付
+            couponsShow: false,
+            pickCoupon: null,
+            money_cal_fmt: 0,
+            money_coupon: 0,
+            vmMycoupon: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 10,
+                state: 0,
+                listname: "pickmycoupon",
+            },
+            _index: -1,
+            _coupIndex: 0,
+        };
+        methods = {
+            chooseAddress(cartid) {
+                this.$preload('cartid', cartid);
+                this.$navigate("/pages/my/myaddress?type=order")
+            },
+            chooseCoupons() {
+                if (this.vm_goods.address.modeId != -999) {
+                    this.couponsShow = !this.couponsShow
+                } else {
+                    tools.showModal("请先选择地址", false)
+                }
+            },
+            pickCouponOK() {
+                this.couponsShow = false
+                this.calMoney();
+            },
+            notuseCoupon() {
+                this.pickCoupon = null
+                this.couponsShow = false
+                this.calMoney('nouse');
+            },
+            async useMyCoupon(index) {
+                let _g = await pro.useCoupon(this.vmMycoupon.list, this.vm_goods.list, index)
+                this.pickCoupon = _g
+                this.couponsShow = false
+                this.$apply()
+                this.calMoney();
+            },
+            // 选择支付方式
+            payMode(index) {
+                this.payIndex = Number(index);
+            },
+            setMess(e) {
+                this.vm_goods.message = e.detail.value;
+                this.$apply()
+            },
+            // 支付
+            payRequest(e) {
+                let [_g, addressInfo, AccepterName, AccepterTelePhone, orderInfo] = [this.vm_goods, {}, "", "", {}]
+                core.formId(e.detail.formId);
+                let buyMode = this.payIndex
+                //普通
+                if (_g.address.modeId == -999) {
+                    tools.ShowToast("亲，请选择配送方式", this);
+                    return;
+                }
+                if (buyMode == 0) {
+                    tools.ShowToast("亲，请选择支付方式", this);
+                    return;
+                }
+                addressInfo = {
+                    userName: _g.address.contact,
+                    telNumber: _g.address.phone,
+                }
+                AccepterName = _g.address.contact;
+                AccepterTelePhone = _g.address.phone;
+                if (_g.address.modeId == 0 || _g.address.modeId == 6) {
+                    addressInfo.postalCode = 0
+                    addressInfo.detailInfo = _g.address.address
+                } else {
+                    addressInfo.cityName = _g.address.city
+                    addressInfo.detailInfo = _g.address.street
+                    addressInfo.countyName = _g.address.district
+                    addressInfo.provinceName = _g.address.province
+                }
+                orderInfo = {
+                    FreightTemplateId: 0,
+                    AccepterName: AccepterName,
+                    AccepterTelePhone: AccepterTelePhone,
+                    Message: _g.message
+                };
+                let isgroup = this.isgroup
+                isgroup == 3 ? isgroup = 0 : ''
+                let vm = {
+                    carId: _g.cartid,
+                    address: JSON.stringify(addressInfo),
+                    order: JSON.stringify(orderInfo),
+                    buyMode: buyMode,
+                    storename: _get(wepy.$instance.globalData.address, 'name', ''),
+                    getWay: _g.address.modeId,
+                    isgroup: isgroup,
+                    goodtype: _g.goodtype,
+                    groupid: _g.groupId,
+                    discountType: _get(this.pickCoupon, 'discountType', 0),
+                    couponlogid: this.pickCoupon == null ? 0 : this.pickCoupon.Id,
+                    zqStoreId: _get(_g.address, "Id", ""),
+                };
+                this.addOrder(buyMode, vm)
+            },
+        };
+        onLoad(options, _g) {
+            this._orderdata = _g
+            this.isgroup = Number(_get(options, 'isgroup', 0))
+            this.$apply()
+            tools.setPageSkin(this)
+        }
+        //运费模板+地址
+        onShow() {
+            this.orderConfig(this._orderdata, this.isgroup)
+        }
+        /**
+         * @param {isgroup 0为单价购买，1为开团}
+         * @param {payPrice用于计算价格}
+         * @param {mainJoinStr团长减价}
+         * @param {lessPriceStr折扣优惠}
+         * @param {shouldPay实付价格}
+         * */
+        async orderConfig(_order, isgroup) {
+            let app = wepy.$instance
+            let _g = _order.preload.vm_goods
+            let address = app.globalData.address || {};
+            if (isgroup == 1 || isgroup == 3) {
+                _g.mainJoinStr = isgroup == 3 ? '0.00' : _g.HeadDeductStr
+                _g.joinPrice = ((Number(_g.list[0].oldPrice).sub(Number(_g.list[0].discountPrice))).mul(Number(_g.totalCount))).toFixed(2) // 拼团折扣价
+            } else {
+                _g.joinPrice = 0
+                _g.mainJoinStr = 0
+            }
+            _g.vipPrice = this.vipMoney(_g, isgroup) // 会员折扣价
+            _g.shouldPay = this.payMoney(_g.totalPrice, _g.vipPrice, _g.mainJoinStr, _g.joinPrice) //应付
+            if (Number(_g.shouldPay) <= 0) {
+                _g.shouldPay = '0.00'
+            }
+            if (Object.keys(address).length) {
+                _g.fee = await this.feeComp(_g, address)
+            } else {
+                _g.fee = "0.00"
+                address.modeId = -999
+            }
+            _g.shouldPay = parseFloat(Number(_g.shouldPay).add(Number(_g.fee))).toFixed(2)
+            _g.valueMoney = app.globalData.vipInfo.valueMoney
+            _g.address = address
+            this.vm_goods = _g
+            this.$apply()
+            await core.getCoup(_g,this)
+        }
+        //运费
+        async feeComp(_g, address) {
+            let vm = {
+                cartid: _g.cartid,
+                province: address.province,
+                city: address.city,
+            }
+            if (address.modeId == 1) {
+                let freight = await core.getFreight(vm)
+                if (freight.data.canpay) {
+                    return parseFloat((freight.data.fee).div(100)).toFixed(2);
+                } else {
+                    if (freight.data.delierymsg) {
+                        tools.showModal(freight.data.delierymsg + ",请重新选择地址", false)
+                    }
+                    return "0.00";
+                }
+            } else {
+                return "0.00";
+            }
+        }
+        /***
+         *  @param {支付方式判断 根据buyMode 1为微信支付.2为储值支付}
+         * ***/
+        async addOrder(buyMode, vm) {
+            if (Number(this._index) == Number(this.payIndex)) {
+                return;
+            }
+            wx.showNavigationBarLoading();
+            if (buyMode == 2) {
+                let showModal = await tools.showModal("是否使用储值支付")
+                if (showModal.confirm == false) {
+                    this._index = -1;
+                    this.$apply()
+                    return;
+                }
+            }
+            this._index = buyMode;
+            this.$apply()
+            let addinfo = await core.addMinOrder(vm)
+            if (addinfo.isok == 1) {
+                if (addinfo.reductionCart != null) {
+                    wepy.$instance.globalData.reduction = addinfo.reductionCart
+                }
+                if (this.money_cal_fmt === '0.00') {
+                    tools.loading("支付成功");
+                    this.goWhere(addinfo.dbOrder)
+                    return;
+                }
+                if (this.vm_goods.totalPrice === '0.00') {
+                    tools.loading("支付成功");
+                    this.goWhere(addinfo.dbOrder)
+                    return;
+                }
+                this.dbOrder = addinfo.dbOrder;
+                buyMode == 1 ? this.wxPay(addinfo.orderid, addinfo.dbOrder) : this.xwPay(addinfo.dbOrder)
+            } else {
+                wx.hideNavigationBarLoading()
+                tools.showModal(addinfo.msg, false);
+            }
+        }
+        // 微信支付
+        async wxPay(oradidp, dbOrder) {
+            if (this.vm_goods.shouldPay == 0) {
+                tools.loading("支付成功")
+                this.goWhere(dbOrder)
+                return;
+            }
+            let newparam = {
+                orderid: oradidp,
+                type: 1
+            };
+            let wxpay = await pay.PayOrder(newparam);
+            // let jsObj = JSON.parse(payInfo.obj);
+            // let wxpay = await pay.wxpay(jsObj)
+            if (wxpay != '' && wxpay.errMsg.includes("requestPayment:ok")) {
+                tools.loading("支付成功");
+                this.goWhere(dbOrder)
+            } else {
+                await pay.deleteLastFormId()
+                tools.loading("取消支付");
+                this.goWhere(dbOrder)
+            }
+        }
+        //储值支付
+        xwPay(dbOrder) {
+            tools.loading("支付成功");
+            this.goWhere(dbOrder)
+        }
+        async reachCouponBottom() {
+            await core.getCoup(this.vm_goods,this)
+        }
+        // 页面跳转
+        goWhere(dbOrder) {
+            wx.hideNavigationBarLoading()
+            if (this.vm_goods.groupId != 0) {
+                setTimeout(resTime => {
+                    tools.goRedirecto("../group2/group2Dlt?id=" + dbOrder + "&isgroup=0");
+                }, 1000);
+                return;
+            }
+            if (this.isgroup == 1) {
+                setTimeout(resTime => {
+                    tools.goRedirecto("../group2/group2Dlt?id=" + dbOrder + "&isgroup=0");
+                }, 1000);
+            } else {
+                setTimeout(resTime => {
+                    tools.goRedirecto("../good/goodOlt?dbOrder=" + dbOrder + "&isgroup=0");
+                }, 1000);
+            }
+        }
+        // 优惠卷计算
+        calMoney(useType) {
+            var coupon = this.pickCoupon;
+            let _vm = this.vm_goods
+            if (coupon && this._coupIndex == coupon) {
+                return;
+            }
+            if (useType && useType == 'nouse') {
+                _vm.vipPrice = this.vipMoney(_vm, this.isgroup)
+                _vm.shouldPay = parseFloat(((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).sub(Number(_vm.vipPrice))).add(Number(_vm.fee))).toFixed(2)
+                if (this.isgroup == 1) {
+                    _vm.shouldPay = parseFloat(Number(_vm.shouldPay).sub(Number(_vm.HeadDeductStr))).toFixed(2)
+                }
+            }
+            var money = (Number(_vm.shouldPay) || 0) * 100;
+            //运费
+            var freight = Number(_vm.fee) * 100
+            //先减去运费
+            money = money - freight;
+            var calMoney = money;
+            var money_coupon = 0; //优惠的钱
+            if (money > 0) {
+                //如果使用了优惠券
+                if (coupon != null) {
+                    //全部商品
+                    if (coupon.GoodsIdStr == "") {
+                        if (coupon.LimitMoney <= 0 || money >= coupon.LimitMoney) {
+                            if (coupon && coupon.discountType == 1) {
+                                _vm.shouldPay = parseFloat((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).add(Number(_vm.fee))).toFixed(2)
+                                if (this.isgroup == 1) {
+                                    _vm.shouldPay = parseFloat(Number(_vm.shouldPay).sub(Number(_vm.HeadDeductStr))).toFixed(2)
+                                }
+                                _vm.vipPrice = "0.00"
+                            }
+                            if (coupon && coupon.discountType == 0) {
+                                _vm.vipPrice = this.vipMoney(_vm, this.isgroup)
+                                _vm.shouldPay = parseFloat(((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).sub(Number(_vm.vipPrice))).add(Number(_vm.fee))).toFixed(2)
+                                if (this.isgroup == 1) {
+                                    _vm.shouldPay = parseFloat(Number(_vm.shouldPay).sub(Number(_vm.HeadDeductStr))).toFixed(2)
+                                }
+                            }
+                            money = (Number(_vm.shouldPay) || 0) * 100;
+                            //运费
+                            freight = Number(_vm.fee) * 100
+                            //先减去运费
+                            money = money - freight;
+                            calMoney = money;
+                            coupon.Money = Number(coupon.Money);
+                            //指定金额 - 优惠
+                            if (coupon.CouponWay == 0) {
+                                calMoney = (money).sub(coupon.Money);
+                                money_coupon = (coupon.Money).div(100);
+                            }
+                            //折扣 * 折扣
+                            else if (coupon.CouponWay == 1) {
+                                var p = (coupon.Money).div(100).mul(10).div(100);
+                                calMoney = (money).mul(p);
+                                var coupon_p = (1).sub(p);
+                                money_coupon = (money).mul(coupon_p).div(100);
+                            }
+                            if (calMoney < 0) {
+                                calMoney = 0;
+                            }
+                        } else {
+                            wx.showModal({
+                                title: '提示',
+                                content: '未达到优惠券使用条件！',
+                            });
+                            _vm.vipPrice = this.vipMoney(_vm, this.isgroup)
+                            _vm.shouldPay = parseFloat(((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).sub(Number(_vm.vipPrice))).add(Number(_vm.fee))).toFixed(2)
+                            _vm.shouldPay = parseFloat(Number(_vm.shouldPay).sub(Number(_vm.mainJoinStr))).toFixed(2)
+                            this.vm_goods = _vm
+                            this.pickCoupon = null
+                            this.$apply()
+                            return;
+                        }
+                    }
+                    //指定产品
+                    else {
+                        /*如果没有优惠券中指定的商品 提示不可用 */
+                        var specifiedGood = coupon.GoodsIdStr.split(',');
+                        var canUse = this.vm_goods.list.some(function(item, index) {
+                            return specifiedGood.includes((item.goodid).toString());
+                        });
+                        if (!canUse) {
+                            wx.showModal({
+                                title: '提示',
+                                content: '不符合优惠券使用条件！',
+                            });
+                            _vm.vipPrice = this.vipMoney(_vm, this.isgroup)
+                            _vm.shouldPay = parseFloat(((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).sub(Number(_vm.vipPrice))).add(Number(_vm.fee))).toFixed(2)
+                            this.vm_goods = _vm
+                            this.pickCoupon = null
+                            this.$apply()
+                            return;
+                        }
+                        //筛选出可优惠的产品
+                        var filterGood = this.vm_goods.list.filter(function(item, index) {
+                            return specifiedGood.includes((item.goodid).toString());
+                        });
+                        //计算指定商品的价格之和
+                        //优惠券的金额都是分为单位 
+                        //商品的价格以元为单位
+                        var sumMoney = 0;
+                        filterGood.forEach(function(item, index) {
+                            sumMoney += (Number(item.discountPrice)).mul(100).mul(Number(item.Count));
+                        });
+                        //如果满足使用条件
+                        if (coupon.LimitMoney <= 0 || sumMoney >= coupon.LimitMoney) {
+                            coupon.Money = Number(coupon.Money);
+                            //指定金额 - 优惠
+                            if (coupon.CouponWay == 0) {
+                                money_coupon = coupon.Money
+                            }
+                            //折扣 * 折扣
+                            else if (coupon.CouponWay == 1) {
+                                //重新计算价格
+                                var p = (coupon.Money).div(100).mul(10).div(100);
+                                var coupon_p = (1).sub(p);
+                                money_coupon = (sumMoney).mul(coupon_p)
+                            }
+                            if (sumMoney < 0) {
+                                sumMoney = 0;
+                            }
+                            if (money_coupon < 0) {
+                                money_coupon = 0;
+                            }
+                            //优惠券优惠的最大金额就是指定商品的总价
+                            if (sumMoney - money_coupon < 0) {
+                                money_coupon = sumMoney;
+                            }
+                            if (coupon && coupon.discountType == 1) {
+                                money = ((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).add(Number(_vm.fee))).mul(100)
+                                if (this.isgroup == 1) {
+                                    money = (Number(money).sub(Number(_vm.HeadDeductStr).mul(100)))
+                                }
+                                _vm.vipPrice = "0.00"
+                            }
+                            if (coupon && coupon.discountType == 0) {
+                                _vm.vipPrice = this.vipMoney(_vm, this.isgroup)
+                                money = (((Number(_vm.totalPrice).sub(Number(_vm.joinPrice))).sub(Number(_vm.vipPrice))).add(Number(_vm.fee))).mul(100)
+                                if (this.isgroup == 1) {
+                                    money = (Number(money).sub(Number(_vm.HeadDeductStr).mul(100)))
+                                }
+                            }
+                            calMoney = (money).sub(Number(money_coupon));
+                            if (calMoney < 0) {
+                                calMoney = 0;
+                            }
+                            //优惠券减掉的钱
+                            money_coupon = (money_coupon).div(100);
+                        }
+                    }
+                }
+            }
+            //再把运费加回来  
+            if (coupon) {
+                this._coupIndex = coupon.Id
+            }
+            calMoney = (calMoney).add(freight);
+            var money_cal_fmt = (calMoney).div(100).toFixed(2);
+            this.money_cal_fmt = money_cal_fmt
+            this.money_coupon = money_coupon.toFixed(2)
+            this.vm_goods = _vm
+            this.$apply()
+        }
+        //价钱计算
+        payMoney(totalPrice, vipPrice, mainPrice, joinPrice) {
+            let price = parseFloat(Number(totalPrice).sub(Number(vipPrice)).sub(Number(mainPrice)).sub(Number(joinPrice))).toFixed(2)
+            return price
+        }
+        //会员减价
+        vipMoney(vm, isgroup) {
+            let discount = Number(vm.list[0].discount).div(100)
+            let _discountprice = 0
+            let vipPrice = 0
+            if (Number(isgroup) == 1 || Number(isgroup) == 3) {
+                _discountprice = Number(vm.list[0].discountPrice).mul(Number(vm.list[0].Count)).mul(discount)
+                vipPrice = Number((Number(vm.list[0].discountPrice).mul(Number(vm.list[0].Count))).sub(_discountprice)).toFixed(2)
+            } else {
+                _discountprice = Number(vm.totalPrice).mul(discount)
+                vipPrice = Number(Number(vm.totalPrice).sub(_discountprice)).toFixed(2)
+            }
+            return vipPrice
+        }
+    }
+</script>

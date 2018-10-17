@@ -1,0 +1,79 @@
+<style lang="less">
+page {
+  background-color: #d65840;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.more-lst {
+  width: 100%;
+  padding: 0 30rpx 30rpx 30rpx;
+}
+.lst {
+  margin-top: 31rpx;
+  position: relative;
+  image {
+    width: 100%;
+  }
+  .lst-open {
+    position: absolute;
+    top: 45%;
+    font-size: 26rpx;
+    color: #fff;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .lst-txt {
+    position: absolute;
+    bottom: 15%;
+    font-size: 26rpx;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+</style>
+<template>
+    <view class="more-lst">
+        <repeat for="{{vm}}">
+            <view class='lst f fv fc'>
+                <image src='http://j.vzan.cc/miniapp/img/lijianjin/smoneybg3.png' mode='widthFix' />
+                <view class='lst-open' @tap="navDetail({{item.Id}},{{item.fromOrderId}})">领取</view>
+                <view class='lst-txt c999'>快领取吧~</view>
+            </view>
+        </repeat>
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+import { core, tools } from "@/lib/core";
+// import
+//第一步： 引入组件文件
+export default class reductionLst extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的立减金",
+    navigationBarBackgroundColor: "#d65840",
+    navigationBarTextStyle: "#ffffff"
+  };
+  components = {};
+  data = {
+    vm: {}
+  };
+  methods = {
+    navDetail(couponsid, orderid) {
+      tools.goNewPage(
+        "/pages/my/my-coupon/reduction?couponsid=" +
+          couponsid +
+          "&orderid=" +
+          orderid
+      );
+    }
+  };
+  async onLoad(option) {
+    var storeId = option.storeId;
+    if (storeId) {
+      this.vm = await core.getReductionCardListV2(storeId);
+      this.$apply();
+    }
+  }
+}
+</script>

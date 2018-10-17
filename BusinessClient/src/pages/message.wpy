@@ -1,0 +1,114 @@
+<style>
+
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="item-group">
+    <navigator url="/pages/message_list?type=4" class="f fc item">
+      <view class="ico54 ico-task"></view>
+      <view class="f1 pl30">订单消息</view>
+      <view class="num">{{vm.orderCount}}</view>
+      <view class="dzicon icon-jiantou"></view>
+    </navigator>
+    <navigator url="/pages/message_list?type=3" class="f fc item">
+      <view class="ico54 ico-clock__onbig"></view>
+      <view class="f1 pl30">预约消息</view>
+      <view class="num">{{vm.subscribeCount}}</view>
+      <view class="dzicon icon-jiantou"></view>
+    </navigator>
+
+    <navigator url="/pages/im/contact" class="f fc item">
+      <view style="width:54rpx;text-align:center;">
+        <image src="/img/icon_chat.png" style="width:38rpx;height:38rpx;"></image>
+      </view>
+      <view class="f1 pl30">私聊</view>
+      <view class="dzicon icon-jiantou"></view>
+    </navigator>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core } from "../lib/core";
+// import
+//第一步： 引入组件文件
+
+export default class message extends wepy.page {
+  config = {
+    navigationBarTitleText: "消息通知",
+    // 引入min组件
+    usingComponents: {},
+    enablePullDownRefresh: true
+  };
+  //第二步：声明组件
+  components = {};
+  data = {
+    $toast: {
+      show: false,
+      msg: "",
+      inMess: ""
+    },
+    vm: {
+      ispost: false,
+      orderCount: 0,
+      subscribeCount: 0
+    }
+  };
+  computed = {};
+  methods = {
+    navTo: function(type) {
+      let q = {};
+      switch (type) {
+        case "yuyue":
+          q = { orderType: 3, dateType: 0, state: -999 };
+          break;
+        case "order":
+          q = { orderType: 0, dateType: 0, state: -999 };
+          break;
+        default:
+          break;
+      }
+      wx.navigateTo({
+        url: "/pages/order_list?q=" + JSON.stringify(q)
+      });
+    }
+  };
+  events = {};
+  async onLoad() {
+    let that = this;
+  }
+
+  async onShow() {
+    await this.getPageData();
+  }
+  async getPageData() {
+    var that = this;
+    //wx.showNavigationBarLoading();
+    if (that.vm.ispost) return;
+
+    let result = await core.GetMessageCount();
+    if (result) {
+      if (result.isok) {
+        that.vm.ispost = false;
+        that.vm.orderCount = result.dataObj.orderCount;
+        that.vm.subscribeCount = result.dataObj.subscribeCount;
+        that.$apply();
+      } else {
+        that.ShowToast(result.Msg);
+      }
+    }
+    //wx.hideNavigationBarLoading();
+  }
+  //下拉刷新
+  async onPullDownRefresh() {
+    var that = this;
+    that.vm.ispost = false;
+    await this.getPageData();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+}
+</script>

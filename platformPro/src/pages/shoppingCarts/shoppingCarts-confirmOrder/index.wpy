@@ -1,0 +1,892 @@
+<style lang="less">
+  .shoppingCarts-confirmOrder {
+    padding-bottom: 30rpx;
+    .delivery-mask {
+      transition: all 0.1s ease-in-out;
+      z-index: 10;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      visibility: hidden;
+    }
+    .fade {
+      opacity: 1!important; 
+      visibility: visible!important;
+    }
+    .translateY { 
+      transform: translateY(0) !important;
+    } 
+    .layout {
+      transition: transform 0.2s ease-in-out 0.1s;
+      transform: translateY(100%);
+      width: 100%; 
+      height: 1038rpx;
+      background: rgba(255, 255, 255, 1);
+      position: absolute;  
+      bottom: 0; 
+      padding-left: 30rpx; 
+      padding-top: 30rpx;
+      .delivery-type {
+        .btn-type {  
+          width: 150rpx;
+          height: 60rpx;
+          border-radius: 30rpx;
+          line-height: 60rpx;
+        }
+        .defult {
+          color: #666;
+          border: 1px solid #d9d8d9; 
+        }
+        .active{
+          color:#FF6F30;
+          border: 1px solid #FFA076; 
+        }
+      }
+      .scroll-list {
+        height: 717rpx;
+        width: 100%;
+        .list-item {
+          min-height: 144rpx;
+          border-bottom: 1px solid #eee;
+        }
+      }
+      .btn-addAddress {
+        width: 450rpx;
+        height: 80rpx;
+        background-color: #FF6F30;
+        border-radius: 40rpx;
+        line-height: 80rpx;
+      }
+      .coupon-item {
+        width: 690rpx;
+        height: 170rpx;
+        margin-top: 30rpx;
+        background-color: #fff;
+        border-top-left-radius: 8rpx;
+        border-bottom-left-radius: 8rpx;
+        overflow: hidden;
+        position: relative;
+        &:first-child {
+          margin: 0;
+        }
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 6rpx;
+          height: 100%;
+          background-color: #ff6f30;
+        }
+        .discounts {
+          width: 160rpx;
+          border-right: 1px dashed #f6f6f6;
+          position: relative;
+          &::before,
+          &::after {
+            content: "";
+            position: absolute;
+            width: 20rpx;
+            height: 20rpx;
+            background-color: #f6f6f6;
+            border-radius: 50%;
+          }
+          &::before {
+            bottom: -10rpx;
+            right: -10rpx;
+          }
+          &::after {
+            top: -10rpx;
+            right: -10rpx;
+          }
+        }
+        .name {
+          width: 376rpx;
+        }
+        .btn-wrap {
+          .btn {
+            width: 120rpx;
+            height: 60rpx;
+            line-height: 60rpx;
+            text-align: center;
+            color: #ffa076;
+            border: 1px solid #ffa076;
+            border-radius: 30rpx;
+          }
+          .active {
+            background-color: #ffa076 !important;
+            color: #fff !important;
+          }
+        }
+      }
+    }
+    .header {
+      height: 146rpx;
+      padding-left: 30rpx;
+      padding-right: 10rpx;
+    }
+    .line {
+      height: 6rpx;
+      background: url("http://j.vzan.cc/miniapp/img/platformPro/order_top_bg.png") no-repeat;
+      background-size: 100%;
+    }
+    .goods {
+      margin-top: 24rpx;
+      padding-left: 30rpx;
+      .item {
+        height: 230rpx;
+        border-bottom: 1px solid #eee;
+        .right-part {
+          height: 170rpx;
+          width: 490rpx;
+        }
+      }
+    }
+    .beizhu {
+      height: 100rpx;
+      line-height: 100rpx;
+    }
+    .detail {
+      padding: 15rpx 30rpx;
+      margin-top: 24rpx;
+    }
+    .detail-group {
+      height: 55rpx;
+      line-height: 55rpx;
+    }
+    .form-group_ {
+      height: 84rpx;
+      border-bottom: 1px solid #eee;
+      input {
+        height: 84rpx;
+        line-height: 84rpx;
+      }
+    }
+    .address-ziqu {
+      height: 330rpx;
+    }
+    .vc {
+      vertical-align: center;
+      display: inline-block;
+    }
+    .ca1a2a3 {
+      color: #a1a2a3;
+    }
+    .wxGreen {
+      background-color: #09bb07;
+    }
+  }
+</style>
+<template leng="wxml">
+  <view class="shoppingCarts-confirmOrder ">
+    <view class="header f fj fc bg-w" @tap="switchMask">
+      <view class="wp85">
+        <view class="f34 c333 f fv">
+          <view class="w-100 ellipsis t-b" wx:if="{{addresssInfo.contact == ''}}">请选择配送方式</view>
+          <block wx:else>
+            <view class="w-100 ellipsis t-b f fc">
+              <text class="mr20">{{addresssInfo.contact}}</text>
+              <text class="mr20">{{addresssInfo.phone}}</text>
+              <text class="f26 colorFF6F30">[{{addresssInfo.type}}]</text>
+            </view>
+            <view class="w-100 ellipsis mt15 f26 c666">
+              <block wx:if="{{addresssInfo.type != '自取'}}">
+                <text class="dzicon icon-shouhuodizhi mr10"></text>
+                <text>{{addresssInfo.province + addresssInfo.city + addresssInfo.district + addresssInfo.street}}</text>
+              </block>
+              <block wx:else>
+                <text class="">自取地址：</text>
+                <text>{{shopAddress}}</text>
+              </block>
+            </view>
+          </block>
+        </view>
+      </view> 
+      <text class="f50 dzicon icon-zhuanyebaniconkuozhan_Distribu2"></text>
+    </view>
+    <view class="line"></view>
+    <view class="goods bg-w">
+      <view class="list">
+        <view class="item f fc" wx:for="{{goodsList}}" wx:key="{{index}}">
+          <image class="good-img-size fs mr30" src="{{item.SpecImg}}"></image>
+          <view class="right-part f fv fj">
+            <view class="top">
+              <view class="f26 c333 ellipsis">{{item.GoodsName}}</view>
+              <view class="f24 c666 mt8">{{item.SpecInfo}}</view>
+            </view>
+            <view class="bottom f fj c333">
+              <view> 
+                <text class="f30 t-b mr10">￥{{item.PriceStr}}</text>
+                <text class="f24 t-del c666" wx:if="{{item.PriceStr != item.OriginalPriceStr}}">￥{{item.OriginalPriceStr}}</text>
+              </view>
+              <text class="f26">x{{item.Count}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="beizhu f">
+        <text class="f26 c333">店铺备注</text>
+        <input type="text" class="fg1 hl100 pl30 f26" @input="inputRemark" placeholder="选填，给商家留言" />
+      </view>
+    </view>
+    <view class="beizhu f fj mt20 pl30 bg-w" @tap="switchCoupon">
+      <text class="f26 c333 mr20">优惠券</text>
+      <view class="f fc">
+        <text class="mr5 t-b" wx:if="{{curCoupon&&curCoupon.CouponWay==0}}">优惠:{{curCoupon.Money_fmt}}元</text>
+        <text class="mr5 t-b" wx:if="{{curCoupon&&curCoupon.CouponWay==1}}">折扣:{{curCoupon.Money_fmt}}折</text>
+        <text class="c666 f24" wx:if="{{curCoupon==null}}">选择优惠券</text>
+        <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f40"></text>
+      </view>
+    </view>
+    <view class="detail f26 bg-w">
+      <view class="detail-group f fj">
+        <text>商品金额</text>
+        <text class="f30 t-b">￥{{totalPrice}}</text>
+      </view>
+      <!-- 优惠卷暂时不开放 -->
+      <view class="detail-group f fj">
+        <!-- <text wx:if="{{curCoupon&&curCoupon.CouponWay==1}}">折扣券{{curCoupon.Money_fmt}}折</text> -->
+        <text>优惠券</text>
+        <text class="t-b colorFF6F30">￥-{{discountsPrice}}{{isSpecGood ? '(指定商品)' : ''}}</text>
+      </view>
+      <view class="detail-group f fj" wx:if="{{vipDiscountPrice!='10折'}}">
+        <text>会员折扣</text>
+        <text class="t-b colorFF6F30">{{vipDiscountPrice}}</text>
+      </view>
+      <view class="detail-group f fj">
+        <text>运费</text>
+        <text class="t-b colorFF6F30">￥+{{actualFee}}</text>
+      </view>
+    </view>
+    <view class="detail-group f fe f30 pr30 mt20 mb20">
+      <text class="mr10">实付款:</text>
+      <text class="t-b colorFF6F30">￥{{actualPay}}</text>
+    </view>
+    <button class="block-center btn-big wxGreen cfff tc f26 mt50" @tap="wxPay">
+        微信支付
+      </button>
+    <!-- <button class="block-center btn-big bg-light-gray border-light-gray c333 tc f26 mt30" @tap="saveMoneyPay">
+        储值支付（余额：{{saveMoney}}元）
+      </button> -->
+    <!-- 配送方式 -->
+    <view class="delivery-mask {{isOpenMask ? 'fade' : ''}}" style="transition-delay:{{isOpenMask ? '' : '0.35s'}};">
+      <view class="layout {{isOpenMask ? 'translateY' : ''}}">
+        <view class="w-100 c333 f34 f fj fc">
+          <text class="t-b">配送方式</text>
+          <text class="pr30 dzicon icon-iconset0127 t-b c666" @tap="switchMask"></text>
+        </view>
+        <view class="delivery-type f mt30">
+          <button wx:if="{{SwitchModel.enableDeliveryTemplate}}" class="btn-type mr30 tc f26 {{deliveryType[0] == 1 ? 'active' : 'defult' }}" @tap="selectType(0)">快递</button>
+          <button wx:if="{{SwitchModel.SwitchReceiving}}" class="btn-type tc f26 {{deliveryType[1] == 1 ? 'active' : 'defult' }}" @tap="selectType(1)">自取</button>
+        </view>
+        <view class="kuaidi" wx:if="{{SwitchModel.enableDeliveryTemplate && deliveryType[0] == 1}}">
+          <scroll-view scroll-y class="scroll-list mt20">
+            <view class="list-item f fj pr30 fc pt20 pb20" wx:for="{{addressList}}" wx:key="{{index}}" @tap="selectAddress({{index}})">
+              <view class="f fc">
+                <text @tap.stop="modifyAddress('修改', {{item}})" class="dzicon icon-bianji f40 ca1a2a3 mr30"></text>
+                <view class="f fv">
+                  <view class="c333 f34 t-b">
+                    <text class="mr15">{{item.contact}}</text>
+                    <text class="mr15">{{item.phone}}</text>
+                  </view>
+                  <view class="c666 f26 mt15 lh15">
+                    <text class="colorFF6F30 f26 mr10" wx:if="{{item.isdefault == 1}}">[默认]</text>{{item.province + item.city + item.district + item.street}}
+                  </view>
+                </view>
+              </view>
+              <text class="ml30 f44 dzicon {{item.isSelect ? 'icon-Choice_xuanze colorFF6F30' : 'icon-Unselected_weixuanze colorD9D8D9'}}"></text>
+            </view>
+          </scroll-view>
+          <button class="block-center btn-addAddress tc f26 cfff mt30" @tap="modifyAddress('新增')">添加新地址</button>
+        </view>
+        <view class="ziqu" wx:if="{{SwitchModel.SwitchReceiving && deliveryType[1] == 1}}">
+          <view class="mt40 f26">
+            <view class="f34 t-b c333">
+              填写领取人信息
+            </view>
+            <view class="mt20">
+              <view class="form-group_">
+                <input placeholder="领取人姓名" value="{{getBySelfName}}" @input="inputGetBySelfName" placeholder-style="color:#D9D8D9;" />
+              </view>
+              <view class="form-group_">
+                <input placeholder="手机号码" value="{{getBySelfPhone}}" @input="inputGetBySelfPhone" placeholder-style="color:#D9D8D9;" />
+              </view>
+            </view>
+            <view class="f34 t-b c333 mt50">
+              自取地址
+            </view>
+            <view class="address-ziqu  mt40">
+              <view class="h45">
+                <text class=" f30 dzicon icon-Choice_xuanze colorFF6F30 mr10"></text>
+                <text class="f26 c666">{{shopAddress}}</text>
+              </view>
+            </view>
+          </view>
+          <button class="block-center btn-addAddress tc f26 cfff mt15 " @tap="confirmBySelf">确认</button>
+        </view>
+      </view>
+    </view>
+    <!-- 优惠券 -->
+    <view class="delivery-mask {{isOpenCoupon ? 'fade' : ''}}" style="transition-delay:{{isOpenCoupon ? '' : '0.35s'}};">
+      <view class="layout {{isOpenCoupon ? 'translateY' : ''}}" style="background-color: #f6f6f6;">
+        <view class="w-100 c333 f34 f fj fc">
+          <text class="t-b">选择优惠券</text>
+          <text class="pr30 dzicon icon-iconset0127 t-b c666" @tap="switchCoupon"></text>
+        </view>
+        <scroll-view scroll-y class="mt30" style="height:940rpx;padding-bottom:30rpx;">
+          <repeat for="{{couponList}}" key="index">
+            <view class="coupon-item f">
+              <view class="discounts t-b f fv fc fc-h">
+                <view wx:if="{{item.CouponWay==0}}">满{{item.LimitMoney/100}}</view>
+                <view wx:if="{{item.CouponWay==0}}">减{{item.Money_fmt}}</view>
+                <view wx:if="{{item.CouponWay==1}}">
+                  <text class="f50">{{item.Money_fmt}}</text>折</view>
+              </view>
+              <view class="name t-b f fc fc-h">{{item.CouponName}}</view>
+              <view class="btn-wrap f fv fc-h">
+                <view class="btn f24 {{item.isSelect ? 'active' : ''}}" @tap="useCoupon({{index}})">{{item.isSelect ? '使用中': '使用'}}</view>
+              </view>
+            </view>
+          </repeat>
+        </scroll-view>
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+    http,
+    pay
+  } from "@/lib/core";
+  import com_wait from "@/components/com_wait";
+  export default class shoppingCarts extends wepy.page {
+    config = {
+      navigationBarTitleText: "确认订单",
+      enablePullDownRefresh: false
+    };
+    data = {
+      isWait: false,
+      isOpenMask: false, //是否开启遮掩罩
+      isOpenCoupon: false, //开启优惠券弹窗
+      deliveryType: [1, 0], //配送类型 index : 0 快递 1自取
+      addressList: [
+        //地址列表
+        {
+          contact: "联系人",
+          phone: "手机",
+          province: "省",
+          city: "市",
+          district: "区 / 县",
+          street: "街道 / 详细地址",
+          isSelect: false,
+          id: 0
+        }
+      ],
+      addresssInfo: {
+        //与addressList的数据结构保持一致
+        contact: "",
+        phone: "",
+        province: "",
+        city: "",
+        district: "",
+        street: "",
+        isSelect: false,
+        id: 0,
+        type: "" //或者自取
+      },
+      couponParam: {
+        state: 4,
+        goodsId: 0, //商品id（使用时）
+        pageIndex: 1,
+        goodsInfo: []
+      },
+      getBySelfName: "", //自取人名
+      getBySelfPhone: "", //自取人电话
+      shopAddress: "", //店铺地址,
+      remark: "", //备注  
+      goodsList: [], //商品信息 来自 1.购物车 2.直接购买
+      couponList: [], //优惠券列表
+      curCoupon: null, //当前选择的优惠券
+      couponPrice: 0, //优惠券金额
+      Fee: 0, //运费
+      saveMoney: 0, //储值余额
+      isSpecGood: false, //是否指定商品使用优惠卷
+      vipDiscount:0,//折扣
+      SwitchModel: {
+          SwitchReceiving: false, //开启自取选项
+          enableDeliveryTemplate: false //开启快递选项
+      }
+
+    };
+    components = {
+      comWait: com_wait
+    };
+    computed = {
+      //商品金额
+      totalPrice() {
+        var i = 0;
+        var goodItem;
+        var price = 0;
+        while ((goodItem = this.goodsList[i++])) {
+          var itemPrice = Number(goodItem.Price);
+          var itemCount = Number(goodItem.Count);
+          price = price.add(itemPrice.mul(itemCount));
+        }
+        return price.div(100).toFixed(2);
+      },
+      //折扣金额
+      discountsPrice() {
+        var discounts = 0;
+        if (this.curCoupon) {
+          if (!this.isSpecGood) {
+            discounts = this.getSuiDiscount(this.curCoupon, this.totalPrice);
+          } else {
+            var goodsTotalPrice = Number(this.curCoupon.goodsTotalPrice)
+            discounts = this.getSuiDiscount(
+              this.curCoupon,
+              goodsTotalPrice.div(100)
+            );
+          }
+        }
+        return discounts.toFixed(2);
+      },
+      //会员折扣
+      vipDiscountPrice(){
+        // return (1 - this.vipDiscount.div(100)).mul(Number(this.totalPrice)).toFixed(2);
+        return this.vipDiscount.div(10)+"折";
+      },
+      actualFee() {
+        if (this.addresssInfo.type == "自取") {
+          return 0;
+        } else {
+          return Number(this.Fee);
+        }
+      },
+      //实际支付
+      actualPay() {
+        var sum = Number(this.totalPrice) - Number(this.discountsPrice);
+        sum <= 0 ? 0 : sum;
+        return (sum + Number(this.actualFee)).toFixed(2);
+      }
+    };
+    methods = {
+      switchMask() {
+        this.switchMask_();
+      },
+      switchCoupon() {
+        this.switchCoupon_();
+      },
+      selectType(index) {
+        this.selectType_(index);
+      },
+      //选择快递配送地址
+      async selectAddress(index) {
+        //async
+        tools.showLoading('选择中')
+        var inRange = await this.getFreightFeeC(
+          this.addressList[index]["province"],
+          this.addressList[index]["city"]
+        );
+        if (!inRange) {
+          return;
+        }
+        this.resetExpressSelect();
+        //设置快递地址被选项
+        this.addressList[index].isSelect = true;
+        //注入地址信息
+        for (var key in this.addresssInfo) {
+          if (key == "type") continue;
+          this.addresssInfo[key] = this.addressList[index][key];
+        }
+        //确认配送类型
+        this.confirmDeliveryType(0);
+        tools.freeToast('选择成功', 'success')
+        this.switchMask_()
+        this.$apply();
+      },
+      inputGetBySelfName(e) {
+        this.getBySelfName = e.detail.value;
+      },
+      inputGetBySelfPhone(e) {
+        this.getBySelfPhone = e.detail.value;
+      },
+      confirmBySelf() {
+        //自取
+        if (!this.getBySelfName) {
+          tools.showModalCancle("领取人姓名不能为空");
+          return;
+        }
+        if (!this.getBySelfPhone) {
+          tools.showModalCancle("领取人电话不能为空");
+          return;
+        }
+        //重置快递类型地址选择项
+        this.resetExpressSelect();
+        //注入自取人信息 自取地址 就是 shopAddress
+        this.addresssInfo.contact = this.getBySelfName;
+        this.addresssInfo.phone = this.getBySelfPhone;
+        //确认配送类型
+        this.confirmDeliveryType(1);
+        //关闭mask
+        this.switchMask_();
+      },
+      inputRemark(e) {
+        this.remark = e.detail.value;
+      },
+      modifyAddress(mode, item) {
+        console.log(item, "item");
+        item = JSON.stringify(item);
+        var args = mode == "修改" ? "?mode=修改&item=" + item : "?mode=新增";
+        tools.goNewPage("../updateAddress/index" + args);
+      },
+      useCoupon(i) {
+        this.setCouponDefaultStatus(i);
+        //当前优惠卷
+        var currentCoupon = this.couponList[i];
+        //GoodsIdStr id字符串转换为数组
+        var couponGoodIds = currentCoupon.GoodsIdStr ? currentCoupon.GoodsIdStr.split(",") : [];
+        //限制金额 单位：元
+        var limitMoney = Number(currentCoupon.LimitMoney); //转为元
+        limitMoney = limitMoney.div(100);
+        //判断是否选择且使用
+        currentCoupon.isSelect = !currentCoupon.isSelect;
+        //使用该优惠卷下
+        if (currentCoupon.isSelect) {
+          //没有指定商品
+          if (couponGoodIds.length == 0) {
+            //假如商品金额大于 优惠卷限制金额，则使用
+            if (Number(this.totalPrice) >= limitMoney) {
+              //指定商品标记为false
+              this.isSpecGood = false;
+              this.injectCurCoupon(currentCoupon);
+            } else {
+              //否则提示错误
+			        currentCoupon.isSelect = false
+              tools.freeToast("没有达到优惠条件", "none");
+            }
+          } else {
+            //指定商品
+            var i = 0;
+            var couponGoodId;
+            var matchGoods = []
+            //找到能使用优惠卷的商品列表
+            while ((couponGoodId = couponGoodIds[i++])) {
+              var target = this.goodsList.find(val => {
+                return val.GoodsId == couponGoodId;
+              });
+              //找到匹配的商品，被把它放入matchGoods
+              if (target) {
+                matchGoods.push(target)
+              }
+            }
+            //分
+            var targetTotalPrice = 0
+            //指定商品列表计算累计价格
+            matchGoods.forEach(val => {
+              targetTotalPrice += Number(val.Price) * Number(val.Count)
+            })
+            //统一单位  targetTotalPrice.div(100) 转为元 ，当优惠商品累计总金额大于优惠卷限制金额时
+            if (targetTotalPrice.div(100) >= limitMoney) {
+              //指定商品标记为true
+              this.isSpecGood = true;
+              //注入当前优惠卷 ，this.curCoupon添加额外属性goodsTotalPrice = targetTotalPrice
+              this.injectCurCoupon(currentCoupon, targetTotalPrice);
+            } else {
+              //否则提示错误
+			        currentCoupon.isSelect = false
+              tools.freeToast("没有达到优惠条件", "none");
+            }
+          }
+        } else {
+          this.curCoupon = null;
+        }
+      },
+      wxPay() {
+        this.pay(1);
+      },
+      // saveMoneyPay() {
+      //   this.pay(2);
+      // }
+    };
+    //Price - 单间商品的价格 or 总价格
+    getSuiDiscount(couponObj, Price) {
+      var discounts;
+      Price = Number(Price); //单位元
+      var couponMoney = Number(couponObj.Money); //单位分
+      if (couponObj.CouponWay == 0) {
+        //当现金卷时 ，当优惠卷的金额大于Price时，有优惠价格是Price，否则是couponMoney
+        discounts =
+          Price.sub(couponMoney.div(100)) < 0 ? Price : couponMoney.div(100);
+      } else {
+        //当折扣卷时
+        discounts = (1 - Number(couponObj.Money_fmt).div(10)).mul(Price);
+      }
+      return discounts;
+    }
+    //注入当前优惠卷信息，并触发computed计算价格
+    injectCurCoupon(currentCoupon, goodsTotalPrice) {
+      this.curCoupon = {
+        CouponWay: currentCoupon.CouponWay,
+        Id: currentCoupon.Id,
+        Money_fmt: currentCoupon.Money_fmt,
+        goodsTotalPrice: goodsTotalPrice,
+        Money: currentCoupon.Money
+      };
+      this.couponPrice = currentCoupon.Money_fmt;
+      this.switchCoupon_();
+    }
+    //设置优惠卷默认状态
+    setCouponDefaultStatus(except) {
+      if (this.couponList.length > 0) {
+        this.couponList.forEach((val, index) => {
+          if (index == except) {
+            return;
+          }
+          val.isSelect = false;
+        });
+      }
+    }
+    // 1是微信支付 2是储值支付
+    async pay(payType) {
+      wx.showLoading({
+        mask: true,
+        title: "支付处理中"
+      });
+      payType = payType || 1;
+      var getWay = this.addresssInfo.type == "自取" ? 0 : 1;
+      var goodcartids = this.goodsList.map(val => {
+        //这个Id对不对呢？
+        return val.Id;
+      });
+      goodcartids = goodcartids.join();
+      var addresJson = {
+        provinceName: this.addresssInfo.province,
+        cityName: this.addresssInfo.city,
+        postalCode: ""
+      };
+      addresJson = JSON.stringify(addresJson);
+      var address =
+        this.addresssInfo.type == "自取" ?
+        this.shopAddress :
+        this.addresssInfo.province +
+        this.addresssInfo.city +
+        this.addresssInfo.district +
+        this.addresssInfo.street;
+      var jsonData = {
+        AccepterName: this.addresssInfo.contact,
+        AccepterTelePhone: this.addresssInfo.phone,
+        Message: this.remark,
+        BuyMode: payType,
+        GetWay: getWay,
+        CartIds: goodcartids,
+        CouponLogId: this.curCoupon ? this.curCoupon.Id : 0,
+        Address: address,
+        WxAddresJson: addresJson,
+        StoreId: this.goodsList[0].storeId
+      };
+      var buyPrice = Number(this.actualPay).mul(100);
+      jsonData = JSON.stringify(jsonData);
+      var result = await core.addPayOrder(payType, jsonData, buyPrice);
+      tools.handleResult(
+        result,
+        async res => {
+          wx.hideLoading();
+          if (payType == 1 && this.actualPay > 0) {
+            //微信支付
+            await pay.handleWxPay({
+              orderid: res.orderid,
+              success: async() => {
+                await tools.freeToast("支付成功", "success");
+                wx.hideNavigationBarLoading();
+                tools.goNewPage(
+                  "../my-order/goodOlt?orderid=" + res.dbOrder
+                );
+              },
+              fail: async() => {
+                await tools.freeToast("支付失败", "loading");
+                wx.hideNavigationBarLoading();
+                tools.goNewPage(
+                  "../my-order/goodOlt?orderid=" + res.dbOrder
+                );
+              }
+            });
+          } else {
+            //储值支付
+            this.handleSaveMoneyPay(res.dbOrder);
+          }
+        },
+        () => {
+          wx.hideLoading();
+          tools.freeToast(result.Msg, "none", 500);
+        }
+      );
+    }
+    //控制储值支付逻辑
+    async handleSaveMoneyPay(dborder) {
+      await tools.freeToast("支付成功", "success");
+      //跳转订单详情页
+      tools.goNewPage("../my-order/goodOlt?orderid=" + dborder);
+    }
+    //mask开关
+    switchMask_() {
+      this.isOpenMask = !this.isOpenMask;
+    }
+    //优惠券开关
+    switchCoupon_() {
+      this.isOpenCoupon = !this.isOpenCoupon;
+    }
+    //选择配送类型
+    selectType_(index) {
+      this.deliveryType = [0, 0];
+      this.deliveryType[index] = 1;
+    }
+    //确认配送类型
+    confirmDeliveryType(index) {
+      var strArr = ["快递", "自取"];
+      this.addresssInfo.type = strArr[index];
+    }
+    //重置快递地址选项
+    resetExpressSelect() {
+      this.addressList.forEach(val => {
+        val.isSelect = false;
+      });
+    }
+    async onShow() {
+      this.isWait = true;
+      await this.getUserAddressC();
+      // await this.getSaveMoneySetUserC();
+      this.isWait = false;
+      this.$apply();
+    }
+    async onLoad() {
+      // tools.setThemeColor(this)
+      var goodList = wx.getStorageSync("goodsList");
+      if (goodList) {
+        this.goodsList = goodList;
+        this.vipDiscount =this.goodsList[0].Discount;
+        // this.DiscountPrice(this.goodsList);
+        wx.removeStorageSync("goodsList");
+      } else {
+        tools.goBack();
+        return;
+      }
+      this.getMyCouponList();
+      this.getStoreDetailC();
+    }
+    // DiscountPrice(goodsList) {
+    //   goodsList.forEach((item, index) => {
+    //     item["Discount"] = item["Discount"] / 100;
+    //     console.log(item, index)
+    //   })
+    // }
+    /**********api对接**************/
+    async getUserAddressC() {
+      var result = await core.getUserAddress();
+      if (result.isok) {
+        this.addressList = await this.addSelectStatus(result.data);
+      } else {
+        tools.showModalCle(result.msg);
+      }
+    }
+    // async getSaveMoneySetUserC() {
+    //   var result = await core.getSaveMoneySetUser();
+    //   if (result.isok) {
+    //     this.saveMoney = result.saveMoneySetUser.AccountMoneyStr;
+    //   } else {
+    //     tools.showModalCle(result.msg);
+    //   }
+    // }
+    async getFreightFeeC(province, city) {
+      var goodcartids = this.goodsList.map(val => {
+        return val.Id;
+      });
+      var result = await core.getFreightFee(province, city, goodcartids, this.goodsList[0].storeId);
+      console.log(result)
+      wx.hideLoading()
+      if (!result.isok || !result.dataObj.deliueryResult.InRange) {
+        tools.freeToast(result.Msg || '不在商家配送范围内', 'none')
+        return false;
+      }
+      this.Fee = Number(result.dataObj.deliueryResult.Fee).div(100);
+      this.shopAddress = result.dataObj.storeaddress;
+      return true;
+    }
+    async getStoreDetailC() {
+      var result = await core.getStoreDetail({
+        storeId: this.goodsList[0].storeId
+      });
+      tools.handleResult(result, res => {
+        this.shopAddress = res.platStore.Location || "未知的店铺地址，请联系店主";
+        this.SwitchModel = res.platStore.SwitchModel
+        if ( !this.SwitchModel.enableDeliveryTemplate && this.SwitchModel.SwitchReceiving ) {
+          this.deliveryType = [0, 1]
+        }
+      });
+      this.$apply();
+    }
+    //注入默认收货地址并获取运费
+    async addSelectStatus(array) {
+      array.forEach(async val => {
+        //地址列表存在默认地址
+        if (val.isdefault == 1) {
+          //获取运费，检查是否在配送范围，不在则不注入默认地址
+          var inRange = await this.getFreightFeeC(val["province"], val["city"]);
+          if (!inRange) {
+            return;
+          }
+          //注入默认地址信息
+          for (var key in val) {
+            //地址列表对应项打勾
+            val.isSelect = true;
+            debugger
+            this.addresssInfo[key] = val[key];
+            //适配类型
+            this.addresssInfo.type = "快递";
+          }
+        } else {
+          val.isSelect = false;
+        }
+        this.$apply();
+      });
+      return array;
+    }
+    //获取优惠券列表
+    async getMyCouponList() {
+      var goodsId = this.goodsList.map(val => {
+        return val.GoodsId;
+      });
+      var goodsInfo = this.goodsList.map(val => {
+        var totalprice = Number(val.Price) * Number(val.Count)
+        if (totalprice < 1) {
+          totalprice = 1
+        }
+        return {
+          goodid: val.GoodsId,
+          totalprice: totalprice
+        };
+      });
+      this.couponParam.goodsInfo = JSON.stringify(goodsInfo);
+      this.couponParam.goodsId = goodsId.join();
+      this.couponParam.storeid = this.goodsList[0].storeId
+      let data = await core.getMyCouponList(this.couponParam);
+      if (data.isok) {
+        //this.saveMoney = result.saveMoneySetUser.AccountMoneyStr;
+        var postData = data.postdata
+        if (postData && Array.isArray(postData) && postData.length > 0) {
+            console.log(data)
+            this.couponList = postData[0].couponloglist
+        }
+        this.$apply();
+      } else {
+        tools.showModalCancle(data.msg);
+      }
+    }
+  }
+</script>

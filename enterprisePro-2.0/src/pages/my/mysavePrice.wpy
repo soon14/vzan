@@ -1,0 +1,196 @@
+<style lang="less">
+  .sp-lt {
+    width: 100%;
+    padding: 20rpx;
+    .sp-item {
+      width: 350rpx;
+      height: 170rpx;
+      background: #ccc;
+      margin-bottom: 10rpx;
+      background-image: url("http://j.vzan.cc/miniapp/img/myicon.png");
+      background-repeat: no-repeat;
+      background-size: cover;
+      padding: 20rpx;
+    }
+    .sp-btn {
+      width: 95%;
+      height: 100rpx;
+      line-height: 100rpx;
+      text-align: center;
+      font-size: 30rpx;
+      border-radius: 4rpx;
+      position: fixed;
+      bottom: 30rpx;
+      margin: 0 auto;
+    }
+    .icon-Choice_xuanze {
+      position: absolute;
+      top: 0;
+      right: 10rpx;
+      font-size: 40rpx;
+    }
+  }
+  .sp-mask {
+    height: 156rpx;
+    position: relative;
+    margin: 20rpx 26rpx;
+    background: #fff;
+    padding: 0 50rpx;
+    .sp-icon {
+      width: 86rpx;
+      height: 86rpx;
+      position: absolute;
+      top: 0;
+      left: -14rpx;
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="{{currentSkin}}">
+    <view wx:if="{{showMask=='save'}}">
+      <view class='sp-lt f fw fj'>
+        <repeat for="{{vm_save.price}}">
+          <view class="sp-item f fv fj rel" @tap="selPrice({{index}})">
+            <text class="dzicon icon-Choice_xuanze skin_txt" wx:if="{{item.sel}}" />
+            <text class="f50">{{item.JoinMoneyStr}}<text class="f30">元</text></text>
+            <text class="f22 c666 mt20">{{item.SetName}}</text>
+          </view>
+        </repeat>
+        <view class="sp-btn skin_bg" @tap="recharge">立即支付</view>
+      </view>
+    </view>
+    <view wx:else>
+      <repeat for="{{vm_record.list}}" item="history" wx:if="{{vm_record.list[1].length!=0&&vm_record.list[1]!=null}}">
+        <repeat for="{{history}}">
+          <view class='sp-mask f fv fc fc-h'>
+            <view class="f fj fc w-100">
+              <view class="f fc" wx:if="{{item.Type==-1||item.Type==-2}}">
+                <text class="f38">消费</text>
+                <text class="f26 c999">({{item.Type==-1?'储值支付':'微信支付'}})</text>
+              </view>
+              <text class="f38" wx:if="{{item.Type==0}}">充值</text>
+              <text class="f30 c999">{{item.CreateDateStr}}</text>
+            </view>
+            <view class="f fc w-100">
+              <text class="f30 c666 f1">余额：{{item.AfterMoneyStr}}</text>
+              <text class="f42" wx:if="{{item.Type==-1||item.Type==-2}}">-{{item.ChangeMoneyStr}}</text>
+              <text class="f42 cf3" wx:if="{{item.Type==0}}">+{{item.ChangeMoneyStr}}</text>
+              <text class="f42 cf3" wx:if="{{item.Type==1}}">+{{item.ChangeMoneyStr}}</text>
+            </view>
+            <image src="http://j.vzan.cc/miniapp/img/enterprise/a49.png" class='sp-icon' wx:if="{{item.Type==-1||item.Type==-2}}" />
+            <image src="http://j.vzan.cc/miniapp/img/enterprise/a48.png" class='sp-icon' wx:if="{{item.Type==0}}" />
+            <image src="http://j.vzan.cc/miniapp/img/enterprise/a51.png" class='sp-icon' wx:if="{{item.Type==1}}" />
+          </view>
+        </repeat>
+      </repeat>
+      <wxc-abnor type="DATA" wx:if="{{vm_record.list[1].length==0||vm_record.list[1]==null}}"></wxc-abnor>
+      <wxc-loadmore is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" wx:if="{{vm_record.list[1]!=null&&vm_record.list[1].length!=0&&vm_record.loadall}}"></wxc-loadmore>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    pay,
+    tools
+  } from "../../lib/core";
+  import _get from "@/lib/lodash.get.js"
+  // import
+  //第一步： 引入组件文件
+  export default class savePrice extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+        "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+        'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+      }
+    };
+    data = {
+      vm_save: {},
+      currentSkin: {},
+      showMask: false,
+      vm_record: {
+        pageindex: 1,
+        pagesize: 10,
+        list: [],
+        ispost: false,
+        loadall: false,
+      },
+    };
+    computed = {};
+    methods = {
+      selPrice(index) {
+        let _p = this.vm_save.price[index]
+        let _g = this.vm_save.price
+        _g.forEach(function(obj, i) {
+          obj.Id != _p.Id ? obj.sel = false : obj.sel = !obj.sel;
+        })
+        this.vm_save.price = _g
+        this.$apply()
+      },
+      // 充值
+      async recharge() {
+        let app = wepy.$instance
+        let _find = this.vm_save.price.find(f => f.sel == true)
+        if (_find) {
+          wx.showNavigationBarLoading();
+          let vm = await core.addSavePrice(_find.Id);
+          if (vm.isok) {
+            let newparam = {
+              orderid: vm.orderid,
+              type: 1
+            };
+            let wxPay = await pay.PayOrder(newparam);
+            if (wxPay != '' && wxPay.errMsg.includes("requestPayment:ok")) {
+              let show = await tools.showModal("支付成功")
+              if (show.confirm) {
+                let valueMoney = await core.valueMoney();
+                app.globalData.vipInfo.valueMoney = valueMoney.saveMoneySetUser.AccountMoneyStr
+                if (app.globalData.myUser) {
+                  app.globalData.myUser.model.valueMoney = valueMoney.saveMoneySetUser.AccountMoneyStr
+                }
+                tools.goBack(1)
+              } else {
+                for (let i = 0, len = this.vm_save.price.length; i < len; i++) {
+                  this.vm_save.price[i].sel = false
+                  this.$apply()
+                }
+              }
+              wx.hideNavigationBarLoading()
+            } else {
+              wx.hideNavigationBarLoading()
+              tools.loading("取消支付");
+            }
+          }
+        }
+      },
+      //充值历史
+      async showMask() {
+        tools.goNewPage("../my/mysavePrice?type=history")
+      }
+    };
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      let type = _get(options, "type", "")
+      if (type === "save") {
+        await core.getSaveList(this);
+        tools.setPageTitle("余额充值")
+      } else {
+        await core.getMoneyRec(this)
+        tools.setPageTitle("账单记录")
+      }
+      this.showMask = type
+      this.$apply()
+    }
+    onReachBottom() {
+      if (this.showMask == 'history') {
+        core.getMoneyRec(this)
+      }
+    }
+  }
+</script>

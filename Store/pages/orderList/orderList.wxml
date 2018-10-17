@@ -1,0 +1,133 @@
+<!--pages/orderList/orderList.wxml-->
+<!-- header -->
+<view class="header" bindtap="navTomyAddress">
+  <!-- <block wx:for="{{Address}}"> -->
+  <view wx:if="{{Address==''}}">
+    <text>请设置收货地址</text>
+  </view>
+  <view wx:if="{{Address!=''}}">
+    <text style="line-height:42rpx;">收货人：{{Address.userName}}</text>
+    <text>{{Address.telNumber}}</text>
+  </view>
+  <image src="../../image/a6.png" class="header_icon"></image>
+  <text style="font-size:26rpx;">{{Address.provinceName}}{{Address.cityName}}{{Address.countyName}}{{Address.detailInfo}}</text>
+  <!-- </block> -->
+</view>
+<!-- body1 -->
+<view class="body1">
+  <!-- 购物清单 -->
+  <view class="body1_shopList">
+    <text style="font-size:30rpx;color:#121212">购物清单</text>
+    <view style="margin-right: 22rpx;">
+      <text style="color:#666666">共{{nums}}件</text>
+      <text style="color:#666666;margin:0 10rpx 0 30rpx;">小计</text>
+      <text>￥</text>
+      <text>{{sumprice}}</text>
+    </view>
+  </view>
+  <block wx:for="{{goods}}">
+    <!-- 商品模板 -->
+    <!-- <view class="body2">
+      <image src="{{item.goodsMsg.ImgUrl}}" class="body2_img" mode="aspectFill"></image>
+      <view class="body2_content">
+        <text style="line-height: 30rpx;font-size:26rpx">{{item.goodsMsg.Description}}</text>
+        <view class="body2_content1" style="font-size:26rpx">{{item.SpecInfo}}</view>
+        <view class="body2_content2">
+          <view style="display:flex;">
+            <text>￥</text>
+            <text>{{item.Price}}</text>
+          </view>
+          <text>x{{item.Count}}</text>
+        </view>
+      </view>
+    </view> -->
+    <view class="body2">
+      <image src="{{item.ImgUrl}}" class="body2_img" mode="aspectFill"></image>
+      <view class="body2_content">
+        <text style="line-height: 30rpx;font-size:26rpx">{{item.Introduction}}</text>
+        <view class="body2_content1" style="font-size:26rpx" wx:if="{{item.SpecInfo==null}}"></view>
+        <view class="body2_content1" style="font-size:26rpx" wx:if="{{item.SpecInfo!=null}}">{{item.SpecInfo}}</view>
+        <view class="body2_content2">
+          <view class='flex'>
+            <text wx:if="{{item.discount!=100}}" class='marri30'>￥{{item.Price}}</text>
+            <text wx:if="{{item.discount==100}}">￥{{item.undiscountPrice}}</text>
+            <view class="posre">
+              <text wx:if="{{item.discount!=100}}" style='color:#999'>￥{{item.undiscountPrice}}</text>
+              <view class='posa5'></view>
+            </view>
+          </view>
+          <text>x{{item.Count}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>
+<!-- 选项 -->
+<view class="body3">
+  <!-- 配送方式 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">配送方式</text>
+    <view class="picker">
+      <picker bindchange="bindPickerChange" value="{{index}}" range="{{array}}">
+        <text>当前选择：{{array[index]}}</text>
+      </picker>
+      <image src='/image/a9.png' style='margin-left:10rpx;width:24rpx;height:24rpx'></image>
+    </view>
+  </view>
+  <!-- 支付方式 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">支付方式</text>
+    <view class="picker">
+      <picker bindchange="changePayway" value="{{index1}}" range="{{array1}}">
+        <text>当前选择：{{array1[index1]}}</text>
+      </picker>
+      <image src='/image/a9.png' style='margin-left:10rpx;width:24rpx;height:24rpx'></image>
+    </view>
+  </view>
+  <!-- 发票设置 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">发票设置</text>
+    <input style="text-align:right" class="picker" placeholder="不开发票" disabled='true' />
+  </view>
+  <!-- 留言说明 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">留言说明</text>
+    <input style="text-align:right" class="picker" placeholder="" bindinput="inputMessage" />
+  </view>
+</view>
+
+<view class="body3">
+  <!-- 商品总额 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">商品总额</text>
+    <text class="picker">+ ￥{{yuanjia}}</text>
+  </view>
+  <!-- 折扣优惠 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">折扣优惠</text>
+    <text class="picker">-￥{{youhui}}</text>
+  </view>
+  <!-- 快递运费 -->
+  <view class="body3_choose">
+    <text class="body3_choose_text">快递运费</text>
+    <text class="picker">￥{{chooseModel[index].sum}}</text>
+  </view>
+</view>
+<!-- 底部按钮 -->
+<view style="height:160rpx;"></view>
+<view class="bottom">
+  <view class="bottom_nums">
+    <text style="color:#111111;font-size:30rpx;">应付：</text>
+    <text>￥</text>
+    <text>{{sumprice}}</text>
+  </view>
+
+  <!-- 提交模拟formId -->
+  <form bindsubmit="showtoastAddaddress" report-submit="true" style='background-color: #ef0000;' wx:if="{{Address.length==0}}">
+    <button class="bottom_pay" formType="submit">{{array1[index1]}}</button>
+  </form>
+  <!-- 提交模拟formId -->
+  <form bindsubmit="checkgooddetail" report-submit="true" style='background-color: #ef0000;' wx:if="{{Address.length!=0}}">
+    <button class="bottom_pay" formType="submit">{{array1[index1]}}</button>
+  </form>
+</view>

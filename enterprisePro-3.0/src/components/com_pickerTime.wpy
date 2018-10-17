@@ -1,0 +1,112 @@
+<style lang="less">
+  .t-pick {
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    position: fixed;
+    z-index: 5;
+    &__bg {
+      background-color: #000;
+      opacity: 0.6;
+      width: 100%;
+      height: 50vh;
+    }
+    &__main {
+      width: 100%;
+      height: 50vh;
+      color: #373737;
+      background-color: #fff;
+      .t-btn {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        padding: 0 20rpx;
+        font-size: 32rpx;
+        border-top: 1px solid #f5f5f5;
+        z-index: 5;
+      }
+      .t-btn>view:nth-child(1) {
+        color: #121212;
+      }
+      .t-btn>view:nth-child(2) {
+        color: #1aad19;
+      }
+      .pick {
+        width: 100%;
+        height: 500rpx;
+        border-top: 1px solid #f5f5f5;
+      }
+      .pick picker-view-column {
+        width: 20%;
+        text-align: center;
+        z-index: 6;
+      }
+      .pick picker-view-column view {
+        line-height: 50px;
+      }
+    }
+  }
+</style>
+<template>
+  <view class='t-pick'>
+    <view class='t-pick__bg' @tap.stop='Timeshow(0)'/>
+    <view class='t-pick__main'>
+      <view class='t-btn f fj'>
+        <view @tap.stop='Timeshow(0,{{formIndex}})'>取消</view>
+        <view @tap.stop='Timeshow(1,{{formIndex}},{{vm}})'>确定</view>
+      </view>
+      <picker-view class='pick' indicator-style="height: 50px;" value="{{vm.value}}" @change="bindChange({{vm}})">
+        <picker-view-column>
+          <repeat for="{{vm.years}}">
+            <view>{{item}}年</view>
+          </repeat>
+        </picker-view-column>
+        <picker-view-column>
+          <repeat for="{{vm.months}}">
+            <view>{{item}}月</view>
+          </repeat>
+        </picker-view-column>
+        <picker-view-column>
+          <repeat for="{{vm.days}}">
+            <view>{{item}}日</view>
+          </repeat>
+        </picker-view-column>
+        <picker-view-column>
+          <repeat for="{{vm.hours}}">
+            <view>{{item}}时</view>
+          </repeat>
+        </picker-view-column>
+        <picker-view-column>
+          <repeat for="{{vm.mins}}">
+            <view>{{item}}分</view>
+          </repeat>
+        </picker-view-column>
+      </picker-view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  export default class com_pickerTime extends wepy.component {
+    components = {};
+    props = {};
+    methods = {
+      Timeshow(index, formIndex, vm) {
+        let timeValue = {}
+        if (Number(index) == 1) {
+          timeValue = this.DateTime || vm.years[vm.value[0]] + "年" + vm.months[vm.value[1]] + "月" + vm.days[vm.value[2]] + "日" + vm.hours[vm.value[3]] + "时" + vm.mins[vm.value[4]] + "分";
+        } else {
+          timeValue = "请选择时间";
+        }
+        this.$emit("closeData", timeValue, formIndex);
+      },
+      bindChange(vm, e) {
+        const val = e.detail.value;
+        let DateTime = vm.years[val[0]] + "年" + vm.months[val[1]] + "月" + vm.days[val[2]] + "日" + vm.hours[val[3]] + "时" + vm.mins[val[4]] + "分"
+        this.DateTime = DateTime;
+      }
+    };
+  }
+</script>

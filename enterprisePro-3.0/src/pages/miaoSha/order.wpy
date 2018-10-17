@@ -1,0 +1,334 @@
+<style lang="less">
+    .order {
+        width: 100%;
+        color: #333;
+        .header {
+            width: 100%;
+            height: 155rpx;
+            background: #fff;
+        }
+        .wrap-good {
+            margin-top: 20rpx;
+            background: #fff;
+            .wrap-message {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                padding: 0 30rpx;
+            }
+        }
+        .wrap-order {
+            width: 100%;
+            background: #fff;
+            margin: 24rpx 0;
+            padding: 0 30rpx;
+            font-size: 26rpx;
+        }
+        .wrap-mode {
+            width: 100%;
+            height: 200rpx;
+            background: #fff;
+            padding-left: 30rpx;
+            .mode-weixin {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                padding-right: 30rpx;
+                border-bottom: 1px solid #eee;
+            }
+            .mode-weixin:last-child {
+                border-bottom: none;
+            }
+        }
+        .wrap-btn {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            background: #fff;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            >form {
+                width: 209rpx;
+                height: 100rpx;
+                button {
+                    width: 100%;
+                    line-height: 100rpx;
+                    text-align: center;
+                    font-size: 28rpx;
+                }
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='order {{currentSkin}}'>
+        <!-- 用户信息 -->
+        <view class='header' @tap='chooseAddress({{vm.cartid}})'>
+            <view class='f fc' style='height:150rpx; padding: 0 30rpx;'>
+                <text class='f34 c333 t-b f1' wx:if="{{vm.address.modeId==-999}}">请选择配送方式</text>
+                <view class='user-model f fv f1' wx:if="{{vm.address.modeId!=-999}}">
+                    <view class='f fc'>
+                        <text class='f26' style='color:#FF6F30'>[{{vm.address.mode}}]</text>
+                        <text class='f34 t-b c333' style='margin:0 10rpx'>{{vm.address.contact}}</text>
+                        <text class='f34 t-b c333'>{{vm.address.phone}}</text>
+                    </view>
+                    <view class='f26 c666 mt20 line line1'>地址：{{vm.address.address}}</view>
+                </view>
+                <text class='dzicon icon-jiantou' style='font-size:58rpx;' />
+            </view>
+            <image src='http://j.vzan.cc/dz/content/images/Enterprisepro/order-logo.png' mode='widthFix' class='w-100' style='display:inherit;' />
+        </view>
+        <!-- 商品信息 -->
+        <view class='wrap-good'>
+            <repeat>
+                <comItem :currentCom.sync="vm.list"></comItem>
+            </repeat>
+            <view class='wrap-message f fc'>
+                <text class='f26'>买家留言:</text>
+                <input class="ml20 f1 tr f26" placeholder="选填，给商家留言" placeholder-style='color:#d9d9d9' @blur="setMess" value='{{vm.message}}' maxlength="100" />
+            </view>
+        </view>
+        <!-- 订单信息 -->
+        <view class='wrap-order f fv'>
+            <view class='f fj fc' style='padding-top:30rpx'>
+                <text>商品金额</text>
+                <text class='t-b'>￥{{vm.totalPrice}}</text>
+            </view>
+            <view class='f fj fc' style='padding:30rpx 0;'>
+                <text>运费</text>
+                <text class='t-b' style='color:#FF3232'>+￥{{vm.fee}}</text>
+            </view>
+        </view>
+        <!-- 支付方式 -->
+        <view class='wrap-mode'>
+            <view class='mode-weixin f fc fj' @tap='payMode(1)'>
+                <view class='f fc'>
+                    <text class='dzicon icon-wechat f50' style='color:#22AC38' />
+                    <text style='margin-left:23rpx;'>微信支付</text>
+                </view>
+                <view class='dzicon icon-Choice_xuanze f47' style='color:#FF3232' wx:if="{{payIndex==1}}" />
+            </view>
+            <view class='mode-weixin f fc fj' @tap='payMode(2)'>
+                <view class='f fc'>
+                    <text class='dzicon icon-qiandai f50' style='color:#F9B629' />
+                    <text style='margin-left:23rpx;'>储值支付<text class='c666 ml10'>(￥{{vm.valueMoney}})</text></text>
+                </view>
+                <view class='dzicon icon-Choice_xuanze f47' style='color:#FF3232' wx:if="{{payIndex==2}}" />
+            </view>
+        </view>
+        <view style='height:120rpx' />
+        <!-- 支付按钮 -->
+        <view class='wrap-btn f fc fj'>
+            <view class='f fc f1' style='border-top:1px solid #eee;padding-left:30rpx;'>
+                <text class='f26'>实付款:</text>
+                <text class='t-b f34 ml10' style='color:#FF3232'>￥{{vm.realPrice}}</text>
+            </view>
+            <form report-submit="true" @submit='payRequest'>
+                <button class="skin_bg" formType="submit">立即支付</button>
+            </form>
+        </view>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js"
+    import com_goodItem from "../../components/com_goodItem";
+    import {
+        core,
+        pro,
+        tools,
+        pay
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class order extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            },
+            navigationBarTitleText: "订单确认",
+        };
+        //第二步：声明组件
+        components = {
+            comItem: com_goodItem,
+        };
+        data = {
+            currentSkin: {},
+            vm: {},
+            _index: -1,
+            payIndex: 0, //1微信支付,2储值支付
+            toast: {},
+        };
+        computed = {};
+        methods = {
+            //选择地址
+            chooseAddress(cartid) {
+                this.$preload('cartid', cartid);
+                this.$navigate("/pages/my/myaddress?type=order")
+            },
+            // 选择支付方式
+            payMode(index) {
+                this.payIndex = Number(index);
+            },
+            //填写留言
+            setMess(e) {
+                this.vm.message = e.detail.value;
+                this.$apply()
+            },
+            // 支付
+            payRequest(e) {
+                let app = wepy.$instance
+                let [_g, addressInfo, AccepterName, AccepterTelePhone, orderInfo] = [this.vm, {}, "", "", {}]
+                core.formId(e.detail.formId);
+                let buyMode = this.payIndex
+                let storename = _get(app.globalData.address, 'name', '')
+                //普通
+                if (_g.address.modeId == -999) {
+                    tools.ShowToast("亲，请选择配送方式", this);
+                    return;
+                }
+                if (buyMode == 0) {
+                    tools.ShowToast("亲，请选择支付方式", this);
+                    return;
+                }
+                addressInfo = {
+                    userName: _g.address.contact,
+                    telNumber: _g.address.phone,
+                }
+                AccepterName = _g.address.contact;
+                AccepterTelePhone = _g.address.phone;
+                if (_g.address.modeId == 0 || _g.address.modeId == 6) {
+                    addressInfo.postalCode = 0
+                    addressInfo.detailInfo = _g.address.address
+                } else {
+                    addressInfo.cityName = _g.address.city
+                    addressInfo.detailInfo = _g.address.street
+                    addressInfo.countyName = _g.address.district
+                    addressInfo.provinceName = _g.address.province
+                }
+                orderInfo = {
+                    FreightTemplateId: 0,
+                    AccepterName: AccepterName,
+                    AccepterTelePhone: AccepterTelePhone,
+                    message: _g.message
+                };
+                let vm = {
+                    isgroup: 0,
+                    groupid: 0,
+                    goodtype: 0,
+                    couponlogid: 0,
+                    discountType: 0,
+                    salesManRecordId: 0,
+                    carId: _g.cartid,
+                    buyMode: buyMode,
+                    flashDealId: _g.flashDealId,
+                    storename: storename,
+                    getWay: _g.address.modeId,
+                    order: JSON.stringify(orderInfo),
+                    address: JSON.stringify(addressInfo),
+                    zqStoreId: _get(_g.address, "Id", ""),
+                };
+                this.addOrder(buyMode, vm)
+            },
+        }
+        async onLoad(options, _order) {
+            this._g = _order.preload.vm_order
+            this.$apply()
+            await tools.setPageSkin(this);
+        }
+        onShow() {
+            this.orderInfo(this._g)
+        }
+        async orderInfo(_g) {
+            let app = wepy.$instance
+            let address = app.globalData.address || {};
+            _g.message = ""; //初始化获取留言
+            _g.realPrice = _g.totalPrice
+            if (Object.keys(address).length) {
+                let vm = {
+                    cartid: _g.cartid,
+                    city: address.city,
+                    province: address.province,
+                }
+                let freight = await core.getFreight(vm)
+                if (address.modeId == 1) {
+                    _g.fee = parseFloat((freight.data.fee).div(100)).toFixed(2);
+                } else {
+                    _g.fee = "0.00"
+                }
+                _g.realPrice = ((Number(_g.realPrice)).add(Number(_g.fee))).toFixed(2) //实付价+运费
+            } else {
+                _g.fee = "0.00"
+                address.modeId = -999
+            }
+            _g.valueMoney = app.globalData.vipInfo.valueMoney;
+            _g.address = address;
+            this.vm = _g
+            this.$apply()
+        }
+        async addOrder(buyMode, vm) {
+            if (Number(this._index) == Number(this.payIndex)) {
+                return;
+            }
+            wx.showNavigationBarLoading();
+            if (buyMode == 2) {
+                let showModal = await tools.showModal("是否使用储值支付")
+                if (showModal.confirm == false) {
+                    this._index = -1;
+                    this.$apply()
+                    return;
+                }
+            }
+            this._index = buyMode;
+            this.$apply()
+            let addinfo = await core.addMinOrder(vm)
+            if (addinfo.isok == 1) {
+                if (addinfo.reductionCart != null) {
+                    wepy.$instance.globalData.reduction = addinfo.reductionCart
+                }
+                if (this.vm.realPrice === '0.00') {
+                    tools.loading("支付成功");
+                    this.goWhere(addinfo)
+                    return;
+                }
+                buyMode == 1 ? this.wxPay(addinfo) : this.xwPay(addinfo)
+            } else {
+                this._index = -1
+                wx.hideNavigationBarLoading()
+                tools.showModal(addinfo.msg, false);
+            }
+        }
+        // 微信支付
+        async wxPay(data) {
+            let newparam = {
+                orderid: data.orderid,
+                type: 1
+            };
+            let wxpay = await pay.PayOrder(newparam);
+            if (wxpay != '' & wxpay.errMsg.includes("requestPayment:ok")) {
+                tools.loading("支付成功");
+                this.goWhere(data)
+            } else {
+                tools.loading("取消支付");
+                this.goWhere(data)
+            }
+        }
+        //储值支付
+        xwPay(data) {
+            tools.loading("支付成功");
+            this.goWhere(data)
+        }
+        goWhere(data) {
+            wx.hideNavigationBarLoading();
+            setTimeout(resTime => {
+                tools.goRedirecto("../good/goodOlt?dbOrder=" + data.dbOrder)
+            }, 1000);
+        }
+    }
+</script>

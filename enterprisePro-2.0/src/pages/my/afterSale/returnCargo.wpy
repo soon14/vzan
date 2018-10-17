@@ -1,0 +1,248 @@
+<style lang="less">
+  .return-cargo {
+    .header {
+      padding: 20rpx 31rpx 20rpx 20rpx;
+      .commodity-avator {
+        height: 150rpx;
+        width: 150rpx;
+        background-color: #eee;
+      }
+      .title {
+        font-size: 28rpx;
+      }
+    }
+    .hl80 {
+      height: 80rpx;
+      line-height: 80rpx;
+    }
+    .hl100 {
+      height: 100rpx;
+      line-height: 100rpx;
+    }
+    .bbgray {
+      border-bottom: 1px solid #eee;
+    } 
+    .picker {
+      flex: 1;
+      text-align: right;
+    }
+    .btn-confirm {
+      width: 100%;
+      height: 88rpx;
+      line-height: 88rpx;
+      position: fixed;
+      bottom: 0;
+    }
+    .bgD32A7C {
+      background-color: rgb(201, 32, 26);
+    }
+    .width75 {
+      width: 75%;
+    }
+  }
+</style>
+<template>
+  <view class="return-cargo {{currentSkin}}">
+    <view class="bg-w pt20">
+      <repeat for="{{shipmentsInfo}}">
+        <view class="f fj header">
+          <image class="commodity-avator" src="{{item.Img}}" />
+          <view class="f fv ml20 width75">
+            <view class="title">
+              <text class="line line2">{{item.Name}}</text>
+            </view>
+            <view class="specification c999 mt10 f22 f fj">
+              <text>{{item.Attr}}</text><text>x{{item.Count}}</text>
+            </view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <view class="bg-w f fj fc pl20 pr20 hl100 mt20">
+      <text class="t-b">收货人: </text>
+      <input class="f1 ml20 hl80" bindinput="bindManInput" placeholder="请填写收货人" />
+    </view>
+    <view class="bg-w mt20">
+      <view class="hl100 pl20 bbgray f fv">
+        <view class="f fj fc pr20">
+          <text class="t-b">物流公司：</text>
+          <view class="f24 c999 picker" @tap="selectCompany">
+            <text>{{selectCompanyInfo.title}}</text>
+            <text class="dzicon icon-xiala-copy-right"></text>
+          </view>
+        </view>
+      </view>
+      <view class="f fj pl20 pr20 hl100 fc">
+        <text class="t-b">物流单号: </text>
+        <input class="f1 ml20 hl80" bindinput="bindOrderInput" placeholder="请填写物流单号" />
+      </view>
+      <view class="f fj pl20 pr20 hl100 fc">
+        <text class="t-b">收货地址: </text>
+        <input class="f1 ml20 hl80" bindinput="bindAddressInput" placeholder="请填写收货地址" />
+      </view>
+      <view class="f fj pl20 pr20 hl100 fc">
+        <text class="t-b">备注信息: </text>
+        <input class="f1 ml20 hl80" bindinput="bindMarkInput" placeholder="请填写备注信息" />
+      </view>
+    </view>
+    <view class="bg-w f fj hl100 pl20 mt20 fc">
+      <text class="t-b">联系电话: </text>
+      <input class="f1 ml20 hl80" bindinput="bindPhoneInput" placeholder="请填写联系电话" />
+    </view>
+    <button hover-class="bgD32A7C" class="btn-confirm skin_bg f36 cfff" @tap="submitForm">确定</button>
+    <similar :onSelectAfter="getCompanyName" :isCancel.sync="isShow" placeholder="快速查询物流公司"></similar>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http,
+    tools
+  } from "@/lib/core";
+  import addr from "@/lib/addr.js";
+  import ComSimilar from "@/components/com_similar";
+  export default class ReturnCargo extends wepy.page {
+    //基础配置层
+    config = {
+      navigationBarTitleText: "返回货物",
+      usingComponents: {
+      }
+    };
+    components = {
+      similar: ComSimilar
+    };
+    data = {
+      currentSkin: "",
+      company: {
+        //物流公司
+        range: []
+      },
+      orderid: 0,
+      shipmentsInfo: {
+        //退货商品信息
+        Img: "",
+        Name: "",
+        Count: "",
+        Attr: "" //规格
+      },
+      codeList: [], //查询码
+      phone: 0, //联系人电话
+      man: "", //收货人
+      order: "", //物流订单号
+      address: "", //收货地址
+      mark: "", //备注信息,
+      isShow: false,
+      selectCompanyInfo: {
+        title: "请选择物流公司",
+        index: 0
+      }
+    };
+    methods = {
+      selectCompany(e) {
+        this.isShow = true;
+      },
+      bindManInput(e) {
+        this.man = e.detail.value;
+      },
+      bindOrderInput(e) {
+        this.order = e.detail.value;
+      },
+      bindPhoneInput(e) {
+        this.phone = e.detail.value;
+      },
+      bindAddressInput(e) {
+        this.address = e.detail.value;
+      },
+      bindMarkInput(e) {
+        this.mark = e.detail.value;
+      },
+      //提交物流表单
+      async submitForm(e) {
+        const vm = this;
+        var reg = /[0-9]{11}/;
+        var pureNum = /[0-9]+/
+        if (!vm.man ||
+          !vm.phone ||
+          !vm.order ||
+          vm.selectCompanyInfo.title == "请选择物流公司" ||
+          !vm.address
+        ) {
+          tools.showModal("表单资料不完整",false);
+          return;
+        }
+        if (!reg.test(vm.phone)) {
+          tools.showModal("请输入正确的电话格式",false);
+          return;
+        }
+        if (!pureNum.test(vm.order)) {
+          tools.showModal("请输入正确的物流订单号格式",false);
+          return;
+        }
+        var userInfo = await core.getUserInfo();
+        var aid = wepy.$instance.globalData.appid;
+        //返回数据
+        var attchData = {
+          ContactName: vm.man,
+          ContactTel: vm.phone,
+          CompanyCode: vm.remark,
+          CompanyTitle: vm.selectCompanyInfo.title,
+          CompanyCode: vm.codeList[vm.selectCompanyInfo.index],
+          DeliveryNo: vm.order,
+          Address: vm.address,
+          Remark: vm.mark
+        };
+        //提交表单
+        http
+          .post(addr.submitReturnGoodAppeal, {
+            appId: aid,
+            openId: userInfo.OpenId,
+            orderId: Number(vm.orderid),
+            State: 15, //15为退货物流提交
+            attchData: JSON.stringify(attchData)
+          })
+          .then(res => {
+            if (res.isok == 1) {
+              tools.goRedirecto("appealResult?orderId=" + vm.orderid);
+            } else {
+              tools.showModal('提交失败,请检查所填项',false);
+            }
+          });
+      }
+    };
+    getCompanyName(item) {
+      this.selectCompanyInfo = item;
+    }
+    //生命钩子层
+    onShow() {
+      tools.setPageSkin(this);
+    }
+    async onLoad(query) {
+      await tools.showLoading()
+      //提交参数准备
+      this.orderid = query.orderId;
+      this.shipmentsInfo =wx.getStorageSync('shipments')
+      //返回物流数据
+      var result = await http.post(addr.getDeliveryCompany);
+      wx.hideLoading()
+      var json = result.dataObj;
+      var namelist = [];
+      if (typeof json === "object" && Array.isArray(json)) {
+        var len = json.length;
+        while (len--) {
+          var name = {
+            title: json[len].Title,
+            index: len
+          };
+          var code = json[len].Code;
+          this.codeList[len] = code;
+          namelist.push(name);
+        }
+        this.company.range = namelist;
+        this.$invoke("similar", "setList", this.company.range);
+      }
+      this.$apply();
+    }
+    //自定义方法层
+  }
+</script>

@@ -1,0 +1,162 @@
+<style lang="less">
+    .integralOrder-list {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .integralOrder-item {
+        width: 704rpx;
+        height: 409rpx;
+        background-color: #fff;
+        border-radius: 10rpx;
+        margin: 10rpx 0;
+    }
+    .integralOrder-title {
+        height: 94rpx;
+        font-size: 28rpx;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f2f2f2;
+        padding: 0 22rpx;
+    }
+    .integralOrder-content {
+        padding: 25rpx 20rpx;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #f2f2f2;
+    }
+    .order-content-text {
+        height: 172rpx;
+        padding-left: 20rpx;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .order-content-title {
+        font-size: 30rpx;
+        line-height: 1.2em;
+        display: -webkit-box;
+        word-break: break-all;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+    .order-content-price {
+        font-size: 36rpx;
+        color: #ff953e;
+    }
+    .integralOrder-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        font-size: 28rpx;
+        padding: 15rpx 20rpx;
+    }
+</style>
+
+<template>
+    <view class="integralOrder-list" wx:if="{{vm.list[1].length}}">
+        <repeat for="{{vm.list}}" item="lst">
+            <repeat for="{{lst}}">
+                <view class="integralOrder-item">
+                    <view class="integralOrder-title" style='color:#ff8929'>
+                        <text style='color:#666;'>{{item.AddTimeStr}}</text>
+                        <text wx:if="{{item.Way==1}}">待消费</text>
+                        <text wx:if="{{item.Way==2}}">待自取</text>
+                        <view wx:if="{{item.Way==0}}">
+                            <text style="{{item.state==2?'color:#ff8929':'color:#ffc63d'}}" @tap='confirmReceipt({{item.Id}},{{item.state}})'>{{state[item.state]}}</text>
+                        </view>
+                    </view>
+                    <view class="integralOrder-content">
+                        <view>
+                            <image src="{{item.activityImg}}" style='width:172rpx;height:172rpx;' mode="aspectFill" />
+                        </view>
+                        <view class="order-content-text">
+                            <text class="order-content-title">{{item.activityName}}</text>
+                            <view class="order-content-price">
+                                <text wx:if="{{item.PayWay==0}}">{{item.integral}} </text>
+                                <text wx:if="{{item.PayWay==1}}"><text style="font-size:26rpx;">￥</text>{{item.BuyPriceStr}}+{{item.integral}}</text>
+                                <text style="font-size:22rpx;"> 积分</text>
+                                <text style="font-size:24rpx;color:#bfbfbf;text-decoration: line-through;padding-left:36rpx;">原价:￥{{item.originalPriceStr}}</text>
+                            </view>
+                        </view>
+                    </view>
+                    <view class="integralOrder-bottom">
+                        <text>消耗：{{item.integral}} <text>积分</text></text>
+                        <text style='padding-left:60rpx;'>实付：￥{{item.BuyPriceStr}}</text>
+                    </view>
+                </view>
+            </repeat>
+        </repeat>
+    </view>
+    <wxc-abnor type="ORDER" wx:else></wxc-abnor>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core";
+    export default class interLst extends wepy.page {
+        config = {
+            navigationBarTitleText: "积分订单",
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            },
+        };
+        data = {
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                pageindex: 1,
+                pagesize: 10,
+            },
+            state: ["", "", "待发货", "点击确认收货", "已完成"]
+        }
+        methods = {
+            async confirmReceipt(id, state) {
+                if (state == 3) {
+                    let showInfo = await tools.showModal("确认收货吗？")
+                    if (showInfo.confirm) {
+                        let _c = await core.interConfirm(id)
+                        if (_c.isok) {
+                            await tools.loading("收货成功", 'success')
+                            this.vm.ispost = false
+                            this.vm.loadall = false
+                            this.vm.pageindex = 1
+                            this.lst()
+                        } else {
+                            tools.showModal(_c.msg, false)
+                        }
+                    }
+                }
+            },
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            await this.lst()
+        }
+        async lst() {
+            let vm = this.vm
+            if (vm.ispost || vm.loadall)
+                return;
+            if (!vm.ispost)
+                vm.ispost = true
+            let _g = await core.interLst(vm)
+            if (_g.isok) {
+                vm.ispost = false
+                vm.list[vm.pageindex] = _g.model.listActivity
+                _g.model.listActivity.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true
+                this.vm = vm
+                this.$apply()
+            } else {
+                tools.showModal(_g.msg, false)
+            }
+        }
+    }
+</script>

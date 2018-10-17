@@ -1,0 +1,112 @@
+<style lang="less">
+.my-comment {
+  .item {
+    width: 100%;
+    margin-bottom: 30rpx;
+    padding-right: 30rpx;
+    border-bottom: 1px solid #eee;
+    .ptos {
+      .pto {
+        width: 224rpx;
+        height: 232rpx;
+        background: rgba(217, 216, 217, 1);
+        margin-right: 9rpx;
+        margin-bottom: 9rpx;
+        &:nth-child(3n) {
+          margin-right: 0rpx;
+        }
+      }
+    }
+  }
+  .mb0imp {
+    margin-bottom: 0 !important;
+  }
+  .height129 {
+    height: 129rpx;
+  }
+  .comment {
+    line-height: 1.2;
+    margin: 5rpx 0;
+  }
+  .null-data { 
+    margin-top: 481rpx;
+  }
+}
+</style>
+<template>
+  <view class="my-comment">
+    <view class="null-data tc pr30" wx:if="{{0}}">
+        暂无数据
+    </view>
+    <view class="item mb0imp" wx:for="{{hisActivityLog.list}}" wx:key="{{index}}" @tap="">
+      <view class="f fj fc height129">
+        <view class="my-track fc wp70 f">
+          <image class="wh100r mr15 fs" src="{{item.MyImgUrl}}"></image>
+          <view class="f fv jc c666 wp85">
+            <text class="f26 ib ellipsis">
+              <text class="mr10">{{item.MyName}}</text>
+              <text class="mr10">评论了</text>
+              <text class="c333">{{item.OtherName}}</text>
+            </text>
+            <!-- 评论才有 -->
+            <block wx:if="{{item.Datatype == 0 && item.DataComment != ''}}">
+              <view class="f20 ellipsisLine2 comment c333">{{item.DataComment}}</view>
+              <text class="f20">{{item.AddTimeStr}}</text>
+            </block>
+          </view>
+        </view>
+        <block wx:if="{{item.Datatype == 0}}">
+          <!-- 假如有图片的话 -->
+          <image wx:if="{{item.DataImgUrl}}" src="{{item.DataImgUrl}}" class="wh100g"></image>
+          <view wx:else class="wh100 c333 f20 p10 ellipsisLine3 lh15">{{item.DataContent}}</view>
+        </block>
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    http,
+    tools,
+    core
+  } from "@/lib/core";
+  import com_wait from '@/components/com_wait';
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "发帖评论"
+    };
+
+    data = {
+      isWait: false
+    }
+
+    async onLoad(query) {
+        //   var cardId = query.cardId
+    //   if (!cardId) {
+    //       tools.goBack()
+    //       return
+    //   }
+      //记得补翻参数
+      this.isWait = true
+      await this.getOtherFavoriteListC(20)
+      this.isWait = false
+      this.$apply()
+    }
+
+    async getOtherFavoriteListC(cardId) {
+        var result = await core.getOtherFavoriteList({
+            actiontype: 5,
+            datatype: 0,
+            pageindex: 1,
+            type: 1,
+            mycardid: cardId
+        })
+        tools.handleResult(result, res => {
+            console.log(res)
+        })
+    }
+  }
+
+</script>

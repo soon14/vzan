@@ -1,0 +1,527 @@
+<style lang="less">
+    .add-wrap {
+        width: 100%;
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            >text {
+                width: 50%;
+                text-align: center;
+                display: inline-block;
+            }
+            .sel-nor {
+                font-size: 30rpx;
+            }
+            .sel {
+                font-weight: bold;
+                font-size: 50rpx;
+            }
+        }
+        .add-express {
+            width: 100%;
+            .wrap {
+                width: 100%;
+                height: 268rpx;
+                padding-left: 30rpx;
+                background: #fff;
+                margin-bottom: 25rpx;
+                .wrap-up {
+                    width: 100%;
+                    height: 180rpx;
+                    padding-right: 30rpx;
+                    .wrap-address {
+                        margin-top: 26rpx;
+                        font-size: 26rpx;
+                        color: #666;
+                        width: 519rpx;
+                    }
+                }
+                .wrap-down {
+                    width: 100%;
+                    height: 88rpx;
+                    border-top: 1px solid #eee;
+                    padding-right: 30rpx;
+                }
+            }
+            .add-down {
+                width: 100%;
+                position: fixed;
+                bottom: 20rpx;
+                left: 0;
+                padding: 0 60rpx;
+                .add-btn {
+                    width: 300rpx;
+                    height: 88rpx;
+                    line-height: 88rpx;
+                    text-align: center;
+                    color: #fff;
+                    border-radius: 10rpx;
+                }
+            }
+        }
+        .add-self {
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #eee;
+            .self-write {
+                width: 100%;
+                padding: 0 30rpx;
+                position: fixed;
+                top: 100rpx;
+                left: 0;
+                z-index: 2;
+                background: #fff;
+                >text {
+                    width: 100%;
+                    height: 104rpx;
+                    line-height: 104rpx;
+                    font-size: 30rpx;
+                    font-weight: bold;
+                    color: #333;
+                    text-align: center;
+                    display: inline-block;
+                }
+                >input {
+                    width: 100%;
+                    height: 88rpx;
+                    line-height: 88rpx;
+                    font-size: 26rpx;
+                    background-color: #f6f6f6;
+                    padding-left: 31rpx;
+                    border-radius: 5rpx;
+                    margin-bottom: 20rpx;
+                }
+                plac-style {
+                    color: #d0d0d0;
+                }
+            }
+            .self-title {
+                width: 100%;
+                padding: 9rpx 0 10rpx 0;
+                text-align: center;
+                font-size: 30rpx;
+                color: #333;
+                font-weight: bold;
+            }
+            .self-lst {
+                width: 100%;
+                padding-left: 30rpx;
+                .self-item {
+                    padding: 29rpx 30rpx 32rpx 0;
+                    border-bottom: 1px solid #eee;
+                }
+            }
+        }
+    }
+    .add-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.6);
+        width: 100%;
+        height: 100vh;
+        z-index: 3;
+        .a-dialog {
+            width: 85%;
+            height: 600rpx;
+            background: #fff;
+            z-index: 5;
+            border-radius: 8rpx;
+            margin: 120rpx auto;
+            .dig-title {
+                height: 88rpx;
+                line-height: 88rpx;
+                text-align: center;
+                font-size: 34rpx;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .dig-input {
+                padding: 0 20rpx;
+                height: 88rpx;
+                line-height: 88rpx;
+                border-bottom: 1px solid #f0f0f0;
+                text {
+                    width: 120rpx;
+                }
+            }
+            .dig-btn {
+                width: 80%;
+                height: 88rpx;
+                line-height: 88rpx;
+                text-align: center;
+                color: #fff;
+                border-radius: 10rpx;
+                margin: 50rpx auto;
+            }
+            .dig-cancle {
+                position: absolute;
+                bottom: -130rpx;
+                left: 42%;
+                z-index: 4;
+            }
+        }
+    }
+    .wrap-btn {
+        width: 120rpx;
+        height: 50rpx;
+        text-align: center;
+        line-height: 50rpx;
+        font-size: 26rpx;
+        color: #333;
+        border: 1px solid #d9d9d9;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <view class='add-wrap'>
+            <!-- 顶部 -->
+            <view class='header skin_bg' wx:if='{{pageType&&(vm_addr.selflst.storeInfo.funJoinModel.openInvite||vm_addr.selflst.storeInfo.funJoinModel.openToStoreConsume)}}'>
+                <!-- <repeat for='{{header}}'> -->
+                <text class="{{selIndex==0?'sel':'sel-nor'}}" @tap='navChange(0)'>快递</text>
+                <text class="{{selIndex==1?'sel':'sel-nor'}}" @tap='navChange(1)' wx:if="{{vm_addr.selflst.storeInfo.funJoinModel.openInvite}}">自取</text>
+                <text class="{{selIndex==6?'sel':'sel-nor'}}" @tap='navChange(6)' wx:if="{{vm_addr.selflst.storeInfo.funJoinModel.openToStoreConsume}}">到店消费</text>
+                <!-- </repeat> -->
+            </view>
+            <view style='height:100rpx' wx:if='{{pageType&&(vm_addr.selflst.storeInfo.funJoinModel.openInvite||vm_addr.selflst.storeInfo.funJoinModel.openToStoreConsume)}}' />
+            <!-- 快递列表 -->
+            <view class='add-express' wx:if='{{selIndex==0}}'>
+                <repeat for='{{vm_addr.express}}'>
+                    <view class='wrap'>
+                        <view class='wrap-up f fc fj'>
+                            <view class='f fv'>
+                                <view class='f f34 t-b'>
+                                    <text>{{item.contact}}</text>
+                                    <text class='ml20'>{{item.phone}}</text>
+                                </view>
+                                <view class='wrap-address'>{{item.address}} </view>
+                            </view>
+                            <view class='wrap-btn' @tap="setDefaul({{item}})" wx:if='{{pageType}}'>使用</view>
+                        </view>
+                        <view class='wrap-down f f-end'>
+                            <view class="f fc f26 c666" @tap.stop="delChange({{item.id}})">
+                                <text class='dzicon icon-icon_shanchu- f60' />
+                                <text>删除</text>
+                            </view>
+                            <view class="f fc f26 c666 ml20" @tap.stop="editChange({{index}})" data-id="{{item.id}}">
+                                <text class='dzicon icon-icon_bianji-' style='font-size:58rpx;' />
+                                <text>编辑</text>
+                            </view>
+                        </view>
+                    </view>
+                </repeat>
+                <!-- 按钮 -->
+                <view style="height:120rpx"></view>
+                <view class='add-down f fc fj'>
+                    <view class="add-btn bgf2 " @tap='setAddress'>手动添加 </view>
+                    <view class="add-btn bg08c" @tap="chooseLocation">微信添加</view>
+                </view>
+                <wxc-abnor type="DATA" wx:if="{{vm_addr.express.length==0}}"></wxc-abnor>
+            </view>
+            <!-- 自取列表 -->
+            <view class='add-self' wx:if='{{(vm_addr.selflst.storeInfo.funJoinModel.openInvite&&selIndex==1||vm_addr.selflst.storeInfo.funJoinModel.openToStoreConsume&&selIndex==6)&&pageType}}'>
+                <view class='self-write'>
+                    <text>填写领取人姓名和电话</text>
+                    <input placeholder='填写领取人姓名' placeholder-class='plac-style' value='{{self.name}}' @input='selfName' />
+                    <input placeholder='填写领取人手机号码' placeholder-class='plac-style' value='{{self.phone}}' @input='selfPhone' type='number' maxlength='11' />
+                    <view class='self-title' wx:if="{{vm_addr.selflst.storeInfo.funJoinModel.openInvite}}">选择自取地点</view>
+                    <view class='self-title' wx:if="{{vm_addr.selflst.storeInfo.funJoinModel.openToStoreConsume}}">选择到店消费地点</view>
+                </view>
+                <view style='height:360rpx' />
+                <view class='self-lst'>
+                    <repeat for="{{vm_more.list}}">
+                        <view class='self-item f fj fc'>
+                            <view class='f fv' style='width:519rpx'>
+                                <text class='f30 c333'>{{item.name}}</text>
+                                <text class='f26 c666 mt30'>{{item.address}}</text>
+                            </view>
+                            <view class='wrap-btn' @tap='selfChange({{item}})'>使用</view>
+                        </view>
+                    </repeat>
+                </view>
+            </view>
+        </view>
+        <!-- 弹窗 -->
+        <view class="add-mask" wx:if="{{digShow}}">
+            <view class="a-dialog rel">
+                <view class="dzicon icon-3 f90 dig-cancle cfff" @tap.stop="hide"></view>
+                <view class="dig-title f1">添加新收货地址</view>
+                <view class="dig-input f1 f fc">
+                    <text>姓名</text>
+                    <input class="f1 ml10" type='text' value="{{vm.contact}}" placeholder='请填写姓名' placeholder-class='ccc' @input="setName"></input>
+                </view>
+                <view class="dig-input f1 f fc">
+                    <text>手机号码</text>
+                    <input class="f1 ml10" type='number' value="{{vm.phone}}" maxlength='11' placeholder='请填写手机号码' placeholder-class='ccc' @input="setPhone"></input>
+                </view>
+                <picker mode="region" @change="addrChange">
+                    <view class='dig-input f1 f fc'>
+                        <text>选择地区</text>
+                        <input class='f1 ml10' type='text' disabled value='{{array.region}}' placeholder='请选择地区' placeholder-class='ccc'></input>
+                    </view>
+                </picker>
+                <view class="dig-input f1 f fc">
+                    <text>详细地址</text>
+                    <input class="f1 ml10" value="{{vm.street}}" placeholder='请输入详细地址' placeholder-class='ccc' @input="setDlt"></input>
+                </view>
+                <view class="dig-btn bgf2 f32" @tap.stop="saveChange">保存</view>
+            </view>
+        </view>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core";
+    import _get from "../../lib/lodash.get.js"
+    // import
+    //第一步： 引入组件文件
+    export default class address extends wepy.page {
+        config = {
+            navigationBarTitleText: "收货地址",
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+            }
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm: {
+                id: 0,
+                isdefault: 0,
+                contact: "",
+                phone: "",
+                province: "",
+                city: "",
+                district: "",
+                street: "",
+            },
+            vm_addr: {
+                express: [],
+                selflst: [],
+            },
+            self: {
+                name: '',
+                phone: '',
+            },
+            selIndex: 0,
+            toast: {},
+            currentSkin: {},
+            array: {},
+            digShow: false,
+            pageType: '',
+            vm_more: {
+                lat: '',
+                lng: '',
+                ispost: false,
+                loadall: false,
+                pageIndex: 1,
+                pageSize: 10,
+                list: []
+            }
+        };
+        computed = {};
+        methods = {
+            // 导航栏切换
+            navChange(index) {
+                let that = this
+                that.selIndex = Number(index);
+                if (Number(index) == 6 || Number(index) == 1) {
+                    wx.getLocation({
+                        type: 'wgs84',
+                        success: res => {
+                            that.vm_more.lat = res.latitude
+                            that.vm_more.lng = res.longitude
+                            core.GetStorePickPlace(that.vm_more, that)
+                            that.$apply();
+                        },
+                        fail: res => {
+                            tools.showModal("若要使用地位,请点击右上角‘关于小程序’进行相关设置", false)
+                            core.GetStorePickPlace(that.vm_more, that)
+                        },
+                        complete: function() {}
+                    })
+                }
+                that.$apply();
+            },
+            //选择地址
+            async setDefaul(item) {
+                let app = wepy.$instance;
+                if (this.pageType) {
+                    let vm = {
+                        cartid: this.cartid,
+                        province: item.province,
+                        city: item.city
+                    };
+                    let freight = await core.getFreight(vm);
+                    if (freight.data.canpay == false) {
+                        let infoModal = await tools.showModal("超出配送范围,请重新选择", false);
+                        return;
+                    }
+                    item.mode = '快递'
+                    item.modeId = 1
+                    app.globalData.address = item;
+                    tools.goBack(1);
+                }
+            },
+            setName(e) {
+                this.vm.contact = e.detail.value;
+            },
+            setPhone(e) {
+                this.vm.phone = e.detail.value;
+            },
+            setDlt(e) {
+                this.vm.street = e.detail.value;
+            },
+            // 三联地址选择
+            addrChange(e) {
+                this.array.region = e.detail.value;
+                this.vm.province = e.detail.value[0];
+                this.vm.city = e.detail.value[1];
+                this.vm.district = e.detail.value[2];
+            },
+            //手动添加
+            setAddress() {
+                this.showMask();
+            },
+            //隐藏
+            hide() {
+                this.showMask();
+            },
+            //删除
+            async delChange(id) {
+                let showModal = await tools.showModal("确定要删除该地址吗？");
+                if (showModal.confirm) {
+                    let delInfo = await core.delAddress(id);
+                    if (delInfo.isok) {
+                        tools.ShowToast(delInfo.msg, this);
+                        await core.getAddresslt(this);
+                    } else {
+                        tools.showModal(delInfo.msg, false);
+                    }
+                }
+            },
+            // 添加地址保存
+            async saveChange() {
+                let vm = this.vm;
+                this.saveAddress(vm);
+            },
+            // 编辑
+            editChange(index, e) {
+                this.showMask();
+                let _vm = this.vm
+                let _item = this.vm_addr
+                _vm.id = e.currentTarget.dataset.id;
+                _vm.city = _item.express[index].city;
+                _vm.phone = _item.express[index].phone;
+                _vm.street = _item.express[index].street;
+                _vm.contact = _item.express[index].contact;
+                _vm.province = _item.express[index].province;
+                _vm.district = _item.express[index].district;
+                this.vm = _vm
+                this.array.region = _item.express[index].province + "," + _item.express[index].city + "," + _item.express[index].district;
+            },
+            //调用微信
+            async chooseLocation(e) {
+                let addInfo = await tools.chooseAddress();
+                if (addInfo.errMsg == "chooseAddress:fail auth deny") {
+                    await tools.showModal("授权后才可使用,请点击右上角‘关于小程序’进行相关设置", false)
+                } else {
+                    let _g = {
+                        contact: addInfo.userName,
+                        phone: addInfo.telNumber,
+                        province: addInfo.provinceName,
+                        city: addInfo.cityName,
+                        district: addInfo.countyName,
+                        street: addInfo.detailInfo
+                    };
+                    this.saveAddress(_g);
+                }
+            },
+            /*******************自取************************ */
+            selfName(e) {
+                this.self.name = e.detail.value
+                this.$apply()
+            },
+            selfPhone(e) {
+                this.self.phone = e.detail.value
+                this.$apply()
+            },
+            selfChange(item) {
+                let _user = this.self
+                let app = wepy.$instance
+                let vm = this.vm_addr.selflst.storeInfo.funJoinModel
+                if (vm.openInvite) {
+                    if (_user.name && _user.phone) {
+                        item.mode = '自取'
+                        item.modeId = 0
+                        item.contact = _user.name
+                        item.phone = _user.phone
+                        app.globalData.address = item;
+                        tools.goBack(1);
+                        wx.setStorageSync("selfuser", _user)
+                    } else {
+                        tools.showModal('请完善信息', false)
+                    }
+                } else {
+                    if (_user.name && _user.phone) {
+                        item.mode = '到店消费'
+                        item.modeId = 6
+                        item.contact = _user.name
+                        item.phone = _user.phone
+                        app.globalData.address = item;
+                        tools.goBack(1);
+                        wx.setStorageSync("selfuser", _user)
+                    } else {
+                        tools.showModal('请完善信息', false)
+                    }
+                }
+            }
+        };
+        async onLoad(options, data) {
+            let app = wepy.$instance
+            let type = _get(options, 'type', '')
+            let selfuser = wx.getStorageSync('selfuser')
+            let cartid = _get(data.preload, 'cartid', 0)
+            await tools.setPageSkin(this);
+            core.getAddresslt(this);
+            if (selfuser) {
+                this.self.name = selfuser.name
+                this.self.phone = selfuser.phone
+            }
+            this.pageType = type;
+            this.cartid = cartid;
+            this.$apply();
+        }
+        showMask() {
+            this.digShow = !this.digShow;
+        }
+        async saveAddress(vm) {
+            let addInfo = await core.saveAddress(vm);
+            if (addInfo.isok) {
+                tools.ShowToast(addInfo.msg, this);
+                await core.getAddresslt(this);
+                this.digShow = false;
+            } else {
+                tools.showModal(addInfo.msg, false);
+            }
+        }
+        onReachBottom() {
+            let index = Number(this.selIndex)
+            if (index == 6 || index == 1) {
+                core.GetStorePickPlace(this.vm_more, this)
+            }
+        }
+    }
+</script>

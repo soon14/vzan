@@ -1,0 +1,86 @@
+<!--pages/newShopCart/newShopCart.wxml-->
+<import src="/template/shopcart.wxml" />
+<view class='{{currentSkin}}'>
+  <block wx:for="{{goodsList}}" wx:for-index="parentindex" wx:if="{{goodsList.length!=0}}">
+    <view class='w100 h250nl flex-r-c-sb bgff m20-b'>
+      <!-- 选择按钮 -->
+      <view class='dzicon {{item.goodsMsg.sel?"icon-zhifuchenggong":"icon-kongxinyuan"}} f60 cFFC m20-l' hidden="{{item.showModalStatus2}}" bindtap='itemSelectFunc' data-parentindex="{{parentindex}}"></view>
+
+      <view class='flex-c-c  cff4 m20-w' wx:if="{{item.showModalStatus2}}" data-parentindex="{{parentindex}}" bindtap='deleteFunc'>
+        <text class='dzicon icon-iconfontlajitong f40'></text>
+        <text class='f22'>删除</text>
+      </view>
+      <!-- 商品图 -->
+      <image mode='aspectFill' src='{{item.goodsMsg.img}}' class='w150nl h150nl br10 m20-l'></image>
+      <!-- 内容 -->
+      <view class='f1 flex-c-sb h150nl p20-w' hidden="{{item.showModalStatus2}}">
+        <view class='flex-r-c-sb'>
+          <text class='br-txt'>{{item.goodsMsg.name}}</text>
+          <view class='dzicon icon-bianji c66 f35' catchtap='showEditorFunc' id='{{item.Id}}' data-parentindex="{{parentindex}}"></view>
+        </view>
+        <text class='ccc' wx:if="{{item.SpecInfo!=''}}">{{item.SpecInfo}}</text>
+        <view class='flex-r-sb cff9'>
+          <view>
+            <text class='f30'>￥{{item.Price}}</text>
+            <text class='fprice' wx:if="{{item.discount!=100}}">￥{{item.originalPriceStr}}</text>
+          </view>
+          <text>x{{item.Count}}</text>
+        </view>
+      </view>
+      <!-- 更改商品信息 -->
+      <view class='flex-r' wx:if="{{item.showModalStatus2}}" animation="{{animationDataRight}}">
+        <view class="flex-c-sb">
+
+          <view class="flex-r">
+            <text data-parentindex="{{parentindex}}" bindtap='lessViewFunc' class='count h78-l c66 bgf3 center'>-</text>
+            <input type="number" value="{{item.Count}}" data-parentindex="{{parentindex}}" bindinput='setValueFunc' class='set h78-l f38 c66 bgf3 center' />
+            <text data-parentindex="{{parentindex}}" bindtap='addViewFunc' class='count h78-l c66 bgf3 center'>+</text>
+          </view>
+
+          <view class="flex-r-c-c bgf3 f26 h78-l" bindtap="showShopcarFunc" data-parentindex="{{parentindex}}" data-statu="open">
+            <text class='ccc' wx:if="{{item.SpecInfo!='undefined'||item.SpecInfo!=''}}">{{item.SpecInfo}}</text>
+            <text class='dzicon icon-jiantou1 f40 c66' wx:if="{{item.SpecInfo!='undefined'||item.SpecInfo!=''}}"></text>
+            <text class='c66' wx:if="{{item.SpecInfo=='undefined'||item.SpecInfo==''}}">暂无规格</text>
+          </view>
+
+        </view>
+
+        <view class="ed-btn" id='{{parentindex}}' bindtap='updateEditorFunc'>完成</view>
+      </view>
+    </view>
+  </block>
+
+
+  <view wx:if="{{goodsList.length==0}}" class='w100 h100vh flex-c-c-c c99'>
+    <image mode='aspectFit' src='/image/shopcartNo.png' class='w350nl h150nl m20-b'></image>
+    <text>暂无商品</text>
+  </view>
+  <!-- 底部按钮 -->
+  <view class='h120nl'></view>
+  <view class="w100 h100-l bgff flex-r p-fbot bt-f3">
+
+    <view class="f1 flex-r-c-sb">
+      <view class='flex-r-c'>
+        <view class='dzicon {{selectedAllStatus?"icon-zhifuchenggong":"icon-kongxinyuan"}} f60 cFFC m20-l' bindtap="allSelectFunc"></view>
+        <text class='f30 m20-l'>全选</text>
+      </view>
+
+      <view class='m30-r'>
+        <text>合计：</text>
+        <text class="pr-price cef">{{total}}</text>
+      </view>
+
+    </view>
+
+
+    <!-- <view class='bottomright bottomright_constructor' bindtap="goPlayFunc">去结算({{shopNum}})</view> -->
+
+    <!-- 提交模拟formId -->
+    <form bindsubmit="goPlayFunc" report-submit="true" style='width:30%;height:100rpx;'>
+      <button formType="submit" class='w100 h100-l f34 center cfff shop_sel br0'>去结算({{shopNum}})</button>
+    </form>
+
+  </view>
+
+  <template is="shopcart" data="{{msg,showModalStatus,pickspecification,animationData,discountTotal,oldprice,stock,specInfo,addshop,totalCount}}" />
+</view>

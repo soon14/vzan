@@ -1,0 +1,97 @@
+<style lang="less">
+    .com-value {
+        width: 100%;
+        background: #fff;
+        margin: 20rpx 0;
+        padding: 0 20rpx;
+        .com-valueHear {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            border-bottom: 1px solid #f1f1f1
+        }
+        .com-valueuser {
+            width: 100%;
+            padding-top: 30rpx;
+            image {
+                width: 60rpx;
+                height: 60rpx;
+                border-radius: 50%;
+                margin-right: 20rpx;
+            }
+        }
+        .com-valueimg {
+            width: 100%;
+            margin-top: 25rpx;
+            padding-bottom: 30rpx;
+            image {
+                width: 230rpx;
+                height: 230rpx;
+                margin-right: 7rpx;
+                margin-bottom: 20rpx;
+            }
+        }
+    }
+    .v-replay {
+        padding: 30rpx 0;
+        font-size: 26rpx;
+        color: #ccc;
+    }
+</style>
+<template>
+    <view class="com-value">
+        <view class="com-valueHear f">
+            <text class="f32 f1">宝贝评价</text>
+            <view class="f fc c999" @tap="pathNav({{vm.GoodsId}})">
+                <text class="f26">查看全部</text>
+                <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f32" />
+            </view>
+        </view>
+        <view class="com-valueuser f fc">
+            <image src="{{vm.HeadImgUrl||'http://j.vzan.cc/content/city/images/voucher/10.jpg'}}" mode="aspectFill" />
+            <text class="f30" wx:if="{{vm.Anonymous}}">匿名</text>
+            <text class="f30" wx:else>{{vm.NickName||""}}</text>
+        </view>
+        <view class="mt20 f24 c999 f fc">
+            <text>{{vm.AddTimeStr}}</text>
+            <text class="ml20 f1 line lin1">{{vm.GoodsSpecification}}</text>
+        </view>
+        <view class="f30 mt30" wx:if="{{vm.Comment}}">{{vm.Comment}}</view>
+        <view class="f30 mt30" wx:else>该用户暂无评论</view>
+        <view class="com-valueimg f fw">
+            <repeat for="{{vm.CommentImgs}}">
+                <image mode="aspectFill" src="{{item.filepath}}" @tap="showimg({{vm.CommentImgs}},{{index}})" />
+            </repeat>
+        </view>
+        <view class="v-replay" wx:if="{{item.Replay!=null}}">掌柜回复: {{item.Replay}}</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        tools
+    } from "../lib/core.js"
+    export default class com_goodValue extends wepy.component {
+        config = {
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+            }
+        };
+        components = {};
+        props = {};
+        methods = {
+            showimg(item, index) {
+                let img = item[index].filepath
+                let array = []
+                for (let i = 0, len = item.length; i < len; i++) {
+                    array.push(item[i].filepath)
+                }
+                tools.preViewShow(img, array)
+            },
+            pathNav(id) {
+                tools.goNewPage("/pages/good/goodValueLst?type=pro&id=" + id)
+            },
+        };
+    }
+</script>

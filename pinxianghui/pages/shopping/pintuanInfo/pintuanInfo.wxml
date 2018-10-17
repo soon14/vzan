@@ -1,0 +1,96 @@
+<!--pages/shopping/pintuanInfo/pintuanInfo.wxml-->
+<import src='/script/template.wxml' />
+<view class='f h220 p20' bindtap='goodInfo_nt' wx:if="{{pintuanInfo.goodsInfo}}">
+  <image src='{{pintuanInfo.goodsInfo.img}}' class='w180h180 mr20' mode='aspectFill'></image>
+  <view class='f-c jsb f1'>
+    <text class='f-B c333 t32 vertical-2'>{{pintuanInfo.goodsInfo.name}}</text>
+    <view class='f'>
+      <text class='cf0033 t-B t32'>￥{{pintuanInfo.goodsInfo.priceStr}}</text>
+      <view class='buy_tips' wx:if="{{pintuanInfo.goodsInfo.groupPrice>0}}">拼立返{{pintuanInfo.goodsInfo.groupPrice/100}}</view>
+    </view>
+    <!-- <view class='tc t32 w-full' wx:else>该商品已下架</view> -->
+  </view>
+</view>
+<view class='bgcfff h530'>
+  <view class='f jsc'>
+    <block wx:for="{{pintuanInfo.users}}">
+      <view class='mt40 ml20' wx:if="{{index<5}}">
+        <image src='{{item.headImg||item.noneLogo}}' class='w100h100b' mode='aspectFill'></image>
+      </view>
+    </block>
+    <view class='user_showmore' wx:if="{{pintuanInfo.users.length>5}}" bindtap="showmore_User">...</view>
+  </view>
+  <view class='mt40 t30 fc' wx:if="{{pintuanInfo.goodsInfo}}">
+    <text class='c333' wx:if="{{pintuanInfo.groupDetail.state==0}}">"拼单仅剩<text class='cf0033'>{{pintuanInfo.groupDetail.endtimeStr || '00:00:00'}}</text> 还差<text class='cf0033'>{{pintuanInfo.goodsInfo.groupUserLimit-pintuanInfo.groupDetail.entrantCount}}</text>人"</text>
+    <text wx:if="{{pintuanInfo.groupDetail.state==-1}}">"拼单失败 还差<text class='cf0033'>{{pintuanInfo.goodsInfo.groupUserLimit-pintuanInfo.groupDetail.entrantCount}}</text>人"</text>
+    <text class='c333' wx:if="{{pintuanInfo.groupDetail.state==1}}">"人数已满，全员确认收货立即返现"</text>
+    <text class='c333' wx:if="{{pintuanInfo.groupDetail.state==2}}">"拼单成功，立返{{orderInfo.goodsInfo.groupPrice * orderInfo.orderDetail.count / 100}}元"</text>
+  </view>
+  <view class='tc t32 w-full l88 mt30' wx:if="{{pintuanInfo&&pintuanInfo.goodsInfo==null}}">该商品已下架</view>
+
+  <view wx:if="{{pintuanInfo.groupDetail.state==0}}">
+    <button class='btn_css btn_css_t' bindtap='show_invite_modal' wx:if="{{pintuanInfo.isjoin}}">马上邀请好友拼单</button>
+
+    <button class='btn_css btn_css_t' wx:if="{{!pintuanInfo.isjoin}}" data-groupid='{{pintuanInfo.groupDetail.id}}' data-gid='{{pintuanInfo.goodsInfo.id}}' bindtap='goodinfo_nt'>我也要拼</button>
+  </view>
+
+  <view wx:else>
+    <button class='btn_css btn_css_t' wx:if="{{pintuanInfo.isjoin}}" data-orderid='{{pintuanInfo.orderId}}' data-storeid='{{pintuanInfo.goodsInfo.storeId}}' bindtap='orderinfo_nt'>查看订单</button>
+
+    <button class='btn_css btn_css_t' wx:if="{{!pintuanInfo.isjoin}}" data-groupid='0' data-gid='{{pintuanInfo.goodsInfo.id}}' bindtap='goodinfo_nt'>我也要拼</button>
+  </view>
+
+
+  <button class='btn btn_css btn_css_b' bindtap='storeindex_nt'>去店铺逛逛</button>
+</view>
+
+
+
+
+<!-- 热门商品推荐 -->
+<!-- <view class='h88 fc bgcfff bg_bottom_line mt20'>
+  <image src='/image/hotsell.png' class='w40h40 mr10'></image>
+  <text class='f-B t28'>热门推荐</text>
+</view>
+
+<view class='bgcfff'>
+  <template is="goodsList-classify" data="{{pintuanList:item2}}" />
+  <button loading class='btn bottom_loading'> 加载更多宝贝</button>
+</view> -->
+<!-- 显示更多成员弹窗 -->
+<view wx:if="{{show_moreUser}}">
+  <view class='bg3'></view>
+  <text class='dzicon icon-3 cfff more_unshow' bindtap='showmore_User'></text>
+  <view class='more_user f-c'>
+    <view class='f-c c mt40'>
+      <view class='more_user_icon'>
+        <text class='dzicon icon-fenxiaozhongxin cfff'></text>
+      </view>
+      <text class='t30 c9a37 f-B mt16'>拼团人员</text>
+    </view>
+    <view class='fw'>
+      <block wx:for="{{pintuanInfo.users}}">
+        <view class='pr mt20 ml20' wx:if="{{index<5}}">
+          <image src='{{item.headImg}}' class='w100h100b' mode='aspectFill'></image>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>
+
+<!-- 邀请拼团弹窗 -->
+<view wx:if="{{invite_modal}}">
+  <view class='bg3'></view>
+  <text class='dzicon icon-3 cancel-modal cfefe' style='position: absolute' bindtap='hidden_invite_modal'></text>
+  <view class='new-sm-basecss-1 f-sa pt20'>
+    <view class='f jsc w-full t30 c333'>
+      <text>“拼单仅剩</text>
+      <text class='cf0033'>{{pintuanInfo.groupDetail.endtimeStr || '00:00:00'}} </text>
+      <text>还差</text>
+      <text>{{pintuanInfo.groupDetail.groupCount-pintuanInfo.groupDetail.entrantCount}}</text>
+      <text>人”</text>
+    </view>
+    <canvas class='gs_canvas' canvas-id="groupShare_Card"></canvas>
+    <template is='share_cardBtn' data="{{cardbottom_btn,AlbumUnset}}" />
+  </view>
+</view>

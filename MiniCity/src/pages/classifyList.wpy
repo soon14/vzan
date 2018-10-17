@@ -1,0 +1,201 @@
+<style lang="less">
+  view {
+    box-sizing: border-box;
+  }
+  page {
+    background-color: #f7faf8;
+  }
+  .info-label {
+    .active {
+      color: #000;
+      font-weight: bold;
+      border-bottom: 5rpx solid #34c658;
+      padding-bottom: 10rpx;
+    }
+  }
+  .no-content {
+    height: 190rpx;
+    position: relative;
+    .bg-line {
+      width: 550rpx;
+      border-bottom: 1rpx solid #ededed;
+    }
+    .text {
+      z-index: 3;
+      background: #f7faf8;
+      display: block;
+      padding: 0 40rpx;
+    }
+  }
+</style>
+ 
+<template>
+  <view>
+    <view>
+      <view class="info-label f fc h100 bg-w tc c999">
+        <block wx:for="{{infoLabel.label}}">
+          <view class="f1"><text class=" f30 {{infoLabel.index==index?'active':''}}" @tap="toggleLabel({{index}})">{{item}}</text></view>
+        </block>
+      </view>
+      <repeat for="{{msgList}}" item="infoItem">
+        <comInfoItem :info.sync="infoItem" :comIndex.sync="index" :comUser.sync="userInfo" :isClassify.sync="isClassify" ></comInfoItem>
+      </repeat>
+    </view>
+    <view class="no-content tc f fc fc-h" wx:if="{{!isLoading}}">
+      <view class="bg-line abs"></view>
+      <text class="text c-c6c8cc f24 abs">我是有底线的</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http
+  } from "@/lib/core";
+  import addr from "@/lib/addr";
+  import com_infoItem from "@/components/com_infoItem";
+  export default class classifyList extends wepy.page {
+    config = {};
+    components = {
+      comInfoItem: com_infoItem,
+    };
+    
+    data = {
+      isClassify:true,
+      pageTitle: "",
+      classifyId: "",
+      appid: "",
+      infoLabel: {
+        index: 0,
+        label: ["最新发布", "距离最近"]
+      },
+      location: {
+        lat: 0,
+        lng: 0
+      },
+      userInfo:{},
+      msgList: [],
+      isUpData: false,
+      isLoading: true,
+      pageIndex: 1,
+      pageSize: 4
+    };
+    methods = {
+      toggleLabel: function(index) {
+        this.infoLabel.index = index;
+        this.pageIndex = 1;
+        this.isLoading = true;
+        this.isUpData = true;
+        this.getMsgByUserId(this.classifyId, this.infoLabel.index);
+      },
+    };
+    events = {};
+    async onLoad(option) {
+      this.userInfo = await core.getUserInfo();
+      this.classifyId = option.typeId;
+      this.pageTitle = option.title;
+      core.setPageTitle(this.pageTitle);
+      var that = this;
+      wx.getLocation({
+        type: "gcj02",
+        success: function(res) {
+          console.log(res.latitude, res.longitude);
+          that.location = {
+            lat: res.latitude,
+            lng: res.longitude
+          };
+        },
+        fail: function(res) {},
+        complete: function() {
+          that.getMsgByUserId(that.classifyId, that.infoLabel.index);
+        }
+      });
+    }
+    onShow() {}
+    async getMsgByUserId(typeId, orderType) {
+      var app = wepy.$instance;
+      var userInfo = await core.getUserInfo();
+      core.loading();
+      http
+        .post(addr.GetMsgList, {
+          appId: app.globalData.appid,
+          userId: userInfo.userid,
+          orderType: orderType,
+          msgTypeId: typeId,
+          lat: this.location.lat,
+          lng: this.location.lng,
+          pageIndex: this.pageIndex,
+          pageSize: this.pageSize
+        })
+        .then(data => {
+          wx.hideLoading();
+          if (data.isok) {
+            if (this.isUpData) {
+              this.msgList = data.dataObj.list;
+              this.isUpData = false;
+            } else if (this.pageIndex == 1 && data.dataObj.list.length == 0) {
+              core.showToast("此分类下暂无信息", "none", 1200);
+            } else if (this.pageIndex >= 1 && data.dataObj.list.length > 0) {
+              this.msgList = this.msgList.concat(data.dataObj.list);
+            } else if (this.pageIndex >= 1 && data.dataObj.list.length == 0) {
+              this.isLoading = false;
+            }
+          } else {
+            core.showModal(data.Msg);
+          }
+          this.$apply();
+        });
+    }
+    onReachBottom() {
+      this.loadMore();
+    }
+    //上拉加载更多
+    loadMore() {
+      if (this.isLoading) {
+        this.pageIndex++;
+        this.getMsgByUserId(this.classifyId, this.infoLabel.index);
+      }
+    }
+    //分享
+    onShareAppMessage(e) {
+      var title, imgUrl, sharePath;
+      var app = wepy.$instance;
+      var msgList = this.msgList;
+      var that = this;
+      if (e.from === "menu") {
+        title = this.pageTitle;
+        sharePath = "/pages/classifyList?title=" + this.pageTitle + "&typeId=" + this.classifyId;
+      } else if (e.from === "button") {
+        let id = e.target.dataset.id;
+        let index = e.target.dataset.index;
+        let defaultImg = "http://j.vzan.cc/miniapp/img/MiniCity/shareDefault.jpg";
+        title = msgList[index].msgDetail;
+        imgUrl = msgList[index].imgList[0] ? msgList[index].imgList[0] : defaultImg;
+        sharePath = "/pages/classifyDetails?msgId=" + id;
+      }
+      return {
+        title: title,
+        imageUrl: imgUrl,
+        path: sharePath,
+        success: function(res) {
+          if (e.from === "button") {
+            let index = e.target.dataset.index;
+            let id = e.target.dataset.id;
+            core.addMsgViewFavoriteShare(app.globalData.appid, id, 2);
+            msgList[index].ShareCount++;
+            that.$apply();
+          }
+          core.showToast("分享成功", "success", 1000);
+        },
+        fail: function(res) {
+          console.log(res);
+        }
+      };
+    }
+  }
+</script>
+
+
+

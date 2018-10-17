@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Kaaden后台系统</title>
+  <link rel="stylesheet" href='./css//login.css' type="text/css" />
+  <link rel="stylesheet" href='./css/base.css' type="text/css" />
+</head>
+
+<body>
+  <div class="Login" id='app'>
+    <div class="login f fv fc">
+      <div class="title f fc rv">
+        <span>Kaa</span>
+        <span class="c1a">d</span>
+        <span>en</span>
+      </div>
+      <form class="form-horizontal f fv fc fj rv" role="form" @submit.prevent="submit">
+        <h1 class="form-title rv">Log in</h1>
+        <div class="forminput rv">
+          <input class="f-name" id='username' v-cloak v-model='formdata.name' :class="{'showbottom':formdata.name!=''}" @input="useName">
+          <label class="f-label" for='username' v-cloak :class="{'show':formdata.name!=''}">userName</label>
+          <label class="f-account" v-if='checkname' v-cloak>请输入账号</label>
+        </div>
+        <div class="forminput2 rv">
+          <input class="f-password" id='password' v-model='formdata.password' type='password' :class="{'showbottom':formdata.password!=''}"
+            @input="usePassword" v-cloak>
+          <label class="f-label2" for='password' :class="{'show':formdata.password!=''}" v-cloak>password</label>
+          <label class="f-account" v-if='checkpass' v-cloak>请输入密码</label>
+        </div>
+        <p class="f-error" v-if="check" v-cloak>{{tip}}</p>
+        <input class="formbtn rv" type="submit" value="login">
+      </form>
+    </div>
+  </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script src="./js/scrollreveal.min.js"></script>
+<script src='./js/core.js'></script>
+<script>
+  new Vue({
+    el: '#app',
+    data: {
+      formdata: {
+        name: '',
+        password: '',
+      },
+      checkname: false,
+      checkpass: false,
+      tip: '',
+      check: false,
+    },
+    methods: {
+      useName() {
+        this.checkname = false
+        this.check = false
+      },
+      usePassword() {
+        this.checkpass = false
+        this.check = false
+      },
+      submit() {
+        let that = this
+        let _g = that.formdata
+        if (_g.name) {
+          that.checkname = false
+        } else {
+          that.checkname = true
+          return;
+        }
+        if (_g.password) {
+          that.checkpass = false
+        } else {
+          that.checkpass = true
+          return;
+        }
+
+        http.post(addr.login, {
+          name: _g.name,
+          password: _g.password,
+        }).then(data => {
+          if (data.isok) {
+            that.check = false
+            tools.goNewPage('./home.html')
+          } else {
+            that.tip = data.msg
+            that.check = true
+          }
+        })
+
+
+      },
+
+    },
+
+
+  })
+  //滚动效果
+  window.sr = ScrollReveal({
+    reset: true,
+  });
+  sr.reveal('.rv');
+</script>
+
+</html>

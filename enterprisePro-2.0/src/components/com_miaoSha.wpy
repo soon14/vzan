@@ -1,0 +1,158 @@
+<style lang="less">
+    .c-ms {
+        width: 100%;
+        background-color: #fff;
+        margin-bottom: 20rpx;
+        padding: 0 30rpx 30rpx 30rpx;
+        .c-ms-countDonw {
+            width: 100%;
+            margin-top: 30rpx;
+            .ms-line {
+                color: #d0d0d0;
+            }
+            .ms-time {
+                width: 45rpx;
+                text-align: center;
+                padding: 5rpx 0;
+                font-size: 24rpx;
+                color: #444;
+                border-radius: 5rpx;
+                border: 1px solid #d9d8d9;
+                margin: 0 8rpx;
+                font-weight: bold;
+            }
+            .ms-radius {
+                font-size: 22rpx;
+                font-weight: bold;
+                color: #333;
+            }
+        }
+        .c-ms-main {
+            width: 100%;
+            .c-ms-main-item:last-child {
+                border-bottom: none;
+            }
+            .c-ms-main-item {
+                width: 100%;
+                padding: 30rpx 0;
+                border-bottom: 1px solid #eee;
+                >image {
+                    width: 220rpx;
+                    height: 220rpx;
+                    border-radius: 5rpx;
+                    flex-shrink: 0;
+                    margin-right: 30rpx;
+                }
+                .c-ms-main-content {
+                    height: 220rpx;
+                    .c-ms-main-price {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                    }
+                }
+                .c-ms-main-btn {
+                    width: 140rpx;
+                    height: 66rpx;
+                    text-align: center;
+                    line-height: 66rpx;
+                    border-radius: 5rpx;
+                }
+            }
+        }
+        .c-ms-more {
+            color: #666;
+            width: 260rpx;
+            text-align: center;
+            height: 56rpx;
+            line-height: 56rpx;
+            border-radius: 5rpx;
+            border: 1px solid #d0d0d0;
+            margin: 30rpx auto 0 auto;
+        }
+    }
+</style>
+
+<template>
+    <view class="c-ms">
+        <view class='component-title f fc fc-h' wx:if='{{currentCom.title&&vm.more}}'><text class='component-title-left dzicon icon-_xiegan skin_txt' />{{currentCom.title}}<text class='component-title-right dzicon icon-_xiegan skin_txt' /></view>
+        <view class="c-ms-countDonw f fc fc-h" wx:if="{{vm.more}}">
+            <text class="ms-line" style="margin-right:30rpx">————</text>
+            <text class="f26 c666">{{vm.State==2?'距结束':'距开始'}}</text>
+            <text class="ms-time">{{vm.countDownArray[0]>99?99:(vm.countDownArray[0]||'00')}}</text>
+            <text>天</text>
+            <text class="ms-time">{{vm.countDownArray[1]||'00'}}</text>
+            <text class="ms-radius">:</text>
+            <text class="ms-time">{{vm.countDownArray[2]||'00'}}</text>
+            <text class="ms-radius">:</text>
+            <text class="ms-time">{{vm.countDownArray[3]||'00'}}</text>
+            <text class="ms-line" style="margin-left:25rpx">————</text>
+        </view>
+        <view class="c-ms-main">
+            <repeat for="{{vm.Item}}">
+                <view class="c-ms-main-item f">
+                    <image src="{{item.Img||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                    <view class="c-ms-main-content f fv fj f1">
+                        <view class='line line2'>{{item.Title}}</view>
+                        <view class="f f-end rel">
+                            <view class="c-ms-main-price f fv">
+                                <text class="f34 skin_txt">￥{{item.DealPrice}}</text>
+                                <text class="c123 f24" style="text-decoration: line-through" wx:if="{{item.DealPrice!=item.OrigPrice}}">￥{{item.OrigPrice}}</text>
+                            </view>
+                            <view class="f fv">
+                                <view class="f f-end" wx:if="{{vm.countDownArray[0]<=7&&vm.State==1&&item.IsNotify==false&&vm.countDownArray[4]}}" @tap='goTip({{item.FlashItemId}},{{vm.Id}},{{pageIndex}},{{comIndex}})'>
+                                    <text class="c-ms-main-btn skin_bg">提醒我</text>
+                                </view>
+                                <view class="f f-end" wx:if="{{(item.StockLimit&&item.saleRate!=0||item.StockLimit==false)&&vm.countDownArray[4]==false&&vm.State==2}}" @tap='goDeal({{item.FlashItemId}})'>
+                                    <text class="c-ms-main-btn skin_bg">立即抢购</text>
+                                </view>
+                                <view class="f f-end" wx:if="{{vm.countDownArray[0]<=7&&vm.State==1&&item.IsNotify&&vm.countDownArray[4]}}">
+                                    <text class="c-ms-main-btn" style="background-color:#f2f2f2;color:#666">已提醒</text>
+                                </view>
+                                <view class="f f-end" wx:if="{{vm.State==2&&item.StockLimit&&item.saleRate==0&&vm.countDownArray[4]==false}}">
+                                    <text class="c-ms-main-btn" style="background-color:#f2f2f2;color:#666">已售罄</text>
+                                </view>
+                                <view class="f f-end" wx:if="{{vm.countDownArray[0]>7&&vm.countDownArray[4]}}">
+                                    <text class="c-ms-main-btn" style="background-color:#f2f2f2;color:#666">未开始</text>
+                                </view>
+                                <view class='f mt10'>
+                                    <text class='f22 c123'>剩余:{{item.saleRate}}%</text>
+                                    <progress percent="{{item.saleRate}}" stroke-width='10' activeColor='#FF6F30' style='margin-left:10rpx;width:140rpx;border-radius:100px;overflow:hidden' />
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <view class="c-ms-more" wx:if='{{vm.Item.length>=4&&vm.more}}' @tap='goMore({{vm.Id}})'>查看全部</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        tools,
+        core
+    } from "../lib/core.js";
+    export default class com_miaoSha extends wepy.component {
+        components = {};
+        props = {};
+        methods = {
+            goMore(id) {
+                tools.goNewPage('/pages/miaoSha/more?id=' + id)
+            },
+            goDeal(id) {
+                tools.goNewPage("/pages/miaoSha/detail?id=" + id)
+            },
+            goTip(id, miaoshaId, pageindex, comindex) {
+                let key = pageindex + "_" + comindex
+                if (pageindex && comindex) {
+                    core.miaoShaTip(id, this.$parent, '1', miaoshaId, key)
+                } else {
+                    core.miaoShaTip(id, this.$parent, '2', miaoshaId)
+                }
+            }
+        };
+    }
+</script>

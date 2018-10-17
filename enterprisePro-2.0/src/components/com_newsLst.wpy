@@ -1,0 +1,142 @@
+<style lang="less">
+    .c-news-lst {
+        width: 100%;
+        background-color: #fff;
+        .c-news-lst-top {
+            width: 100%;
+            padding: 0 30rpx;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            .c-news-lst-search {
+                width: 100%;
+                height: 70rpx;
+                background-color: #f2f2f2;
+                border-radius: 35rpx;
+                margin-top: 30rpx;
+                >text {
+                    position: absolute;
+                    left: 40%;
+                    top:11rpx;
+                    color: #a1a2a3;
+                }
+                input {
+                    width: 100%;
+                    height: 70rpx;
+                    text-align: center;
+                }
+            }
+            .c-news-lst-nav {
+                font-size: 30rpx;
+                height: 100rpx;
+                line-height: 50rpx;
+                >text {
+                    flex-shrink: 0;
+                    margin-right: 50rpx;
+                }
+            }
+        }
+        .c-news-lst-main {
+            width: 100%;
+            padding: 0 30rpx;
+            .c-news-lst-item {
+                width: 100%;
+                padding: 30rpx 0;
+                border-bottom: 1px solid #eee;
+                >image {
+                    width: 220rpx;
+                    height: 220rpx;
+                    flex-shrink: 0;
+                    margin-left: 30rpx;
+                }
+            }
+        }
+        .c-news-lst-none {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            text-align: center;
+            line-height: 100vh;
+            background-color: #fff;
+            color: #666;
+        }
+    }
+</style>
+
+<template>
+    <view class="c-news-lst">
+        <view class="c-news-lst-top f fv" style="padding-bottom:{{currentCom.isShowNewsNav?'0':'30'}}rpx" wx:if="{{currentCom.isShowNewsSearch||currentCom.isShowNewsNav}}">
+            <view class="c-news-lst-search rel" wx:if="{{currentCom.isShowNewsSearch}}">
+                <text class="dzicon icon-sousuo_rearch f44" wx:if="{{vm.search==''}}" />
+                <input value="{{vm.search}}" type='text' confirm-type="搜索" class="f1" placeholder='搜索' placeholder-style="color:#a1a2a3" @input="setInput" @confirm="confirm({{vm.ids_array}})" />
+            </view>
+            <scroll-view scroll-x wx:if="{{currentCom.isShowNewsNav}}">
+                <view class="c-news-lst-nav f fc f1">
+                    <text class="{{newsIndex==0?'skin_bottom':'c666'}}" @tap="selNav({{vm.ids_array}},'all')">全部</text>
+                    <repeat for="{{currentCom.newsCat}}">
+                        <text class="{{newsIndex==item.id?'skin_bottom':'c666'}}" @tap="selNav({{item.id}},'item')">{{item.name}}</text>
+                    </repeat>
+                </view>
+            </scroll-view>
+        </view>
+        <view style="height:{{currentCom.isShowNewsNav&&currentCom.isShowNewsSearch?'200rpx':''}}" wx:if="{{currentCom.isShowNewsSearch&&currentCom.isShowNewsNav}}" />
+        <view style="height:{{currentCom.isShowNewsNav&&currentCom.isShowNewsSearch==false?'100rpx':''}}" wx:if="{{currentCom.isShowNewsSearch==false&&currentCom.isShowNewsNav}}" />
+        <view style="height:{{currentCom.isShowNewsNav==false&&currentCom.isShowNewsSearch?'130rpx':''}}" wx:if="{{currentCom.isShowNewsSearch&&currentCom.isShowNewsNav==false}}" />
+        <view class="c-news-lst-main" wx:if="{{vm.list.length}}">
+            <repeat for="{{vm.list}}">
+                <view class="c-news-lst-item f" @tap="goDlt({{item.id}})">
+                    <view class="f fv f1 fj">
+                        <view class="line line2">{{item.title}}</view>
+                        <view class="w-100 fj f fc f24 c999">
+                            <text>{{item.addtime}}</text>
+                            <text>{{item.PV+item.VirtualPV||0}}浏览</text>
+                        </view>
+                    </view>
+                    <image src="{{item.img||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                </view>
+            </repeat>
+        </view>
+        <view class="c-news-lst-none" wx:if="{{vm.list.length==0}}">暂无数据~</view>
+        <!-- 加载状态 -->
+        <view class="loding w-100 f fc-h" style="padding:20rpx 0" wx:if="{{vm.loadall==false&&vm.list.length}}">
+            <text class="loading-icon" />
+            <text class="c999 f26 ml20">正在加载中...</text>
+        </view>
+        <!-- 加载完毕 -->
+        <view class="w-100 tc c123 f24 ph20" style="background-color:#f6f6f6" wx:if="{{vm.loadall&&vm.list.length}}">到底啦</view>
+    </view>
+</template>
+
+
+
+
+<script>
+    import wepy from "wepy";
+    import {
+        tools,
+        core
+    } from "../lib/core.js";
+    export default class com_newsLst extends wepy.component {
+        methods = {
+            selNav(id, type) {
+                this.$emit('newsSel', id, type)
+            },
+            goDlt(id) {
+                tools.goNewPage("/pages/news/news?id=" + id);
+            },
+            setInput(e) {
+                this.$emit('setInput', e)
+            },
+            confirm(id) {
+                this.$parent.data.vm_com_newlst = tools.resetArray(this.$parent.data.vm_com_newlst)
+                this.$parent.data.vm_com_newlst.ids = id
+                core.getNewsLst(this.$parent.data.vm_com_newlst, this.$parent)
+            }
+        }
+    }
+</script>

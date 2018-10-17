@@ -1,0 +1,119 @@
+<style lang="less">
+.my-activity {
+  .info-label {
+    .active {
+      color: #3fd682; // font-weight: bold;
+      border-bottom: 5rpx solid #3fd682;
+      padding-bottom: 10rpx;
+    }
+  }
+  .line-fuck {
+    height: 1px;
+    width: 100%;
+    background-color: #eee;
+  }
+}
+</style>
+
+<template> 
+    <view>
+        <view class="my-activity" @tap="test">
+            <view class="line-fuck"></view>
+            <repeat>
+                <comInfoItem :infoList.sync="infoList" jumpPath="../../classify/classify-details/index" :isMyPublishOrFavorite="myPublishOrFavorite" :onClickDelAfter="deleteMsg"></comInfoItem>
+            </repeat>
+            <comWait wx:if="{{showWait}}"  />
+        </view>
+    </view>
+</template>
+
+<script> 
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import addr from "@/lib/addr";
+import com_infoItem from "@/components/com_infoItem";
+import com_wait from "@/components/com_wait";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的动态",
+    enablePullDownRefresh: true
+  };
+  components = {
+    comInfoItem: com_infoItem,
+    comWait: com_wait
+  };
+  data = {
+    myPublishOrFavorite: true,
+    infoLabel: {
+      type: 0, //最新发布|距离最近
+      msgTypeId: 0, //帖子分类
+      pageIndex: 1,
+      pageSize: 10
+    },
+    infoList: [],
+    showWait: false,
+    myCardId: 0
+  };
+  methods = {
+    // test() {
+    //     tools.goNewPage('../../classify/classify-details/index')
+    // }
+  };
+
+  events = {};
+  onLoad(option) {
+    this.myCardId = option.myCardId;
+    if (!this.myCardId) {
+      tools.goBack(1);
+      return;
+    }
+    this.GetInfoList();
+  }
+
+
+  async onPullDownRefresh() {
+    wx.showNavigationBarLoading();
+    this.GetInfoList();
+    this.$apply();
+    wx.hideNavigationBarLoading();
+    wx.stopPullDownRefresh();
+  }
+
+  //获取帖子列表
+  async GetInfoList() {
+    this.showWait = true;
+    let data = await core.getMyActivity(this.myCardId);
+    tools.handleResult(data, res => {
+      console.log(res);
+      let dataList = res.list;
+      let pageIndex = this.infoLabel.pageIndex;
+      for (let i = 0, l = dataList.length; i < l; i++) {
+        dataList[i].DzBtnText = dataList[i].IsDzed ? "取消" : "赞";
+      }
+      // this.isLoading = (dataList.length == 0 && pageIndex > 1) ? false : true;
+      // this.isShowBottom = (dataList.length == 0 && pageIndex > 1) ? true : false;
+      this.infoList = this.isOnReach
+        ? this.infoList.concat(dataList)
+        : dataList;
+      this.showWait = false;
+      this.$apply();
+    });
+  }
+
+  async deleteMsg(id) {
+    console.log(id, "删除");
+    var option = {
+      Id: id,
+      myCardId: this.myCardId
+    };
+    var result = await core.delMyFavoriteOrMyMsg(option);
+    tools.handleResult(result, res => {
+      wx.showToast({
+        icon: "success",
+        title: "删除成功"
+      });
+      this.GetInfoList();
+    });
+  }
+}
+</script>

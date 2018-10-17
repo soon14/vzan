@@ -1,0 +1,157 @@
+<style lang="less">
+    .goodCfy-search {
+        width: 100%;
+        height: 100rpx;
+        background: #ebebeb;
+        padding: 20rpx 30rpx;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5;
+        .cfy-search {
+            width: 100%;
+            height: 60rpx;
+            background: #fff;
+            padding: 16rpx 30rpx;
+            color: #C5C4CC;
+        }
+    }
+    .cfy-first {
+        width: 200rpx;
+        position: fixed;
+        top: 100rpx;
+        left: 0;
+        height: 83.5vh;
+        .cfy-firstname {
+            height: 100rpx;
+            line-height: 100rpx;
+            padding: 0 30rpx;
+            text-align: center; // border-bottom: 1px solid #f1f1f1;
+        }
+    }
+    .cfy-sec {
+        min-height: 83.5vh;
+        padding: 0 20rpx;
+        background: #fff;
+        .cfy-more {
+            padding-top: 40rpx;
+            padding-bottom: 30rpx;
+        }
+        .cfy-main {
+            width: 170rpx;
+            font-size: 26rpx;
+            color: #666;
+            margin-bottom: 20rpx;
+        }
+        .cfy-main>image {
+            width: 150rpx;
+            height: 150rpx;
+            margin-bottom: 14rpx;
+        }
+    }
+    .sel-classify {
+        background: #fff;
+        color: #666;
+    }
+    .sel-none {
+        color: #666;
+        background: #f6f6f6;
+    }
+</style>
+<template>
+    <view>
+        <view class="goodCfy-search">
+            <view class="cfy-search f fc" @tap="pathSear">
+                <text class="dzicon icon-sousuo_rearch f50" />
+                <text class="ml10 f26">搜索商品名称</text>
+            </view>
+        </view>
+        <view style='height:100rpx;'></view>
+        <view class='f'>
+            <view style="width:200rpx" wx:if="{{vm.showfirst}}"></view>
+            <!-- 大类 -->
+            <scroll-view scroll-y class="cfy-first" wx:if="{{vm.showfirst}}">
+                <view class="cfy-firstname" @tap="selallFirst({{vm.list}})">全部</view>
+                <repeat for="{{vm.list}}" index="tIndex">
+                    <view class="cfy-firstname line line1  {{typeIndex==tIndex?'sel-classify':'selnone'}}" @tap="selChange({{tIndex}})">{{item.FirstGoodType.name}}</view>
+                </repeat>
+            </scroll-view>
+            <!-- 小类 -->
+            <scroll-view scroll-y class="f1 cfy-sec ">
+                <view class="f fv">
+                    <view class="f cfy-more">
+                        <text class="f1">{{vm.list[typeIndex].FirstGoodType.name}}</text>
+                        <view class="f fc f24 c666" @tap="selallType({{vm.list}},{{typeIndex}})">
+                            <text>查看更多</text>
+                            <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f38" />
+                        </view>
+                    </view>
+                    <view class="f fw" wx:if="{{vm.list[typeIndex].SecondGoodTypes.length}}">
+                        <repeat for="{{vm.list[typeIndex].SecondGoodTypes}}" item="second">
+                            <view class="cfy-main f fv fc {{vm.showfirst==false?'f1':''}}" @tap="seloneType({{second.id}},{{second.name}})">
+                                <image src="{{second.Img||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+                                <text class='line line1'>{{second.name}}</text>
+                            </view>
+                        </repeat>
+                    </view>
+                    <wxc-abnor type="DATA" wx:else></wxc-abnor>
+                </view>
+            </scroll-view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        tools
+    } from "../lib/core.js";
+    export default class com_goodClassify extends wepy.component {
+        components = {};
+        data = {
+            typeIndex: 0,
+        }
+        methods = {
+            pathSear() {
+                tools.goNewPage("/pages/good/goodSearch")
+            },
+            selChange(index) {
+                this.typeIndex = index
+                this.$apply()
+            },
+            seloneType(id, title) {
+                let vm = {
+                    typeid:id,
+                    title,
+                    goods: this.$parent.data.currentPage.coms.find(f => f.type == 'goodlist')
+                }
+                this.$parent.$preload("vm", vm);
+                this.$parent.$navigate("/pages/good/goodProLst");
+            },
+            selallType(lst, index) {
+                let vm = {
+                    isFirstType: 0,
+                    typeid: lst[index].FirstGoodType.id,
+                    title: lst[index].FirstGoodType.name,
+                    goods: this.$parent.data.currentPage.coms.find(f => f.type == 'goodlist'),
+                }
+                this.$parent.$preload("vm", vm);
+                this.$parent.$navigate("/pages/good/goodProLst");
+            },
+            selallFirst(lst) {
+                let id = []
+                lst.forEach(function(o, i) {
+                    id.push(o.FirstGoodType.id)
+                });
+                let vm = {
+                    title: '全部',
+                    typeid: id.join(','),
+                    isFirstType: 0,
+                    goods: this.$parent.data.currentPage.coms.find(f => f.type == 'goodlist')
+                }
+                this.$parent.$preload("vm", vm);
+                this.$parent.$navigate("/pages/good/goodProLst");
+            },
+        }
+    }
+</script>

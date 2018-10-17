@@ -1,0 +1,397 @@
+<style lang="less">
+  .c-news {
+    width: 100%;
+    .c-news-video {
+      width: 100%;
+      height: 450rpx;
+      .c-news-video-cover,
+      video {
+        width: 100%;
+        height: 450rpx;
+      }
+      .c-news-video-btn {
+        width: 100rpx;
+        height: 100rpx;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -50rpx;
+        margin-top: -50rpx;
+      }
+    }
+    .c-news-audio {
+      width: 100%;
+      padding: 30rpx 0;
+      >image {
+        width: 500rpx;
+        height: 500rpx;
+      }
+      .c-news-audio-progress {
+        width: 500rpx;
+        font-size: 20rpx;
+        margin-top: 40rpx;
+        >slider {
+          width: 364rpx;
+          margin: 0 10rpx;
+        }
+      }
+      .c-news-audio-btn {
+        width: 88rpx;
+        height: 88rpx;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-left: -44rpx;
+        margin-top: -50rpx;
+      }
+    }
+    .c-news-main {
+      width: 100%;
+      padding: 30rpx;
+      background-color: #fff;
+    }
+    .c-news-rich {
+      padding: 20rpx 0;
+      background-color: #fff;
+      margin-top: 20rpx;
+    }
+    .c-news-bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100rpx;
+      background-color: #fff;
+      z-index: 1;
+      .c-news-bottom-btn {
+        line-height: 100rpx;
+        text-align: center;
+        font-size: 36rpx;
+      }
+      .c-good-btn-icon {
+        color: #777;
+        width: 125rpx;
+        height: 100rpx;
+        font-size: 24rpx;
+      }
+    }
+    .c-icon-other-main {
+      position: fixed;
+      bottom: 10%;
+      right: 30rpx;
+      z-index: 87;
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="c-news {{currentSkin}}">
+    <view wx:if="{{vm.isShowBtn}}" class="dzicon icon-xiala-copy c-icon-other-main" style="bottom: 20% !important;" @tap="goTop" />
+    <navigator class='dzicon icon-shouye2 c-icon-other-main' url="/pages/index/index" open-type="reLaunch" wx:if="{{vm.ispay==false}}" />
+    <repeat wx:if='{{vm.contenttype==0}}'>
+      <comSliderIn :currentCom="vm" wx:if="{{vm.slideimgs_fmt!=''}}" />
+      <image src="{{vm.img}}" mode="widthFix" class="w-100" wx:if="{{vm.slideimgs_fmt==''&&vm.img_fmt!=''}}" />
+    </repeat>
+    <!-- 视频 -->
+    <view wx:if="{{vm.contenttype==1}}" class='c-news-video'>
+      <view hidden="{{vm.playVideo}}" class="rel" @tap='playVideo'>
+        <image class='c-news-video-cover' wx:if="{{vm.videocover}}" src='{{vm.videocover}}' />
+        <view class='c-news-video-cover' wx:else/>
+        <image class='c-news-video-btn' src='http://j.vzan.cc/miniapp/img/enterprise/videoplay.png' />
+      </view>
+      <video id="ctvideo" hidden='{{vm.playVideo==false}}' objectFit="cover" custom-cache="{{false}}" controls src="{{vm.video}}" @ended='endVideo' />
+    </view>
+    <!-- 音频 -->
+    <view wx:if="{{vm.contenttype==2}}" class="c-news-audio f fv fc rel">
+      <image src="{{vm.img}}" />
+      <image class="c-news-audio-btn" src="{{vm.playAudio?'http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload//20180814/69762a1ac43747e0ab0c545a717ea9611534217693033.png':'http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload//20180814/5dee266cc82a44ee96f13f65e6b2ffc31534217689437.png'}}"
+        @tap="playAudio" />
+      <view class='c-news-audio-progress f fc fj'>
+        <text>{{vm.currentTime||'00:00'}}</text>
+        <slider @change="audioChange" min="0" block-size="10" max="{{vm.maxTime}}" backgroundColor="#EEEEEE" activeColor="#ff3838" block-color="#ff3838" value="{{vm.moveTime}}" />
+        <text>{{vm.duration||'00:00'}}</text>
+      </view>
+    </view>
+    <view class='c-news-main'>
+      <view class='f fc'>
+        <text class='f32 f1 line line3'>{{vm.title}}</text>
+        <button class='f fv ml10' open-type="share"><text class="dzicon icon-Forward_fenxiang f44 c123"  /><text class="f24 c999 mt5">分享</text></button>
+      </view>
+      <view class='f32 skin_txt mt20 t-b' wx:if="{{vm.ispaid==false&&vm.ispay}}">{{vm.payinfo.PayAmount}}</view>
+      <view class='f26 mt20' style="color:#888">{{vm.description}}</view>
+      <view class='c999 f24 mt20 f fc fj'>
+        <text>{{vm.addtime}}</text>
+        <text>浏览量 {{vm.PV+vm.VirtualPV||0}}</text>
+      </view>
+    </view>
+    <!-- 富文本 -->
+    <image src='http://j.vzan.cc/miniapp/img/enterprise/ct-bg.png' class='w-100' mode='widthFix' @tap='playContent' wx:if="{{vm.playContent}}" />
+    <view class="c-news-rich" wx:if="{{vm.playContent==false&&vm.content_fmt}}">
+      <repeat>
+        <comRichIn :currentCom="vm" />
+      </repeat>
+    </view>
+    <!-- 热门推荐 -->
+    <repeat wx:if="{{vm.RecommendedItem}}">
+      <comHot :vm.sync="vm.hostlist" />
+    </repeat>
+    <!-- 按钮 -->
+    <view wx:if="{{vm.ispay}}">
+      <view style='height:100rpx;' />
+      <view class='c-news-bottom f' style='border-top:1px solid #f2f2f2'>
+        <navigator class='c-good-btn-icon f fc fv fc-h' open-type='reLaunch' url="/pages/index/index">
+          <text class='dzicon icon-shouye2 f40' />
+          <text class='mt10'>首页</text>
+        </navigator>
+        <repeat>
+          <comImBtn :false.sync="false" @getUser.user="getUser" :wxServer.sync="vm.wxServer" :vm.sync="vm.userInfo" />
+        </repeat>
+        <button class='c-news-bottom-btn f1 skin_bg' wx:if='{{vm.ispaid==false&&vm.userInfo.newUser}}' open-type="getUserInfo" @getuserinfo="getUser">立即购买</button>
+        <view class='c-news-bottom-btn f1 skin_bg' @tap="buyMask" wx:if='{{vm.ispaid==false&&vm.userInfo.newUser==false}}'>立即购买</view>
+        <view class='c-news-bottom-btn f1' style='background-color:#eee;color:#666' wx:if='{{vm.ispaid}}'>已购买</view>
+      </view>
+    </view>
+    <!-- 支付弹窗 -->
+    <repeat wx:if="{{vm.payMask}}">
+      <comPay :vm.sync="vm" @selChange.user="selChange"  @hideMask.user="hideMask"  @payMoney.user="payMoney"/>
+    </repeat>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js";
+  import com_payMask from "@/components/com_payMask";
+  import com_hot from "@/components/com_goodHot";
+  import com_richt_in from "@/components/com_richtxt";
+  import com_imSwitch from "@/components/com_imSwitch";
+  import com_slider_in from "@/components/com_slider_in";
+  import {
+    core,
+    tools,
+    pay,
+  } from "@/lib/core";
+  // import
+  //第一步： 引入组件文件
+  export default class news extends wepy.page {
+    config = {
+      navigationBarTitleText: "",
+      enablePullDownRefresh: true,
+    };
+    //第二步：声明组件
+    components = {
+      comHot: com_hot,
+      comPay:com_payMask,
+      comImBtn: com_imSwitch,
+      comRichIn: com_richt_in,
+      comSliderIn: com_slider_in,
+    };
+    data = {
+      currentSkin: {},
+      vm: {},
+      audioIndex: -1, //用于音频防止多次重复赋值导致暂停重新播放
+      BackgroundAudioManager: wx.getBackgroundAudioManager(),
+    }
+    methods = {
+      //授权
+      async getUser(e) {
+        this.vm.userInfo = await tools.getRnUser(e);
+        if (this.vm.userInfo.newUser == false) {
+          this.vm.payMask = true
+        }
+        this.$apply()
+      },
+      // 支付弹窗
+      buyMask() {
+        this.vm.payMask = true
+        this.$apply()
+      },
+      hideMask() {
+        this.vm.payMask = false
+        this.$apply()
+      },
+      //支付方式
+      selChange(index) {
+        this.vm.selIndex = Number(index)
+        this.$apply()
+      },
+      // 微信支付
+      async payMoney() {
+        let that = this
+        let payindex = Number(that.vm.selIndex)
+        if (payindex == 0) {
+          tools.showModal("请选择支付方式", false)
+          return;
+        }
+        let _g = {
+          id: that.vm.id,
+          mode: payindex,
+        }
+        let _info = await core.payCtOrder(_g)
+        if (_info == false) {
+          return;
+        }
+        wx.showNavigationBarLoading();
+        //微信支付
+        if (payindex == 1) {
+          let newparam = {
+            orderid: _info.orderId,
+            type: 1
+          };
+          let wxPay = await pay.PayOrder(newparam);
+          if (wxPay != "" && wxPay.errMsg.includes("requestPayment:ok")) {
+            tools.loading("正在支付...");
+            setTimeout(() => {
+              that.vm.payMask = false
+              that.vm.playContent = false
+              wx.hideNavigationBarLoading()
+              tools.showModal("支付成功", false)
+              core.getNewInfo(that.vm.id, that)
+            }, 1000);
+          } else {
+            wx.hideNavigationBarLoading()
+            tools.loading("取消支付");
+          }
+        }
+        // 储值支付
+        else {
+          tools.loading("正在支付...");
+          setTimeout(() => {
+            that.vm.payMask = false
+            that.vm.playContent = false
+            wx.hideNavigationBarLoading()
+            tools.showModal("支付成功", false)
+            core.getNewInfo(that.vm.id, that)
+          }, 1000);
+        }
+        that.$apply()
+      },
+      //文章收费
+      async playContent() {
+        let showtip = await tools.showModal('该正文为付费内容请先购买')
+        if (showtip.confirm) {
+          this.vm.payMask = true
+          this.$apply()
+        }
+      },
+      //视频播放
+      async playVideo() {
+        let tmp = this.vm
+        if (tmp.ispaid || tmp.ispay == false) {
+          wx.createVideoContext('ctvideo').play()
+          tmp.playVideo = true
+        } else {
+          tmp.playVideo = false
+          let showtip = await tools.showModal('此视频付费后才可观看')
+          if (showtip.confirm) {
+            this.vm.payMask = true
+          }
+        }
+        this.vm = tmp
+        this.$apply()
+      },
+      //视频暂停
+      endVideo() {
+        wx.createVideoContext('ctvideo').stop()
+        this.vm.playVideo = false
+        this.$apply()
+      },
+      //音频播放
+      async playAudio() {
+        let tmp = this.vm
+        if (tmp.ispaid || tmp.ispay == false) {
+          tmp.playAudio = !tmp.playAudio
+          if (tmp.playAudio) {
+            this.BackgroundAudioManager.play()
+            this.audioCreate(tmp, this.audioIndex)
+            this.audioIndex = 0
+          } else {
+            this.BackgroundAudioManager.pause()
+          }
+        } else {
+          let showtip = await tools.showModal('此视频付费后才可观看')
+          if (showtip.confirm) {
+            this.vm.payMask = true
+          }
+        }
+        this.vm = tmp
+        this.$apply()
+      },
+      //音频进度条
+      audioChange(e) {
+        let that = this
+        let position = e.detail.value
+        this.BackgroundAudioManager.seek(position)
+      },
+      //返回顶部
+      goTop(e) {
+        tools.onPageScroll()
+      },
+    }
+    onPageScroll(e) {
+      this.vm.isShowBtn = e.scrollTop == 0 ? false : true;
+      this.$apply()
+    }
+    /**
+     * @param {contenttype 0表示文章，1表示视频 2表示音频}
+     */
+    async onLoad(options) {
+      await tools.setPageSkin(this);
+      await core.getNewInfo(_get(options, "id", 0), this)
+      this.storeInfo()
+    }
+    // 热门推荐产品
+    async getHotList(ids) {
+      let tm = await core.getGoodByids(ids)
+      this.vm.hostlist = tm
+      this.$apply()
+    }
+    audioCreate(tmp, index) {
+      if (index == -1) {
+        this.BackgroundAudioManager.title = tmp.title // 音频标题
+        this.BackgroundAudioManager.src = tmp.audio
+      }
+      this.BackgroundAudioManager.onTimeUpdate(() => {
+        this.vm.currentTime = this.format(this.BackgroundAudioManager.currentTime)
+        this.vm.duration = this.format(this.BackgroundAudioManager.duration)
+        this.vm.moveTime = Math.floor(this.BackgroundAudioManager.currentTime)
+        this.vm.maxTime = Math.floor(this.BackgroundAudioManager.duration)
+        this.$apply()
+      })
+      this.BackgroundAudioManager.onEnded(() => {
+        this.vm.playAudio = false
+        this.vm.currentTime = "00:00"
+        this.vm.moveTime = 0
+        this.audioIndex = -1
+        this.$apply()
+      })
+    }
+    format(t) {
+      let time = Math.floor(t / 60) >= 10 ? Math.floor(t / 60) : '0' + Math.floor(t / 60)
+      t = time + ':' + ((t % 60) / 100).toFixed(2).slice(-2)
+      return t
+    }
+    //店铺配置
+    async storeInfo() {
+      let app = wepy.$instance
+      let store = _get(app.globalData, 'storeConfig', '') || await core.getStoreConfig();
+      this.vm.wxServer = store.storeInfo.funJoinModel.wxServer
+      this.$apply()
+    }
+    onShareAppMessage() {
+      let tm = this.vm
+      return {
+        title: tm.title,
+        path: '/pages/news/news?id=' + tm.id,
+        imageUrl: tm.slideimgs_fmt || tm.img
+      }
+    }
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      core.getNewInfo(this.vm.id, this)
+      wx.hideNavigationBarLoading();
+      wx.stopPullDownRefresh();
+    }
+  }
+</script>

@@ -1,0 +1,115 @@
+<style lang="less">
+  .serve-type {
+    .header {
+      padding: 20rpx 31rpx 20rpx 20rpx;
+      .commodity-avator {
+        height: 150rpx;
+        width: 150rpx;
+        background-color: #eee;
+      }
+      .title {
+        font-size: 28rpx;
+      }
+    }
+    .body {
+      .item {
+        padding: 24rpx 20rpx 24rpx 14rpx;
+        .item-bottom {
+          padding-left: 44rpx;
+        }
+        border-bottom: 1px solid #eee;
+      }
+    }
+    .width75 {
+      width: 75%;
+    }
+  }
+</style>
+<template>
+  <view class="serve-type {{currentSkin}}">
+    <view class="body f fv bg-w">
+      <view class="f1 item f fv" @tap="changeGood">
+        <view class="item-top f fj fc">
+          <text class="f28"><text class="dzicon icon-Onlyrefunds_jintuihuo f36 mr10 skin_txt"></text>仅换货</text> <text class="dzicon icon-xiala-copy-right"></text>
+        </view>
+        <view class="item-bottom c999 f22 mt10">
+          已收到货，需要退换已收到的货物
+        </view>
+      </view>
+      <view class="f1 item f fv" @tap="returnMoney">
+        <view class="item-top f fj fc">
+          <text class="f28"><text class="dzicon icon-Refundofrefunds_tuihuo f36 mr10 skin_txt" ></text>退货退款</text> <text class="dzicon icon-xiala-copy-right"></text>
+        </view>
+        <view class="item-bottom c999 f22 mt10">
+          已收到货，需要退回已收到的货物并退款
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http,
+    tools
+  } from "@/lib/core.js";
+  import addr from "@/lib/addr.js";
+  const app = wepy.$instance;
+  export default class ServeType extends wepy.page {
+    //基础配置层
+    config = {
+      navigationBarTitleText: "选择服务类型",
+      usingComponents: {
+      }
+    };
+    data = {
+      currentSkin: "",
+      goodList: [{
+        goodImgUrl: "", //图片路径
+        goodname: "未知数据", //产品名
+        orderDtl: {
+          //产品的各种信息
+          SpecInfo: "" //标签信息
+        },
+        price: "" //价格
+      }],
+      orderid: 0
+    };
+    methods = {
+      changeGood(e) {
+        wx.setStorageSync("goodList", this.goodList)
+        tools.goRedirecto("selectOrder?orderId=" + this.orderid);
+      },
+      returnMoney(e) {
+        //申请页面头部只显示首个商品图片
+        wx.setStorageSync("allList", this.goodList)
+        tools.goRedirecto("appeal?typeID=0&orderId=" + this.orderid);
+      }
+    };
+    //生命钩子层
+    onShow() {
+      tools.setPageSkin(this);
+    }
+    async onLoad(query) {
+      await tools.showLoading();
+      //提交参数准备
+      var vm = this;
+      vm.orderid = query.orderId;
+      var userInfo = await core.getUserInfo();
+      var aid = wepy.$instance.globalData.appid;
+      //返回数据
+      var result = await http.get(addr.getMiniappGoodsOrderById, {
+        appid: aid,
+        openid: userInfo.OpenId,
+        orderid: vm.orderid
+      });
+      if (result) {
+        this.goodList = result.postdata.goodOrderDtl;
+      }
+      wx.hideLoading();
+      this.$apply();
+    }
+    //自定义方法层
+  }
+</script>

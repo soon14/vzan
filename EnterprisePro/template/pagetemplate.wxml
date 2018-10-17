@@ -1,0 +1,891 @@
+<!-- 水印 -->
+<template name="logoshow">
+  <view class='basis-logo' wx:if="{{AgentConfig.IsOpenAdv==1}}">
+    <image mode='widthFix' style='max-width:80rpx' src='{{AgentConfig.LogoImgUrl}}'></image>
+    <text wx:if="{{AgentConfig.isdefaul==1}}">{{AgentConfig.LogoText}}</text>
+    <text wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[0]}}</text>
+    <text wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[2]}}</text>
+  </view>
+</template>
+<!-- 筛选 -->
+<template name="fifter">
+  <view class='filter-scroll' wx:if="{{showMadalFilterStatus}}" animation="{{animationDataFilter}}">
+    <view class='para-main'>
+      <scroll-view scroll-view scroll-y style='height:100%;'>
+        <view class='para-title'>筛选</view>
+        <block wx:for="{{extTypes_fmt}}" wx:for-item="this" wx:for-index="parentindex">
+          <view class='para-selectitle'>{{this.item.TypeName}}</view>
+          <view class='para-selectitem'>
+            <!-- 第一层 -->
+
+            <block wx:for="{{this.child}}" wx:for-index="childindex">
+              <view class='para-selectitem-view' bindtap='spliceFilterFunc' style="color:{{item.sel?'#5669ff':'#121212'}};background:{{item.sel?'#E9EBFF':'#F7F7F7'}}" data-parentindex="{{parentindex}}" data-childindex="{{childindex}}" data-sel="{{item.sel}}">{{item.TypeName}}</view>
+            </block>
+
+          </view>
+        </block>
+        <view wx:if="{{extTypes_fmt==0}}" style='font-size:28rpx;color:#666;margin:50rpx;'>没有设置筛选哦</view>
+        <view style='width:100%;height:120rpx'></view>
+      </scroll-view>
+      <view class='para-btn'>
+        <text bindtap='clearFilterFunc'>重置</text>
+        <text bindtap='submitFilterFunc' data-statu="close">完成</text>
+      </view>
+    </view>
+  </view>
+  <view bindtap="closeFilterFunc" class='para-gray' data-statu="close" wx:if="{{showMadalFilterStatus}}"></view>
+</template>
+<!-- 画布 -->
+<template name="canvas">
+  <view style='position:fixed;z-index:5;top:2%'>
+    <view id="{{index}}" class='{{showCanvas? "share_Canvas_none": "share_Canvas"}}'>
+      <view class='Canvas_cancle' bindtap='canvasFunc'>
+        <image mode='aspectFill' src='/image/a35.png'></image>
+      </view>
+      <canvas style='width:100%;height:75%;z-index:999' canvas-id="firstCanvas">
+      </canvas>
+      <view class="canvas_bottom_btn">
+        <!-- 保存按钮 -->
+        <view class='canvas_save' bindtap='canvasToTempFilePath' id="0">
+          <view class='canvas_img'>
+            <image mode='aspectFill' src='/image/a39.png'></image>
+          </view>
+          <text>保存</text>
+        </view>
+        <!-- 发送朋友圈 -->
+        <view class='canvas_save' style='margin-left:4%' bindtap='canvasToTempFilePath' id="1">
+          <view class='canvas_img'>
+            <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/a40.png'></image>
+          </view>
+          <text>发朋友圈</text>
+        </view>
+        <!-- 分享给朋友 -->
+        <view class='canvas_save'>
+          <button class='canvas_img' open-type="share">
+            <image mode='aspectFit' src='http://j.vzan.cc/miniapp/img/enterprise/a41.png'></image>
+          </button>
+          <text>分享给朋友</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class='{{showCanvas? "bg_none": "bg_show"}}' id="{{index}}" bindtap='canvasFunc'></view>
+</template>
+<!-- 悬浮按钮 -->
+<template name="right-temp">
+  <view class='right-btn'>
+    <!-- 主页 -->
+    <view class='same-btn' wx:if="{{homeClose==true}}">
+      <view class='dzicon icon-home1 dzicon-big' id='0' bindtap='pagesGoto'></view>
+    </view>
+    <!-- 拨打电话 -->
+    <view class='same-btn' wx:if="{{makecall}}">
+      <view class='dzicon {{makecallIcon}}' bindtap='phoneCallFunc' data-name="{{makecallPhone}}"></view>
+    </view>
+    <!-- 客服 -->
+    <view class='customer-relative same-btn' wx:if="{{customer}}">
+      <view class='dzicon {{customerIcon}}'></view>
+      <button class='customer-contact' open-type="contact"></button>
+    </view>
+    <!-- 分享按钮 -->
+    <view class='same-btn' wx:if="{{shareShow==true}}">
+      <view class='dzicon {{showIcon}} share-btn basis-btn' bindtap='shareBtnFunc'></view>
+    </view>
+    <!-- 产品组件预约单 -->
+    <view wx:if="{{yuyueShow==true}}" class='yuyuebtn basis-btn' bindtap='mySubscriptGoto'>
+      <text>我的</text>
+      <text>预约单</text>
+    </view>
+    <!-- 购物车标志 -->
+    <view class='same-btn shop_constructor' wx:if="{{buyShow==true}}" bindtap='shopCartGoto' style='border:none;position:relative'>
+      <view class='dzicon icon-gouwuche dzicon-big'></view>
+      <view class='shopcart-point' wx:if="{{logoShow}}"></view>
+    </view>
+  </view>
+
+</template>
+<!-- 视频 -->
+<template name="video">
+  <block wx:if="{{this.type=='video'}}">
+    <view class='video-view' wx:if="{{this.sel==false}}" bindtap='videoFunc' data-childindex="{{comindex}}">
+      <image wx:if="{{this.poster!=''}}" mode='aspectFill' src='{{this.poster}}' style='width:100%;height:470rpx'></image>
+      <view wx:else="{{this.poster==''}}" class='video-black'></view>
+      <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/videoplay.png'></image>
+    </view>
+    <video wx:else="{{this.sel==true}}" class='myVideo' src="{{this.src}}" autoplay="{{this.sel==true}}" controls='true' bindended='videoFunc' data-childindex="{{comindex}}"></video>
+  </block>
+</template>
+<!-- 轮播图 -->
+<template name="slider">
+  <block wx:if="{{this.type=='slider'}}" wx:for-item="this">
+    <swiper indicator-dots="{{indicatorDots}}" autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}">
+      <block wx:for="{{this.items}}">
+        <swiper-item>
+          <image mode='aspectFill' src="{{item.img}}" class="basis-swiper" bindtap='goNewPage' data-id="{{item.url}}" data-type="{{this.type}}" data-items="{{this.items}}" id="{{index}}" />
+        </swiper-item>
+      </block>
+    </swiper>
+  </block>
+</template>
+<!-- 地图 -->
+<template name="map">
+  <block wx:if="{{this.type=='map'}}">
+    <view class='map basis-row' bindtap="mapFuc" data-latitude="{{this.latitude}}" data-longitude='{{this.longitude}}'>
+      <view class='basis-row'>
+        <image class='basis-img' mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/location2.png'></image>
+        <text class='basis-text'>{{this.txt}}</text>
+      </view>
+      <view class='dzicon icon-jiantou basis-right'></view>
+    </view>
+    <map wx:if="{{this.showmap==true}}" class='{{showCanvas?"myVideo":"myVideo_no"}}' longitude="{{this.longitude}}" latitude="{{this.latitude}}" markers="{{this.markers}}" scale="{{this.scale}}" bindmarkertap="mapFuc" controls="{{controls}}">
+    </map>
+  </block>
+</template>
+<!-- 图片 -->
+<template name="img">
+  <block wx:if="{{this.type=='img'}}">
+    <image mode='widthFix' class='photo' src='{{this.imgurl}}' bindtap='goNewPage' data-id='{{this.url}}' data-items="{{this.items}}" data-img="{{this.imgurl}}" data-urltype="{{this.urltype}}" data-btnType="{{this.btnType}}" data-type="{{this.type}}"></image>
+  </block>
+</template>
+<!-- 图片导航 -->
+<template name="imgnav">
+  <block wx:if="{{this.type=='imgnav'}}" wx:for-item="this">
+    <view class='header basis-row'>
+      <block wx:for="{{this.navlist}}">
+        <view class='header_item basis-column' bindtap='goNewPage' data-id="{{item.url}}" data-type="{{this.type}}">
+          <image mode='aspectFill' src='{{item.img}}'></image>
+          <view wx:if="{{item.icon!=''&&item.img==''}}" class='dzicon {{item.icon}}' style='font-size:91rpx'></view>
+          <text>{{item.name}}</text>
+        </view>
+      </block>
+    </view>
+  </block>
+</template>
+<!-- 音乐组件 -->
+<template name="bgaudio">
+  <block wx:if="{{this.type=='bgaudio'}}">
+    <view class='bgaudio'>
+      <image class='basis-img' wx:if="{{isPlay}}" src='http://j.vzan.cc/miniapp/img/enterprise/stopauto.png' bindtap='playAudioFunc' data-src='{{this.src}}' data-play="{{this.autoplay}}"></image>
+      <image class='basis-img' wx:if="{{!isPlay}}" src='http://j.vzan.cc/miniapp/img/enterprise/autoplay.png' bindtap='stopAudioFunc' data-src='{{this.src}}' data-play="{{this.autoplay}}"></image>
+    </view>
+  </block>
+</template>
+<!-- 表单 -->
+<template name="form">
+  <block wx:if="{{this.type=='form'}}" wx:for-item="this">
+    <form bindsubmit="sumbitFormFuc">
+      <view class='agents' name="{{this.name}}" hidden="{{this.title==''}}">
+        <text class='agents-txt'>{{this.title}}</text>
+      </view>
+      <block wx:for="{{this.items}}" wx:for-index="arrayindex">
+        <!-- 判断输入框 -->
+        <!-- 姓名 -->
+        <view class='person-list basis-form-column' wx:if="{{item.type=='text'}}">
+          <text class='basis-form-text'>{{item.name}}</text>
+          <input class='basis-form-input' type='{{item.type}}' placeholder='{{item.placeholder}}' placeholder-class='basis-placeholder' name="{{item.name}}" value='{{typed}}'></input>
+        </view>
+        <!-- 号码 -->
+        <view class='person-list basis-form-column' wx:if="{{item.type=='number'}}">
+          <text class='basis-form-text'>{{item.name}}</text>
+          <input class='basis-form-input' type='{{item.type}}' placeholder='{{item.placeholder}}' placeholder-class='basis-placeholder' name="{{item.name}}" value='{{typed}}'></input>
+        </view>
+        <!-- 代理产品 -->
+        <view class='picker_product basis-form-column' wx:if="{{item.type=='radio'}}">
+          <text class='basis-form-text'>{{item.name}}</text>
+          <picker style='width:100%' bindchange="pickFormFunc" data-index="{{arrayindex}}" range="{{item.array}}">
+            <input class='basis-form-input' type='text' disabled value='{{item.array[indexarray[arrayindex]]}}' name="{{item.name}}"></input>
+          </picker>
+        </view>
+        <!-- 时间 -->
+        <view class='picker_product basis-form-column' wx:if="{{item.type=='date'}}">
+          <text class='basis-form-text'>{{item.name}}</text>
+          <input class='basis-form-input' type='text' disabled value='{{startDate}}' name="{{item.name}}" bindtap="timeFormFunc"></input>
+        </view>
+      </block>
+
+      <button class='foot_btn {{index==isSkin?"sel_btn":"sel_btn"}}' formType="submit" data-name="{{this.title}}">确认提交</button>
+    </form>
+  </block>
+</template>
+<!-- 产品组件 -->
+<template name="good">
+  <block wx:if="{{this.type=='good'}}" wx:for-item="this">
+    <!-- 大图 -->
+    <view class='basis-product-column' wx:if="{{this.goodShowType=='big'}}">
+      <block wx:for='{{listviewModel_goods_arr[isIndex1+ "_"+comindex].list}}'>
+        <view class='product-bigitem basis-product-item-column' bindtap='productGoto' data-id='{{item.id}}' data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}" data-soldnone="{{item.soldNone}}">
+          <view class='basis-BigImg'>
+            <image class="product-bigitemImage" mode='aspectFill' src='{{item.img}}'></image>
+            <image class="basis-soldnoe" wx:if="{{item.soldNone}}" mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/soldnone.png' style='height:88rpx'></image>
+          </view>
+          <text class='basis-text'>{{item.name}}</text>
+          <view class='label basis-row' hidden='{{item.plabelstr_array.length=="" }}'>
+            <block wx:for="{{item.plabelstr_array}}">
+              <text class='basis-label basis-text'>{{item}}</text>
+            </block>
+          </view>
+          <view class='product-bottom basis-row'>
+            <view class='product-price' wx:if="{{this.isShowPrice==true}}">
+              <view class='price'>
+                <text>¥</text>
+                <text>{{item.discountPricestr}}</text>
+                <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+              </view>
+              <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="basis-price">
+                <text>¥{{item.price}}</text>
+                <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text> </view>
+            </view>
+            <view catchtap='subscriptGoto' data-name="{{item.name}}" data-id="{{item.id}}" class='product_btn {{index==isSkin? "sel_product": "sel_product"}}' wx:if="{{this.btnType!=''&&this.btnType=='yuyue'}}">预约</view>
+            <view class='dzicon icon-gouwuche {{item.soldNone? "basis-gray": "icongouwu"}};' wx:if="{{this.btnType!=''&&this.btnType=='buy'}}" data-id="{{item.id}}" data-name="{{this.btnType}}"></view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <!-- 小图 -->
+    <view class='prodcut-small basis-product-row' wx:if="{{this.goodShowType=='small'}}">
+      <block wx:for="{{listviewModel_goods_arr[isIndex1+'_'+comindex].list}}">
+        <view class='prodcut-smallitem basis-product-item-column' bindtap='productGoto' data-id="{{item.id}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}" data-soldnone="{{item.soldNone}}">
+          <view class='basis-Img'>
+            <image class="prodcut-smallitemImage" mode='aspectFill' src='{{item.img}}'></image>
+            <image class="basis-soldnoe" wx:if="{{item.soldNone}}" mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/soldnone.png' style='height:66rpx'></image>
+          </view>
+          <text class='basis-text'>{{item.name}}</text>
+          <view class='product-bottom basis-row'>
+            <view class='product-price'>
+              <view class='price' wx:if="{{this.isShowPrice==true}}">
+                <text>¥</text>
+                <text>{{item.discountPricestr}}</text>
+                <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+              </view>
+              <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="basis-price">
+                <text>¥{{item.price}}</text>
+                <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+              </view>
+            </view>
+            <!-- 预约按钮 -->
+            <view catchtap='subscriptGoto' data-name="{{item.name}}" data-id="{{item.id}}" class='product_btn {{index==isSkin? "sel_product": "sel_product"}}' wx:if="{{this.btnType!=''&&this.btnType=='yuyue'}}">预约</view>
+            <!-- 购买按钮 -->
+            <view class='dzicon icon-gouwuche {{item.soldNone? "basis-gray": "icongouwu"}};' wx:if="{{this.btnType!=''&&this.btnType=='buy'}}" data-id="{{item.id}}" data-name="{{this.btnType}}"></view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <!-- 详情 -->
+    <view class='product-detail basis-product-column' wx:if="{{this.goodShowType=='normal'}}">
+      <block wx:for="{{listviewModel_goods_arr[isIndex1+'_'+comindex].list}}">
+        <view class='product-detailitem basis-product-item-row' bindtap='productGoto' data-id="{{item.id}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}" data-soldnone="{{item.soldNone}}">
+          <view class='basis-detailImg'>
+            <image class="product-detailitemImage" mode='aspectFill' src='{{item.img}}'></image>
+            <image class="basis-soldnoe" wx:if="{{item.soldNone}}" mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/soldnone.png' style='height:55rpx'></image>
+          </view>
+          <view class='detail-column f1'>
+            <text class='basis-text'>{{item.name}}</text>
+            <view class='label basis-row' hidden='{{item.plabelstr_array.length==""}}'>
+              <block wx:for="{{item.plabelstr_array}}">
+                <text class='basis-label basis-text'>{{item}}</text>
+              </block>
+            </view>
+            <view class='product-bottom basis-row'>
+              <view class='product-price'>
+                <view class='price' wx:if="{{this.isShowPrice==true}}">
+                  <text>¥</text>
+                  <text>{{item.discountPricestr}}</text>
+                  <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                </view>
+                <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="basis-price">
+                  <text>¥{{item.price}}</text>
+                  <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text> </view>
+              </view>
+              <!-- 预约按钮 -->
+              <view catchtap='subscriptGoto' data-name="{{item.name}}" data-id="{{item.id}}" class='product_btn {{index==isSkin? "sel_product": "sel_product"}}' wx:if="{{this.btnType!=''&&this.btnType=='yuyue'}}">预约</view>
+              <!-- 购买按钮 -->
+              <view class='dzicon icon-gouwuche {{item.soldNone? "basis-gray": "icongouwu"}};' wx:if="{{this.btnType!=''&&this.btnType=='buy'}}" data-id="{{item.id}}" data-name="{{this.btnType}}"></view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <!-- 轮播 -->
+    <scroll-view class='prodcut-scrollx' scroll-x wx:if="{{this.goodShowType=='scroll'}}">
+      <view class='basis-row'>
+        <block wx:for="{{listviewModel_goods_arr[isIndex1+'_'+comindex].list}}">
+          <view class='prodcut-scrollitem basis-column' bindtap='productGoto' data-id="{{item.id}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}" data-soldnone="{{item.soldNone}}">
+            <view class='basis-scroll'>
+              <image class='prodcut-scrollitemImage' mode='aspectFill' src='{{item.img}}'></image>
+              <image class="basis-soldnoe" wx:if="{{item.soldNone}}" mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/soldnone.png' style='height:55rpx'></image>
+            </view>
+            <text class='basis-text'>{{item.name}}</text>
+            <view class='product-price' wx:if="{{this.isShowPrice==true}}">
+              <text>¥</text>
+              <text>{{item.discountPrice}}</text>
+              <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+  </block>
+</template>
+<!-- 产品列表组件 -->
+<template name="goodlist">
+  <view class='{{showModalStatus? "product-hidden": "product-show"}}'>
+    <block wx:if="{{this.type=='goodlist'}}">
+      <!-- 分类4 -->
+      <view class='same-btn go-back' bindtap='goBack'>
+        <text>返回</text>
+        <text>顶部</text>
+      </view>
+      <scroll-view class='list-left' scroll-y wx:if="{{this.goodCat!=''&&this.GoodCatNavStyle=='4'&&this.isShowGoodCatNav==true}}">
+        <block wx:for="{{this.goodCat}}">
+          <view class='list-left-item {{item.id==condition? "sel_sortitem": "sel_sortitem2"}} basis-text' bindtap="conditionFunc" data-name="{{item.name}}" id="{{item.id}}">{{item.name}}</view>
+        </block>
+        <view style='width:100%;height:96rpx;'></view>
+      </scroll-view>
+      <!-- 详情列表 -->
+      <scroll-view bindscrolltolower="onLoadMore" enable-back-to-top="true" scroll-top="{{scrollTop}}" scroll-y class='basis-absolute {{this.GoodCatNavStyle=="4" &&this.isShowGoodCatNav==true&&this.goodCat.length!=0? "list-small-right":"list-right"}}' wx:if="{{this.goodShowType=='normal'}}">
+        <view class='product-normal'>
+          <block wx:for="{{goodListViewModal.list}}">
+            <view class='product-detailitem basis-product-item-row' bindtap='productGoto' data-id="{{item.id}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}">
+              <image class="productscroll-Image" mode='aspectFill' src='{{item.img}}'></image>
+              <view class='detail-column basis-column flex1'>
+                <text class='basis-text'>{{item.name}}</text>
+                <view class='label basis-row' hidden='{{item.plabelstr_array.length==""}}'>
+                  <block wx:for="{{item.plabelstr_array}}">
+                    <text class='basis-label basis-text'>{{item}}</text>
+                  </block>
+                </view>
+                <view class='product-bottom basis-row'>
+                  <view class='product-price'>
+                    <view class='price' wx:if="{{this.isShowPrice==true}}">
+                      <text>¥</text>
+                      <text>{{item.discountPricestr}}</text>
+                      <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                      <!-- <text wx:if="{{item.discount!=100}}" class="basis-price">¥{{item.price}}</text> -->
+                    </view>
+                    <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="basis-price">
+                      <text>¥{{item.price}}</text>
+                      <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                    </view>
+                  </view>
+                  <!-- 预约按钮 -->
+                  <view catchtap='subscriptGoto' data-name="{{item.name}}" data-id="{{item.id}}" class='product_btn {{index==isSkin? "sel_product": "sel_product"}}' wx:if="{{this.btnType!=''&&this.btnType=='yuyue'}}">预约</view>
+                  <!-- 购买按钮 -->
+                  <view class='dzicon icon-gouwuche icongouwu' wx:if="{{this.btnType!=''&&this.btnType=='buy'}}" data-id="{{item.id}}" data-name="{{this.btnType}}"></view>
+                </view>
+              </view>
+            </view>
+          </block>
+          <!-- 加载提示 -->
+          <view class='load-show' wx:if="{{goodListViewModal.list!=''}}">
+            <text wx:if="{{goodListViewModal.ispost==true}}">加载中</text>
+            <text wx:else="{{goodListViewModal.ispost==false}}">数据加载完毕</text>
+          </view>
+          <view class='load-show' wx:if="{{this.isShowFilter==true&&goodListViewModal.list==''}}">啊噢，没有符合筛选条件的产品哦</view>
+        </view>
+        <template is="logoshow" data="{{AgentConfig}}" />
+        <view style='width:100%;height:96rpx;' wx:if="{{homeClose==false}}"></view>
+      </scroll-view>
+      <!-- 小图 -->
+      <scroll-view scroll-y bindscrolltolower="onLoadMore" class='basis-absolute' wx:if="{{this.goodShowType=='small'}}" enable-back-to-top="true" scroll-top="{{scrollTop}}">
+        <view class='prodcut-small basis-product-row'>
+          <block wx:for="{{goodListViewModal.list}}">
+            <view class='prodcut-smallitem basis-product-item-column' bindtap='productGoto' data-id="{{item.id}}" data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}">
+              <image class='prodcut-smallitemImage' mode='aspectFill' src='{{item.img}}'></image>
+              <text class='basis-text'>{{item.name}}</text>
+              <view class='product-bottom basis-row'>
+                <view class='product-price'>
+                  <view class='price' wx:if="{{this.isShowPrice==true}}">
+                    <text>¥</text>
+                    <text>{{item.discountPricestr}}</text>
+                    <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                    <!-- <text wx:if="{{item.discount!=100}}" class="basis-price">¥{{item.price}}</text> -->
+                  </view>
+                  <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="basis-price">
+                    <text>¥{{item.price}}</text>
+                    <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                  </view>
+                </view>
+                <!-- 预约按钮 -->
+                <view catchtap='subscriptGoto' data-name="{{item.name}}" data-id="{{item.id}}" class='product_btn {{index==isSkin? "sel_product": "sel_product"}}' wx:if="{{this.btnType!=''&&this.btnType=='yuyue'}}">预约</view>
+                <!-- 购买按钮 -->
+                <view class='dzicon icon-gouwuche icongouwu;' wx:if="{{this.btnType!=''&&this.btnType=='buy'}}" data-id="{{item.id}}" data-name="{{this.btnType}}"></view>
+              </view>
+            </view>
+          </block>
+          <!-- 加载提示 -->
+          <view class='load-show'>
+            <text wx:if="{{goodListViewModal.ispost==true}}">加载中</text>
+            <text wx:else="{{goodListViewModal.ispost==false}}">数据加载完毕</text>
+          </view>
+          <view class='load-show' wx:if="{{this.isShowFilter==true&&goodListViewModal.list==''}}">啊噢，没有符合筛选条件的产品哦</view>
+          <template is="logoshow" data="{{AgentConfig}}" />
+        </view>
+        <view style='width:100%;height:96rpx;' wx:if="{{homeClose==false}}"></view>
+      </scroll-view>
+      <!-- 大图 -->
+      <scroll-view scroll-y bindscrolltolower="onLoadMore" class='basis-absolute' wx:if="{{this.goodShowType=='big'}}" enable-back-to-top="true" scroll-top="{{scrollTop}}">
+        <view class='basis-product-column'>
+          <block wx:for='{{goodListViewModal.list}}'>
+            <view class='product-bigitem basis-product-item-column' bindtap='productGoto' data-id='{{item.id}}' data-name="{{this.btnType}}" data-showprice="{{this.isShowPrice}}">
+              <image class="product-bigitemImage" mode='aspectFill' src='{{item.img}}'></image>
+              <text class='basis-text'>{{item.name}}</text>
+              <view class='label basis-row' hidden='{{item.plabelstr_array.length=="" }}'>
+                <block wx:for="{{item.plabelstr_array}}">
+                  <text class='basis-label basis-text'>{{item}}</text>
+                </block>
+              </view>
+              <view class='product-bottom basis-row'>
+                <view class='product-price'>
+                  <view class='price' wx:if="{{this.isShowPrice==true}}">
+                    <text>¥</text>
+                    <text>{{item.discountPricestr}}</text>
+                    <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                  </view>
+                  <view wx:if="{{item.discount!=100&&this.isShowPrice==true}}" class="basis-price">
+                    <text>¥{{item.price}}</text>
+                    <text hidden="{{item.unit.length==''}}">/{{item.unit}}</text>
+                  </view>
+                </view>
+                <!-- 预约按钮 -->
+                <view catchtap='subscriptGoto' data-name="{{item.name}}" data-id="{{item.id}}" class='product_btn {{index==isSkin? "sel_product": "sel_product"}}' wx:if="{{this.btnType!=''&&this.btnType=='yuyue'}}">预约</view>
+                <!-- 购买按钮 -->
+                <view class='dzicon icon-gouwuche icongouwu;' wx:if="{{this.btnType!=''&&this.btnType=='buy'}}" data-id="{{item.id}}" data-name="{{this.btnType}}"></view>
+              </view>
+            </view>
+          </block>
+          <!-- 加载提示 -->
+          <view class='load-show'>
+            <text wx:if="{{goodListViewModal.ispost==true}}">加载中</text>
+            <text wx:else="{{goodListViewModal.ispost==false}}">数据加载完毕</text>
+          </view>
+          <view class='load-show' wx:if="{{this.isShowFilter==true&&goodListViewModal.list==''}}">啊噢，没有符合筛选条件的产品哦</view>
+          <template is="logoshow" data="{{AgentConfig}}" />
+        </view>
+        <view style='width:100%;height:96rpx;' wx:if="{{homeClose==false}}"></view>
+      </scroll-view>
+    </block>
+  </view>
+</template>
+<!-- 新闻咨询组件 -->
+<template name="news">
+  <block wx:if="{{this.type=='news'}}">
+    <!-- 标题样式1 -->
+    <view class='basis-news-title bg-w' wx:if="{{this.titlestyle==1}}">
+      <text class='news_title_left'>{{this.title}}</text>
+      <view class='basis-news-right' data-typeid="{{this.typeid}}" data-ids="{{listViewModal_arr[isIndex1+'_'+comindex].ids}}" bindtap='newsMoreGoto' hidden="{{this.listmode=='all'||(this.list.length!=0&&this.list.length<=this.num)}}">
+        <text>查看全部</text>
+        <text class="dzicon icon-arrow-right"></text>
+      </view>
+    </view>
+    <!-- 标题样式2 -->
+    <view class='news_column_title basis-news-title' wx:if="{{this.titlestyle==2}}">
+      <text>{{this.title}}</text>
+      <view class='basis-news-right' data-typeid="{{this.typeid}}" bindtap='newsMoreGoto' hidden="{{this.listmode=='all'||(this.list.length!=0&&this.list.length<=this.num)}}" data-ids="{{listViewModal_arr[isIndex1+'_'+comindex].ids}}">
+        <text>查看全部</text>
+        <text class="dzicon icon-arrow-right"></text>
+      </view>
+    </view>
+    <!-- 标题样式3 -->
+    <view class='news_more_tile basis-news-title' wx:if="{{this.titlestyle==3}}">
+      <view class='left_line'></view>
+      <view>{{this.title}}</view>
+      <view class='left_line'></view>
+    </view>
+    <!-- 标题样式4 -->
+    <view class='news_normal_title1 basis-news-title' wx:if="{{this.titlestyle==4}}">
+      <text>{{this.title}}</text>
+      <view class='basis-news-right'>
+        <text data-typeid="{{this.typeid}}" bindtap='newsMoreGoto' hidden="{{this.listmode=='all'||(this.list.length!=0&&this.list.length<=this.num)}}" data-ids="{{listViewModal_arr[isIndex1+'_'+comindex].ids}}">查看全部</text>
+        <text class="dzicon icon-arrow-right"></text>
+      </view>
+    </view>
+
+    <!-- 列表样式1 -->
+    <view class='news_list' wx:if="{{this.liststyle==1}}">
+      <block wx:if="{{listViewModal_arr[isIndex1+'_'+comindex].list!=0}}">
+        <block wx:for="{{listViewModal_arr[isIndex1+'_'+comindex].list}}">
+          <view class='news_list_item basis-row' data-id="{{item.id}}" bindtap='newsDetailGoto'>
+            <view class='news_content basis-row'>
+              <view class="dzicon icon-yuandian"></view>
+              <text class='basis-text'>{{item.title}}</text>
+            </view>
+            <view class="dzicon icon-arrow-right "></view>
+          </view>
+        </block>
+      </block>
+      <block wx:else="{{listViewModal_arr[isIndex1+'_'+comindex].list==0}}">
+        <view class='basis-news-none'>暂无数据</view>
+      </block>
+    </view>
+    <!-- 列表样式2 -->
+    <scroll-view class='scroll-second basis-news-scroll' scroll-x wx:if="{{this.liststyle==2}}">
+      <block wx:if="{{listViewModal_arr[isIndex1+'_'+comindex].list!=0}}">
+        <block wx:for="{{listViewModal_arr[isIndex1+'_'+comindex].list}}">
+          <view class='news-item-blankimg{{this.liststyle}} scroll_2_gray basis-news-item' wx:if="{{item.img.length==''}}" bindtap='newsDetailGoto' data-id="{{item.id}}">{{item.img}}</view>
+          <image class='basis-news-item' wx:else="{{item.img.length!=''}}" mode='aspectFill' src='{{item.img}}' data-id="{{item.id}}" bindtap='newsDetailGoto'></image>
+        </block>
+      </block>
+      <block wx:else="{{listViewModal_arr[isIndex1+'_'+comindex].list==0}}">
+        <view class='basis-news-none'>暂无数据</view>
+      </block>
+    </scroll-view>
+    <!-- 列表样式3 -->
+    <scroll-view class='scroll-third basis-news-scroll' scroll-x wx:if="{{this.liststyle==3}}">
+      <view class='scroll_3'>
+        <block wx:if="{{listViewModal_arr[isIndex1+'_'+comindex].list!=0}}">
+          <block wx:for="{{listViewModal_arr[isIndex1+'_'+comindex].list}}">
+            <view class='news-item-blankimg{{this.liststyle}} scroll_3_gray basis-news-item' wx:if="{{item.img.length==''}}" bindtap='newsDetailGoto' data-id="{{item.id}}">{{item.img}}</view>
+            <image class='basis-news-item' wx:else="{{item.img.length!=''}}" mode='aspectFill' src='{{item.img}}' data-id="{{item.id}}" bindtap='newsDetailGoto'></image>
+          </block>
+        </block>
+        <block wx:else="{{listViewModal_arr[isIndex1+'_'+comindex].list==0}}">
+          <view class='basis-news-none'>暂无数据</view>
+        </block>
+      </view>
+    </scroll-view>
+    <!-- 列表样式4 -->
+    <block wx:if="{{this.liststyle==4}}">
+      <block wx:if="{{listViewModal_arr[isIndex1+'_'+comindex].list!=0}}">
+        <block wx:for="{{listViewModal_arr[isIndex1+'_'+comindex].list}}">
+          <view class='news_column_content' data-id="{{item.id}}" bindtap='newsDetailGoto'>
+            <view wx:if="{{item.img.length==''}}" class='gray-column-content news-item-blankimg{{this.liststyle}} '></view>
+            <image wx:else="{{item.img.length!=''}}" mode='aspectFill' src='{{item.img}}'></image>
+            <view class='content_title'>
+              <text class='basis-text'>{{item.title}}</text>
+              <text>{{item.addtime}}</text>
+            </view>
+            <view class='basis-text' hidden='{{item.description=="" }}'>{{item.description}}</view>
+          </view>
+        </block>
+      </block>
+      <block wx:else="{{listViewModal_arr[isIndex1+'_'+comindex].list==0}}">
+        <view class='basis-news-none'>暂无数据</view>
+      </block>
+    </block>
+    <!-- 列表样式5 -->
+    <block wx:if="{{this.liststyle==5}}">
+      <block wx:if="{{listViewModal_arr[isIndex1+'_'+comindex].list!=0}}">
+        <block wx:for="{{listViewModal_arr[isIndex1+'_'+comindex].list}}">
+          <view class='news_more basis-row' data-id="{{item.id}}" bindtap='newsDetailGoto'>
+            <view class='news-more-gray news-item-blankimg{{this.liststyle}} ' wx:if="{{item.img.length==''}}"></view>
+            <image wx:else="{{item.img.length!=''}}" mode='aspectFill' src='{{item.img}}'></image>
+            <view class='news_more_content'>
+              <text class='basis-text'>{{item.title}}</text>
+              <text class='basis-text'>{{item.description}}</text>
+              <text>{{item.addtime}}</text>
+            </view>
+          </view>
+        </block>
+      </block>
+      <block wx:else="{{listViewModal_arr[isIndex1+'_'+comindex].list==0}}">
+        <view style='margin-left:20rpx;font-size:28rpx;color:#666'>暂无数据</view>
+      </block>
+    </block>
+    <view wx:if="{{this.titlestyle==3}}" hidden="{{this.listmode=='all'||(this.list.length!=0&&this.list.length<=this.num)}}" class='more_btn' bindtap='newsMoreGoto' data-typeid="{{this.typeid}}" data-ids="{{listViewModal_arr[isIndex1+'_'+comindex].ids}}">查看更多</view>
+  </block>
+</template>
+<!-- 直播 -->
+<template name="live">
+  <view class='live-list' wx:if="{{this.type=='live'}}">
+    <view class='live-item' data-key="{{isIndex1+'_'+comindex}}" data-pageindex="{{isIndex1}}" data-comindex="{{comindex}}" data-url="{{this.url}}" bindtap='liveGoto'>
+      <image mode='aspectFill' src='{{this.img}}'></image>
+      <view class='live-content'>
+        <text class='basis-text'>{{this.title}}</text>
+        <text class='basis-text'>{{this.des}}</text>
+        <view class='live-scroll'>
+          <block wx:for="{{listviewModel_liveList_arr[isIndex1+'_'+comindex]}}">
+            <image mode='aspectFill' src='{{item.img}}'></image>
+          </block>
+          <view class='live-num' wx:if="{{listviewModel_liveList_num[isIndex1+'_'+comindex].long>3}}">{{listviewModel_liveList_num[isIndex1+'_'+comindex].long}}件商品热卖中</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<!-- 拼团 -->
+<template name="joingroup">
+  <block wx:if="{{this.type=='joingroup'}}">
+    <block wx:for='{{listviewModel_joingroup_arr[isIndex1+ "_"+comindex].list}}'>
+      <view class='groupUnit d-flex' wx:for-index="group_index" wx:for-item="group_item" bindtap='clickGroupItem' data-groupid='{{group_item.Id}}' data-group="{{item.Id}}">
+        <view>
+          <image mode='aspectFill' src='{{item.ImgUrl}}' class='pimg'></image>
+        </view>
+        <view class='groupUnit-r ml20 flex1 d-flex flex-v'>
+          <view class='line2 f28'>{{item.GroupName}}
+          </view>
+          <view class='flex1'>
+            <view class='groupNumDes f24 mt10'>
+              <text class='groupnum'>{{item.GroupSize}}人团</text>邀请{{item.GroupSize-1}}位好友即可成团</view>
+            <view class='priceDesc mt10 flex1'>
+              <text class='f22'>￥</text>
+              <text class='f38'>{{item.DiscountPrice/100}}</text>
+              <text class='f24 ml20'>(单买：￥{{item.UnitPrice/100}})</text>
+            </view>
+          </view>
+          <view class='d-flex d-flex-center'>
+            <view class='flex1'>
+
+              <view class='btn-startGroup mt10' wx:if="{{item.State==1}}">去开团</view>
+              <view class='btn-disable mt10' wx:elif="{{item.State==2}}">已结束</view>
+              <view class='btn mt10 countdown' wx:else>
+                {{item.countdown||""}}
+              </view>
+            </view>
+            <view class='f20 c999'>
+              已团购{{item.GroupsNum}}件
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </block>
+</template>
+<!-- 顶部栏 -->
+<template name="goodlistTop">
+  <block wx:if="{{this.type=='goodlist'}}">
+    <!-- 产品列表功能 -->
+    <block wx:if="{{this.isShowGoodPriceSort==true||this.isShowFilter==true||this.isShowGoodSearch==true}}">
+      <view class='product-func'>
+        <!-- 搜索框 -->
+        <view class="search" wx:if="{{this.isShowGoodSearch==true}}">
+          <image mode='aspectFill' src="../../image/a1.png"></image>
+          <input bindchange='searchFunc' placeholder="请输入关键字搜索" placeholder-class='basis-placeholder' />
+        </view>
+        <view class='para-rank basis-row' wx:if="{{this.isShowGoodPriceSort==true||this.isShowFilter==true}}">
+          <!-- 价格排序 -->
+          <view class='rank-item' catchtap='showSortFunc' data-statu="open" wx:if="{{this.isShowGoodPriceSort==true}}">
+            <text>{{text}}</text>
+            <view class="dzicon icon-xiala dzicon-small "></view>
+          </view>
+          <!-- 筛选 -->
+          <view class='para-item basis-row' bindtap='showFilterFunc' data-statu="open" wx:if="{{this.isShowFilter==true}}">
+            <view class="dzicon icon-shaixuan dzicon-big" id='{{index}}'></view>
+            <text id='{{index}}'>筛选</text>
+          </view>
+          <!-- 排序内容 -->
+          <view class='rank-gray' wx:if="{{showModalStatus}}" bindtap='showSortFunc' data-statu="close">
+            <view class='rank-content basis-column' animation="{{animationData}}" wx:if="{{showModalStatus}}">
+              <block wx:for="{{price}}">
+                <view class='rank-view'>
+                  <view data-id='{{index}}' bindtap='priceSortFunc' style='color:{{item.id==inShow?"#5669ff":"#121212"}}' data-content="{{item.context}}" data-statu="close">{{item.context}}</view>
+                  <image id="{{index}}" class="{{item.id==inShow?'rank-show':'rank-none'}}" mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/tip.png'></image>
+                </view>
+              </block>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <!-- 分类1 -->
+    <scroll-view scroll-x wx:if="{{this.goodCat!=''&&this.GoodCatNavStyle=='1'&&this.isShowGoodCatNav==true}}">
+      <view class="scroll">
+        <block wx:for="{{this.goodCat}}">
+          <view class='scroll-horizaonl1 {{item.id==condition?"scroll_item2":"scroll_item3"}}' bindtap="conditionFunc" id="{{item.id}}">
+            {{item.name}}
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+    <!-- 分类2 -->
+    <scroll-view scroll-x wx:if="{{this.goodCat!=''&&this.GoodCatNavStyle=='2'&&this.isShowGoodCatNav==true}}">
+      <view class='scroll'>
+        <block wx:for="{{this.goodCat}}">
+          <view class='scroll-horizaonl2 {{item.id==condition?"sel_item1_2":"sel_item1_3"}}' bindtap="conditionFunc" id="{{item.id}}">
+            {{item.name}}
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+    <!--分类3 -->
+    <view class='tab-all' wx:if="{{this.goodCat!=''&&this.GoodCatNavStyle=='3'&&this.isShowGoodCatNav==true}}">
+      <block wx:for="{{this.goodCat}}">
+        <view class='tab-item {{item.id==condition?"sel_topic2":"sel_topic3"}} basis-text' bindtap="conditionFunc" id="{{item.id}}">{{item.name}}</view>
+      </block>
+    </view>
+  </block>
+</template>
+<!-- 底部导航 -->
+<template name="bottomnav">
+  <block wx:if="{{this.type=='bottomnav'}}" wx:for-item="this">
+    <view class='bottom_navigation basis-row'>
+      <block wx:for="{{this.navlist}}">
+        <view class='naviga_item basis-column {{item.url==isIndex1? "sel": "#000"}}' bindtap="pagesGoto" id="{{item.url}}">
+          <image mode='aspectFill' src='{{item.img}}' wx:if="{{item.img}}"></image>
+          <view wx:else="{{item.icon}}" class="dzicon {{item.icon}}"></view>
+          <text>{{item.name}}</text>
+        </view>
+      </block>
+      <view class='naviga_item basis-column' bindtap='myPageGoto'>
+        <view class='dzicon icon-personal4-33'></view>
+        <text>我的</text>
+      </view>
+    </view>
+  </block>
+</template>
+
+<!-- 会员弹窗 -->
+<template name="vip-dig">
+  <view class='vipbg' wx:if="{{showModalStatus}}" data-statu="close" bindtap='showVipFunc'></view>
+  <view class='vip-flex basis-column' wx:if="{{showModalStatus}}" animation="{{animationData}}">
+    <view class='vip-showDiglong basis-column'>
+      <image mode='aspectFit' src='http://j.vzan.cc/miniapp/img/enterprise/a46.png'></image>
+      <view class='vip-header basis-column'>
+        <text>{{model.levelInfo.name}}</text>
+        <text>享受以下会员权益</text>
+        <image src='http://j.vzan.cc/miniapp/img/enterprise/a47.png' class='vipicon'></image>
+      </view>
+      <view class='vip-txt' wx:if="{{model.levelInfo.discount==100}}">暂无折扣</view>
+      <view class='vip-txt' wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.type==2}}">购买一下商品享受{{model.levelInfo.discount*0.1}}折</view>
+      <view class='vip-txt' wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.type==1}}">全场商品享受{{model.levelInfo.discount*0.1}}折</view>
+      <view class='vip-txt' wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.type==0}}">无</view>
+      <scroll-view scroll-y style='max-height:280rpx;width:420rpx;padding-bottom:20rpx' wx:if="{{model.levelInfo.discount!=100}}">
+        <view class="basis-column">
+          <view style='over-flow:hidden;flex-shrink:0;font-size:26rpx' wx:for="{{model.levelInfo.entGoodsList}}">
+            {{item.name}}
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    <image src='/image/a35.png' class='cancel' bindtap='showVipFunc' data-statu="close"></image>
+  </view>
+</template>
+<!-- 个人中心底部入口 -->
+<template name="entry">
+  <view class="entry">
+    <block wx:for="{{menu_entry}}">
+      <view style="margin-top:{{item.title=='我的购物车'?'18':'0'}}rpx;" data-url="{{item.url}}" bindtap="addressGoto" id="{{item.id}}">
+        <view class="entry-item">
+          <text>{{item.title}}</text>
+          <view class="entry-right">
+            <text wx:if="{{item.title=='我的订单'?'我的订单':''}}">查看更多订单</text>
+            <text class="dzicon icon-arrow-right"></text>
+          </view>
+        </view>
+        <view class="my-classify" hidden="{{item.title!='我的订单'}}">
+          <block wx:for="{{classify}}">
+            <view class="classify_item" id="{{index}}" data-state="{{item.state}}" catchtap="statusGoto">
+              <image src="{{item.icon}}" class="classify_icon" mode='aspectFill'></image>
+              <text>{{item.txt}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </block>
+  </view>
+</template>
+
+<!-- 置顶按钮 -->
+<template name="scrolltoTop">
+  <view class='same-btn'>
+    <view class='dzicon icon-zhiding scrolltoTop' bindtap='scrolltoTop'></view>
+  </view>
+</template>
+
+
+<template name="smoney">
+  <view class='bg' wx:if="{{smoney}}"></view>
+  <image src='/image/a35.png' class='cancel-smoney' bindtap='cancelsmoney'></image>
+  <image src='http://j.vzan.cc/miniapp/img/lijianjin/smoneybg1.png' style='width:570rpx' class='reduce-money' mode='widthFix' wx:if="{{smoney}}"></image>
+  <text class='smoney-txt' wx:if="{{smoney}}" bindtap='getreducemoney'>開</text>
+</template>
+
+<template name="reductionMoney">
+  <image src='http://j.vzan.cc/miniapp/img/lijianjin/smoneyIcon.png' style='height:80rpx;width:80rpx;position:fixed;right:10rpx;bottom:300rpx;' catchtap='mysmoney'></image>
+</template>
+
+
+<!--拼团2.0-->
+<template name="entjoingroup">
+  <block  wx:if="{{this.type=='entjoingroup'}}">
+  <view class="c-group-title">{{this.title}}</view>
+<!--样式1-->
+  <view wx:if="{{this.displayMode==''}}" class='c-group-default'>
+    
+    <navigator class="f c-group-item" wx:for="{{listviewModel_entjoingroup_arr[isIndex1+ '_'+comindex].list}}" wx:for-item="groupItem" wx:for-index="groupIndex" wx:if="{{this.items.length>0}}"
+    url='/pages/group/groupDetail?pid={{groupItem.id}}&pageIndex={{isIndex1}}' open-type='navigate'
+    >
+      <view class="rel c-group-img">
+        <image src="{{groupItem.img}}" mode='aspectFill'></image>
+      </view>
+      <view class="f1 p0-10">
+        <view class="f fv fj h-full">
+          <view class="line2 c-group-pname pt10">{{groupItem.name}}</view>
+          <view class="f fc pb10">
+            <view class="f1">
+              <view class="c999 f22">已团{{groupItem.EntGroups.SaleNum}}件</view>
+              <view class="cred">
+                <text class="f24">￥</text>
+                <text class="f38">{{groupItem.EntGroups.GroupPriceStr}}</text>
+              </view>
+            </view>
+            <view>
+              <text class="c-group-btn">去开团</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </navigator>
+  </view>
+  <!--样式2-->
+  <view wx:elif="{{this.displayMode=='small'}}" class='c-group-small'>
+
+    <navigator class="f c-group-item" wx:for="{{listviewModel_entjoingroup_arr[isIndex1+ '_'+comindex].list}}" wx:for-item="groupItem" wx:for-index="groupIndex" wx:if="{{this.items.length>0}}"
+    url='/pages/group/groupDetail?pid={{groupItem.id}}&pageIndex={{isIndex1}}' open-type='navigate'
+    >
+      <view class="rel c-group-img">
+        <image src="{{groupItem.img}}" mode='aspectFill'></image>
+      </view>
+      <view class="f1 p0-10">
+        <view class="f fv fj h-full">
+          <view class="line2 c-group-pname pt10">{{groupItem.name}}</view>
+          <view class="f fc pb10">
+            <view class="f1">
+              <view class="c999 f22">已团{{groupItem.EntGroups.SaleNum}}件</view>
+              <view class="cred">
+                <text class="f24">￥</text>
+                <text class="f38">{{groupItem.EntGroups.GroupPriceStr}}</text>
+              </view>
+            </view>
+            <view>
+              <text class="c-group-btn">去开团</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </navigator>
+  </view>
+  <!--样式3-->
+  <view wx:elif="{{this.displayMode=='big'}}" class='c-group-big'>
+
+    <view class="c-group-item" wx:for="{{listviewModel_entjoingroup_arr[isIndex1+ '_'+comindex].list}}" wx:for-item="groupItem" wx:for-index="groupIndex" wx:if="{{this.items.length>0}}">
+      <navigator url='/pages/group/groupDetail?pid={{groupItem.id}}&pageIndex={{isIndex1}}' open-type='navigate'>
+        <view class="rel c-group-img">
+          <image src="{{groupItem.img}}" mode='aspectFill'></image>
+        </view>
+        <view class="p10">
+          <view class="line2 c-group-pname">{{groupItem.name}}</view>
+          <view class="f fc mt10">
+            <view class="f f1 fc">
+              <view class="cred">
+                <span class="f24">￥</span>
+                <span class="f38">{{groupItem.EntGroups.GroupPriceStr}}</span>
+              </view>
+              <view class="c999 f22 ml10">已团{{groupItem.EntGroups.SaleNum}}件</view>
+            </view>
+            <view class="f fc c-group-groupuser rel">
+              <img />
+              <img />
+              <img />
+            </view>
+            <view>
+              <text class="c-group-btn">去开团</text>
+            </view>
+          </view>
+        </view>
+      </navigator>
+    </view>
+  </view>
+  </block>
+</template>
+<!--/拼团2.0-->

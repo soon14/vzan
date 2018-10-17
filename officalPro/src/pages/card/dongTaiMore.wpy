@@ -1,0 +1,66 @@
+<style lang="less">
+    .p-dynamic {
+        border-top: 1px solid #eee;
+        width: 100%;
+        padding: 0 30rpx;
+        .p-none {
+            width: 100%;
+            height: 100vh;
+            text-align: center;
+            line-height: 100vh;
+            font-size: 32rpx;
+            color: #d9d8d9;
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='p-dynamic'>
+        <repeat for="{{vm}}">
+            <comDong :current.sync="item" :type.sync="type" wx:if="{{vm.length}}" />
+        </repeat>
+        <view class='p-none' wx:if="{{vm.length==0}}">暂无动态~</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_dongTai from "@/components/com_dongTai";
+    import {
+        core,
+        tools
+    } from "@/lib/core.js";
+    export default class dongTaiMore extends wepy.page {
+        config = {
+            navigationBarTitleText: "",
+             navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+            },
+        };
+        //第二步：声明组件
+        components = {
+            comDong: com_dongTai,
+        };
+        data = {
+            vm: {},
+            type: ''
+        };
+        methods = {}
+        onLoad(options) {
+            let _type = _get(options, "type", "")
+            let userid=_get(options,"userId","")
+            if (_type == 'me') {
+                tools.setPageTitle("我的动态")
+            } else {
+                tools.setPageTitle("Ta的动态")
+            }
+
+            this.type = _type
+            this.$apply()
+            core.GetListPostMsg(this,userid)
+        }
+    }
+</script>

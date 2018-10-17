@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Home</title>
+    <link rel='stylesheet' href='./css/base.css' />
+    <link rel='stylesheet' href='./css/home.css' />
+    <link rel='stylesheet' href="./css/dzicon.css" />
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+</head>
+
+<body>
+    <div id='home' class="f">
+
+        <section class='rv' :class="{'left-hide':showleft==false,'left':showleft}">
+            <p class="dzicon icon-iconfl" @click='leftshow' :class="{'iconGO':showleft}"></p>
+            <div :class="{'title-show':showleft,'title-hide':showleft==false}">
+                <span style='color:#26a69a' v-if='showleft' v-cloak>Kaa</span>|den</div>
+            <ul :class="{'navigator':showleft,'navigator-hide':showleft==false}">
+                <li v-for="(item,index) in leftnav" v-cloak>
+                    <a class="nav-item" :class="{'selItem':selIndex==index}" @click='selnav(index)'>{{item}}</a>
+                </li>
+            </ul>
+
+
+        </section>
+
+        <section class="right">
+            <section class="header f fc f-end rv">
+                <img :src="userInfo.userlogo">
+                <p style="margin-right:1.5vh">{{userInfo.username}}</p>
+                <el-button @click='goBack'>退出</el-button>
+            </section>
+            <!-- 首页配置 -->
+
+
+            <section class="wrap rv" v-if='selIndex==0'>
+                <div class="content f fc fc-h">
+                    <p class="t-b">[</p>
+                    <div class="f fv">
+
+                        <span>Welcome to</span>
+                        <span>Kaaden System</span>
+                    </div>
+                    <p class="t-b">]</p>
+                </div>
+            </section>
+
+            <!-- 新闻列表 -->
+            <section class="rv" v-if='selIndex==1'>
+                <div :class="{'wrap-table':showleft==false,'wrap-table2':showleft}" style='margin-top:1vw;'>
+                    <el-select v-model="newsLst.selValue" placeholder="请选择" @change='chooseType'>
+                        <el-option :label="newsLst.selAll">全部</el-option>
+                        <el-option v-for="item in classify" :key="item.id" :label="item.type_name" :value="item.id"></el-option>
+                    </el-select>
+                    <el-button type="primary" icon="el-icon-plus" @click='addNews' style="margin-left:1vw">添加</el-button>
+
+                    <el-table key='2' :data="newsLst.list" type=index max-height="700" border style="width: 100%;margin-top:1vw;" v-loading="loading">
+                        <el-table-column prop="title" label="标题" width="180">
+                        </el-table-column>
+                        <el-table-column prop="type_name" label="所属分类" width="180">
+                        </el-table-column>
+                        <el-table-column prop="descript" label="描述">
+                        </el-table-column>
+                        <el-table-column prop="time" label="创建时间">
+                        </el-table-column>
+                        <el-table-column label="操作">
+                            <template slot-scope="scope">
+                                <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+                                <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <el-pagination background layout="prev, pager, next" :total="newsLst.count" :page-size='9' @current-change='pageindexChange'
+                        style='margin-top:1vw'>
+
+                </div>
+            </section>
+            <!-- 分类列表 -->
+            <section class="rv" v-if='selIndex==2'>
+                <div :class="{'wrap-table':showleft==false,'wrap-table2':showleft}" style='margin-top:1vw;'>
+                    <el-button type="primary" icon="el-icon-plus" @click='showType  '>添加</el-button>
+                    <el-table key='1' :data="classifyLst" type=index max-height="700" border style="width: 100%;margin-top:1vw;" v-loading="loading">
+                        <el-table-column prop="id" label="分类序号" width="180">
+                        </el-table-column>
+                        <el-table-column prop="type_name" label="分类名称" width="700">
+                        </el-table-column>
+                        <el-table-column label="操作">
+                            <template slot-scope="scope">
+                                <el-button size="mini" @click="handType(scope.$index, scope.row)">编辑</el-button>
+                                <el-button size="mini" type="danger" @click="handTypeDele(scope.$index, scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+            </section>
+            <!-- 用户列表 -->
+            <section class="rv" v-if='selIndex==3'>
+                <div :class="{'wrap-table':showleft==false,'wrap-table2':showleft}" style='margin-top:1vw;'>
+                    <el-button type="primary" icon="el-icon-plus" @click='goNewUser'>添加</el-button>
+                    <el-table key='3' :data="userlst.list" type=index max-height="700" border style="width: 100%;margin-top:1vw;" v-loading="loading">
+                        <el-table-column prop="id" label="序号" width="180">
+                        </el-table-column>
+                        <el-table-column prop="name" label="账号" width="500">
+                        </el-table-column>
+
+                        <el-table-column prop="username" label="用户名" width="500">
+                        </el-table-column>
+
+                        <el-table-column label="操作">
+                            <template slot-scope="scope">
+                                <el-button size="mini" @click="handUser(scope.$index, scope.row)">编辑</el-button>
+                                <el-button size="mini" type="danger" @click="handDelUser(scope.$index, scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                    <el-pagination background layout="prev, pager, next" :total="userlst.count" :page-size='9' @current-change='pageIndexUser'
+                        style='margin-top:1vw'>
+                </div>
+            </section>
+            <!-- 新增修改 -->
+            <section v-if='selIndex==999'>
+                <div :class="{'wrap-table':showleft==false,'wrap-table2':showleft}" v-loading.fullscreen.lock="fullscreenLoading">
+                    <div class="wrap-newsbtn f fc">
+                        <el-button type="success" @click='saveUpload'>保存</el-button>
+                        <el-button type="danger" @click='goCancle'>取消</el-button>
+                    </div>
+                    <p class="wrap-newstitle">基础信息</p>
+                    <div class="wrap-form">
+                        <el-form ref="form" label-width="80px">
+                            <el-form-item label="标题">
+                                <el-input placeholder="请输入内容" v-model="news.title" clearable></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="描述">
+                                <el-input type="textarea" :rows="2" placeholder="请输入内容" v-model="news.desc" resize='none'></el-input>
+                            </el-form-item>
+                            <div class="wrap-info">
+                                <el-tag type="success">图片</el-tag>
+                                <div class="f fc" style='margin:1vw 0;'>
+                                    <div v-for='item in news.img'>
+
+                                        <img :src="item" alt="" style="width:8vw;height:8vw;margin-right:1vw" v-if='news.dialogVisible' v-loading.fullscreen.lock="loading">
+                                    </div>
+                                    <el-upload action="123" accept='image/*' list-type="picture-card" :before-upload='handleUpload'>
+                                        <i class="el-icon-plus"></i>
+                                    </el-upload>
+                                </div>
+                                <el-select v-model="news.selType" placeholder="请选择分类" style=" margin-bottom: 1vw;">
+                                    <el-option v-for="item in classify" :key="item.id" :label="item.type_name" :value="item.id">
+                                    </el-option>
+                                </el-select>
+                                <div>
+                                    <el-tag type="success" style='margin-bottom: 1vw'>内容</el-tag>
+                                    <el-input type="textarea" :rows="2" placeholder="请输入内容" v-model="news.content" autosize resize='none'>
+                                    </el-input>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </section>
+            <!-- 添加编辑用户管理员 -->
+            <section v-if='selIndex==888'>
+                <div :class="{'wrap-table':showleft==false,'wrap-table2':showleft}" v-loading.fullscreen.lock="fullscreenLoading">
+                    <div class="wrap-newsbtn f fc">
+                        <el-button type="success" @click='saveUser'>保存</el-button>
+                        <el-button type="danger" @click='cancleUser'>取消</el-button>
+                    </div>
+                    <p class="wrap-newstitle">基础信息</p>
+                    <div class="wrap-form">
+                        <el-form ref="form" label-width="80px">
+                            <el-form-item label="账号">
+                                <el-input placeholder="请输入账号" v-model="userVm.acount" clearable></el-input>
+                            </el-form-item>
+
+                            <el-form-item label="密码">
+                                <el-input type="password" :rows="2" placeholder="请输入密码" v-model="userVm.password" resize='none'></el-input>
+                            </el-form-item>
+                            <el-form-item label="确认密码">
+                                <el-input type="password" :rows="2" placeholder="请输入密码" v-model="userVm.repeatpass" resize='none'></el-input>
+                            </el-form-item>
+                            <el-form-item label="用户名">
+                                <el-input placeholder="请输入用户名" v-model="userVm.name" resize='none'></el-input>
+                            </el-form-item>
+                            <div class="wrap-info">
+                                <el-tag type="success">头像</el-tag>
+                                <div class="f fc" style='margin:1vw 0;'>
+                                    <img :src="userVm.logo" alt="" style="width:8vw;height:8vw;margin-right:1vw" v-loading.fullscreen.lock="loading" v-if='userVm.logo'>
+
+                                    <el-upload action="234" accept='image/*' list-type="picture-card" :before-upload='handleLogo'>
+                                        <i class="el-icon-plus"></i>
+                                    </el-upload>
+                                </div>
+
+                            </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 博客管理 -->
+            <section v-if='selIndex==4'>
+                <div :class="{'wrap-table':showleft==false,'wrap-table2':showleft}" v-loading.fullscreen.lock="fullscreenLoading">
+                    <el-tabs v-model="vm.activeName" @tab-click="handleClick" class="wrap-tabs">
+                        <el-tab-pane label="用户管理" name="first">
+                            <div class="wrap-box">
+                                <div class="wrap-swiper f fc">
+                                    <span>轮播图:</span>
+                                    <div class="f fc">
+                                        <div v-for='item in vm.img'>
+                                            <img :src="item" alt="" style="width:8vw;height:8vw;margin-right:1vw" v-if='vm.dialogVisible' v-loading.fullscreen.lock="loading">
+                                        </div>
+                                        <el-upload action="123" accept='image/*' list-type="picture-card" :before-upload='handSwiper'>
+                                            <i class="el-icon-plus"></i>
+                                        </el-upload>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </el-tab-pane>
+                        <el-tab-pane label="配置管理" name="second">配置管理</el-tab-pane>
+                        <el-tab-pane label="角色管理" name="third">角色管理</el-tab-pane>
+                        <el-tab-pane label="定时任务补偿" name="fourth">定时任务补偿</el-tab-pane>
+                    </el-tabs>
+
+                    <!-- <el-tabs type="border-card" class="wrap-tabs">
+                        <el-tab-pane label="首页配置">
+                            <div class="wrap-box">
+                                <div class="wrap-swiper f fc">
+                                    <span>轮播图:</span>
+                                    <div class="f fc">
+                                        <div v-for='item in vm.img'>
+                                            <img :src="item" alt="" style="width:8vw;height:8vw;margin-right:1vw" v-if='vm.dialogVisible' v-loading.fullscreen.lock="loading">
+                                        </div>
+                                        <el-upload action="123" accept='image/*' list-type="picture-card" :before-upload='handSwiper'>
+                                            <i class="el-icon-plus"></i>
+                                        </el-upload>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </el-tab-pane>
+                        <el-tab-pane label="配置管理">配置管理</el-tab-pane>
+                        <el-tab-pane label="角色管理">角色管理</el-tab-pane>
+                        <el-tab-pane label="定时任务补偿">定时任务补偿</el-tab-pane>
+                    </el-tabs> -->
+                </div>
+            </section>
+        </section>
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="./js/scrollreveal.min.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src='./js/core.js'></script>
+
+<script>
+    new Vue({
+        el: '#home',
+        data: {
+
+            news: {
+                title: "",
+                desc: "",
+                content: "",
+                img: [],
+                selType: "",
+                dialogVisible: false
+            }, //添加编辑新闻列表
+            newsLst: {
+                list: [],
+                count: 1,
+                selValue: '',
+                selAll: '全部',
+            }, //新闻列表
+            userlst: {
+                pageindex: 1,
+                pagesize: 9,
+                list: [],
+                count: 1,
+            }, //用户管理列表
+            userVm: {
+                acount: "",
+                password: '',
+                repeatpass: "",
+                name: '',
+                logo: '',
+                updateUser: false,
+
+            }, //用户管理列表添加编辑
+
+            selIndex: 0,
+            leftnav: ['首页', '内容列表', '内容分类', '管理员', '博客管理'],
+            showleft: false,
+            userInfo: {}, //用户信息
+            classify: [], //分类
+            classifyLst: [],
+            fullscreenLoading: false,
+            loading: false,
+            update: false,
+            //博客管理
+            vm: {
+                img: [],
+                activeName: 'first',
+                dialogVisible: false
+            },
+        },
+        methods: {
+            handleClick(tab, event) {
+                console.log(tab, event);
+            },
+            //加载
+            openFullScreen() {
+                this.loading = true;
+                setTimeout(() => {
+                    this.loading = false;
+                }, 1000);
+            },
+
+
+            /***************************************内容列表**************************************/
+            handleUpload(file) {
+                let that = this
+                var formData = new FormData();
+                formData.append('file', file);
+                http.uploadImg(formData).then(data => {
+                    if (data.isok) {
+                        that.news.img.push(data.img);
+                    }
+                })
+            },
+            //新增内容
+            saveUpload() {
+                let vm = this.news
+                let _g = {
+                    title: vm.title,
+                    desc: vm.desc,
+                    img: vm.img.join(','),
+                    c_id: vm.selType,
+                    content: vm.content
+                }
+                if (_g.title == '') {
+                    tools.showError('请输入标题', this)
+                    return;
+                }
+
+                if (_g.classify == '') {
+                    tools.showError('请选择分类', this)
+                    return;
+                }
+                let _findItem = this.classify.find(f => f.id == _g.c_id)
+                if (_findItem) {
+                    _g.type_name = _findItem.type_name
+                }
+                //更新
+                if (vm.update) {
+                    _g.id = vm.newsId
+                    core.updateNewsLst(_g, this)
+                }
+                //添加 
+                else {
+                    core.addNewsLst(_g, this)
+                }
+            },
+            //取消
+            goCancle() {
+                let vm = this.news
+                vm.title = ''
+                vm.desc = ''
+                vm.img = []
+                vm.selType = ''
+                vm.content = ''
+                vm.update = false
+                this.news = vm
+                this.selIndex = 1
+            },
+            //删除
+            handleDelete(index) {
+                let id = this.newsLst.list[index].id
+                this.$confirm('确定删除吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    core.deleteNews(id, this)
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+
+            },
+            //编辑
+            handleEdit(index, item) {
+                let vm = this.news
+                this.selIndex = 999
+                vm.title = item.title
+                vm.desc = item.descript
+                vm.img = item.image.split(',')
+                vm.selType = item.c_id
+                vm.content = item.content
+                vm.dialogVisible = true;
+                vm.update = true
+                vm.newsId = item.id
+                this.news = vm
+            },
+            //前往新增新闻
+            addNews() {
+                this.update = false
+                this.selIndex = 999
+            },
+            //点击指定页面
+            pageindexChange(e) {
+                core.newslist(this.newsIndex, e, this)
+            },
+            //分类选择
+            chooseType() {
+                let _index = this.newsLst.selValue
+                if (_index == undefined) {
+                    _index = ''
+                }
+                core.newslist(_index, 1, this)
+            },
+            /******************************分类操作***************************************/
+            showType() {
+                this.$prompt('咨询分类', '添加', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                }).then(({
+                    value
+                }) => {
+                    core.addType(value, this)
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '取消输入'
+                    });
+                });
+            },
+            //编辑分类
+            handType(index, item) {
+                let id = item.id
+                this.$prompt('咨询分类', '修改', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    inputValue: this.classifyLst[index].type_name
+                }).then(({
+                    value
+                }) => {
+                    core.updateType(id, value, this)
+                }).catch(() => {
+
+                });
+            },
+            //删除
+            handTypeDele(index, item) {
+                let that = this
+                let id = item.id
+                http.post(addr.deleType, {
+                    id,
+                }).then(data => {
+                    if (data.isok) {
+                        that.openFullScreen()
+                        core.newsType(that)
+                        setTimeout(() => {
+                            tools.showTip(data.msg, that)
+                            that.selIndex = 2
+                        }, 2000);
+                    } else {
+                        tools.showError(data.msg, that)
+                    }
+                })
+            },
+            /******************************用户界面***************************************/
+            pageIndexUser(e) {
+                this.userlst.pageindex = e
+                core.getUserLst(this)
+            },
+            //前往添加用户
+            goNewUser() {
+                this.selIndex = 888
+                this.userVm.updateUser = false
+            },
+            //添加用户
+            saveUser() {
+                let vm = this.userVm
+                if (vm.acount == '') {
+                    tools.showError('请输入账号', this)
+                    return
+                }
+                if (vm.password == '') {
+                    tools.showError('请输入密码', this)
+                    return
+                }
+                if (vm.repeatpass == '') {
+                    tools.showError('请输入密码', this)
+                    return
+                }
+                if (vm.password != vm.repeatpass) {
+                    tools.showError('两次密码不一致', this)
+                    return
+                }
+                if (vm.logo == '') {
+                    tools.showError('请上传头像', this)
+                    return
+                }
+                if (vm.logo == '') {
+                    tools.showError('请上传头像', this)
+                    return
+                }
+                if (vm.updateUser) {
+                    core.updateUser_re(vm, this)
+                } else {
+                    core.addUser(vm, this)
+                }
+            },
+            //取消
+            cancleUser() {
+                this.userVm.acount = ''
+                this.userVm.password = ''
+                this.userVm.repeatpass = ''
+                this.userVm.name = ''
+                this.userVm.logo = ''
+                this.userVm.updateUser = false
+                this.selIndex = 3
+            },
+            //上传头像
+            handleLogo(file) {
+                let that = this
+                var formData = new FormData();
+                formData.append('file', file);
+                http.uploadImg(formData).then(data => {
+                    if (data.isok) {
+                        that.loading = true
+                        setTimeout(() => {
+                            that.loading = false
+                            that.userVm.logo = data.img;
+
+                        }, 2000);
+                    }
+                })
+            },
+            handUser(index, item) {
+                this.selIndex = 888
+                this.userVm.acount = item.name
+                this.userVm.password = item.password
+                this.userVm.repeatpass = item.password
+                this.userVm.logo = item.userlogo
+                this.userVm.name = item.username
+                this.userVm.updateUser = true
+                this.userVm.id = item.id
+            },
+            handDelUser(index, item) {
+                let id = item.id
+                core.deleteUser(id, this)
+            },
+            /******************************页面操作***************************************/
+            selnav(index) {
+                if (this.showleft == false) {
+                    return;
+                }
+                this.selIndex = Number(index)
+                switch (Number(this.selIndex)) {
+                    case 0:
+                        break;
+                    case 1:
+                        this.openFullScreen()
+                        core.newslist("", "", this)
+                        break;
+                    case 2:
+                        this.openFullScreen()
+                        core.newsType(this)
+                        break;
+                    case 3:
+                        this.openFullScreen()
+                        core.getUserLst(this)
+                        break;
+                    case 4:
+                        this.openFullScreen()
+                        // tools.goNewPage('./blog.html')
+
+                }
+
+            },
+            // 隐藏或显示导航条
+            leftshow() {
+                this.showleft = !this.showleft
+            },
+            // 退出
+            goBack() {
+                if (confirm("真的要退出吗?")) {
+                    tools.goNewPage('http://kaaden.orrzt.com/')
+                }
+            },
+            /***************************************首页配置**************************************/
+            handSwiper(file) {
+                let that = this
+                var formData = new FormData();
+                formData.append('file', file);
+                http.uploadImg(formData).then(data => {
+                    if (data.isok) {
+                        that.vm.img.push(data.img);
+                        that.loading = true;
+                        that.vm.dialogVisible = true
+                        setTimeout(() => {
+                            that.loading = false;
+                        }, 2000);
+                    }
+                })
+            },
+        },
+        created: function () {
+            http.post(addr.userInfo).then(data => {
+                this.userInfo = data
+            })
+        },
+
+
+
+
+    })
+    //滚动效果
+    window.sr = ScrollReveal({
+        reset: true,
+    });
+    sr.reveal('.rv');
+</script>
+
+</html>

@@ -1,0 +1,418 @@
+<style lang="less">
+    .se-hear {
+        width: 100%;
+        background: #fff;
+        padding: 40rpx;
+        image {
+            width: 280rpx;
+            height: 280rpx;
+            margin-right: 50rpx;
+        }
+    }
+    .se-user {
+        padding: 35rpx 20rpx 45rpx 20rpx;
+        image {
+            height: 100rpx;
+            width: 100rpx;
+            border-radius: 50%;
+            margin-right: 20rpx;
+        }
+        .tuanzhang {
+            width: 64rpx;
+            height: 32rpx;
+            line-height: 32rpx;
+            text-align: center;
+            background-color: #FF9A37;
+            color: #fff;
+            font-size: 20rpx;
+            position: absolute;
+            bottom: -10rpx;
+            left: 42%;
+            transform: translateX(-50%);
+            border-radius: 10rpx;
+        }
+        .btn-invit {
+            height: 88rpx;
+            line-height: 88rpx;
+            border-radius: 8rpx;
+        }
+    }
+    .gpIng {
+        padding-bottom: 30rpx;
+        .gp-more {
+            justify-content: flex-end;
+            padding: 20rpx 25rpx;
+            border-bottom: 1px solid #f3f3f3;
+        }
+        .gp-show {
+            padding: 20rpx 30rpx;
+            .gp-item {
+                background-color: #fafafa;
+                margin-top: 20rpx;
+                height: 110rpx;
+                padding-left: 20rpx;
+                .gp-img {
+                    width: 88rpx;
+                    height: 88rpx;
+                    border-radius: 50%;
+                }
+                .gp-joinbtn {
+                    width: 164rpx;
+                    height: 110rpx;
+                    text-align: center;
+                    line-height: 110rpx;
+                }
+            }
+        }
+    }
+    .se-olt {
+        padding: 0 20rpx;
+        background: #fff;
+        margin: 20rpx 0;
+        .se-item {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            border-bottom: 1px solid #f3f3f3;
+        }
+    }
+    .mask {
+        width: 100%;
+        .mask-main {
+            position: fixed;
+            top: 10vh;
+            left: 10%;
+            width: 600rpx;
+            background: #fff;
+            z-index: 4;
+            border-radius: 8rpx;
+            color: #191919;
+            .m-title {
+                width: 100%;
+                height: 100rpx;
+                line-height: 100rpx;
+                text-align: center;
+                font-size: 32rpx;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .m-scroll {
+                width: 100%;
+                max-height: 400rpx;
+                .m-item {
+                    width: 100%;
+                    height: 120rpx;
+                    padding: 0 20rpx;
+                    border-bottom: 1px solid #f0f0f0;
+                    .m-logo {
+                        width: 88rpx;
+                        height: 88rpx;
+                        border-radius: 50%;
+                    }
+                    .m-btn {
+                        width: 130rpx;
+                        height: 60rpx;
+                        line-height: 60rpx;
+                        text-align: center;
+                        border-radius: 4rpx;
+                        background-color: #f20033;
+                        color: white;
+                    }
+                }
+            }
+            .m-tip {
+                height: 60rpx;
+                line-height: 60rpx;
+                text-align: center;
+            }
+        }
+    }
+    .mask-cancle {
+        position: absolute;
+        bottom: -150rpx;
+        left: 42%;
+        z-index: 4;
+        color: #fff;
+    }
+    .showmore {
+        background-color: white;
+        position: fixed;
+        top: 10vh;
+        width: 600rpx;
+        left: 10%;
+        border-radius: 8rpx;
+        padding: 0 21rpx 30rpx 21rpx;
+        line-height: 44rpx;
+        z-index: 4;
+        .show-title {
+            text-align: center;
+            height: 100rpx;
+            line-height: 100rpx;
+        }
+    }
+    .mask-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.6);
+        width: 100%;
+        height: 100vh;
+        z-index: 3;
+    }
+</style>
+ 
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <view class="se-hear f fc">
+            <image mode="aspectFill" src="{{vm.GroupImage}}" @tap="preview({{vm.GroupImage}})" />
+            <view class="f fv f44">
+                <view class="t-b" wx:if="{{vm.State!=2}}">仅剩<text class="t-b cred">{{vm.GroupSize-vm.GroupUserList.length}}</text>个名额</view>
+                <view wx:else>{{vm.GroupName}}</view>
+                <wxc-price class="mt30 cred t-b">{{vm.GroupPrice}}</wxc-price>
+                <wxc-price class="mt30 f26 ccc">{{vm.OriginalPrice}}</wxc-price>
+            </view>
+        </view>
+        <view class='bg-w mt20 se-user'>
+            <view class="f fw fc fc-h" wx:if="{{vm.State!=-4}}">
+                <repeat for="{{vm.GroupUserList}}">
+                    <view class='rel'>
+                        <image src="{{item.HeadImgUrl||'http://j.vzan.cc/content/city/images/voucher/10.jpg'}}" mode='aspectFill' />
+                        <text class='tuanzhang' wx:if="{{item.Id==vm.SponsorUserId}}">团长</text>
+                    </view>
+                </repeat>
+                <repeat for="{{vm.GroupSize-vm.GroupUserList.length}}">
+                    <image src='http://j.vzan.cc/miniapp/img/group2/icon_blankuser.png' />
+                </repeat>
+            </view>
+            <view class='mt40'>
+                <button class='f28 cfff btn-invit skin_bg br0' @tap='goJoin({{vm.GoodId}},{{vm.Id}})' wx:if="{{vm.State==1&&!haveJoin}}">去参团</button>
+                <button class='f28 cfff btn-invit skin_bg br0' wx:if="{{(vm.State==-1&&haveJoin)||vm.State==-4}}">拼团时间逾期 去首页看看吧</button>
+                <button class='f28 cfff btn-invit skin_bg br0' wx:if="{{vm.State==1&&haveJoin}}" open-type='share'>邀请好友拼团 {{userCutdown.timeInter}} 后结束</button>
+                <button class='f28 cfff btn-invit skin_bg br0' wx:if="{{vm.State==2}}" @tap='goHome'>拼团人数已够 去首页看看吧</button>
+            </view>
+        </view>
+        <!-- 正在开团 -->
+        <view class='mt20 bg-w gpIng' wx:if="{{groupList!=0&&showIng&&vm.State!=-4}}">
+            <view class='gp-more f fc' @tap="showMask">
+                <text>查看更多</text>
+                <text class="dzicon icon-xiala-copy-right"/>
+            </view>
+            <view class='gp-show'>
+                <repeat for="{{groupList}}" wx:if="{{index<3}}">
+                    <view class='gp-item f fc'>
+                        <image src='{{item.UserLogo}}' mode='aspectFill' class='gp-img' />
+                        <text class='f32 pl20 f1 line lin1'>{{item.UserName||""}}</text>
+                        <view class='f24 tr mr10'>
+                            <view class='cffb0'>差 <text class='cred'>{{item.GroupSize-item.GroupUserList.length}}</text> 人成团</view>
+                            <view class='c999'>剩余{{item.countdown}}</view>
+                        </view>
+                        <view class='gp-joinbtn skin_bg' wx:if="{{item.haveJoin}}" @tap="goCheck({{item.Id}})">查看详情</view>
+                        <view class='gp-joinbtn skin_bg' wx:else @tap="goJoin({{item.GoodId}},{{item.Id}})">去参团</view>
+                    </view>
+                </repeat>
+            </view>
+        </view>
+        <!-- 订单信息 -->
+        <view class="se-olt f fv">
+            <view class="se-item f fj" wx:if="{{vm.State!=2}}">
+                <text class="f32" style="width:150rpx">商品名称</text>
+                <text class="c666 line1 line f1">{{vm.GroupName}}</text>
+            </view>
+            <view class="se-item f fj fc" wx:if="{{vm.State==2}}">
+                <text class="f32">收货人</text>
+                <text class="c666">{{vm.Name}}</text>
+            </view>
+            <view class="se-item f fj fc" wx:if="{{vm.State==2}}">
+                <text class="f32">收货地址</text>
+                <text class="c666">{{vm.Address}}</text>
+            </view>
+            <view class="se-item f fj fc">
+                <text class="f32">参团时间</text>
+                <text class="c666">{{vm.StartDate}}</text>
+            </view>
+            <view class="se-item f fj fc" @tap="showMoreToast">
+                <text class="f32">拼团须知</text>
+                <view class="f fc c666">参与方式、拼团成功、拼团失败<text class="dzicon icon-xiala-copy-right c123"></text></view>
+            </view>
+        </view>
+        <!-- 查看更多 -->
+        <view class="mask" wx:if="{{showMore}}">
+            <view class='mask-bg' @tap="showMask"></view>
+            <view class='mask-main'>
+                <view class="rel">
+                    <view class='m-title'>正在开团</view>
+                    <scroll-view scroll-y class='m-scroll'>
+                        <repeat for="{{groupList}}">
+                            <view class='m-item f fc fc-h'>
+                                <image src='{{item.UserLogo}}' class='m-logo' />
+                                <view class="f1 f fv">
+                                    <view class='f ml20'>
+                                        <text>{{item.UserName||""}} </text>
+                                        <text class='f24 c999 ml20'>还差{{item.GroupSize-item.GroupUserList.length}}人</text>
+                                    </view>
+                                    <view class='f24 c999 ml20'>剩余{{item.countdown}}</view>
+                                </view>
+                                <view wx:if="{{item.haveJoin}}" class='m-btn  skin_bg' @tap="goCheck({{item.Id}})">查看详情</view>
+                                <view wx:else class='m-btn  skin_bg' @tap="goJoin({{item.GoodId}},{{item.Id}})">去参团</view>
+                            </view>
+                        </repeat>
+                    </scroll-view>
+                    <view class='m-tip c999 f24 f1'>仅显示最多10个在开团的人</view>
+                    <view class="dzicon icon-zhuanyebaniconkuozhan_Close f80 mask-cancle" @tap="showMask"></view>
+                </view>
+            </view>
+        </view>
+        <!-- 拼团须知弹窗 -->
+        <view wx:if="{{showToast}}">
+            <view class='mask-bg' @tap="showMoreToast"></view>
+            <view class='showmore'>
+                <text class='show-title f32 t-b f1'>拼团规则</text>
+                <view class='t-b mt30'>1.参与方式</view>
+                <text>开团邀请好友参团或参加别人的团，并在规定时间内成团，未达到拼团人数，钱款将自动原路退还。</text>
+                <view class='t-b mt30'>2.拼团成功</view>
+                <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。
+                                                                                                </text>
+                <view class='t-b mt30'>3.拼团失败</view>
+                <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+                <view class="dzicon icon-zhuanyebaniconkuozhan_Close f80 mask-cancle" @tap="showMoreToast"></view>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "../../lib/core.js";
+    import addr from "../../lib/addr.js";
+    import _get from "../../lib/lodash.get.js"
+    //第一步： 引入组件文件
+    export default class group2Share extends wepy.page {
+        config = {
+            // 引入min组件
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+            },
+            navigationBarTitleText: "参团详情"
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            currentSkin: {},
+            vm: {},
+            haveJoin: false,
+            groupList: {},
+            showMore: false,
+            showToast: false,
+            userCutdown: {},
+            showIng: true //正在进行
+        };
+        methods = {
+            preview(img) {
+                tools.preViewShow(img)
+            },
+            //查看更多
+            showMask() {
+                this.showMore = !this.showMore
+            },
+            //查看更多
+            showMoreToast() {
+                this.showToast = !this.showToast
+            },
+            //去参团
+            goJoin(id, groupId) {
+                tools.goNewPage("../group2/group2?id=" + id + "&showGroup=1" + "&groupId=" + groupId)
+            },
+            //查看详情
+            goCheck(id) {
+                tools.goNewPage("../group2/group2Share?id=" + id + "&showGroup=1")
+            },
+            //返回首页
+            goHome() {
+                tools.goLaunch("/pages/index/index")
+                clearInterval(this.timeInter);
+                clearInterval(this.timeInter_sec);
+            }
+        };
+        async onLoad(options) {
+            let showGroup = options.showGroup || 0
+            showGroup == "1" ? this.showIng = false : this.showIng = true
+            let groupid = options.id || 0;
+            await tools.setPageSkin(this);
+            await this.shareInfo(groupid);
+        }
+        async shareInfo(id) {
+            let app = wepy.$instance
+            let userInfo = _get(app.globalData, 'userInfo', '') || await core.getUserInfo();
+            http.get(addr.GetentGroupDetail, {
+                appid: app.globalData.appid,
+                groupid: id
+            }).then(async info => {
+                if (info.isok == 1) {
+                    let _g = info.postdata
+                    var finduserId = _g.GroupUserList.find(f => f.Id == userInfo.Id)
+                    if (finduserId) {
+                        _g.Address = finduserId.Address
+                        _g.Name = finduserId.Name
+                        this.haveJoin = true
+                    } else {
+                        this.haveJoin = false
+                    }
+                    for (var i = 0, len = info.GroupSponsorList.length; i < len; i++) {
+                        if (info.GroupSponsorList[i].SponsorUserId == userInfo.Id) {
+                            info.GroupSponsorList[i].haveJoin = true
+                        } else {
+                            info.GroupSponsorList[i].haveJoin = false
+                        }
+                    }
+                    _g.StartDate = await tools.ChangeDateFormat(_g.StartDate)
+                    _g.EndDate = await tools.ChangeDateFormat(_g.EndDate)
+                    this.vm = _g
+                    this.groupList = info.GroupSponsorList
+                    this.$apply()
+                    this.cutDown()
+                    this.cutDown_sec()
+                } else {
+                    tools.showModal(info.msg, false)
+                }
+            })
+        }
+        // 倒计时
+        cutDown() {
+            let that = this
+            if (Object.keys(that.groupList).length) {
+                that.timeInter = setInterval(async res => {
+                    let list = {}
+                    list.GroupSponsorList = that.groupList
+                    that.groupList = await core.initCountDown(list)
+                    that.$apply()
+                }, 1000);
+            }
+        }
+        //倒计时2
+        cutDown_sec() {
+            let that = this
+            let vm = that.vm
+            if (Object.keys(vm).length) {
+                that.timeInter_sec = setInterval(async res => {
+                    let star = vm.StartDate
+                    let end = vm.EndDate
+                    that.userCutdown = await core.groupTime(star, end)
+                    that.$apply()
+                }, 1000)
+            }
+        }
+        onShareAppMessage() {
+            let vm = {
+                id: this.vm.Id,
+                name: this.vm.GroupName,
+                img: this.vm.GroupImage
+            }
+            return core.group2Share(vm)
+        }
+    }
+</script>

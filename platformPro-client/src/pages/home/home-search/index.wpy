@@ -1,0 +1,79 @@
+<style lang="less">
+
+</style>
+<template leng="wxml">
+    <comSearch :firstLevelNum.sync="firstLevelNum" :categoryLevel.sync="level" :firstLevelList.sync="firstList" :secondLevelList.sync="secondList" onClickCategory="clickCategory" onSearch="search" jumpCategory="jumpSingleCategory" jumpType="jumpSingleType"
+    />
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import com_search from "@/components/com_search";
+    export default class HomeSearch extends wepy.page {
+        config = {
+            navigationBarTitleText: "搜索",
+        };
+        components = {
+            comSearch: com_search,
+        };
+        data = {
+            searchValue: "",
+            level: 1, //判断是开启一级还是二级分类 
+            firstLevelNum: 0,
+            firstList: [],
+            secondList: [],
+            categoryRequestParam: {
+                isFirstType: 0,
+                parentId: "",
+            },
+        };
+        search(value) {
+           // let title = "商户列表"
+            tools.goRedirecto("../shop-list/index?keyMsg=" + value);
+        };
+        clickCategory(i) {
+            this.firstLevelNum = i;
+            this.categoryRequestParam.isFirstType = 3;
+            this.categoryRequestParam.parentId = this.firstList[i].Id;
+            this.GetSecondLevelList(this.categoryRequestParam);
+        };
+        jumpSingleCategory() {
+            let title = this.firstList[this.firstLevelNum].Name;
+            let categoryId = this.firstList[this.firstLevelNum].Id;
+            tools.goRedirecto("../shop-list/index?shopType=" + categoryId + "&isBigType=" + 1);
+        };
+        jumpSingleType(i) {
+            let title = this.secondList[i].Name;
+            let typeId = this.secondList[i].Id;
+            tools.goRedirecto("../shop-list/index?shopType=" + typeId);
+        };
+        events = {};
+        async onLoad() {
+            this.level = await core.GetStoreCategoryLevel();
+            this.level === 1 ? this.GetSecondLevelList() : this.GetFirstLevelList();
+        };
+        //获取大类
+        async GetFirstLevelList(param) {
+            let data = await core.GetStoreCategory(param);
+            tools.handleResult(data, (res) => {
+                this.firstList = res.list;
+                this.$apply();
+            })
+            this.categoryRequestParam.parentId = this.firstList[0].Id;
+            await this.GetSecondLevelList(this.categoryRequestParam);
+        }
+        //获取小类
+        async GetSecondLevelList(param) {
+            let data = await core.GetStoreCategory(param);
+            tools.handleResult(data, (res) => {
+                this.secondList = res.list;
+                this.$apply();
+            })
+        }
+        onReady() {}
+    }
+</script>

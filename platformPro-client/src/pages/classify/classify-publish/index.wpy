@@ -1,0 +1,482 @@
+<style lang="less">
+    .c-d9d8d9 {
+        color: #d9d8d9
+    }
+    .c-9ba9cd {
+        color: #9ba9cd
+    }
+    .input-area {
+        padding: 30rpx;
+        .img-area {
+            width: 560rpx; 
+            .img-item {
+                margin-top: 18rpx;
+                margin-right: 10rpx;
+                width: 180rpx;
+                height: 180rpx;
+                background-color: #eee;
+                image {
+                    width: 100%;
+                    height: 100%;
+                    vertical-align: middle;
+                } 
+                .close { 
+                    width: 50rpx;
+                    height: 50rpx;
+                    top: 0;
+                    right: 0;
+                }
+            }
+            .img-item:nth-child(3) {
+                margin-right: 0;
+            }
+            .img-item:nth-child(6) {
+                margin-right: 0;
+            }
+            .upload {
+                width: 180rpx;
+                height: 180rpx; //padding: 0 3rpx;
+                margin-top: 18rpx; //height: 164rpx; 
+                box-sizing: border-box; //border: 1rpx dashed #c6c8cc;
+            }
+        }
+    }
+    .info-area {
+        padding: 0 30rpx;
+        .info-item {
+            height: 110rpx;
+            .my-icon {
+                width: 56rpx;
+            }
+        }
+    }
+    .stick-area {
+        padding: 0 30rpx;
+        .stick-item {
+            height: 110rpx;
+            .my-icon {
+                width: 56rpx;
+                .topicon {
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: red;
+                }
+            }
+            .content {
+                padding-left: 47rpx;
+            }
+        }
+        .bd {
+            border-bottom: 1rpx solid #f0f2f0;
+            border-top: 1rpx solid #f0f2f0;
+        }
+    }
+    .statement {
+        padding-top: 32rpx;
+        padding-bottom: 60rpx;
+        .not-set {
+            width: 30rpx;
+            height: 30rpx;
+            border: 1rpx solid #b2b2b2;
+            border-radius: 50%;
+        }
+    }
+    .btn-box {
+        .btn {
+            width: 690rpx;
+            height: 90rpx;
+            line-height: 90rpx;
+            margin-bottom: 100rpx;
+            color: #fff;
+            border-radius: 50rpx;
+            background-color: #3FD481;
+        }
+    }
+    .disclaimer-box {
+        background-color: rgba(0, 0, 0, 0.5);
+        position: fixed;
+        top: 0;
+        left: 0;
+        padding: 0 40rpx;
+        .cancel-btn {
+            top: 20rpx;
+            right: 20rpx;
+        }
+        .disclaimer {
+            margin-bottom: 50rpx;
+            padding: 60rpx 50rpx 60rpx 30rpx;
+            border-radius: 10rpx;
+        }
+    }
+</style>
+<template leng="wxml">
+    <view>
+        <view wx:if="{{!showDisclaimer.isHidden}}">
+            <view class="input-area bg-w">
+                <view>
+                    <textarea value="{{jsonData.msgDetail}}" class="w-full" maxlength="-1" focus="true" placeholder="输入您要发布的信息" placeholder-class="c-d9d8d9" style="height:200rpx;" @input="getTextareaMsg({{event}})"></textarea>
+                </view>
+                <view class="img-area mt20 f fc fw">
+                    <repeat for="{{imgArr}}">
+                        <view class="img-item rel">
+                            <image class="img" src="{{item}}" mode="aspectFill" />
+                            <image class="close abs" src="http://j.vzan.cc/miniapp/img/MiniCity/icon_img_close.png" @tap="deleteImg({{index}})" />
+                        </view>
+                    </repeat>
+                    <view class="upload" hidden="{{imgArr.length>=6}}" @tap.stop="uploadImg">
+                        <view class="f fc fc-h" style="border: 1rpx dashed #c6c8cc;height:100%;">
+                            <view class="dzicon icon-paizhao c-d9d8d9 f50"></view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="info-area mt20 bg-w">
+                <view class="info-item f fc" style="border-bottom:1rpx solid #f0f2f0;">
+                    <view class="my-icon  h-full f fc fc-h">
+                        <view class="dzicon icon-dingwei c666 f30"></view>
+                    </view>
+                    <view class="text f fc w-full h-full" @tap="getLocation">
+                        <view class="f1 line line1 f28 " style="width:80%">
+                            <text>{{jsonData.location}}</text>
+                            <text class="c-d9d8d9" wx:if="{{jsonData.location==''}}">请选择地址</text>
+                        </view>
+                        <view class="h-full f fc f-end" style="width:20%;">
+                            <view class="dzicon icon-jiantou c666 f50"></view>
+                        </view>
+                    </view>
+                </view>
+                <view class="info-item f fc">
+                    <view class="my-icon h-full f fc fc-h">
+                        <view class="dzicon icon-dianhua2 c666 f40"></view>
+                    </view>
+                    <view class="f fc h-full w-full">
+                        <input class="f1 f28" value="{{jsonData.phone}}" placeholder="请填写手机号（必填）" placeholder-class="c-d9d8d9" bindinput="getPhoneNum({{event}})" />
+                    </view>
+                </view>
+            </view>
+            <view class="stick-area mt20 bg-w f28">
+                <view class="stick-item f fc">
+                    <view class="my-icon  f fc rel h-full ">
+                        <view class="dzicon icon-Recommend4 topicon abs"></view>
+                    </view>
+                    <view class="f fc w-full h-full">
+                        <view style="width:80%;">我要置顶</view>
+                        <switch color="#3FD481" style="width:20%;text-align:right;" bindchange="toggleStick({{event}})" />
+                    </view>
+                </view>
+                <view class="stick-item f fc bd" wx:if="{{jsonData.isTop==1}}">
+                    <view class="content f fc w-full h-full">
+                        <view style="width:80%;">选择置顶天数</view>
+                        <view class="h-full f fc f-end" style="width:20%;">
+                            <!-- 置顶天数选取器 -->
+                            <view class="section f fc f-end" wz:if="{{showPicker}}">
+                                <picker @change="openPickerArr" value="{{stickDate.index}}" range="{{stickDate.dateArr}}">
+                                    <view class="picker">
+                                        {{stickDate.dateArr[stickDate.index]}}
+                                    </view>
+                                </picker>
+                                <view class="dzicon icon-jiantou c-c6c8cc f50"></view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+                <view class="stick-item f fc" wx:if="{{jsonData.isTop==1}}">
+                    <view class="content f fc w-full h-full">
+                        <view style="width:80%;">置顶费用</view>
+                        <view style="width:20%;text-align:right;padding-right:20rpx;">
+                            <text style="color:#ff5d5d">￥{{stickDate.list[stickDate.index].PriceStr}}</text>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="statement f fc fc-h">
+                <view class=" f fc" @tap="isRead">
+                    <view class="not-set" wx:if="{{!showDisclaimer.isRead}}"></view>
+                    <icon type="success" color="#09bb07" size="15" wx:if="{{showDisclaimer.isRead}}" />
+                    <view class="c666 f28"><text style="padding-left:20rpx;">发帖则代表你已接受</text></view>
+                </view>
+                <view class="c-9ba9cd" @tap="showDisclaimer">免责声明</view>
+            </view>
+            <view class="btn-box f fc-h tc">
+                <view class="btn f30" @tap="publish">立即发布</view>
+            </view>
+        </view>
+        <!-- 免责声明 -->
+        <view class="disclaimer-box w-full h-full f fc fc-h" wx:if="{{showDisclaimer.isHidden}}">
+            <view class="rel">
+                <icon class="cancel-btn abs" type="cancel" color="#b2b2b2" size="25" @tap="closeDisclaimer" />
+                <view class="disclaimer bg-w">
+                    <view class="tc f30 mb20">免责声明</view>
+                    <view>一、禁止发布违法、涉法、反党、反国、色情、敏感政治话题及相关信息。</view>
+                    <view>二、本平台不参与任何负面新闻话题。</view>
+                    <view>三、禁止发表攻击、侵犯他人人权信息。</view>
+                    <view>四、禁止发布违反国家法律的诈骗、传销、诱导信息。</view>
+                    <view>五、本平台销售产品来源于合法厂家、商家、个人登记产品。</view>
+                    <view>六、一切违法、不人道信息的信息发布者，自行承担一切后果，与本平台无关。</view>
+                    <view>七、违反以上、以及法律相关的不良信息，本平台有权利删除。</view>
+                </view>
+                <view class="btn-box f fc-h mt100">
+                    <view class="btn tc f30" @tap="showDisclaimer">我已阅读</view>
+                </view>
+            </view>
+        </view>
+        <comWait wx:if="{{showLoading}}"></comWait>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        pay,
+        http
+    } from "@/lib/core";
+    import addr from "@/lib/addr";
+    import com_wait from "@/components/com_wait";
+    export default class Publish extends wepy.page {
+        config = {
+            navigationBarTitleText: "信息发布"
+        };
+        components = {
+            comWait: com_wait,
+        };
+        data = {
+            imgArr: [],
+            showLoading: false,
+            stickDate: {
+                dateArr: [],
+                list: [],
+                index: 0
+            },
+            showDisclaimer: {
+                isHidden: false,
+                isRead: false
+            },
+            jsonData: {
+                userId:19164507,
+                msgType: 0,
+                isTop: 0,
+                msgDetail: "",
+                phone: "",
+                imgs: "",
+                location: "",
+                lng: "",
+                lat: "",
+                ruleId: 0
+            }
+        };
+        methods = {
+            getTextareaMsg(e) {
+                this.jsonData.msgDetail = e.detail.value;
+            },
+            uploadImg() {
+                var that = this;
+                var count = 6 - that.imgArr.length;
+                if (that.imgArr.length < 6) {
+                    wx.chooseImage({
+                        count: count,
+                        sizeType: ["original", "compressed"],
+                        sourceType: ["album", "camera"],
+                        success(res) {
+                            var tempFilePaths = "";
+                            tempFilePaths = res.tempFilePaths;
+                            var fileIndex = 0;
+                            upload();
+                            function upload() {
+                                wx.uploadFile({
+                                    url: addr.Upload,
+                                    filePath: tempFilePaths[fileIndex],
+                                    name: "file",
+                                    formData: {
+                                        filetype: "img"
+                                    },
+                                    success(res) {
+                                        fileIndex++;
+                                        if (fileIndex < tempFilePaths.length) {
+                                            upload();
+                                        }
+                                        var imgAddr = JSON.parse(res.data);
+                                        that.imgArr.push(imgAddr.msg);
+                                        that.$apply();
+                                    },
+                                    fail(res) {
+                                        console.log(res);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                } else {
+                    core.showToast("最大上传6张图片", "none", 1200);
+                }
+            },
+            deleteImg(index) {
+                this.imgArr.splice(index, 1);
+            },
+            //选择地址
+            getLocation() {
+                var that = this;
+                var app = wepy.$instance;
+                wx.chooseLocation({
+                    success: function(res) {
+                        //console.log(res);
+                        that.jsonData.location = res.address;
+                        that.jsonData.lng = res.longitude;
+                        that.jsonData.lat = res.latitude;
+                        that.$apply();
+                    },
+                    fail: function(res) {
+                        console.log(res.errMsg);
+                        that.queryIsLocation();
+                    }
+                });
+            },
+            //置顶开关
+            toggleStick(e) {
+                let app = wepy.$instance;
+                let toggle = e.detail.value;
+                this.stickDate.dateArr = [];
+                this.jsonData.isTop = toggle ? 1 : 0;
+                if (toggle) {
+                    http
+                        .get(addr.GetRuleList, {
+                            appId: app.globalData.appid
+                        })
+                        .then(data => {
+                            if (data.isok) {
+                                let list = data.dataObj.list;
+                                this.stickDate.list = list;
+                                this.jsonData.ruleId = list[0].Id;
+                                for (var i = 0, l = list.length; i < l; i++) {
+                                    this.stickDate.dateArr.push(
+                                        list[i].ExptimeDay + "天"
+                                    );
+                                }
+                            }else{
+                                tools.showModalCancle(data.Msg);
+                            }
+                            this.$apply();
+                        });
+                }
+            },
+            //打开置顶规则选项
+            openPickerArr(e) {
+                let pickerIndex = e.detail.value;
+                this.stickDate.index = pickerIndex;
+                this.jsonData.ruleId = this.stickDate.list[pickerIndex].Id;
+            },
+            showDisclaimer() {
+                this.showDisclaimer.isHidden = !this.showDisclaimer.isHidden;
+                if (this.showDisclaimer.isHidden == false) {
+                    this.showDisclaimer.isRead = true;
+                }
+            },
+            closeDisclaimer() {
+                this.showDisclaimer.isHidden = false;
+            },
+            isRead() {
+                this.showDisclaimer.isRead = !this.showDisclaimer.isRead;
+            },
+            getPhoneNum(e) {
+                this.jsonData.phone = e.detail.value;
+            },
+            selectData() {
+                this.showPicker = true;
+            },
+            async publish() {
+                var app = wepy.$instance;
+                var user = await core.getStorage("userInfo");
+                var read = this.showDisclaimer.isRead;
+                var msgDetail = this.jsonData.msgDetail;
+                var location = this.jsonData.location;
+                var phone = this.jsonData.phone;
+                var paytype = this.jsonData.isTop;
+                var payParam = {};
+                var wxPayParam = {};
+                let setting = await this.getReviewSetting();
+                let reviewType = setting.dataObj.obj.ReviewSetting;
+                let fbText = "";
+                if (read && msgDetail != "" && location != "" && phone != '') {
+                    this.jsonData.imgs = this.imgArr.join();
+                    var jsonDataStr = JSON.stringify(this.jsonData);
+                    http
+                        .post(addr.AddPayOrder, {
+                            appId: app.globalData.appid,
+                            userId: user.Id,
+                            // userId:19164507,
+                            ordertype: 3001018,
+                            paytype: paytype,
+                            jsonData: jsonDataStr
+                        })
+                        .then(async data => {
+                            // console.log(data);
+                            if (data.isok) {
+                                if (paytype == 1) {
+                                    payParam.orderid = data.dataObj.orderid;
+                                    payParam.type = paytype;
+                                    var payOrder = await pay.PayOrder(payParam);
+                                    wxPayParam = JSON.parse(payOrder.obj);
+                                    var wxpay = await pay.wxpay(wxPayParam);
+                                    if (wxpay.errMsg == "requestPayment:ok") {
+                                        if (reviewType == 0 || reviewType == 2) {
+                                            fbText = "发布成功"
+                                        } else if (reviewType == 1) {
+                                            fbText = "发布成功，等待管理员审核，可以到[我的动态]进行查看"
+                                        }
+                                        await tools.showModalCancle(fbText);
+                                        await wx.reLaunch({
+                                            url: "../classify-index/index"
+                                        })
+                                    } else if (wxpay.errMsg == "requestPayment:fail cancel") {
+                                        tools.showModalCancle("已取消支付,发布失败", "none", 1200);
+                                    }
+                                } else if (paytype == 0) {
+                                    if (reviewType == 0 || reviewType == 2) {
+                                        fbText = "发布成功"
+                                    } else if (reviewType == 1) {
+                                        fbText = "发布成功，等待管理员审核，可以到[我的发布]进行查看"
+                                    }
+                                    await tools.showModalCancle(fbText);
+                                    await wx.reLaunch({
+                                       url: "../classify-index/index"
+                                    })
+                                }
+                            } else {
+                                tools.showModalCancle(data.Msg);
+                            }
+                        });
+                } else if (msgDetail == "") {
+                    tools.showModalCancle("请填写发布信息内容");
+                } else if (location == "") {
+                    tools.showModalCancle("请选择地址");
+                } else if (phone == "") {
+                    tools.showModalCancle("请填写手机号");
+                } else if (!read) {
+                    tools.showModalCancle("请阅读免责声明，如已阅读请勾选");
+                }
+            },
+        };
+        events = {};
+        onLoad(option) {
+            this.jsonData.msgType = option.id;
+        };
+        //获取发帖配置 0:不需要审核  1:先审核后发布 2:先发布后审核
+        async getReviewSetting() {
+            let app = wepy.$instance;
+            return await http.get(addr.GetCityReviewSetting, {
+                appId: app.globalData.appid,
+            })
+            //return setting
+        }
+        //查询授权
+        queryIsLocation() {
+            wx.getSetting({
+                success(res) {
+                    if (!res.authSetting["scope.userLocation"]) {
+                        core.openSetting();
+                    }
+                }
+            });
+        }
+    }
+</script>

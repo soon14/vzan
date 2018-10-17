@@ -1,0 +1,203 @@
+<style lang="less">
+    .hear-fix {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 3;
+        background: #ffffff;
+    }
+    .hear {
+        height: 100rpx;
+        line-height: 100rpx;
+    }
+    .group {
+        width: 100%;
+        padding: 0 20rpx;
+        .group-item {
+            width: 100%;
+            height: 324rpx;
+            margin-top: 20rpx;
+            background-color: #fff;
+            padding: 20rpx 20rpx 0 20rpx;
+            .group-img {
+                width: 200rpx;
+                height: 200rpx;
+                margin-right: 20rpx;
+            }
+            .group-con {
+                height: 200rpx;
+            }
+            .group-size {
+                width: 80rpx;
+                text-align: center;
+                height: 32rpx;
+                border: 1px solid #FFB049;
+                font-size: 22rpx;
+                border-radius: 15rpx;
+                color: #FFB049;
+            }
+        }
+    }
+    .cf200 {
+        color: #F20033
+    }
+    .cffb {
+        color: #FFB049;
+    }
+    .btn-startGroup {
+        width: 120rpx;
+        height: 50rpx;
+        text-align: center;
+        line-height: 50rpx;
+        background-color: #f20033;
+        color: #fff;
+        font-size: 28rpx;
+        border-radius: 8rpx;
+    }
+    .btn-disable {
+        width: 120rpx;
+        height: 50rpx;
+        text-align: center;
+        line-height: 50rpx;
+        background-color: #e6e6e6;
+        color: #fff;
+        font-size: 28rpx;
+        border-radius: 8rpx;
+    }
+</style>
+
+<template>
+    <view class="{{currentSkin}}">
+        <view class="hear-fix w-100 fj f fc f32">
+            <text class="hear f1 tc {{item.state==vm.state?'skin_txt':''}}" wx:for="{{groupState}}" @tap="changeType({{item.state}})">{{item.name}}</text>
+        </view>
+        <view style="height:100rpx;"></view>
+        <view class='group'>
+            <repeat for="{{vm.list}}">
+                <repeat for="{{item}}" item="g">
+                    <view class="group-item f">
+                        <image mode="aspectFill" src="{{g.ImgUrl}}" class="group-img" />
+                        <view class="f fv f1">
+                            <view class="group-con f fv fj">
+                                <!-- 标题 -->
+                                <view class="f34">{{g.GroupName}}</view>
+                                <!-- 人数 -->
+                                <view class="f">
+                                    <text class="group-size">{{g.GroupSize}}人团</text>
+                                    <text class="f22 cffb ml10">邀请{{g.GroupSize-1}}位好友即可成团</text>
+                                </view>
+                                <!-- 价格 -->
+                                <view class='f fc'>
+                                    <wxc-price class="f34 cf200">{{g.DiscountPrice/100}}</wxc-price>
+                                    <text class="f24 ml20 cf200">(单买：￥{{g.UnitPrice/100}})</text>
+                                </view>
+                            </view>
+                            <!-- 按钮 -->
+                            <view class='f fc mt20'>
+                                <view class='f1'>
+                                    <view class='btn-startGroup mt10' wx:if="{{g.State==1}}" @tap="navGroup({{g.Id}})">去开团</view>
+                                    <view class='btn-disable mt10' wx:elif="{{g.State==2}}">已结束</view>
+                                </view>
+                                <view class='f36 c999'>已团购{{g.GroupsNum}}件</view>
+                            </view>
+                        </view>
+                    </view>
+                </repeat>
+            </repeat>
+            <view class="loding w-100 f fc-h" style="padding:30rpx 0" wx:if="{{vm.showloading&&vm.loadall==false}}">
+                <text class="loading-icon"></text>
+                <text class="c999 f26 ml20">正在加载中...</text>
+            </view>
+        </view>
+        <wxc-loadmore is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" wx:if="{{vm.list[1].length!=0&&vm.loadall}}"></wxc-loadmore>
+        <wxc-abnor type="ORDER" wx:if="{{vm.list[1].length==0}}"></wxc-abnor>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js";
+    // import
+    //第一步： 引入组件文件
+    export default class grouping extends wepy.page {
+        config = {
+            navigationBarTitleText: "进行中的拼团",
+            enablePullDownRefresh: true,
+            // 引入min组件
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                'wxc-loadmore': '../../packages/@minui/wxc-loadmore/dist/index',
+            }
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            groupState: [{
+                    name: "进行中",
+                    state: 1,
+                    sel: true
+                },
+                {
+                    name: "已结束",
+                    state: 2,
+                    sel: false
+                },
+                {
+                    name: "全部",
+                    state: 0,
+                    sel: false
+                }
+            ],
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                state: 1,
+                pagesize: 10,
+                pageindex: 1,
+                showloading: false,
+            },
+            currentSkin: {}
+        };
+        methods = {
+            async changeType(state) {
+                this.vm.state = state
+                this.vm.pageindex = 1
+                this.vm.ispost = false
+                this.vm.loadall = false
+                this.vm.list = []
+                await tools.showLoading()
+                core.groupIng(this)
+                wx.hideLoading()
+            },
+            navGroup(id) {
+                tools.goNewPage("../group/group?id=" + id)
+            }
+        };
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            await core.groupIng(this)
+        }
+        async onReachBottom() {
+            this.vm.showloading = true
+            await core.groupIng(this)
+            this.vm.showloading = false
+        }
+        async onPullDownRefresh() {
+            wx.showNavigationBarLoading()
+            this.vm.pageindex = 1
+            this.vm.ispost = false
+            this.vm.loadall = false
+            this.vm.list = []
+            await core.groupIng(this)
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

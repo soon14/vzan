@@ -1,0 +1,313 @@
+<style lang="less">
+    page {
+        background: #fff;
+    }
+    .c-goodlst {
+        width: 100%;
+        &__big {
+            padding: 0 20rpx;
+            .main {
+                width: 100%;
+                padding-bottom: 40rpx;
+                >image {
+                    width: 100%;
+                }
+                .m-title {
+                    margin: 29rpx 0 10rpx 0;
+                }
+                .m-label {
+                    height: 40rpx;
+                    margin-bottom: 10rpx;
+                    overflow: hidden;
+                    display: -webkit-box;
+                }
+                .m-price {
+                    .m-sub {
+                        width: 88rpx;
+                        height: 50rpx;
+                        font-size: 24rpx;
+                        line-height: 50rpx;
+                        text-align: center;
+                        margin-right: 10rpx;
+                    }
+                }
+            }
+        }
+        &__small {
+            padding: 20rpx;
+            .main {
+                width: 350rpx;
+                >image {
+                    width: 350rpx;
+                    height: 350rpx;
+                }
+                .m-title {
+                    margin-top: 19rpx;
+                }
+                .m-price {
+                    margin-bottom: 28rpx;
+                    .m-sub {
+                        width: 88rpx;
+                        height: 44rpx;
+                        font-size: 24rpx;
+                        line-height: 44rpx;
+                        text-align: center;
+                        margin-right: 10rpx;
+                    }
+                }
+            }
+        }
+        &__detail {
+            padding: 0 20rpx;
+            .main {
+                width: 100%;
+                padding: 30rpx 0;
+                border-bottom: 1px solid #f7f5f5;
+                image {
+                    width: 200rpx;
+                    height: 200rpx;
+                }
+                .m-label {
+                    margin-top: 10rpx;
+                    height: 40rpx;
+                    overflow: hidden;
+                    display: -webkit-box;
+                }
+            }
+        }
+    }
+    .c-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5;
+        border-bottom: 1px solid #f3f3f3;
+        .item {
+            padding: 0 30rpx;
+            height: 100rpx;
+            line-height: 100rpx;
+            text-align: center;
+            background: #fff;
+            flex-shrink: 0;
+        }
+        .item-bd {
+            padding: 0 30rpx;
+            height: 100rpx;
+            line-height: 100rpx;
+            text-align: center;
+            background: #fff;
+            flex-shrink: 0;
+        }
+    }
+    .f-r {
+        width: 78%;
+        float: right;
+        background: #fff;
+    }
+    .f-l {
+        width: 100%;
+        float: left;
+        background: #fff;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <!-- 导航 -->
+        <scroll-view scroll-x class="c-nav" wx:if="{{vm.pageInfo.showBig}}">
+            <view class="f fc bg-w f30">
+                <view class="item {{selIndex==0?'skin_bottom':''}}" @tap="navFunc(0)">全部</view>
+                <repeat for="{{vm.second}}">
+                    <view class="item {{selIndex==item.id?'skin_bottom':''}}" @tap="navFunc({{item.id}})">{{item.name}}</view>
+                </repeat>
+            </view>
+        </scroll-view>
+        <view style="height:100rpx" wx:if="{{vm.pageInfo.showBig}}" />
+        <!-- 列表 -->
+        <view class="c-goodlst">
+            <!-- 详情列表 -->
+            <view class="c-goodlst__detail f fv" wx:if="{{vm.pageInfo.goodShowType=='normal'}}">
+                <repeat for='{{vm.list}}' item="lst">
+                    <repeat for='{{lst}}' item="good_item">
+                        <view class='main f' @tap="goodnav({{good_item.id}},{{vm.pageInfo}})">
+                            <image src="{{good_item.img_fmt}}" />
+                            <view class='f fv ml20 f1 fj' style='padding:10rpx 0'>
+                                <view class='f fv'>
+                                    <view class="m-title line line1">{{good_item.name}}</view>
+                                    <view class="m-label f" hidden="{{good_item.plabelstr_array.length==0}}">
+                                        <repeat for="{{good_item.plabelstr_array}}" item="label_item">
+                                            <wxc-label class="mr10" type="fill" type-color="#eff3f6" text-color="#a6a6a6">{{label_item}}</wxc-label>
+                                        </repeat>
+                                    </view>
+                                </view>
+                                <view class='m-price f fc'>
+                                    <view class="f fc f1" wx:if='{{vm.pageInfo.isShowPrice}}'>
+                                        <wxc-price icon="sub" class='f30 skin_txt t-b'>{{good_item.priceStr}}<text class='f22' wx:if="{{good_item.unit.length!='' }}">/{{good_item.unit}}</text></wxc-price>
+                                        <wxc-price status="del" del-color="#CECECE" class='f20 ml10' wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}" style='margin-top:4rpx;'>{{good_item.originalPrice}}<text class='f20' wx:if="{{good_item.unit.length!='' }}">/{{good_item.unit}}</text></wxc-price>
+                                    </view>
+                                    <view class='f20' style='color:#cecece' wx:if="{{vm.pageInfo.btnType}}">{{vm.pageInfo.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</view>
+                                </view>
+                            </view>
+                        </view>
+                    </repeat>
+                </repeat>
+            </view>
+            <!-- 大图 -->
+            <scroll-view class="c-goodlst__big" scroll-y wx:if="{{vm.pageInfo.goodShowType=='big'}}">
+                <view class='c f fv fc'>
+                    <repeat for='{{vm.list}}' item="big">
+                        <repeat for='{{big}}' item="good_item">
+                            <view class='main' @tap="goodnav({{good_item.id}},{{vm.pageInfo}})">
+                                <image mode='widthFix' src='{{good_item.img_fmt}}' />
+                                <view class='m-title line line1'>{{good_item.name}}</view>
+                                <view class="m-label f" wx:if="{{good_item.plabelstr_array.length}}">
+                                    <repeat for="{{good_item.plabelstr_array}}" item="label_item">
+                                        <wxc-label class="mr10" type="fill" type-color="#eff3f6" text-color="#a6a6a6">{{label_item}}</wxc-label>
+                                    </repeat>
+                                </view>
+                                <view class='m-price f fc'>
+                                    <view class="f fv f1" wx:if='{{vm.pageInfo.isShowPrice}}'>
+                                        <wxc-price icon="sub" class='f30 skin_txt t-b'>{{good_item.priceStr}}<text class='f22' wx:if="{{good_item.unit.length!='' }}">/{{good_item.unit}}</text></wxc-price>
+                                        <wxc-price status="del" del-color="#CECECE" class='f20' wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}" style='margin-top:4rpx;'>{{good_item.originalPrice}}<text class='f20' wx:if="{{good_item.unit.length!='' }}">/{{good_item.unit}}</text></wxc-price>
+                                    </view>
+                                    <view wx:if="{{vm.pageInfo.btnType!=''}}" class='f fc'>
+                                        <view class='f20' style='margin-right:20rpx;color:#cecece' wx:if="{{vm.pageInfo.btnType}}">{{vm.pageInfo.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</view>
+                                        <view class='m-sub skin_bg' wx:if="{{vm.pageInfo.btnType=='yuyue'}}" @tap.stop='goSub({{good_item}})'>预约</view>
+                                        <view class='m-sub skin_bg' wx:if="{{vm.pageInfo.btnType=='buy'}}">购买</view>
+                                    </view>
+                                </view>
+                            </view>
+                        </repeat>
+                    </repeat>
+                </view>
+            </scroll-view>
+            <!-- 小图 -->
+            <view class='c-goodlst__small f fw fj' wx:if="{{vm.pageInfo.goodShowType=='small'}}">
+                <repeat for='{{vm.list}}' item="small">
+                    <repeat for='{{small}}' item="good_item">
+                        <view class='main' @tap="goodnav({{good_item.id}},{{vm.pageInfo}})">
+                            <image src="{{good_item.img_fmt}}" />
+                            <view class="m-title line line1">{{good_item.name}}</view>
+                            <view class='m-price f fc'>
+                                <wxc-price icon="sub" class='f30 skin_txt t-b f1' wx:if='{{vm.pageInfo.isShowPrice}}'>{{good_item.priceStr}}<text class='f22' wx:if="{{good_item.unit.length!='' }}">/{{good_item.unit}}</text></wxc-price>
+                                <view class='f20 mr10' style='color:#cecece' wx:if="{{vm.pageInfo.btnType}}">{{vm.pageInfo.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</view>
+                            </view>
+                        </view>
+                    </repeat>
+                </repeat>
+            </view>
+            <wxc-abnor type="DATA" wx:if="{{vm.list.length&&vm.list[1].length==null||vm.list[1].length==0}}" />
+        </view>
+        <wxc-loadmore wx:if="{{vm.loadall&&vm.list[1].length>5}}" is-end="{{true}}" text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png" />
+        <view class="loding w-100 f fc-h" style="margin:20rpx 0" wx:if="{{vm.loadall==false}}">
+            <text class="loading-icon" />
+            <text class="c999 f26 ml20">正在加载中...</text>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "../../lib/lodash.get.js";
+    import {
+        core,
+        pay,
+        tools
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class goodProLst extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+                "wxc-label": "../../packages/@minui/wxc-label/dist/index",
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index"
+            },
+            enablePullDownRefresh: true
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            currentSkin: {},
+            vm: {
+                ispost: false,
+                loadall: false,
+                list: [],
+                pageindex: 1,
+                pagesize: 10,
+                typeid: "",
+                isFirstType: "",
+                allid: ''
+            },
+            selIndex: 0
+        };
+        methods = {
+            navFunc(id) {
+                let vm = this.vm
+                vm = tools.resetArray(vm)
+                if (Number(id) == 0) {
+                    this.selIndex = 0
+                    id = vm.allid
+                    vm.isFirstType = 0
+                } else {
+                    this.selIndex = id
+                    vm.isFirstType = ''
+                }
+                vm.typeid = id
+                this.proInfo(vm)
+                this.vm = vm
+                this.$apply()
+            },
+            goodnav(id, item) {
+                tools.pathGood(id, item.btnType, item.isShowPrice)
+            },
+        }
+        async onLoad(options, data) {
+            await tools.setPageSkin(this)
+            let _v = _get(data.preload, "vm", '')
+            let vm = this.vm
+            vm.isFirstType = _get(_v, 'isFirstType', '')
+            vm.typeid = _v.typeid
+            vm.pageInfo = _v.goods
+            vm.allid = _v.typeid
+            await this.proInfo(vm)
+            if (_v.goods.showBig) {
+                let _s = await core.getGoodType(vm.typeid)
+                vm.second = _s.dataObj[0].SecondGoodTypes
+            }
+            this.vm = vm
+            this.$apply()
+            tools.setPageTitle(_v.title)
+        }
+        async proInfo(vm) {
+            let app = wepy.$instance
+            if (vm.ispost || vm.loadall)
+                return;
+            if (!vm.ispost)
+                vm.ispost = true;
+            let info = await core.getGoodList(vm);
+            vm.ispost = false;
+            if (info.isok == 1) {
+                vm.list[vm.pageindex] = info.postdata.goodslist;
+                info.postdata.goodslist.length >= vm.pagesize ? (vm.pageindex += 1) : (vm.loadall = true);
+                this.vm = vm;
+                this.$apply();
+            }
+        }
+        onReachBottom() {
+            this.proInfo(this.vm)
+        }
+        async onPullDownRefresh() {
+            wx.showNavigationBarLoading();
+            this.vm = tools.resetArray(this.vm)
+            this.proInfo(this.vm)
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

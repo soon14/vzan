@@ -1,0 +1,238 @@
+<style lang="less">
+  .c-goodsLst {
+    width: 100%;
+    background-color: #fff;
+    padding-top: 30rpx;
+    .c-goodsLst-top {
+      width: 100%;
+      padding: 0 30rpx;
+      border-bottom: 1px solid #eee;
+      .c-goodsLst-top-search {
+        background-color: #f2f2f2;
+        width: 100%;
+        height: 70rpx;
+        border-radius: 35rpx;
+        color: #a1a2a3;
+        .dzicon {
+          position: absolute;
+          top: 8rpx;
+          left: 32%;
+        }
+        input {
+          width: 100%;
+          height: 70rpx;
+          text-align: center;
+        }
+      }
+      .c-goodsLst-top-fun {
+        width: 100%;
+        height: 100rpx;
+        font-size: 30rpx;
+        .c-goodsLst-top-icon {
+          position: relative;
+          margin-left: 7rpx;
+          font-size: 18rpx;
+          >text {
+            position: absolute;
+            right: -15rpx;
+          }
+          .icon-xialax {
+            top: -1rpx;
+          }
+          .icon-xialax-copy {
+            bottom: -1rpx;
+          }
+        }
+      }
+    }
+    .c-goodsLst-main {
+      width: 100%;
+      .c-good-main {
+        width: 100%;
+        padding-left: 30rpx;
+        .c-good-detail-main {
+          width: 100%;
+          padding: 30rpx 30rpx 30rpx 0;
+          border-bottom: 1px solid #eee;
+          >image {
+            width: 220rpx;
+            height: 220rpx;
+            margin-right: 30rpx;
+            flex-shrink: 0;
+            border-radius: 5rpx;
+          }
+          .c-good-detail-content {
+            height: 220rpx;
+          }
+        }
+        .c-good-detail-main:last-child {
+          border-bottom: none;
+        }
+        .c-good-big-main {
+          width: 100%;
+          padding: 30rpx 30rpx 0 0;
+          >image {
+            width: 100%;
+            border-radius: 5rpx;
+          }
+        }
+        .c-good-big-main:last-child {
+          padding-bottom: 30rpx;
+        }
+      }
+      .c-good-main-small {
+        width: 100%;
+        padding: 0 30rpx;
+        margin-top: 30rpx;
+        .c-good-small-main {
+          width: 340rpx;
+          padding-bottom: 30rpx;
+          >image {
+            width: 340rpx;
+            height: 340rpx;
+            border-radius: 5rpx;
+          }
+        }
+      }
+    }
+  }
+</style>
+
+<template>
+  <view class="c-goodsLst">
+    <!-- 顶部功能 -->
+    <view class="c-goodsLst-top" style="padding-bottom:{{currentCom.isShowFilter==false&&currentCom.isShowGoodSaleCountSort==false&&currentCom.isShowGoodPriceSort==false?'30':''}}rpx">
+      <view class="c-goodsLst-top-search rel" wx:if="{{currentCom.isShowGoodSearch}}">
+        <text class="dzicon icon-sousuo_rearch f47" wx:if="{{vm.search==''}}" />
+        <input placeholder="搜索商品名称" placeholder-class="f26 c123" @input="search" />
+      </view>
+      <view class="c-goodsLst-top-fun f fc fsa" wx:if="{{currentCom.isShowFilter||currentCom.isShowGoodSaleCountSort||currentCom.isShowGoodPriceSort}}">
+        <view class="{{vm_gd.topIndex==0?'skin_txt':'c666'}}" @tap="changeTop(0)">综合</view>
+        <view class="{{vm_gd.topIndex==1?'skin_txt':'c666'}}" @tap="changeTop(1)" wx:if="{{currentCom.isShowGoodSaleCountSort}}">销量</view>
+        <view class="f fc" wx:if="{{currentCom.isShowGoodPriceSort}}">
+          <text class="{{vm_gd.topIndex==2?'skin_txt':'c666'}}" @tap="changeTop(2)">价格</text>
+          <view class="c-goodsLst-top-icon f fv fc">
+            <text class="dzicon icon-xialax-copy {{vm_gd.sort&&vm_gd.topIndex==2?'skin_txt':'c666'}}" />
+            <text class="dzicon icon-xialax {{vm_gd.sort==false&&vm_gd.topIndex==2?'skin_txt':'c666'}}" />
+          </view>
+        </view>
+        <view class="f fc {{vm_gd.topIndex==3?'skin_txt':'c666'}}" @tap="changeTop(3)" wx:if="{{currentCom.isShowFilter}}">
+          <text>筛选</text>
+          <text class="dzicon icon-shaixuan" style="margin-left:7rpx;margin-top:10rpx;font-size:24rpx;color:#a1a2a3" />
+        </view>
+      </view>
+    </view>
+    <!-- 商品 -->
+    <view class="c-goodsLst-main">
+      <!-- 详情模式 -->
+      <view class="c-good-main" wx:if="{{currentCom.goodShowType=='normal'}}">
+        <repeat for='{{vm.list}}' item="lst">
+          <repeat for="{{lst}}" item="good_item">
+            <view class="c-good-detail-main f" @tap="goNav({{good_item}},{{currentCom}})">
+              <image src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+              <view class="c-good-detail-content f f1 fv fj">
+                <view>
+                  <view class="line line2" style="margin-bottom:10rpx;">{{good_item.name}}</view>
+                  <comlabel :vm.sync="good_item.plabelstr_array" wx:if="{{good_item.plabelstr_array.length}}"/>
+                </view>
+                <view>
+                  <view class="f fc">
+                    <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                    <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+                  </view>
+                  <view class="w-100 f fj fc" wx:if="{{currentCom.btnType}}">
+                    <text class='f22 c123'>{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</text>
+                    <text class="dzicon icon-gouwuche c123 f36" wx:if="{{currentCom.btnType=='buy'}}" />
+                    <text class="dzicon icon-yuyue c123 f36" wx:if="{{currentCom.btnType=='yuyue'}}"  />
+                  </view>
+                </view>
+              </view>
+            </view>
+          </repeat>
+        </repeat>
+      </view>
+      <!-- 大图 -->
+      <view class="c-good-main" wx:if="{{currentCom.goodShowType=='big'}}">
+        <repeat for='{{vm.list}}' item="lst">
+          <repeat for="{{lst}}" item="good_item">
+            <view class="c-good-big-main" @tap="goNav({{good_item}},{{currentCom}})">
+              <image mode="widthFix" src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+              <view class="line line1 mt20">{{good_item.name}}</view>
+              <comlabel :vm.sync="good_item.plabelstr_array" class="mt20" wx:if="{{good_item.plabelstr_array.length}}" />
+              <view class="f fc" style="margin-top:30rpx;">
+                <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+              </view>
+              <view class="w-100 f fj fc" wx:if="{{currentCom.btnType}}">
+                <text class='f22 c123'>{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</text>
+                <text class="dzicon icon-gouwuche c123 f36" wx:if="{{currentCom.btnType=='buy'}}" />
+                <text class="dzicon icon-yuyue c123 f36" wx:if="{{currentCom.btnType=='yuyue'}}"  />
+              </view>
+            </view>
+          </repeat>
+        </repeat>
+      </view>
+      <!-- 小图 -->
+      <view class="c-good-main-small f fw fj" wx:if="{{currentCom.goodShowType=='small'}}">
+        <repeat for='{{vm.list}}' item="lst">
+          <repeat for="{{lst}}" item="good_item">
+            <view class="c-good-small-main" @tap="goNav({{good_item}},{{currentCom}})">
+              <image src="{{good_item.img_fmt||'http://j.vzan.cc/miniapp/img/enterprise/blank_150x150.png'}}" />
+              <view class="line line1 mt10">{{good_item.name}}</view>
+              <view class="f fc" style="margin-top:20rpx;">
+                <text class="f30 skin_txt">￥{{good_item.priceStr}}<text class="f24" wx:if="{{good_item.unit}}">/{{good_item.unit}}</text></text>
+                <text class="f24 c123 ml10 line-thor rel" wx:if="{{good_item.originalPrice!=0&&good_item.priceStr!=good_item.originalPrice}}">￥{{good_item.originalPrice}}</text>
+              </view>
+              <view class='f22 c123 mt10' wx:if="{{currentCom.btnType}}">{{currentCom.btnType=='buy'?'已售:':'已约:'}}{{good_item.virtualSalesCount+good_item.salesCount}}</view>
+            </view>
+          </repeat>
+        </repeat>
+      </view>
+    </view>
+    <!-- 加载状态 -->
+    <view class="loding w-100 f fc-h" style="padding:20rpx 0" wx:if="{{vm.loadall==false}}">
+      <text class="loading-icon" />
+      <text class="c999 f26 ml20">正在加载中...</text>
+    </view>
+    <!-- 加载完毕 -->
+    <view class="w-100 tc c123 f24 ph20" style="background-color:#f6f6f6" wx:if="{{vm.loadall&&vm.list[1].length>5}}">到底啦</view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools
+  } from "../lib/core";
+  import com_label from "@/components/com_goodLabel";
+  export default class com_goodList extends wepy.component {
+    data = {
+      vm_gd: {
+        topIndex: 0,
+        sort: false,
+      }
+    };
+    components = {
+      comlabel: com_label,
+    };
+    methods = {
+      search(e) {
+        this.$emit('goodSearch', e)
+      },
+      changeTop(index = Number(index)) {
+        if (index == 2) {
+          this.vm_gd.sort = !this.vm_gd.sort
+        } else {
+          this.vm_gd.sort = false
+        }
+        this.vm_gd.topIndex = index
+        this.$apply()
+      },
+      goNav(item, current) {
+        tools.pathGood(item.id, current.btnType, current.isShowPrice)
+      },
+     
+    }
+  }
+</script>

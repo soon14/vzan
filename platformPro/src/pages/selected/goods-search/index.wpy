@@ -1,0 +1,116 @@
+<style lang="less">
+
+</style>
+<template leng="wxml">
+    <view>
+        <comSearch :firstLevelNum.sync="firstLevelNum" :categoryLevel.sync="level" :firstLevelList.sync="firstList" :secondLevelList.sync="secondList" onClickCategory="clickCategory" onSearch="search" jumpCategory="jumpSingleCategory" jumpType="jumpSingleType"
+        />
+        <comWait :isShow.sync="showWait" />
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import com_search from "@/components/com_search";
+    import com_wait from "@/components/com_wait";
+    export default class GoodsSearch extends wepy.page {
+        config = {
+            navigationBarTitleText: "搜索",
+        };
+        components = {
+            comSearch: com_search,
+            comWait: com_wait,
+        };
+        data = {
+            searchValue: "", 
+            level: 1, //判断是开启一级还是二级分类 
+            firstLevelNum: 0, 
+            firstList: [],
+            secondList: [],
+            categoryRequestParam: {
+                isFirstType: 0,
+                parentId: "",
+            },
+            selectedIndexUrl: "../selected-index/index",
+            showWait: true,
+        };
+        search(value) {
+            //console.log(value);
+            let category = {
+                Name: value,
+                goodsName:value,
+            }
+            wepy.$instance.globalData.category = category;
+            tools.goTabBar(this.selectedIndexUrl);
+        };
+        clickCategory(i) {
+            this.firstLevelNum = i;
+            this.categoryRequestParam.isFirstType = 3;
+            this.categoryRequestParam.parentId = this.firstList[i].Id;
+            this.GetSecondLevelList(this.categoryRequestParam);
+        };
+        jumpSingleCategory() {
+            let category = {
+                Name: this.firstList[this.firstLevelNum].Name,
+                Id: this.firstList[this.firstLevelNum].Id,
+                isFirstType: 1
+            }
+            wepy.$instance.globalData.category = category;
+            //wx.setStorageSync("category", category);
+            tools.goTabBar(this.selectedIndexUrl);
+            // tools.goTabBar("../shop-list/index?title=" + title + "&shopType=" + categoryId + "&isBigType=" + 1);
+        };
+        jumpSingleType(i) {
+            let category = {
+                Name: this.secondList[i].Name,
+                Id: this.secondList[i].Id,
+                isFirstType: 2,
+            }
+            wepy.$instance.globalData.category = category;
+            tools.goTabBar(this.selectedIndexUrl);
+            //tools.goTabBar("../shop-list/index?title=" + title + "&shopType=" + typeId);
+        };
+        events = {};
+        async onLoad() {
+            this.level = await core.GetStoreCategoryLevel();
+            if(this.level===1){
+                this.categoryRequestParam.isFirstType=2;
+                this.GetSecondLevelList();
+            }else{
+                this.categoryRequestParam.isFirstType=1;
+                this.GetFirstLevelList()
+            }
+            this.$apply();
+            // this.level === 1 ? this.GetSecondLevelList() : this.GetFirstLevelList();
+        };
+        //获取大类
+        async GetFirstLevelList() {
+            let data = await core.GetStoreCategory(this.categoryRequestParam);
+            tools.handleResult(data, (res) => {
+                this.firstList = res.list;
+                this.$apply();
+            }, (err) => { 
+                tools.showModalCancle(err.Msg);
+            });
+            this.categoryRequestParam.parentId = this.firstList[0].Id;
+            this.categoryRequestParam.isFirstType = 3;
+            this.GetSecondLevelList(this.categoryRequestParam);
+        }
+        //获取小类
+        async GetSecondLevelList() {
+            let data = await core.GetStoreCategory(this.categoryRequestParam);
+            tools.handleResult(data, (res) => {
+                this.secondList = res.list;
+                this.showWait = false;
+                this.$apply();
+            }, (err) => {
+                tools.showModalCancle(err.Msg);
+            })
+        }
+        onReady() {}
+    }
+</script>

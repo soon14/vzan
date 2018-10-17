@@ -1,0 +1,75 @@
+<style lang="less">
+
+</style>
+<template leng="wxml">
+  <view>
+    <comGoods :comGoodsList.sync="goodsList" onClickGoodsItem="jumpGoodsDetail" />
+    <comLoading :showBottom.sync="showBottom" wx:if="{{isShowBottom}}" />
+    <comWait :isShow.sync="showWait" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools,
+    http
+  } from "@/lib/core";
+  import com_goods from "@/components/com_goods";
+  import com_wait from "@/components/com_wait";
+  import com_loading from "@/components/com_loading";
+  export default class shoppingMall extends wepy.page {
+    config = {
+      navigationBarTitleText: "商城",
+      enablePullDownRefresh: true 
+    };
+    components = {
+      comGoods: com_goods,
+      comLoading: com_loading,
+      comWait: com_wait,
+    };
+    data = {
+      goodsParam: {
+        aid: "",
+        pageIndex: 1,
+        pageSize: 10,
+      },
+      goodsList: [],
+      showWait: true,
+      showBottom: true,
+      isShowBottom: false,
+      isLoading: true,
+    }
+    methods = {};
+    jumpGoodsDetail(pid) {
+      tools.goNewPage("../../selected/goods-details/index?pid=" + pid);
+    }
+    onLoad(option) {
+      this.goodsParam.aid = option.aid;
+      this.GetGoodsList();
+    }
+    //上拉触底
+    onReachBottom() {
+      this.goodsParam.pageIndex++;
+      this.isOnReach = true;
+      this.isLoading ? this.GetGoodsList() : "";
+    }
+    //获取商品列表
+    async GetGoodsList() {
+      let data = await core.GetGoodsList(this.goodsParam);
+      tools.handleResult(data, (res) => {
+        let pageIndex = this.goodsParam.pageIndex;
+        res.goodslist.forEach(goods => {
+            goods.Price =  goods.Price.toFixed(2);
+        });
+        this.isShowBottom = res.goodslist.length == 0 && pageIndex > 1 ? true : false;
+        this.isLoading = res.goodslist.length == 0 && pageIndex > 1 ? false : true;
+        this.goodsList = this.isOnReach ? this.goodsList.concat(res.goodslist) : res.goodslist;
+        this.showWait = false;
+        this.$apply();
+      }, (err) => {
+        tools.showModalCancle(err.Msg)
+      })
+    }
+  }
+</script>

@@ -1,0 +1,139 @@
+<style lang="less">
+view {
+  box-sizing: border-box;
+}
+page {
+  background-color: #f7faf8;
+}
+.msg-box {
+  .msg {
+    padding: 0 30rpx;
+    height: 160rpx;
+    image {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 50%;
+    }
+    .content {
+      border-bottom: 1rpx solid #f5f5f5;
+    }
+  }
+  .no-content {
+    height: 190rpx;
+    position: relative;
+    .bg-line {
+      width: 550rpx;
+      border-bottom: 1rpx solid #ededed;
+    }
+    .text {
+      z-index: 3;
+      background: #f7faf8;
+      display: block;
+      padding: 0 40rpx;
+    } 
+  }
+}
+</style>
+
+<template>
+    <view class="msg-box mt20">
+        <!-- 个人消息 -->
+          <block wx:for="{{msgList}}">
+            <view class="msg f fc bg-w">
+            <view class="h-full f fc fc-h">
+                <image src="{{item.fromUseImg}}"/>
+            </view>
+            <view class="content w-full h-full ml20 f fv fc-h" >
+                <view class="f fj">
+                    <text class="f30">{{item.fromUserName}}</text>
+                    <text class="f22 c-c6c8cc">{{item.addTimeStr}}</text>
+                </view>
+                <text class="f24 mt10 c-c6c8cc line line1">{{item.msgBody}}</text>
+            </view>
+            </view>
+        </block>
+        <!-- 底线 -->
+        <view class="no-content tc f fc fc-h" wx:if="{{!isLoading}}">
+                <view class="bg-line abs"></view>
+                <text class="text c-c6c8cc f24 abs" >{{errText}}</text>
+        </view>
+    </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { core, http } from "../lib/core";
+import addr from "../lib/addr";
+export default class msgCenter extends wepy.page {
+  config = {
+    navigationBarTitleText: "消息中心",
+    enablePullDownRefresh: true
+  };
+
+  data = {
+    errText: "",
+    pageSize: 8,
+    pageIndex: 1,
+    isLoading: true,
+    msgList: []
+  };
+  methods = {};
+
+  events = {};
+  async onLoad() {
+    await this.GetCityUserMsgList();
+  }
+  //获取消息中心信息
+  async GetCityUserMsgList() {
+    var app = wepy.$instance;
+    var user = await core.getUserInfo();
+    if (user.userid) {
+      core.loading();
+      http
+        .get(addr.GetCityUserMsgList, {
+          appId: app.globalData.appid,
+          userId: user.userid,
+          pageSize: this.pageSize,
+          pageIndex: this.pageIndex
+        })
+        .then(data => {
+          wx.hideLoading();
+          if (data.isok) {
+            if (this.pageIndex == 1 && data.dataObj.list.length == 0) {
+             this.errText = "暂无消息通知";
+            } else if (this.pageIndex >= 1 && data.dataObj.list.length != 0) {
+              this.msgList = this.msgList.concat(data.dataObj.list);
+            } else if (data.dataObj.list.length == 0) {
+              this.errText = "我是有底线的";
+              this.isLoading =false;
+            }
+          } else {
+            core.showModal(data.Msg);
+          }
+          this.$apply();
+        });
+    } else {
+      core.openSetting();
+    }
+  }
+  onReachBottom() {
+    this.loadMore();
+  }
+  //上拉加载更多
+  loadMore() {
+    if (this.isLoading) {
+      this.pageIndex++;
+      this.GetCityUserMsgList();
+    }
+  }
+  onPullDownRefresh() {
+    wx.showNavigationBarLoading();
+    this.GetCityUserMsgList();
+    wx.stopPullDownRefresh();
+    wx.hideNavigationBarLoading();
+  }
+}
+</script>
+
+
+

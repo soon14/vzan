@@ -1,0 +1,356 @@
+<style lang="less">
+.my-createCard {
+  padding-bottom: 30rpx;
+  .notify {
+    width: 100%;
+    height: 110rpx;
+    background: #fff0ed;
+  }
+  .avator-wrap {
+    margin-top: 60rpx;
+    .avator {
+      width: 160rpx;
+      height: 160rpx;
+      border: 1px solid #d9d8d9;
+      border-radius: 50%;
+      background: rgba(217, 216, 217, 1);
+    }
+    .camera {
+      bottom: 10rpx;
+      right: 10rpx;
+      width: 30rpx;
+      height: 30rpx;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff; 
+      line-height: 25rpx; 
+      .camera-icon {
+        display: inline-block;
+        height: 16rpx;
+        width: 16rpx; 
+      } 
+    }
+  } 
+  
+  .form {
+    width: 100%;
+    .form-group {
+      height: 89rpx;
+      line-height: 89rpx;
+      margin-bottom: 0;
+      .form-input {
+        height: 89rpx;
+        line-height: 89rpx;
+        padding-left: 5rpx;
+      }
+    }
+  }
+  .btn-location {
+    width: 120rpx;
+    height: 60rpx;
+    border-radius: 30rpx;
+    line-height: 60rpx;
+    text-align: center;
+    border: 1px solid #ffa076;
+    color: #ffa076;
+  }
+  .btn-location-wrap {
+     left: 440rpx;
+     top: 0;
+     bottom: 0;
+     background-color: #fff;
+     width: 160rpx;
+  }
+  .mt55 {
+    margin-top: 55rpx;
+  }
+}
+</style>
+<template leng="wxml">
+  <view class="my-createCard f fv fc bg-w">
+      <view class="notify colorFF6F30 f fv fc jc">
+          <view>
+              完善个人名片的用户，更容易收获商业人脉
+          </view>
+          <view>
+              并得到平台名片榜单推荐
+          </view>
+      </view>
+      <view class="avator-wrap rel">
+          <image class="avator"  mode="aspectFill" @tap="uploadAvator" src="{{imgUrl}}"></image>
+          <text class="camera abs tc"><text class="camera-icon dzicon f16 icon-paizhao"></text></text>
+      </view>
+      <view class="form pl30 mt40 c333">
+          <view class="form-group f pr30">
+              <text class="f30 c666 fs">姓名：</text>
+              <input class="ml30 f30 form-input fg1" value="{{form.name}}" @input="inputName" placeholder="请输入姓名"/>
+          </view>
+           <view class="form-group f pr30">
+              <text class="f30 c666 fs">公司：</text>
+              <input class="ml30 f30 form-input fg1" value="{{form.companyName}}" @input="inputCompany" placeholder="请输入公司名"/>
+          </view>
+           <view class="form-group f pr30">
+              <text class="f30 c666 fs">部门：</text>
+              <input class="ml30 f30 form-input fg1"  value="{{form.department}}" @input="inputDepartment" placeholder="请输入部门"/>
+          </view>
+           <view class="form-group f pr30">
+              <text class="f30 c666 fs">职位：</text>
+              <input class="ml30 f30 form-input fg1" value="{{form.job}}" @input="inputJob" placeholder="请输入职业"/>
+          </view>
+          <view class="form-group f pr30">
+              <text class="f30 c666 fs">负责：</text>
+              <input class="ml30 f30 form-input fg1" value="{{form.desc}}" @input="inputDesc" placeholder="个人描述"/>
+          </view>
+           <view class="form-group f">
+              <text class="f30 c666 fs">所在地：</text>
+              <view class="f30 f fc fg1 fj pl8 pr30 rel">
+                  <view class="ellipsis wp70 fs">{{form.address}}</view>
+                  <view class="abs btn-location-wrap f fc jc">
+                     <button class="btn-location f24" @tap="setLct">设置定位</button>
+                  </view>
+              </view>
+          </view>
+           <view class="form-group f pr30">
+              <text class="f30 c666 fs">行业：</text>
+              <view class="ml30 f30 f fj fc fg1 pl8" @tap="goSelIndustry">
+                  <text>{{industryName}}</text>
+                  <text class="dzicon icon-jiantou f60 c666"></text>
+              </view>
+          </view>
+      </view>
+      <view class="pl30 f f26 c666 w-100 fc mt30" @tap="switchPhoneShow">
+          <!-- icon-Choice_xuanze -->
+          <text class="dzicon f40 mr20 {{isShowPhoneNum ? 'icon-Choice_xuanze color-light-green' : 'icon-Unselected_weixuanze'}}"></text>
+          <text>公开此名片上的手机号</text>
+      </view>
+      <button class="block-center btn-big bg-green cfff f30 mt55" @tap="saveCard">保存</button>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { tools, http, core } from "@/lib/core";
+import addr from "@/lib/addr";
+import Validator from "@/lib/wxValidator";
+const app = wepy.$instance;
+export default class createCard extends wepy.page {
+  config = {
+    navigationBarBackgroundColor: "#fff",
+    navigationBarTitleText: "完善名片",
+    enablePullDownRefresh: false
+  };
+
+  data = {
+    imgUrl: "",
+    form: {
+      name: "", //姓名
+      companyName: "", //公司名
+      department: "", //部门
+      job: "", //职位
+      address: "选择地址", //地址
+      industryid: "", //行业ID
+      lat: "",
+      lng: "",
+      desc: ''
+    },
+    isShowPhoneNum: false,
+    industryData: [],
+    industryName: "请选择行业",
+    userInfo: {},
+    formConnected: false
+  };
+
+  methods = {
+    async uploadAvator() {
+      var urls = await tools.upload();
+      console.log(urls);
+      this.imgUrl = urls.slice(0, 1)[0];
+      this.$apply();
+    },
+    setLct() {
+      var vm = this;
+      wx.chooseLocation({
+        success: res => {
+          vm.form.address = res.address;
+          vm.form.lat = res.latitude;
+          vm.form.lng = res.longitude;
+          vm.$apply();
+        }
+      });
+    },
+    goSelIndustry() {
+      //传行业信息
+      var industryDataStr = JSON.stringify(this.industryData);
+      tools.goNewPage("./business?industryData=" + industryDataStr);
+    },
+    inputJob(e) {
+      this.form.job = e.detail.value;
+    },
+    inputDepartment(e) {
+      this.form.department = e.detail.value;
+    },
+    inputCompany(e) {
+      this.form.companyName = e.detail.value;
+    },
+    inputName(e) {
+      this.form.name = e.detail.value;
+    },
+    inputDesc(e) {
+      this.form.desc = e.detail.value;
+    },
+    switchPhoneShow() {
+      this.isShowPhoneNum = !this.isShowPhoneNum;
+    },
+    async saveCard() {
+      var vm = this;
+      var form = this.form;
+      var hiddenphone = this.isShowPhoneNum ? 0 : -1;
+
+      var aid = await core.getAid();
+      wx.showLoading({
+        title: "提交中",
+        mask: true
+      });
+      http
+        .post(
+          addr.AddMyCard,
+          this.extend(
+            {
+              imgurl: this.imgUrl,
+              hiddenphone: hiddenphone,
+              userid: this.userInfo.Id,
+              sessionKey: this.userInfo.loginSessionKey,
+              type: 1,
+              aid,
+              appid: app.globalData.appid
+            },
+            this.form
+          )
+        )
+        .then(async res => {
+          tools.handleResult(
+            res,
+            async () => {
+              wx.hideLoading();
+              await tools.showModalCancle("编辑成功");
+              if (vm.formConnected) {
+                wx.switchTab({
+                  url: "/pages/join/join-index/index"
+                });
+              } else {
+                vm.setStorageWhenBack();
+                tools.goBack();
+              }
+            },
+            (err) => {
+              wx.hideLoading();
+              tools.showModalCancle(err.Msg);
+            }
+          );
+        });
+    }
+  };
+
+  extend(target, src) {
+    for (var key in src) {
+      target[key] = src[key];
+    }
+    return target;
+  }
+
+  setStorageWhenBack() {
+    tools.cacheGlobalData("editSuccess", true)
+  }
+
+  injectForm(src) {
+    for (var key in this.form) {
+      //转换首字母大写
+      var srcKey = key.replace(/(^\w)/, s1 => {
+        return s1.toUpperCase();
+      });
+      //因为industryid无法转换IndustryId，所以采取这种方式去补救
+      if (key == "industryid") {
+        srcKey = "IndustryId";
+      }
+      //假如地址没填则用默认显示
+      if (srcKey == "Address" && src[srcKey] == "") {
+        continue;
+      }
+      this.form[key] = src[srcKey];
+    }
+  }
+
+  findIndustryById(arr2D) {
+    if (this.form.industryid !== null && this.form.industryid !== 0) {
+      var i = 0;
+      var arr = [];
+      var result;
+      while ((arr = arr2D[i++].Children)) {
+        result = arr.find(val => {
+          return val.Id == this.form.industryid;
+        });
+        if (result) break;
+      }
+      return result.Name;
+    }
+    return "请选择行业";
+  }
+
+  async onLoad(query) {
+    tools.showLoading();
+    var vm = this;
+    var imgUrl;
+    //当未完善名片时，从人脉圈进来的标记
+    vm.formConnected = query.formConnected;
+    //注册后，首次点击名片进来的
+    if (query.imgUrl) {
+      imgUrl = query.imgUrl;
+      this.initData(imgUrl);
+      vm.industryData = await this.getIndustry();
+    } else {
+      //编辑名片信息的
+      var result = await core.getMyCard();
+      if (!result.isok) {
+        tools.showModalCanCle(result.Msg);
+        return;
+      }
+      var data = result.dataObj;
+      data.HiddenPhone == 0
+        ? (vm.isShowPhoneNum = true)
+        : (vm.isShowPhoneNum = false);
+      imgUrl = data.ImgUrl;
+
+      //缓存数据
+      this.initData(imgUrl);
+      this.injectForm(data);
+      vm.industryData = await this.getIndustry();
+      vm.industryName = vm.findIndustryById(vm.industryData);
+    }
+    wx.hideLoading();
+    vm.$apply();
+  }
+
+  async onShow() {
+    var info = tools.cacheGlobalData("industryInfo");
+    if (info) {
+      this.industryName = info.industryName;
+      this.form.industryid = info.industryid;
+      tools.cacheGlobalData("industryInfo", '');
+      this.$apply();
+    }
+  }
+
+  initData(url) {
+    this.imgUrl = url;
+  }
+
+  async getIndustry() {
+    var vm = this;
+    vm.userInfo = await core.getUserInfo();
+    var sessionKey = vm.userInfo.loginSessionKey;
+    var json = await http.post(addr.GetIndustryList, {
+      sessionKey: sessionKey
+    });
+    return json.dataObj;
+  }
+}
+</script>

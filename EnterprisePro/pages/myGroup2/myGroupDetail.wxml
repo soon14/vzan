@@ -1,0 +1,139 @@
+<!--pages/myGroup2/myGroupDetail.wxml-->
+<view class='{{currentSkin}} {{showModalStatus?"w-hidden":""}}'>
+
+  <view class='p40 bg-w f fc'>
+    <view>
+      <image src='{{postdata.GroupImage}}' class='pimg'></image>
+    </view>
+    <view style='margin-left:75rpx;' wx:if="{{postdata.State!=2}}">
+      <view class='t-b f44 c121212'>
+        <text>仅剩</text>
+        <text class='cred' wx:if="{{postdata!=null}}">{{postdata.GroupSize-postdata.GroupUserList.length}}</text>
+        <text>个名额</text>
+      </view>
+      <view class='f44 cred t-b mt30'>￥{{postdata.GroupPrice}}</view>
+      <view class='f24 c999 mt30'>￥{{postdata.OriginalPrice}}</view>
+    </view>
+    <view style='margin-left:75rpx;' wx:if="{{postdata.State==2}}">
+      <view class='t-b f32'>
+        <text class=''>{{postdata.GroupName}}</text>
+      </view>
+      <view class='f44 cred t-b mt30'>￥{{postdata.GroupPrice}}</view>
+      <view class='f24 c999 mt30'>拼团立省￥{{postdata.OriginalPrice-postdata.GroupPrice}}</view>
+    </view>
+  </view>
+
+  <view class='bg-w mt20 groupUserList2'>
+    <view class="headline aic {{postdata.GroupSize<5?'jussc':''}}">
+      <block wx:for="{{postdata.GroupUserList}}">
+        <view class='posre'>
+          <image class='headicon' src='{{item.HeadImgUrl}}' mode='aspectFill'></image>
+          <text class='tuanzhang' wx:if="{{item.Id==postdata.SponsorUserId}}">团长</text>
+        </view>
+      </block>
+      <view wx:for="{{postdata.GroupSize-postdata.GroupNum}}">
+        <view class='user-photo'>
+          <image src='http://j.vzan.cc/miniapp/img/group2/icon_blankuser.png'></image>
+        </view>
+      </view>
+    </view>
+
+    <view class='mt40'>
+      <button class='f28 cfff btn-invit btn_sel br0' bindtap='navtoG2Detail' data-groupid="{{postdata.Id}}" data-goodid="{{postdata.GoodId}}" wx:if="{{postdata.State==1&&!haveJoin}}">去参团</button>
+      <button class='f28 cfff btn-invit btn_sel br0' wx:if="{{postdata.State==-1&&haveJoin}}">拼团时间逾期 去首页看看吧</button>
+      <button class='f28 cfff btn-invit btn_sel br0' wx:if="{{postdata.State==1&&haveJoin}}" open-type='share'>邀请好友拼团 {{postdata.endtime}} 后结束</button>
+      <button class='f28 cfff btn-invit btn_sel br0' wx:if="{{postdata.State==2&&haveJoin}}" bindtap='navtoindex'>拼团人数已够 去首页看看吧</button>
+      <button class='f28 cfff btn-invit btn_sel br0' wx:if="{{postdata.State==4&&haveJoin}}">您未付款 点击去付款</button>
+    </view>
+  </view>
+
+
+
+  <view class='mt20 bg-w groupTopTwo' wx:if="{{GroupSponsorList.length!=0&&!isSponsor}}">
+    <!-- <view class='f fc item flex-rowsb'> -->
+    <!-- <view class='title f28'>{{GroupSponsorList.length}}人在开团，可直接参团</view> -->
+    <view class='d-flex-end' bindtap='showmore'>
+      <text>查看更多</text>
+      <image class='ml20' style='width:14rpx;height:22rpx;' src='https://j.vzan.cc/miniapp/img/group2/icon_right.png'></image>
+    </view>
+    <!-- </view> -->
+
+    <view class='groupTopTwo-wrap'>
+      <view class='d-flex d-flex-center item' wx:for="{{GroupSponsorList}}" wx:if="{{index<2}}">
+        <image src='{{item.UserLogo}}' mode='aspectFill' class=''></image>
+        <text class='f32 username flex1 line1'>{{item.UserName}}</text>
+        <view class='f24 des'>
+          <view class='cFFB049'>差
+            <text class='cF20033'>{{item.GroupSize-item.GroupUserList.length}}</text> 人成团</view>
+          <view class='c999'>剩余{{item.endtimeList}}</view>
+        </view>
+        <view class='btn-joinGroup btn_sel br0' bindtap='navtoG2Detail' data-goodid="{{item.GoodId}}" data-groupid='{{item.Id}}' wx:if="{{item.haveJoin==false}}">去参团</view>
+        <view class='btn-joinGroup btn_sel br0' bindtap='navtooDetail' data-groupid="{{item.Id}}" wx:if="{{item.haveJoin==true}}">查看详情</view>
+      </view>
+    </view>
+  </view>
+
+
+  <view class='mt20 pl30 bg-w'>
+    <view class='f fc item' wx:if="{{postdata.State!=2}}">
+      <view class='f1 f32 c333'>商品名称</view>
+      <view class='f28 c666'>{{postdata.GroupName}}</view>
+    </view>
+    <view class='f fc item' wx:if="{{postdata.State==2}}">
+      <view class='f1 f32 c333'>收货人</view>
+      <view class='f28 c666'>{{postdata.Name}}</view>
+    </view>
+    <view class='f fc item' wx:if="{{postdata.State==2}}">
+      <view class='f1 f32 c333'>收获地址</view>
+      <view class='f28 c666 flex-1'>{{postdata.Address}}</view>
+    </view>
+    <view class='f fc item'>
+      <view class='f1 f32 c333'>参团时间</view>
+      <view class='f28 c666'>{{postdata.StartDateStr}}</view>
+    </view>
+    <view class='f fc item'>
+      <view class='f1 f32 c333'>拼团须知</view>
+      <view class='f28 c666' bindtap='showpublic'>参与方式、拼团成功、拼团失败</view>
+      <image class='icon-right ml20' src='https://j.vzan.cc/miniapp/img/group2/icon_right.png'></image>
+    </view>
+  </view>
+  <view style='height:20rpx;'></view>
+  <!-- 弹窗 -->
+  <view class='bg' wx:if="{{showmoreGroup||showpublic}}" style='z-index:2'></view>
+  <view class='showmore' wx:if="{{showmoreGroup}}" style='z-index:3'>
+    <text class='l100 flex-rowc f32 fontblod bobof3'>正在开团</text>
+    <scroll-view scroll-y class='maxh550'>
+      <block wx:for="{{GroupSponsorList}}">
+        <view class='h120 flex aic ml20 mr20 bobof3 jussb'>
+          <view class='flex'>
+            <image src='{{item.UserLogo}}' class='headlogo'></image>
+            <view class='flex-column ml10'>
+              <view class='flex'>
+                <text class='f28'>{{item.UserName}} </text>
+                <text class='f24 c999 ml20'>还差{{item.GroupSize-item.GroupUserList.length}}人</text>
+              </view>
+              <text class='f24 c999'>剩余{{item.endtimeList}}</text>
+            </view>
+          </view>
+          <view class='joingroup flex-rowc btn_sel br0' bindtap='navtoG2Detail' data-goodid="{{item.GoodId}}" data-groupid='{{item.Id}}' wx:if="{{item.haveJoin==false}}">去参团</view>
+          <view class='joingroup flex-rowc btn_sel br0' bindtap='navtooDetail' data-groupid="{{item.Id}}" wx:if="{{item.haveJoin==true}}">查看详情</view>
+        </view>
+      </block>
+    </scroll-view>
+    <text class='c999 f24 l68 flex-rowc'>仅显示最多10个在开团的人</text>
+  </view>
+  <image class='unshowmore' src='/image/a35.png' bindtap='showmore' wx:if="{{showmoreGroup}}" style='z-index:3'></image>
+</view>
+
+<!-- 拼团须知弹窗 -->
+<view class='showmore f28 public' wx:if="{{showpublic}}">
+  <text class='l100 flex-rowc f32 fontblod bobof3'>拼团规则</text>
+  <view class='fontblod mtop30'>1.参与方式</view>
+  <text>开团邀请好友参团或参加别人的团，并在规定时间内成团，未达到拼团人数，钱款将自动原路退还。</text>
+  <view class='fontblod mtop30'>2.拼团成功</view>
+  <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。
+</text>
+  <view class='fontblod mtop30'>3.拼团失败</view>
+  <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+  <image class='unshowmore' style='bottom:16vh' src='/image/a35.png' bindtap='showpublic'></image>
+</view>

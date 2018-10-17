@@ -1,0 +1,86 @@
+<import src="/template/countdown.wxml" />
+
+<view class="header d-flex d-flex-center f32">
+  <view class='flex1 item {{vm.state==item.state?"sel":""}} ' wx:for="{{groupState}}" catchtap='changeMyGroupState' data-state='{{item.state}}'>
+    <text>{{item.name}}</text>
+  </view>
+</view>
+<view class='myGroupList2'>
+  <!--列表-->
+  <view class='myGroupUnit bg-w' wx:for="{{vm.list}}">
+    <view class=' d-flex'>
+      <view class='rel'>
+        <text class='groupState' style='padding:10rpx'>{{goodState_groupState[item.state].name}}</text>
+        <image class='pimg' src='{{item.goodList[0].goodsMsg.img}}' mode='aspectFill'></image>
+      </view>
+      <view class='groupUnit-r flex1 f fv fj'>
+        <view class='d-flex d-flex-center'>
+          <view class='flex1'>
+            <view class='line2 pname f32'>
+              {{item.goodList[0].goodsMsg.name}}
+            </view>
+          </view>
+        </view>
+        <view class='f c999 f28'>
+          <view class='f1'>{{item.goodList[0].SpecInfo}}</view>
+          <view>X{{item.goodList[0].Count}}</view>
+        </view>
+        <view class='priceDesc'>
+          <text class='c666 f28'>实付：</text>
+          <text class='f28 c-red'>￥</text>
+          <text class='f38 t-b'> {{item.buyPrice}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class='cl item-foot'>
+      <view class='btns d-flex'>
+        <!--进行中-->
+        <view class='btns d-flex' wx:if="{{item.groupstate==1&&item.state==1}}">
+          <navigator class='ml20 btn' open-type='navigate' url='/pages/group2/orderSuccess?gOrderid={{item.orderId}}&&isgroup==1'>
+            <view>订单详情</view>
+          </navigator>
+          <navigator class='ml20 btn' open-type='navigate' url='/pages/myGroup2/myGroupDetail?groupid={{item.groupid}}'>
+            <view class=''>参团详情</view>
+          </navigator>
+          <button open-type="share" class='btn btn-primary ml20' data-group="{{item}}">邀请小伙伴</button>
+        </view>
+        <!--已成功-->
+        <view class='btns d-flex' wx:elif="{{item.groupstate==2}}">
+          <navigator wx:if="{{item.IsGroup}}" class='ml20 btn' open-type='navigate' url='/pages/myGroup2/myGroupDetail?groupid={{item.groupid}}'>
+            <view>参团详情</view>
+          </navigator>
+          <navigator class='ml20 btn' open-type='navigate' url='/pages/group2/orderSuccess?gOrderid={{item.orderId}}&&isgroup==1'>
+            <view>订单详情</view>
+          </navigator>
+          <view wx:if="{{item.state==2}}" bindtap='changeOrderStatus' data-detailid="{{item.orderId}}" class='ml20 btn  btn-primary'>确认收货</view>
+        </view>
+        <!--未成团-->
+        <view class='btns d-flex' wx:elif="{{item.groupstate==-4}}">
+          <navigator class='ml20 btn' open-type='navigate' url='/pages/myGroup2/myGroupDetail?groupid={{item.groupid}}'>
+            <view>参团详情</view>
+          </navigator>
+          <navigator class='ml20 btn' open-type='navigate' url='/pages/group2/orderSuccess?gOrderid={{item.orderId}}&&isgroup==1'>
+            <view>订单详情</view>
+          </navigator>
+        </view>
+        <!--未付款-->
+        <view class='btns d-flex' wx:elif="{{item.groupstate==0}}">
+          <view class='ml20 f28 c999' wx:if="{{item.state==-1||item.state==6}}">该拼团已失效</view>
+          <view class='ml20 btn' bindtap='cancelorder' data-detailid="{{item.orderId}}" wx:if="{{!(item.state==-1||item.state==6)}}">取消订单</view>
+          <view class='btn btn-primary ml20' bindtap='gotopay' data-payid="{{item.citymorderId}}" data-detailid="{{item.orderId}}" wx:if="{{!(item.state==-1||item.state==6)}}">立即支付</view>
+        </view>
+        <view class='btns d-flex' wx:elif="{{item.groupstate==1&&item.state==0||item.groupstate==1&&item.state==6}}">
+          <view class='ml20 f28 c999' wx:if="{{item.state==-1||item.state==6}}">该参团已取消</view>
+          <view class='ml20 btn' bindtap='cancelorder' data-detailid="{{item.orderId}}" wx:if="{{!(item.state==-1||item.state==6)}}">取消订单</view>
+          <view class='btn btn-primary ml20' bindtap='gotopay' data-payid="{{item.citymorderId}}" data-detailid="{{item.orderId}}" wx:if="{{!(item.state==-1||item.state==6)}}">立即支付</view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <!--/列表-->
+  <view class='emptyData'>
+    <text wx:if="{{vm.ispost}}">加载中</text>
+    <text wx:elif="{{vm.loadall}}">已加载全部数据</text>
+  </view>
+</view>

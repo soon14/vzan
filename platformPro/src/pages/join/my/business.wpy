@@ -1,0 +1,44 @@
+<style lang="less">
+</style>
+<template leng="wxml">
+  <view class="my-business">
+    <comScroll :onSelectAfter="selected" title="全部行业"/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import addr from '@/lib/addr';
+import com_scroll from "@/components/com_scroll";
+export default class Business extends wepy.page {
+  config = {
+    navigationBarBackgroundColor: "#fff",
+    navigationBarTitleText: "选择行业",
+    enablePullDownRefresh: false
+  };
+
+  components = {
+    comScroll: com_scroll
+  }
+  
+  data = {
+      industryList: [] 
+  } 
+
+  selected(msg, industryid) {
+      console.log(msg, '选择了行业哦')
+      console.log(industryid, '选择了行业ID')
+      tools.cacheGlobalData('industryInfo',{
+          industryName: msg,
+          industryid
+      }) 
+      tools.goBack() 
+  }
+
+  onLoad(query) {
+      this.industryList = JSON.parse(query.industryData)
+      console.log(this.industryList) 
+      this.$invoke('comScroll', 'init', this.industryList)
+  } 
+}
+</script>

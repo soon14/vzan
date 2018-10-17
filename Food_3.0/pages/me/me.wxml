@@ -1,0 +1,101 @@
+<!--pages/me/me.wxml-->
+<import src="/template/template.wxml" />
+<view class='newVIpc' wx:if="{{islogin==false}}">
+  <view class='newCardentry' style='background-color:{{model.levelInfo.bgcolor}};'>
+    <view class='w120h120b bgcfff dzicon icon-mine_wode flex jusc' style='font-size:100rpx;padding-top:8rpx;color:{{model.levelInfo.bgcolor}}'></view>
+    <button class='w200 h66 cfff t28 mtop20' open-type='getUserInfo' bindgetuserinfo='getUserInfo' style='border:1rpx solid white;background-color:{{model.levelInfo.bgcolor}}'>点击登录</button>
+  </view>
+</view>
+<view class='newVIpc' bindtap='showVipmodal' wx:if="{{islogin==true}}">
+  <view class='newCardentry' style='background-color:{{model.levelInfo.bgcolor}};'>
+    <image src="{{userinfo.avatarUrl}}" class="header_img" mode='aspectFill'></image>
+    <text style='font-size:28rpx'>{{userinfo.nickName}}</text>
+    <text style='font-size:24rpx;'>{{model.levelInfo.name}}</text>
+    <view class='newcheckbtn' style='background-color:#f2f2f2;color:#999'>查看会员权益 ></view>
+  </view>
+</view>
+<view class='flex jusc mtop36 mbottom36' wx:if="{{iscloseBtn==1}}">
+  <view class='t28 cfff getcard' bindtap='getvipCard'>领取微信会员卡</view>
+</view>
+<!-- 金额  -->
+<view class='mymoney' wx:if="{{canSaveMoneyFunction}}">
+  <view class='mymoneyline1'>
+    <text>储值余额</text>
+    <text style='font-size:30rpx;color:#218cd7'>￥{{AccountMoneyStr}}</text>
+  </view>
+  <view class='mymoneyline1'>
+    <text>累计消费</text>
+    <text style='font-size:30rpx;color:#218cd7'>￥{{model.PriceSum}}</text>
+  </view>
+</view>
+<!-- 大图 -->
+<button class='btn flex-rowc' style='padding:30rpx 20rpx;margin:unset' bindtap="{{islogin?'navtomyStorevalue':''}}" wx:if="{{canSaveMoneyFunction}}" open-type="{{islogin?'':'getUserInfo'}}" bindgetuserinfo="{{islogin?'':'getUserInfo'}}">
+  <image src='/image/a24.png' style='height:180rpx;width:100%' mode='widthFix'></image>
+</button>
+<!-- 收货地址 -->
+<view style="background-color:white;padding-right:24rpx" bindtap="navtoAddress" wx:if="{{TablesNo==-999}}">
+  <view class="item">
+    <view style="display:flex;align-items:center">
+      <image src="../../image/a21.png" style="width:26rpx;height:34rpx;margin-right:23rpx;"></image>
+      <text>收货地址</text>
+    </view>
+    <image src="../../image/a6.png" style="width:15rpx;height:26rpx;"></image>
+  </view>
+</view>
+<!-- 联系客服 -->
+<view style="background-color:white;padding-right:24rpx">
+  <view class="item" bindtap="makephoneCall">
+    <view style="display:flex;align-items:center">
+      <image src="../../image/a22.png" style="width:30rpx;height:34rpx;margin-right:23rpx;"></image>
+      <text>联系客服</text>
+    </view>
+    <image src="../../image/a6.png" style="width:15rpx;height:26rpx;"></image>
+  </view>
+  <!-- 优惠券 -->
+  <view class="item" bindtap='navtoMycoupon'>
+    <view style="display:flex;align-items:center">
+      <image src="../../image/a48.png" style="width:38rpx;height:38rpx;margin-right:23rpx;"></image>
+      <text>优惠券</text>
+    </view>
+    <image src="../../image/a6.png" style="width:15rpx;height:26rpx;"></image>
+  </view>
+  <!-- 拼团 -->
+  <view class="item" bindtap='navtomygrouplist'>
+    <view style="display:flex;align-items:center">
+      <image src="../../image/a50.png" style="width:38rpx;height:38rpx;margin-right:23rpx;"></image>
+      <text>我的拼团</text>
+    </view>
+    <image src="../../image/a6.png" style="width:15rpx;height:26rpx;"></image>
+  </view>
+</view>
+<!-- 水印 -->
+<template is="AgentConfig" data="{{AgentConfig}}" />
+
+
+<!-- 会员卡弹窗  -->
+<!-- 背景模糊 -->
+<view class='bg6' wx:if="{{isshowVip}}"></view>
+<!-- 弹窗主题 -->
+<view class='t28 bgcfff w500 vipmodal' wx:if="{{isshowVip}}">
+  <view class='flex-column t32 modal-header'>
+    <view class='flex posre'>
+      <text class='c333'>{{model.levelInfo.name}}</text>
+      <image src='/image/a38.png' class='modal-crown'></image>
+    </view>
+    <view class='c666 mtop10'>享受以下会员权益</view>
+  </view>
+  <view class=' c218cd7 tea mtop24 mbottom20' wx:if="{{model.levelInfo.discount==100}}">暂无</view>
+  <view class=' c218cd7 tea mtop24 mbottom20' wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.type==2}}">以下服务享受{{model.levelInfo.discount*0.1}}折</view>
+  <view class=' c218cd7 tea mtop24 mbottom20' wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.type==1}}">全场服务享受{{model.levelInfo.discount*0.1}}折</view>
+  <view class=' c218cd7 tea mtop24 mbottom20' wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.type==0}}">无</view>
+  <view class='posre modal-sv'>
+    <scroll-view class='modal-sv' scroll-y wx:if="{{model.levelInfo.discount!=100&&model.levelInfo.foodgoodslist!=null}}">
+      <view class='flex-row'>
+        <text class='t26 c666' wx:for="{{model.levelInfo.foodgoodslist}}">{{item.GoodsName+'，'}}</text>
+      </view>
+    </scroll-view>
+    <image src='/image/a19.png' class='w80h80 modal-cancle' bindtap='showVipmodal'></image>
+  </view>
+</view>
+<!-- vip权益图标 -->
+<image src='/image/a37.png' class='modal-vipicon' mode="widthFix" wx:if="{{isshowVip}}"></image>

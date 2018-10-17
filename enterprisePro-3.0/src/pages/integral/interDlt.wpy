@@ -1,0 +1,125 @@
+<style lang="less">
+    .cff9 {
+        color: #ff953e;
+    }
+    .dlt {
+        width: 100%;
+        font-size: 26rpx;
+        color: #999;
+    }
+    .dlt-btn {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        text-align: center;
+        font-size: 32rpx;
+        font-weight: bold;
+    }
+</style>
+
+<template>
+    <view class="{{currentSkin}}">
+        <repeat>
+            <comSliderIn :currentCom="vm"></comSliderIn>
+        </repeat>
+        <view class="f fv p20">
+            <text class="f36 t-b">{{vm.activityname}}</text>
+            <text class="cff9 mt20" wx:if="{{vm.type==0}}">{{vm.integral}}积分</text>
+            <text class="cff9 mt20" wx:if="{{vm.type==1}}">￥{{vm.priceStr}}+{{vm.integral}}积分</text>
+        </view>
+        <view class="dlt fc f fc-h">
+            <view class='dzicon icon-wendang f32'></view>
+            <text>商品详情</text>
+        </view>
+        <repeat wx:if="{{vm.description!=''}}">
+            <comRichIn :currentCom="vm"></comRichIn>
+        </repeat>
+        <wxc-abnor type="ORDER" wx:if="{{vm.list[1].length==0}}" wx:if="{{vm.description==''}}"></wxc-abnor>
+        <view style="height:100rpx;"></view>
+        <view class="dlt-btn skin_bg" @tap='navOrder'>{{vm.btn}}</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,tools
+    } from "../../lib/core";
+    import com_slider_in from "../../components/com_slider_in";
+    import com_richt_in from "../../components/com_richtxt";
+    import {
+        wxParse
+    } from '../../lib/wxParse/wxParse';
+    export default class interRecord extends wepy.page {
+        config = {
+            navigationBarTitleText: "",
+            // 引入min组件
+            usingComponents: {
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+                "wxc-abnor": "../../packages/@minui/wxc-abnor/dist/index",
+            },
+        };
+        //第二步：声明组件
+        components = {
+            comSliderIn: com_slider_in,
+            comRichIn: com_richt_in,
+        };
+        data = {
+            vm: {},
+            currentSkin: {},
+            vm_order: {}
+        }
+        methods = {
+            wxParseImgTap(e) {
+                let src = e.currentTarget.dataset.src
+                 tools.preViewShow(src)
+            },
+        }
+        async onLoad(options) {
+            let id = options.id || 0
+            let type = options.type || '';
+            await tools.setPageSkin(this);
+            await this.dlt(id, type)
+        }
+        async dlt(id, type) {
+            let _g = await core.interDlt(id)
+            if (_g.isok) {
+                _g.obj.slideimgs_fmt = _g.obj.imgs_fmt
+                _g.obj.slideimgs = _g.obj.imgs
+                _g.obj.content_fmt = wxParse('content_fmt', 'html', _g.obj.description || "", this, 5);
+                type == 0 ? _g.obj.btn = "立即兑换" : _g.obj.btn = "立即购买"
+                _g.obj.type = type
+                await tools.setPageTitle(_g.obj.activityname)
+                this.vm = _g.obj
+                this.$apply()
+            } else {
+                tools.showModal(_g.msg,flase)
+            }
+        }
+        // 订单页
+        navOrder() {
+            let vm = this.vm
+            this.vm_order.list = []
+            this.vm_order.list.push({
+                ImgUrl: vm.activityimg,
+                oldPrice: vm.originalPriceStr,
+                SpecInfo: "",
+                Introduction: vm.activityname,
+                discount: 100,
+                discountPrice: vm.priceStr,
+                Count: 1,
+            })
+            this.vm_order.fee = vm.freightStr
+            this.vm_order.activityId = vm.id
+            this.vm_order.totalPrice = vm.priceStr
+            this.vm_order.totalCount = 1
+            this.vm_order.integral = vm.integral
+            this.vm_order.type = vm.type
+            this.$preload('vm_order', this.vm_order);
+            this.$navigate("/pages/integral/interOrder")
+        }
+    }
+</script>

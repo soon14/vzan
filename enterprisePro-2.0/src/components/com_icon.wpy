@@ -1,0 +1,136 @@
+<style lang="less">
+  .c-icon {
+    .c-icon-bg {
+      width: 100%;
+      height: 100vh;
+      background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 10%, rgba(0, 0, 0, 0.4) 90%);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 88;
+    }
+    .c-icon-main {
+      position: fixed;
+      bottom: 10%;
+      left: 30rpx;
+      border-radius: 50rpx;
+      z-index: 89;
+      .c-icon-main-up {
+        border-radius: 50%;
+        text-align: center;
+        color: #fff;
+      }
+      .c-icon-noChange {
+        width: 80rpx;
+        height: 80rpx;
+        background: rgba(0, 0, 0, 0.2);
+        line-height: 80rpx;
+        -webkit-transform: rotate(0);
+        transform: rotate(0);
+        -webkit-transition: -webkit-transform 0.2s linear;
+        transition: transform 0.2s linear;
+      }
+      .c-icon-change {
+        width: 100rpx;
+        height: 100rpx;
+        background: rgba(0, 0, 0, 0.5);
+        line-height: 100rpx;
+        -webkit-transform: rotate(45deg);
+        transform: rotate(45deg);
+        -webkit-transition: -webkit-transform 0.2s linear;
+        transition: transform 0.2s linear;
+      }
+      .c-icon-lst {
+        width: 100rpx;
+        >text {
+          width: 100%;
+          text-align: center;
+          line-height: 80rpx;
+          font-size: 40rpx;
+          color: #fff;
+        }
+        .c-icon-showall {
+          visibility: visible;
+          height: 80rpx;
+          transition: all 0.1s ease;
+          -webkit-transition: all 0.1s ease;
+        }
+        .c-icon-noall {
+          visibility: hidden;
+          height: 0;
+          transition: all 0.1s ease;
+          -webkit-transition: all 0.1s ease;
+        }
+      }
+    }
+    .c-icon-other {
+      position: fixed;
+      bottom: 10%;
+      right: 30rpx;
+      z-index: 87;
+    }
+  }
+</style>
+<template>
+  <view class="c-icon">
+    <view class="c-icon-main f fv fj fc" style="background:{{vm.showState?'rgba(0,0,0,0.2)':'rgba(0,0,0,0)'}}; transition: all 0.1s ease; -webkit-transition:all 0.1s ease;">
+      <view class="c-icon-lst f fv">
+        <text class="dzicon icon-Forward_fenxiang {{vm.showState?'c-icon-showall':'c-icon-noall'}}" wx:if="{{vm.share}}" @tap="goIcon(0)" />
+        <text class="dzicon icon-yuyuedan {{vm.showState?'c-icon-showall':'c-icon-noall'}}" wx:if="{{vm.sub}}" @tap="goIcon(1)" style="font-size:38rpx" />
+        <text class="dzicon icon-gouwuche {{vm.showState?'c-icon-showall':'c-icon-noall'}}" wx:if="{{vm.shop}}" @tap="goIcon(2)" />
+        <text class="dzicon icon-jinbi {{vm.showState?'c-icon-showall':'c-icon-noall'}}" wx:if="{{vm.reduction}}" @tap="goIcon(3)" />
+      </view>
+      <view wx:if="{{vm.share||vm.sub||vm.shop||vm.reduction}}" class="dzicon icon-jiahao c-icon-main-up {{vm.showState?'c-icon-change':'c-icon-noChange'}}" @tap="changeState" />
+    </view>
+    <view class="c-icon-bg" wx:if="{{vm.showState}}" @tap="changeState" />
+    <view class=' c-icon-other f fv'>
+      <view class="dzicon icon-shouye2 c-icon-other-main" style="margin-bottom:20rpx" wx:if="{{vm.homeStatus}}" @tap="goIcon(4)" />
+      <view class="dzicon icon-xiala-copy c-icon-other-main" wx:if="{{vm.backUp}}" @tap="goIcon(5)" />
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    canvas,
+    tools
+  } from "../lib/core.js";
+  export default class com_icon extends wepy.component {
+    data = {}
+    methods = {
+      changeState() {
+        this.$emit('showIcon')
+      },
+      async goIcon(id) {
+        if (Number(id) != 4 && Number(id) != 5) {
+          this.$emit('showIcon')
+        }
+        switch (Number(id)) {
+          case 0:
+            await tools.showLoading()
+            await canvas.getShare()
+            this.$emit("showCanvas")
+            wx.hideLoading()
+            break;
+          case 1:
+            tools.goNewPage("/pages/good/goodSubLst");
+            break;
+          case 2:
+            tools.goNewPage("/pages/good/goodShopCar");
+            break;
+          case 3:
+            tools.goNewPage("/pages/discount/reductionLst")
+            break;
+          case 4:
+            tools.goRedirecto("/pages/index/index?currentPageIndex=0")
+            break;
+          case 5:
+            tools.onPageScroll();
+            break;
+        }
+      },
+    };
+  }
+</script>

@@ -1,0 +1,537 @@
+<style lang="less">
+    .wrap {
+        background-color: #fff;
+        padding: 30rpx;
+    }
+    .t-r {
+        text-align: right;
+    }
+    .pop-layer {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background-color: rgba(0, 0, 0, 0.5);
+        transition: all 300ms ease both;
+        width: 100%;
+        height: 100%;
+    }
+    .pop-mask {
+        position: absolute;
+        z-index: 990;
+        width: 100%;
+        top: 0;
+        bottom: 0;
+    }
+    .pop-wrap {
+        position: absolute;
+        bottom: 0;
+        background-color: #fff;
+        width: 100%;
+        min-height: 300rpx;
+        z-index: 998;
+    }
+    .btn-danger {
+        width: 100%;
+        background-color: #ff5b5b;
+        height: 100rpx;
+        line-height: 100rpx;
+        text-align: center;
+        color: #fff;
+    }
+    .btn-ok {
+        width: 100%;
+        background-color: #fe943d;
+        height: 100rpx;
+        line-height: 100rpx;
+        text-align: center;
+        color: #fff;
+    }
+    .pop-hide {
+        height: 0;
+    }
+    .maxheight600 {
+        max-height: 600rpx;
+        overflow-y: scroll;
+    }
+    .btn-pay {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+    }
+    .btn-pay button {
+        height: 88rpx;
+        line-height: 88rpx;
+        border: 0;
+        cursor: pointer;
+    }
+    .icon-zhifuchenggong {
+        font-size: 50rpx;
+        color: #09bb07;
+    }
+    .icon-kongxinyuan {
+        font-size: 50rpx;
+        color: #333;
+    }
+    .icon-weixin {
+        font-size: 55rpx;
+        color: #09bb07;
+        margin-right: 20rpx;
+    }
+    .icon-qiandai {
+        font-size: 55rpx;
+        color: #fea512;
+        margin-right: 20rpx;
+    }
+    .paynew {
+        width: 100%;
+        height: 160rpx;
+        background-color: #fff;
+        border-radius: 5rpx;
+        padding-left: 20rpx;
+        input {
+            font-size: 80rpx;
+            height: 100rpx;
+            line-height: 100rpx;
+            font-weight: bold;
+        }
+        view {
+            width: 200rpx;
+            color: #999;
+        }
+    }
+    .pay-discount {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        color: #666;
+        padding-left: 10rpx;
+    }
+    .pay-user {
+        width: 100%;
+        height: 200rpx;
+        background: #fff;
+        border-radius: 5rpx;
+        >view:first-child {
+            border-bottom: 1px solid #eee;
+        }
+        .main {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            padding: 0 20rpx;
+            .vipModal {
+                width: 123rpx;
+                height: 36rpx;
+                text-align: center;
+                line-height: 36rpx;
+                border-radius: 18rpx;
+                font-size: 22rpx;
+                display: inline-block;
+            }
+        }
+    }
+    .pay-money {
+        width: 100%;
+        margin-top: 40rpx;
+    }
+</style>
+<template>
+    <view class="{{currentSkin}} p20">
+        <form @submit='payIn' report-submit="true">
+            <view class="paynew f fc fc-h">
+                <view>支付金额(元)</view>
+                <input type='digit' name="money" @input='getPrice' focus value='{{payMoney}}' class="f1" />
+            </view>
+            <view class="pay-discount">可用优惠</view>
+            <view class="pay-user">
+                <view class="main f">
+                    <view class="f fc f1">
+                        <text class="f34 c333">会员折扣</text>
+                        <text class="vipModal ml20 skin_bg">{{vm.vip.levelInfo.name}}</text>
+                    </view>
+                    <view class='c999'>
+                        <text wx:if="{{vm.vip.levelInfo.type==0||vm.vip.levelInfo.type==2}}">无会员卡优惠</text>
+                        <text wx:elif="{{vm.vip.levelInfo.type==1}}">{{vm.vip.levelInfo.discount/10}}折优惠</text>
+                    </view>
+                </view>
+                <view class="main f">
+                    <view class="f34 c333 f1">优惠券</view>
+                    <view class='skin_txt' @tap='chooseCoupons'>
+                        <view wx:if="{{pickCoupon==null}}">选择优惠券</view>
+                        <view wx:else class='line line1' style='max-width:500rpx;text-align:right;'>{{pickCoupon.CouponName}}</view>
+                    </view>
+                </view>
+            </view>
+            <view class="pay-discount">支付方式</view>
+            <view class="pay-user">
+                <view class="main f">
+                    <view class="f32 f fc f1">
+                        <text class="dzicon icon-weixin"></text>
+                        <text>微信支付</text>
+                    </view>
+                    <view class="dzicon icon-kongxinyuan" wx:if="{{showPay==false||payindex==2}}" @tap="selectPay(1)"></view>
+                    <view class="dzicon icon-zhifuchenggong" wx:if="{{showPay&&payindex==1}}" @tap="hidePay"></view>
+                </view>
+                <view class="main f">
+                    <view class="f32 f fc f1">
+                        <text class="dzicon icon-qiandai"></text>
+                        <text>储值支付<text class="skin_txt f26">(￥{{vm.price.AccountMoneyStr}})</text></text>
+                    </view>
+                    <view class="dzicon icon-kongxinyuan" wx:if="{{showPay==false||payindex==1}}" @tap="selectPay(2)"></view>
+                    <view class="dzicon icon-zhifuchenggong" wx:if="{{showPay&&payindex==2}}" @tap="hidePay"></view>
+                </view>
+            </view>
+            <view class='wrap mt20' wx:if="{{vm.price.AccountMoneyStr}}">
+                <view class='f fc'>
+                    <view class='f1 t-r skin_txt'>
+                        <view wx:if="{{money_vip>0}}">会员折扣：- ￥{{money_vip}} 元</view>
+                        <view class='' wx:if="{{money_coupon>0}}">优惠券：- ￥{{money_coupon}} 元</view>
+                    </view>
+                </view>
+                <view class='f fc'>
+                    <view class='f1'>小计</view>
+                    <view class='f60' style='color:#F3C847;'>￥{{money_cal_fmt||0}}</view>
+                </view>
+                <view class='skin_txt t-r'>储值余额：￥{{vm.price.AccountMoneyStr}} 元</view>
+            </view>
+            <!--优惠券选择层-->
+            <view class="pop-layer {{!couponsShow?'pop-hide':''}}">
+                <view class='pop-mask' catchtap='chooseCoupons'></view>
+                <view class='rel pop-wrap pop-coupon'>
+                    <view class='tc pop-title ph20'>选择卡券</view>
+                    <scroll-view class='maxheight600' style='background-color: #f7f6f5' scroll-y="true" @scrolltolower="reachCouponBottom" wx:if="{{couponsShow}}">
+                        <repeat>
+                            <comCoup :vm.sync="vmMycoupon" @useMyCoupon.user="useMyCoupon"></comCoup>
+                        </repeat>
+                    </scroll-view>
+                    <view class='f fc'>
+                        <view class='btn-danger f32 f1' @tap='notuseCoupon'>不使用卡券</view>
+                        <view class='btn-ok f32 f1' @tap='pickCouponOK'>关闭</view>
+                    </view>
+                </view>
+            </view>
+            <!--/优惠券选择层-->
+            <view class='btn-pay'>
+                <button class="skin_bg" form-type='submit'>确认支付</button>
+            </view>
+        </form>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        pay
+    } from "../../lib/core";
+    import _get from "../../lib/lodash.get.js";
+    import com_coup from "../../components/com_coup";
+    // import
+    //第一步： 引入组件文件
+    export default class storePay extends wepy.page {
+        config = {
+            navigationBarTitleText: "支付",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index"
+            }
+        };
+        components = {
+            comCoup: com_coup
+        };
+        data = {
+            vm: {},
+            currentSkin: {},
+            canpay: false,
+            couponsShow: false,
+            pickCoupon: null,
+            money_cal_fmt: 0,
+            money_vip: 0,
+            money_coupon: 0,
+            payMoney: "",
+            vmMycoupon: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 10,
+                state: 99,
+                listname: "pickmycoupon"
+            },
+            showPay: false,
+            payindex: 0
+        };
+        methods = {
+            selectPay(index) {
+                this.payindex = index
+                this.showPay = true;
+                this.$apply();
+            },
+            hidePay() {
+                this.payindex = 0
+                this.showPay = false;
+                this.$apply();
+            },
+            payMode(e) {
+                this.payindex = Number(e.detail.value);
+            },
+            /***
+             * money_vip会员折扣减价
+             * money_coupon优惠价折扣减价
+             * money_cal_fmt实际付钱
+             */
+            getPrice(e) {
+                var value = e.detail.value;
+                if (/[^\d.]/gi.test(value)) {
+                    this.setData({
+                        payMoney: "",
+                        money_cal_fmt: "",
+                        money_vip: 0,
+                        money_coupon: 0
+                    });
+                    return;
+                }
+                if (value === ".") {
+                    this.payMoney = "0.";
+                    return;
+                }
+                //整数位大于7
+                if (value.split(".").length - 1 == 0 && value.length > 7) {
+                    this.setData({
+                        payMoney: value.substring(0, 7),
+                        canpay: false
+                    });
+                    return;
+                }
+                //多个小数点
+                if (value.split(".").length - 1 > 1) {
+                    var v = value.split(".");
+                    this.setData({
+                        payMoney: v[0] + ".",
+                        canpay: false
+                    });
+                    return;
+                }
+                //小数位大于2
+                if (value.split(".").length - 1 == 1 && value.split(".")[1].length > 2) {
+                    var v = value.split(".");
+                    this.setData({
+                        payMoney: v[0] + "." + v[1].substring(0, 2),
+                        canpay: false
+                    });
+                    return;
+                }
+                if (!/^[\d]{1,7}.?([\d]{1,2})?$/gi.test(value)) {
+                    this.payMoney = "";
+                    this.payMoney = "";
+                    this.money_vip = 0;
+                    this.money_coupon = 0;
+                    return;
+                }
+                this.payMoney = value;
+                this.calMoney();
+            },
+            chooseCoupons() {
+                this.couponsShow = !this.couponsShow;
+            },
+            useMyCoupon(index) {
+                this.pickCoupon = this.vmMycoupon.list[index];
+                this.calMoney();
+                this.couponsShow = false;
+            },
+            pickCouponOK() {
+                this.couponsShow = false;
+                this.calMoney();
+            },
+            notuseCoupon() {
+                this.pickCoupon = null;
+                this.couponsShow = false;
+                this.calMoney();
+            },
+            //支付
+            async payIn() {
+                let payIndex = Number(this.payindex)
+                let paymoney = Number(this.payMoney); //输入金额
+                let calmoney = Number(this.money_cal); //支付金额
+                let savePrice = this.vm.price.AccountMoneyStr;
+                if (this.canpay == true && payIndex == 2) {
+                    return;
+                }
+                if (paymoney <= 0) {
+                    return;
+                }
+                if (!savePrice && payIndex == 2) {
+                    tools.showModal("请先充值", false);
+                    return;
+                }
+                if ((calmoney > savePrice * 100) && payIndex == 2) {
+                    tools.showModal("余额不足", false);
+                    return;
+                }
+                //检查优惠券是否可用
+                if (this.pickCoupon) {
+                    //有使用限制
+                    if (this.pickCoupon.LimitMoney > 0) {
+                        if (paymoney.mul(100) < this.pickCoupon.LimitMoney) {
+                            tools.showModal("未达到优惠券使用条件！", false);
+                            return false;
+                        }
+                    }
+                }
+                await this.addOrder(paymoney, calmoney);
+            }
+        };
+        async onLoad() {
+            await tools.setPageSkin(this);
+        }
+        async onShow() {
+            await this.payInfo();
+            core.getCoup("", this);
+        }
+        async addOrder(paymoney, calmoney) {
+            let payway = Number(this.payindex);
+            if (payway == 0) {
+                tools.showModal("请选择支付方式", false)
+                return;
+            }
+            let showInfo = await tools.showModal("确认支付吗?");
+            let discountType = _get(this.pickCoupon, "discountType", 0)
+            if (showInfo.confirm) {
+                wx.showNavigationBarLoading();
+                let pay_g = await core.payByStore(
+                    this.pickCoupon,
+                    paymoney,
+                    calmoney,
+                    this.money_coupon,
+                    this.money_vip,
+                    payway,
+                    discountType,
+                );
+                if (typeof calmoney == "number" && calmoney == 0) {
+                    tools.loading("支付成功");
+                    setTimeout(function() {
+                        wx.hideNavigationBarLoading();
+                        tools.goNewPage("/pages/my/storeSuccess?orderid=" + pay_g.obj.orderid);
+                    }, 1000);
+                    return;
+                }
+                if (payway == 1) {
+                    this.wxPay(pay_g.obj);
+                } else {
+                    this.xwPay(pay_g.obj);
+                }
+            }
+        }
+        onHide() {
+            this.vmMycoupon = {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 10,
+                state: 0,
+                listname: "pickmycoupon"
+            };
+            this.$apply();
+        }
+        // 微信支付
+        async wxPay(_g) {
+            let that = this;
+            let newparam = {
+                orderid: _g.orderid,
+                type: 1
+            };
+            let wxpay = await pay.PayOrder(newparam);
+            if (wxpay != "" && wxpay.errMsg.includes("requestPayment:ok")) {
+                tools.loading("支付成功");
+                setTimeout(function() {
+                    wx.hideNavigationBarLoading();
+                    tools.goNewPage("/pages/my/storeSuccess?orderid=" + _g.orderid);
+                }, 1000);
+            } else {
+                wx.hideNavigationBarLoading();
+                tools.loading("取消支付");
+            }
+        }
+        //储值支付
+        async xwPay(_g) {
+            tools.loading("支付成功");
+            setTimeout(function() {
+                wx.hideNavigationBarLoading();
+                tools.goNewPage("/pages/my/storeSuccess?orderid=" + _g.orderid);
+            }, 1000);
+        }
+        reachCouponBottom() {
+            core.getCoup("", this);
+        }
+        async payInfo() {
+            let model = await core.getVipInfo();
+            let _g = await core.valueMoney();
+            this.vm.vip = model;
+            this.vm.price = _g.saveMoneySetUser;
+            this.$apply();
+        }
+        calMoney() {
+            var money = Number(this.payMoney) || 0;
+            money = money * 100;
+            var calMoney = money;
+            var money_coupon = 0;
+            var money_vip = 0;
+            var coupon = this.pickCoupon;
+            if (money > 0) {
+                //如果有会员折扣
+                var vip = this.vm.vip;
+                if (vip.levelInfo && vip.levelInfo.type == 1) {
+                    if (coupon == null || (coupon && coupon.discountType != 1)) {
+                        var precalMoney = calMoney;
+                        calMoney = calMoney.mul(vip.levelInfo.discount.div(100));
+                        var vip_p = (1).sub(vip.levelInfo.discount.div(100));
+                        money_vip = precalMoney.mul(vip_p).div(100);
+                    }
+                }
+                if (calMoney < 0) {
+                    calMoney = 0;
+                }
+                //如果使用了优惠券
+                if (coupon != null) {
+                    if (coupon.LimitMoney <= 0 || calMoney >= coupon.LimitMoney) {
+                        coupon.Money = Number(coupon.Money);
+                        //指定金额 - 优惠
+                        if (coupon.CouponWay == 0) {
+                            calMoney = calMoney.sub(coupon.Money);
+                            money_coupon = coupon.Money.div(100);
+                        } else if (coupon.CouponWay == 1) {
+                            //折扣 * 折扣
+                            var p = Number(coupon.Money_fmt).div(10);
+                            //会员卡折扣后的金额
+                            var money_aftervip = calMoney;
+                            calMoney = calMoney.mul(p);
+                            var coupon_p = (1).sub(p);
+                            money_coupon = money_aftervip.mul(coupon_p).div(100);
+                        }
+                        if (calMoney < 0) {
+                            calMoney = 0;
+                        }
+                    } else {
+                        tools.showModal("未达到优惠券使用条件！", false);
+                        this.pickCoupon = null;
+                        this.$apply();
+                        return;
+                    }
+                }
+                if (calMoney > this.vm.price.AccountMoneyStr * 100) {
+                    this.canpay = true;
+                } else {
+                    this.canpay = false;
+                }
+            }
+            this.money_cal = calMoney;
+            this.money_cal_fmt = calMoney.div(100).toFixed(2);
+            this.money_vip = money_vip.toFixed(2);
+            this.money_coupon = money_coupon.toFixed(2);
+        }
+    }
+</script>

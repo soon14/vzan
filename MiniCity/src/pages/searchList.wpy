@@ -1,0 +1,167 @@
+<style lang="less">
+  view {
+    box-sizing: border-box;
+  }
+  page {
+    background-color: #f7faf8;
+  }
+  .phcolor {
+    color: #b2b2b2;
+  }
+  .search {
+    .content {
+      width: 638rpx;
+      height: 64rpx;
+      padding: 0 14rpx;
+      margin: 0 auto;
+      background: #f5f7f5;
+      border-radius: 30rpx; 
+      color: #666;
+      box-sizing: border-box;
+    }
+  } 
+  .no-content {
+    height: 190rpx;
+    position: relative;
+    .bg-line {
+      width: 550rpx;
+      border-bottom: 1rpx solid #ededed;
+    }
+    .text {
+      z-index: 3;
+      background: #f7faf8;
+      display: block;
+      padding: 0 40rpx;
+    }
+  }
+</style>
+
+<template>
+  <view>
+    <!-- 搜索 -->
+    <view class="search w-100 h100 bg-w f fc fc-h">
+      <input placeholder-class="phcolor" placeholder="请输入你想查找的信息内容" focus="true" class="content f22" bindconfirm="getSearchText" />
+    </view>
+    <!-- 帖子列表 -->
+    <view>
+      <repeat for="{{list}}" item="infoItem">
+        <comInfoItem :info.sync="infoItem" :comIndex.sync="index" :comUser.sync="userInfo"></comInfoItem>
+      </repeat>
+    </view>
+    <view class="no-content tc f fc fc-h" wx:if="{{!isLoading}}">
+      <view class="bg-line abs"></view>
+      <text class="text c-c6c8cc f24 abs">我是有底线的</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http
+  } from "@/lib/core";
+  import addr from "@/lib/addr";
+  import com_infoItem from "@/components/com_infoItem";
+  export default class setting extends wepy.page {
+    config = {
+      navigationBarTitleText: "搜索"
+    };
+    components = {
+      comInfoItem: com_infoItem,
+    };
+    data = {
+      text: "",
+      isUpData: false,
+      isLoading: true,
+      pageIndex: 1,
+      pageSize: 8,
+      list: [],
+      userInfo:{},
+    };
+    methods = {
+      getSearchText(e) {
+        this.text = e.detail.value;
+        this.isUpData = true;
+        this.isLoading = true;
+        this.getMsgByUserId(this.text);
+      },
+   
+    };
+    events = {};
+    async onLoad() {
+      this.userInfo = await core.getUserInfo();
+      wx.hideShareMenu();
+    }
+    async getMsgByUserId(keyMsg) {
+      core.loading();
+      var app = wepy.$instance;
+      var userInfo = await core.getUserInfo();
+      if (keyMsg != "") {
+        http
+          .post(addr.GetMsgList, {
+            appId: app.globalData.appid,
+            userId: userInfo.userid,
+            keyMsg: keyMsg,
+            pageSize: this.pageSize,
+            pageIndex: this.pageIndex
+          })
+          .then(data => {
+            wx.hideLoading();
+            if (data.isok) {
+              if (this.isUpData) {
+                this.list = data.dataObj.list;
+                this.isUpData =false;
+              } else if (this.pageIndex == 1 && data.dataObj.list.length == 0) {
+                core.showToast("暂无您所搜索的内容", "none", 1200);
+              } else if (this.pageIndex >= 1 && data.dataObj.list.length > 0) {
+                this.list = this.list.concat(data.dataObj.list);
+              } else if (this.pageIndex >= 1 && data.dataObj.list.length == 0) {
+                this.isLoading = false;
+              }
+              this.$apply();
+            } else {
+              core.showModal(data.Msg);
+            }
+          });
+      } else {
+        core.showToast("请输入要搜索的内容", "none", 1200);
+      }
+    }
+    onReachBottom() {
+      this.loadMore();
+    }
+    //上拉加载更多
+    loadMore() {
+      if (this.isLoading) {
+        this.pageIndex++;
+        this.getMsgByUserId(this.text);
+      }
+    }
+    //分享
+    onShareAppMessage(e) {
+      var id = e.target.dataset.id;
+      var index = e.target.dataset.index;
+      var title = this.list[index].msgDetail;
+      var imgUrl = this.list[index].imgList[0] ?
+        this.list[index].imgList[0] :
+        "http://j.vzan.cc/miniapp/img/MiniCity/shareDefault.jpg";
+      var app = wepy.$instance;
+      var that = this;
+      return {
+        title: title,
+        imageUrl: imgUrl,
+        path: "/pages/classifyDetails?msgId=" + id,
+        success: function(res) {
+          core.addMsgViewFavoriteShare(app.globalData.appid, id, 2);
+          that.list[index].ShareCount++;
+          that.$apply();
+          core.showToast("分享成功", "success", 1000);
+        },
+        fail: function(res) {
+          console.log(res);
+        }
+      };
+    }
+  }
+</script>

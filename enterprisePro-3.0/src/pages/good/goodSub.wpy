@@ -1,0 +1,364 @@
+<style lang="less">
+  .c-form {
+    height: 100rpx;
+    line-height: 100rpx;
+    background: #fff;
+    margin-bottom: 20rpx;
+    padding: 0 20rpx;
+    font-size: 28rpx;
+  }
+  .c-area {
+    height: 200rpx;
+    line-height: 200rpx;
+    background: #fff;
+    padding: 0 20rpx;
+    margin-bottom: 20rpx;
+    font-size: 28rpx;
+  }
+  .c66 {
+    color: #666666;
+  }
+  .form-btn {
+    width: 95%;
+    height: 88rpx;
+    line-height: 88rpx;
+    text-align: center;
+    color: #fff;
+    font-size: 32rpx;
+  }
+  .f-none {
+    width: 100%;
+    font-size: 30rpx;
+    color: #666666;
+    text-align: center;
+    line-height: 100vh;
+  }
+  .f-list {
+    .f-item {
+      position: relative;
+      width: 88%;
+      margin: 30rpx auto;
+      border-radius: 12rpx;
+      background: #fff;
+      .f-status {
+        width: 120rpx;
+        height: 120rpx;
+        position: absolute;
+        top: -10rpx;
+        right: -2rpx;
+      }
+      .f-title {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        font-size: 32rpx;
+        text-align: center;
+        color: #666666;
+        background: #ddd;
+        border-radius: 12px 12px 0px 0px;
+        margin-bottom: 30rpx;
+      }
+      .f-main {
+        margin: 0 0 39rpx 20rpx;
+        font-size: 28rpx;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class='{{currentSkin}}'>
+    <repeat wx:if="{{showform=='true'&&array.form.type=='yyform'}}">
+      <form @submit="postForm" report-submit="true">
+        <!-- 名字 -->
+        <view class='c-form f fc' wx:if="{{array.form.showname}}">
+          <view class="dzicon icon-personal1 f50 mr10"></view>
+          <input class='w-100' type='text' maxlength='20' placeholder='请输入您的名字' placeholder-class='c66' name="姓名"></input>
+        </view>
+        <!-- 号码 -->
+        <view class='c-form f fc' wx:if="{{array.form.showphone}}">
+          <view class="dzicon icon-contact3 f50 mr10"></view>
+          <input class='w-100' type='number' maxlength='11' placeholder='请输入您的号码' placeholder-class='c66' name="手机号码"></input>
+        </view>
+        <!-- 性别 -->
+        <view class='c-form f fc' wx:if="{{array.form.showsex}}">
+          <view class='dzicon icon-xingbie f50 mr10'></view>
+          <picker class='w-100' @change="sexChange" value="{{array.index}}" range="{{array.array1}}">
+            <input class='w-100' disabled type='text' maxlength='5' placeholder='请输入您的性别' placeholder-class='c66' value='{{array.array1[array.index]}}' name="性别"></input>
+          </picker>
+        </view>
+        <!-- 年龄 -->
+        <view class='c-form f fc' wx:if="{{array.form.showage}}">
+          <view class='dzicon icon-riqixianxing f50 mr10'></view>
+          <input class='w-100' type='number' maxlength='6' placeholder='请输入您的年龄' placeholder-class='c66' name="年龄"></input>
+        </view>
+        <!-- 地图选位置 勾选->地址并精确-->
+        <view class='c-form f fc fj' wx:if="{{array.form.showmap}}">
+          <view class='w-100 f fc' @tap='chooseLocation'>
+            <view class='dzicon icon-address f50 mr10'></view>
+            <input class='w-100' type='text' value="{{array.region}}" placeholder='选择地址' placeholder-class='c66' disabled name="地址"></input>
+          </view>
+          <view class='dzicon icon-jiantou f40 c66'></view>
+        </view>
+        <!-- 三联 勾选->地址-->
+        <view class="c-form f fc" wx:if="{{array.form.showdress&&array.form.showmap==false}}">
+          <view class='dzicon icon-address f50 mr10'></view>
+          <picker class='w-100' mode="region" @change="addrChange">
+            <input class='w-100' type='text' disabled name="地址" value='{{array.region}}' placeholder-class='ccc'></input>
+          </picker>
+        </view>
+        <!--详细地址-->
+        <view class="c-form f fc" wx:if="{{array.form.showdress}}">
+          <view class='dzicon icon-address f50 mr10'></view>
+          <input class='w-100' type='text' maxlength='16' name="详细地址" placeholder='可补充街道和门牌号等地址信息' placeholder-class='c66'></input>
+        </view>
+        <!-- 时间选择 -->
+        <view class='c-form f fc' wx:if="{{array.form.showtime}}" @tap='showData(1)'>
+          <view class="dzicon icon-trends2 f50 mr10"></view>
+          <input class='w-100' placeholder='请提前{{array.form.timecount}}{{array.form.timetype}}预约' name="预约时间" type='text' disabled value="{{pickTime[1]}}"></input>
+          <comPicker @closeData.user="closeData" wx:if="{{showPicker[1]}}" :vm.sync="vm_time" :formIndex="1"></comPicker>
+        </view>
+        <!-- 备注 -->
+        <view class='c-area f fc' wx:if="{{array.form.showremark}}">
+          <view class="dzicon icon-news1 f50 mr10"></view>
+          <input class='w-100' placeholder="买家备注(字数不超过100)" maxlength='100' placeholder-class='c66' name="备注"></input>
+        </view>
+        <view class="w-100 f fc-h">
+          <button formType="submit" class='form-btn skin_bg mt20'>立即预约</button>
+        </view>
+      </form>
+    </repeat>
+    <repeat wx:else>
+      <view class='f-none' wx:if="{{vm_form.list==''}}">
+        <text>没有预约记录</text>
+      </view>
+      <view wx:else class="f-list">
+        <repeat for="{{vm_form.list}}">
+          <view class='f-item f fv' wx:if="{{item.state==1||item.state==2}}">
+            <image wx:if="{{item.state==2}}" class='f-status' mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/on.png' />
+            <image wx:else class='f-status' mode='aspecFill' src='http://j.vzan.cc/miniapp/img/enterprise/off.png' />
+            <view class='f-title line line1'>
+              <text class='pw20'>预约产品:{{item.remark.goods.name}}</text>
+            </view>
+            <view class='f-main f fv'>
+              <repeat for="{{item.formdatajson}}">
+                <text>{{item}}</text>
+              </repeat>
+            </view>
+          </view>
+        </repeat>
+      </view>
+    </repeat>
+    <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+    <view wx:if="{{vm_form.loadall&&vm_form.ispost==false}}">
+      <wxc-loadmore text="到底啦" icon="https://s10.mogucdn.com/mlcdn/c45406/171016_47j96cl3hdhhdf7ajg8hg2kd13gdc_400x400.png"></wxc-loadmore>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import com_pickerTime from "../../components/com_pickerTime";
+  import _get from "../../lib/lodash.get.js"
+  import {
+    core,
+    tools
+  } from "../../lib/core";
+  // import
+  //第一步： 引入组件文件
+  export default class subscribe extends wepy.page {
+    config = {
+      usingComponents: {
+        "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+        "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+      },
+      navigationBarTitleText: "预约",
+      enablePullDownRefresh: true,
+    };
+    //第二步：声明组件
+    components = {
+      comPicker: com_pickerTime
+    };
+    props = {};
+    data = {
+      array: {},
+      currentSkin: {},
+      pickTime: {},
+      vm_time: {},
+      showPicker: {},
+      showform: "false",
+      toast: {
+        show: false,
+        msg: "",
+        inMess: ""
+      },
+      vm_form: {
+        pageindex: 1,
+        pagesize: 5,
+        list: [],
+        ispost: false,
+        loadall: false
+      },
+    };
+    computed = {};
+    methods = {
+      // 性别选择
+      sexChange(e) {
+        this.array.index = Number(e.detail.value);
+        this.array.region = e.detail.value;
+      },
+      // 三联地址选择
+      addrChange(e) {
+        this.array.region = e.detail.value;
+      },
+      //选择位置位置
+      chooseLocation(e) {
+        wx.chooseLocation({
+          success: res => {
+            this.array.region = res.address;
+          }
+        });
+      },
+      //提交表单
+      postForm(e) {
+        core.formId(e.detail.formId)
+        let [value, detail] = [this.data.array.form, e.detail.value];
+        if (value.showname && detail.姓名 == "") {
+          tools.ShowToast("请填写姓名", this);
+        } else if (value.showphone &&detail.手机号码=="") {
+          tools.ShowToast("请填写手机号", this);
+        } else if (value.showage && detail.年龄 == "") {
+          tools.ShowToast("请填写年龄", this);
+        } else if (value.showage && detail.年龄 == "0") {
+          tools.ShowToast("年龄不能为0", this);
+        } else if (value.showdress && value.showmap == false && detail.地址 == "请选择地址") {
+          tools.ShowToast("请选择地址", this);
+        } else if (value.showmap && detail.地址 == "请选择地址") {
+          tools.ShowToast("请选择地址", this);
+        } else if (value.showtime && detail.预约时间 == "") {
+          tools.ShowToast("请选择预约时间", this);
+        } else {
+          let id = this.pagedata.id;
+          let name = this.pagedata.name;
+          let formVm = {
+            datajson: JSON.stringify(detail),
+            remark: JSON.stringify({
+              goods: {
+                name: name,
+                id: id
+              }
+            }),
+            formId: 0
+          };
+          core.submitForm(formVm);
+        }
+      },
+      showData(formIndex) {
+        this.showPicker[formIndex] = true;
+        this.timeConfig();
+        this.$apply()
+      },
+      closeData(_p, formIndex) {
+        this.pickTime[formIndex] = _p
+        this.showPicker[formIndex] = false;
+        this.$apply()
+      }
+    };
+    async onLoad(options) {
+      let app = wepy.$instance
+      await tools.setPageSkin(this);
+      let type = _get(options, "showform")
+      if (type == "true") {
+        this.array = {
+          form: app.globalData.sub,
+          region: "请选择地址",
+          array1: ["男", "女"],
+          index: 0
+        };
+        this.pagedata = {
+          id: options.id || 0,
+          name: options.name || "",
+        }
+      } else {
+        core.subMore(this);
+      }
+      this.showform = type;
+      this.$apply()
+    }
+    // 获取当前时间
+    timeConfig() {
+      let _time_vm = {};
+      let years = []
+      let value = []
+      let nowDate = new Date()
+      let months = this.timeSpan(12)
+      let days = this.timeSpan(31)
+      let hours = this.timeSpan(24)
+      let mins = this.timeSpan(60)
+      let nowYear = nowDate.getFullYear();
+      let nowMonth = nowDate.getMonth() + 1;
+      let nowDay = nowDate.getDate();
+      let nowHour = nowDate.getHours();
+      let nowMin = nowDate.getMinutes();
+      for (let i = 1990; i <= nowDate.getFullYear() + 1; i++) {
+        years.push(i);
+      }
+      // 未满足大于10时添加0
+      nowMonth = this.timeAdd(nowMonth)
+      nowDay = this.timeAdd(nowDay)
+      nowHour = this.timeAdd(nowHour)
+      nowMin = this.timeAdd(nowMin)
+      // indexOf寻找当前时间下标
+      value = [
+        years.indexOf(nowYear),
+        months.indexOf(nowMonth),
+        days.indexOf(nowDay),
+        hours.indexOf(nowHour),
+        mins.indexOf(nowMin)
+      ];
+      _time_vm = {
+        value,
+        years,
+        months,
+        days,
+        hours,
+        mins
+      };
+      this.vm_time = _time_vm;
+      this.$apply();
+    }
+    //赋值
+    timeSpan(num) {
+      let data = []
+      for (let i = 1; i <= num; i++) {
+        i < 10 ? i = "0" + i : ""
+        data.push(i);
+      }
+      return data
+    }
+    //补零
+    timeAdd(time) {
+      time < 10 ? time = "0" + time : time = time
+      return time
+    }
+    onReachBottom() {
+      if (this.showform == 'false') {
+        wx.clearStorageSync('subList')
+        core.subMore(this);
+      }
+    }
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      if (this.showform == 'false') {
+        this.vm_form = tools.resetArray(this.vm_form)
+        wx.clearStorageSync('subList')
+        core.subMore(this);
+      }
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+        wx.hideNavigationBarLoading();
+      }, 1000);
+    }
+  }
+</script>

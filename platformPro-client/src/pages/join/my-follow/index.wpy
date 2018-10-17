@@ -1,0 +1,108 @@
+<style lang="less">
+.my-follow {
+  .other-msg {
+    margin-bottom: 20rpx;
+    &:last-child {
+      margin-bottom: 0;
+    }
+    .other-msg-item {
+    }
+  }
+  .null-data {
+    margin-top: 481rpx;
+  }
+}
+</style> 
+<template>
+  <view class="my-follow">
+       <!-- 谁赞过我 -->
+    <view class="f fv pl30 pt20 c666 ">
+      <view class="null-data tc pr30" wx:if="{{info.count == 0}}">
+        暂无数据
+      </view>
+      <view wx:else>
+        <repeat for="{{info.list}}" key="index" index="index" item="item">
+          <view class="other-msg mt20 pr30">
+            <view class="lh15 f24 mb20">
+              {{item.AddTimeStr}}
+            </view>
+            <view class="other-msg-item bg-w"  @tap="goDetail({{item.MyCardModel.UserId}})">
+              <comNameCard :cardModal.sync="item.MyCardModel" :onFollowAfter="toFollow" :listIndex.sync="activeTabIndex"  :itemIndex="index"/>
+            </view>
+          </view>
+        </repeat>
+      </view>
+    </view> 
+    <comWait wx:if="{{isWait}}"/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import addr from "@/lib/addr";
+import { http, tools, core } from "@/lib/core";
+import com_nameCard from "@/components/com_nameCard";
+import com_wait from "@/components/com_wait";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的人脉",
+    enablePullDownRefresh: true
+  };
+
+  data = {
+    info: {
+      count: 0,
+      list: []
+    },
+    isWait: false
+  };
+
+  components = {
+    comNameCard: com_nameCard,
+    comWait: com_wait
+  };
+
+  methods = {
+    goDetail(userId) {
+      tools.goNewPage(
+        "../../connected/connected-detail/index?someoneId=" + userId
+      );
+    }
+  };
+
+  async onLoad(query) {
+    //   var cardId = query.cardId
+    //   if (!cardId) {
+    //       tools.goBack()
+    //       return
+    //   }
+    //记得补翻参数
+    this.isWait = true;
+    await this.getOtherFavoriteListC(20);
+    this.isWait = false;
+    this.$apply();
+  }
+
+  async onPullDownRefresh() {
+    wx.showNavigationBarLoading();
+    this.isWait = true;
+    await this.getOtherFavoriteListC(20);
+    this.isWait = false;
+    this.$apply();
+    wx.hideNavigationBarLoading();
+    wx.stopPullDownRefresh();
+  }
+
+  async getOtherFavoriteListC(cardId) {
+    var result = await core.getOtherFavoriteList({
+      type: 1,
+      mycardid: cardId,
+      actiontype: 2,
+      pageindex: 1
+    });
+    tools.handleResult(result, res => {
+      console.log(res);
+      this.info = res;
+    });
+  }
+}
+</script>

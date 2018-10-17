@@ -1,0 +1,198 @@
+<style lang="less">
+.com_tab {
+  top: 0;
+  width: 100%;
+  z-index: 9;
+  border-bottom: 1px solid #f7f7f7;
+  .pw20 {
+    padding: 0 20rpx;
+  }
+  .com-tab-list {
+    width: 100%;
+    height: 100rpx;
+    line-height: 100rpx;
+    text-align: center;
+    position: relative;
+    .com-tab-item {
+      line-height: 100rpx;
+      text-align: center;
+      flex-grow: 1;
+    }
+    .line {
+      height: 2px;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      transition: all 0.25s ease-in-out;
+    }
+  }
+  .inline-block___ {
+    display: inline-block;
+    flex-wrap: nowrap;
+    width: 160rpx;
+    flex-shrink: 0;
+  }
+}
+</style>
+<template>
+  <view class="com_tab f30" style="{{zIndex && 'z-index:' + zIndex +';'}} {{'background-color:' + bgColor + ';'}} {{'position:' + position + ';'}} {{color && 'color:' + color + ';'}}">
+      <view class="pw20" wx:if="{{!scroll}}">
+        <view class="com-tab-list f fj">
+            <view class="com-tab-item" wx:for="{{list}}" wx:key="{{index}}" data-state="{{item.state}}" data-index="{{index}}"  style="{{specialWidth.index && specialWidth.index == index && 'width:' + specialWidth.width + 'rpx;'}}  {{activeIndex == index && 'color:' + activeColor + ';'}}" @tap="move">
+                <text class="com-tab-item-text">{{item.title}}</text>
+            </view>
+            <view class="line" style="{{'width:' + targetWidth + ';transform:translateX(' + targetLeft + ');'}} {{'background-color:' + lineColor + ';'}}"></view>
+        </view>
+      </view>
+      <scroll-view scroll-x class="pw20" scroll-with-animation scroll-into-view="dazhi_{{activeIndex}}" wx:if="{{scroll}}" scroll-left="{{scrollLeft}}">
+          <view class="com-tab-list f fj">
+            <view id="dazhi_{{index}}"  class="com-tab-item inline-block___  {{activeIndex == index ? 'skin_txt' : ''}}" wx:for="{{list}}" wx:key="{{index}}" data-state="{{item.state}}" data-index="{{index}}"  style="{{specialWidth.index && specialWidth.index == index && 'width:' + specialWidth.width + 'rpx;'}} {{activeIndex == index && 'color:' + activeColor + ';'}}" @tap="move">
+                <text class="com-tab-item-text">{{item.title}}</text>
+            </view>
+            <view class="line" style="{{'width:' + targetWidth + ';transform:translateX(' + targetLeft + ');'}} {{'background-color:' + lineColor + ';'}}"></view>
+           </view>
+      </scroll-view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class Tab extends wepy.component {
+  props = {
+    //the callback after click and return a currentTarget's state
+    onClickAfter: {
+      type: String,
+      default: ""
+    },
+    // scroll or not
+    scroll: {
+      type: [Boolean, String],
+      default: false
+    },
+    //to define a active item by index
+    activeIndex: {
+      type: [Number, String],
+      default: 0,
+      twoWay: true
+    },
+    //background-color
+    bgColor: {
+      type: String,
+      default: "#fff"
+    },
+    //the porperty of position is fiexd or not, it default is absolute
+    position: {
+      type: [String],
+      default: "static"
+    },
+    //source array
+    // {title: '', state: ''}
+    list: {
+      type: Array,
+      default: []
+    },
+    //to define a special item's width by index
+    specialWidth: {
+      type: Object,
+      default: {
+        width: "",
+        index: ""
+      }
+    },
+    //the font color
+    color: {
+      type: String,
+      default: "#666"
+    },
+    lineColor: {
+      type: String,
+      default: "#FF5733"
+    },
+    activeColor: {
+      type: String,
+      default: "#FF5733"
+    },
+    scrollLeft: {
+      type: Number,
+      default: 0
+    },
+    zIndex: {
+      type: Number,
+      default: ""
+    },
+    /**
+     * 底部线条跟随目标有2种模式 ：
+     * 1.'itemTrace'：跟随item（默认） ，
+     * 2.'textTrace': 跟随item的文本（当scroll为true时无效）
+     */
+    mode: {
+      type: String,
+      default: "itemTrace"
+    }
+  };
+
+  data = {
+    nodeRefs: [],
+    targetWidth: 0,
+    targetLeft: 0
+  };
+
+ 
+  methods = {
+    move(e) {
+      var index = e.currentTarget.dataset.index;
+      var parent = this.$parent || null;
+      var state = e.currentTarget.dataset.state;
+      this.activeIndex = index;
+      this.targetLeft =
+        (this.mode == "itemTrace"
+          ? this.getLeftFormWidth(index)
+          : this.getLeftRelativeWindow(index) - 10) + "px";
+
+      this.targetWidth = this.nodeRefs[index].width + "px";
+      this.onClickAfter &&
+        typeof parent[this.onClickAfter] === "function" &&
+        parent[this.onClickAfter](state);
+    },
+    async init() {
+      var vm = this;
+      var res = await this.getNodesInfo();
+      vm.nodeRefs = res;
+      vm.targetWidth = res[vm.activeIndex].width + "px";
+      vm.targetLeft =
+        (this.mode == "itemTrace"
+          ? this.getLeftFormWidth(vm.activeIndex)
+          : this.getLeftRelativeWindow(vm.activeIndex) - 10) + "px";
+
+      vm.$apply();
+    }
+  };
+
+  getNodesInfo() {
+    return new Promise(resolve => {
+      var vm = this;
+      var query = wx.createSelectorQuery();
+      var className =
+        this.mode == "itemTrace" ? ".com-tab-item" : ".com-tab-item-text";
+      var refs = query.selectAll(className);
+      refs
+        .boundingClientRect(res => {
+          resolve(res);
+        })
+        .exec();
+    });
+  }
+ 
+  getLeftRelativeWindow(index) { 
+    return this.nodeRefs[index].left;
+  } 
+  
+  getLeftFormWidth(index) {
+    var iteration = 0;
+    for (let i = 0; i < index; i++) {
+      iteration = iteration + this.nodeRefs[i].width;
+    }
+    return iteration;
+  }
+} 
+</script>

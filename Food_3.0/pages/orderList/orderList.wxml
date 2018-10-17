@@ -1,0 +1,46 @@
+<!--pages/orderList/orderList.wxml-->
+
+<block wx:for="{{postdata}}" wx:for-item="this" wx:if="{{postdata.length!=0}}">
+  <block wx:for="{{this.orderList}}">
+    <view class="all" id="{{item.Id}}" bindtap="{{item.OrderTypeStr!='预约'?'navtoOrderinfo':''}}">
+      <!-- 第一行 -->
+      <view class="line1">
+        <view style="display:flex;align-items:center" wx:if="{{item.BuyMode!=10}}">
+          <text>{{item.BuyMode==1?'微信支付':'储值支付'}}</text>
+          <text class="eatcondition" wx:if="{{item.OrderTypeStr=='外卖'}}">{{item.OrderTypeStr}}</text>
+        </view>
+        <text wx:if="{{item.BuyMode==10}}">线下支付</text>
+        <!-- <text>{{item.StateTitle}}</text> -->
+        <text>{{item.OrderTypeStr!='预约'?item.StateTitle:'该订单为预约订单'}}</text>
+      </view>
+      <!-- 第二行 -->
+      <view class="orderinfo">
+        <view style="margin:30rpx 0 0 0">{{item.GoodsDtlName}}</view>
+      </view>
+      <!-- 第三行 -->
+      <view class="line1" style="margin-top:12rpx">
+        <text style="font-size:24rpx;color:#999">{{item.CreateDate}}</text>
+        <view style="display:flex;align-items:center">
+          <text style="color:#FF535F;font-size:20rpx">￥</text>
+          <text style="color:#FF535F;font-size:32rpx">{{item.BuyPrice}}</text>
+        </view>
+      </view>
+      <!-- 第四行 -->
+      <view wx:if="{{item.OrderTypeStr!='预约'}}">
+        <view wx:if="{{item.GetWay!=2}}">
+          <view class="line4" hidden="{{item.StateTitle=='已完成'}}">
+            <view class="line4btn" wx:if="{{item.StateTitle=='待付款'}}" catchtap="gotoPay" data-payid="{{item.cityMorderId}}" data-orderid="{{item.Id}}">确认付款</view>
+            <view class="line4btn" wx:if="{{item.StateTitle=='待送餐'}}" catchtap="changeState" id="{{item.Id}}" data-stateId="-2">申请退款</view>
+            <view class="line4btn " style="margin-left:30rpx;" catchtap="changeState" id="{{item.Id}}" data-stateId="-1" data-pid="{{index}}" wx:if="{{item.StateTitle=='待付款'&&item.BuyMode!=10}}">取消订单</view>
+            <view class="line4btn " style="margin-left:30rpx;" catchtap="changeState" id="{{item.Id}} " data-pid="{{index}}" data-stateId="-2" wx:if="{{item.StateTitle=='待接单'&&item.OrderTypeStr=='外卖'}}">申请退款</view>
+            <view class="line4btn " style="margin-left:30rpx;" catchtap="changeState" id="{{item.Id}} " data-pid="{{index}}" data-stateId="-2" wx:if="{{item.StateTitle=='退单中'&&item.OrderTypeStr=='外卖'}}">申请退款</view>
+            <view class="line4btn " style="margin-left:30rpx;" catchtap="changeState" data-stateId="5" id="{{item.Id}} " data-pid="{{index}}" wx:if="{{item.StateTitle=='待确认送达'&&item.OrderTypeStr=='外卖'}}">确认送达</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</block>
+
+
+<view wx:if="{{postdata.length==0}}" class='tea t32 c999 mtop40'>订单空空如也~</view>

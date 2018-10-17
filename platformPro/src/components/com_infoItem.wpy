@@ -1,0 +1,486 @@
+<style lang="less">
+  .info-wrap {
+    padding-left: 28rpx;
+    .info-item {
+      padding: 30rpx 28rpx;
+      padding-left: 0;
+      position: relative; // border-bottom: 1px solid #eee;
+      // &:last-child {
+      //   border: none;
+      // }
+      &::after {
+        content: "";
+        position: absolute;
+        left: 0; 
+        bottom: 0;
+        width: 100%;
+        height: 1px;
+        background-color: #eee; 
+      }
+      .userpic {
+        text-align: center;
+        margin-right: 30rpx;
+        &>image {
+          width: 80rpx;
+          height: 80rpx; 
+          border-radius: 50%;
+          background-color: #f0f0f0;
+        }
+      }
+      .info-content {
+        .title {
+          padding-bottom: 5rpx;
+          .user-info {
+            .name {
+              &>image {
+                width: 30rpx;
+                height: 37rpx;
+                vertical-align: middle;
+                margin-left: 30rpx;
+              }
+              .topicon {
+                color: red;
+                margin-left: 18rpx;
+              }
+            }
+          }
+          .contact {
+            .contact-btn {
+              padding: 10rpx 18rpx;
+              color: #ffa076;
+              border: 1px solid #ffa076;
+              border-radius: 38rpx;
+            }
+          }
+        }
+        .text {
+          padding-bottom: 25rpx;
+        }
+        .img {
+          padding-bottom: 25rpx;
+          .img-sm {
+            width: 180rpx;
+            height: 180rpx;
+            margin: 0 6rpx;
+            margin-bottom: 12rpx;
+          }
+          .img-xl {
+            width: 272rpx;
+            height: 272rpx;
+            margin: 0 6rpx;
+            margin-bottom: 12rpx;
+          }
+        }
+        .bottom {
+          overflow: hidden;
+          padding: 0 10rpx; // height: 75rpx;
+          .interact {
+            .options {
+              opacity: 0;
+              visibility: hidden;
+              width: 238rpx;
+              height: 60rpx;
+              background-color: #666;
+              border-radius: 8rpx;
+              top: 0;
+              left: 0rpx;
+              z-index: 9;
+              transition: all 0.2s ease-in-out;
+            }
+            .fadeIn {
+              opacity: 1;
+              left: -256rpx;
+              visibility: visible;
+            }
+          }
+        }
+        .comment {
+          width: 100%;
+          background-color: #f0f0f0;
+          border-radius: 5rpx;
+          .dz-user {
+            width: 100%;
+            min-height: 76rpx;
+            padding: 18rpx 14rpx;
+            .userImg {
+              width: 40rpx;
+              height: 40rpx;
+              background-color: #d9d8d9;
+              border-radius: 50%;
+              margin-left: 13rpx;
+              margin-bottom: 5rpx;
+            }
+          }
+          .content {
+            padding: 18rpx 14rpx;
+            .item {
+              margin-bottom: 6rpx;
+            }
+          }
+          .bd-b {
+            border-bottom: 1px solid #d9d8d9;
+          }
+        }
+        .comment::before {
+          display: block;
+          content: "";
+          border-width: 10rpx 10rpx 10rpx 10rpx;
+          border-style: solid;
+          border-color: transparent transparent #f0f0f0 transparent;
+          position: absolute;
+          top: -18rpx;
+          right: 10rpx;
+        }
+      }
+    }
+  }
+</style>
+
+<template lang="wxml">
+  <!-- 帖子 -->
+  <view>
+    <repeat for="{{infoList}}" item="info">
+      <view class="info-wrap bg-w">
+        <view class="info-item f">
+          <!-- 用户头像 -->
+          <view class="userpic">
+            <image src="{{info.UserHeaderImg}}" mode="aspectFill" @tap="goHisAsset({{info.MyCardId}}, {{info.UserId}})" />
+          </view>
+          <!-- 用户信息-->
+          <view class="info-content w-100" @tap="jumpClassifyDetails({{index}})">
+            <!-- 发布者名 -->
+            <view class="title f fc fj">
+              <view class="user-info">
+                <view class="name f fc">
+                  <view class="f26 line line1" style="max-width:400rpx;" wx:if="{{info.UserName!=null}}">{{info.UserName}}</view>
+                  <view class="dzicon icon-Recommend4 topicon" wx:if="{{!info.IsExpired}}"></view>
+                  <!-- <image src="http://j.vzan.cc/miniapp/img/MiniCity/icon-top.png" wx:if="{{!info.isExpired}}" /> -->
+                </view>
+                <!-- <text class="f22 c-c6c8cc">{{info.showTimeStr}}</text> -->
+              </view>
+              <view wx:if="{{isMyPublishOrFavorite}}" class="contact" @tap.stop="deleteThis({{info.Id}}, {{info.FavoriteId}})">
+                <text class="contact-btn f22">删除</text>
+              </view>
+              <!-- <view wx:if="{{myCardId != info.MyCardId && !isMyPublishOrFavorite}}" class="contact" @tap.stop="phoneCall({{index}})">
+                <text class="contact-btn f22">联系TA</text>
+              </view> -->
+            </view>
+            <!-- 文字内容 -->
+            <view>
+              <view class="text mt20 f26">
+                <view class="line line4">
+                  <text class="c-5f97c3" wx:if="{{info.MsgTypeName!=null}}">#{{info.MsgTypeName}}# </text>
+                  <text>{{info.MsgDetail}}</text>
+                </view>
+              </view>
+              <!-- 图片内容 -->
+              <view class="img f fw" wx:if="{{info.ImgList.length>0}}">
+                <repeat for="{{info.ImgList}}" item="imgUrl" index="imgIndex" wx:if="{{imgIndex<6}}">
+                  <view class="img-sm" wx:if="{{info.ImgList.length>=3}}">
+                    <image src="{{imgUrl}}" class="w-full h-full" mode="aspectFill" data-type="info" />
+                  </view>
+                  <view class="img-xl" wx:if="{{info.ImgList.length<3}}">
+                    <image src="{{imgUrl}}" class="w-full h-full" mode="aspectFill" data-type="info" />
+                  </view>
+                </repeat>
+              </view>
+            </view>
+            <!-- 地址 -->
+            <view class="f fc f20 " wx:if="{{labelIndex==1}}">
+              <view class="dzicon icon-dingwei c-a1a2a3 f22"></view>
+              <text class="wp85 c666 ml10 line line1" @tap.stop="clickLocation({{index}})">{{info.Location}}</text>
+            </view>
+            <!-- 底部 -->
+            <view class="bottom">
+              <view class="f fc">
+                <!-- 审核状态 -->
+                <view class="f22 mr20" style="color:#FD5A5A" wx:if="{{info.Review==1}}">[{{info.ReviewState}}]</view>
+                <view class="f22 c-a1a2a3">{{info.ShowTimeStr}}</view>
+              </view>
+              <view class="f fc fj mt30">
+                <view class="f fc c-a1a2a3">
+                  <view class="dzicon icon-liulanliang  f26"></view>
+                  <text class="ml10 f22">{{info.ViewCount}}</text>
+                </view>
+                <view class="f fc c-a1a2a3">
+                  <view class="dzicon icon-pinglun f26"></view>
+                  <text class="ml10 f22 ">{{info.Comments.length}}</text>
+                </view>
+                <view class=" f fc {{info.IsDzed?'cff6f30':'c-a1a2a3'}}" @tap.stop="clickLike({{index}})">
+                  <view class="dzicon icon-dianzan f28"></view>
+                  <text class="ml10 f22">{{info.DzCount}}</text>
+                </view>
+              </view>
+              <!-- <view class="rel interact " wx:if="{{!isMyPublishOrFavorite}}">
+                    <view class="dzicon icon-Eject_danchupinglun f50 c666" @tap.stop="toggleInteract({{index}})"></view>
+                    <view class="abs options f fc tc cfff f26 {{info.showBtn ? 'fadeIn' : ''}}">
+                      <view class="f1" style="border-right:1px solid #fff;" @tap.stop="clickComment({{index}})">评论</view>
+                      <view class="f1" @tap.stop="clickLike({{index}})">{{info.DzBtnText}}</view>
+                    </view>
+                  </view> -->
+            </view>
+            <!-- 评论 -->
+            <!-- <view class="comment rel mt10" hidden="{{info.Comments==null || info.Comments.length==0 && info.DzUsers.length==0}}">
+                  <view class="dz-user f {{info.Comments.length!=0&&info.DzUsers.length!=0?'bd-b':''}}" wx:if="{{info.DzUsers.length>0}}">
+                    <view class="dzicon icon-aixin mt10 c666 f20"></view>
+                    <view class="f fc fw">
+                      <repeat for="{{info.DzUsers}}" item="dzItem">
+                        <image class="userImg" src="{{dzItem.MyCardModel.ImgUrl}}" mode="aspectFill"></image>
+                      </repeat>
+                    </view>
+                  </view>
+                  <view class="content" wx:if="{{info.Comments.length>0}}">
+                    <repeat for="{{info.Comments}}" item="commentItem">
+                      <view class="item f24">
+                        <text class="c666">
+                                    <text wx:if="{{commentItem.NickName!=null}}">{{commentItem.NickName}}</text>：</text>
+                        <text>{{commentItem.CommentDetail}}</text>
+                      </view>
+                    </repeat>
+                  </view>
+                </view> -->
+          </view>
+        </view>
+      </view>
+    </repeat>
+    <comBottomInput :isShow.sync="showInput" :onConfirmAfter="sendComment" :onClickMaskArter="closeMask"></comBottomInput>
+    <comLogin :openLogin.sync="openLogin" />
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import addr from "@/lib/addr";
+  import {
+    core,
+    tools,
+    http
+  } from "@/lib/core";
+  import com_bottom_input from "@/components/com_bottom_input";
+  import com_login from "@/components/com_login";
+  export default class com_infoItem extends wepy.component {
+    components = {
+      comBottomInput: com_bottom_input,
+      comLogin: com_login
+    };
+    data = {
+      showInput: false,
+      infoIndex: "",
+      ReviewSetting: 0,
+      openLogin: false
+    };
+    props = {
+      infoList: {
+        type: Array,
+        twoWay: true
+      },
+      labelIndex: {
+        type: Number,
+        default: 0
+      },
+      isMyPublishOrFavorite: {
+        type: Boolean,
+        default: false
+      },
+      onClickDelAfter: {
+        type: Function,
+        default: null
+      },
+      jumpPath: {
+        type: String,
+        default: "../classify-details/index"
+      },
+      onClickContactAfter: {
+        type: Function,
+        default: null
+      },
+      isRegister2: {
+        type: [String, Boolean],
+        default: ""
+      },
+      myCardId: {
+        type: Number,
+        default: 0
+      },
+      onClickAvatorAfter: {
+        type: Function,
+        default: null
+      }
+    };
+    methods = {
+      deleteThis(id, favoriteId) {
+        var parent = this.$parent || null;
+        typeof this.onClickDelAfter === "function" &&
+          this.onClickDelAfter.call(parent, id, favoriteId);
+      },
+      phoneCall(i) {
+        tools.phoneFunc(this.infoList[i].Phone);
+      },
+      // chatHim(id, name, imgUrl) {
+      //   tools.handleRegister(this.isRegister2, () => {
+      //     console.log("联系他");
+      //     var parent = this.$parent || null;
+      //     var info = {
+      //       userId: id,
+      //       name: name,
+      //       avatorUrl: imgUrl
+      //     };
+      //     typeof this.onClickContactAfter === "function" &&
+      //       this.onClickContactAfter.call(parent, info);
+      //   }, () => {
+      //     this.openLogin = true
+      //   });
+      // },
+      toggleInteract(i) {
+        let infoList = this.infoList;
+        if (infoList[i].showBtn === true) {
+          infoList[i].showBtn = !infoList[i].showBtn;
+        } else {
+          infoList.forEach((item, index) => {
+            item.showBtn = false;
+          });
+          infoList[i].showBtn = true;
+        }
+      },
+      jumpClassifyDetails(i) {
+        if (this.isMyPublishOrFavorite) {
+          this.readyGoDetail(i);
+        } else {
+          tools.handleRegister(this.isRegister2, () => {
+            this.readyGoDetail(i);
+          }, () => {
+            this.openLogin = true
+          });
+        }
+      },
+      clickLocation(i) {
+        let infoList = this.infoList;
+        let location = {
+          lat: parseFloat(infoList[i].Lat),
+          lng: parseFloat(infoList[i].Lng),
+          name: infoList[i].Location
+        };
+        tools.openMap(location);
+      },
+      // clickComment(i) {
+      //   tools.handleRegister(this.isRegister2, () => {
+      //     this.infoIndex = i;
+      //     this.$invoke("comBottomInput", "switchShow");
+      //     this.infoList[i].showBtn = false;
+      //     wx.hideTabBar({
+      //       success: (res) => {
+      //         console.log(res);
+      //       },
+      //       fail: (err) => {
+      //         console.log(err);
+      //       }
+      //     })
+      //   }, () => {
+      //     this.openLogin = true
+      //   });
+      // },
+      async clickLike(i) {
+        tools.handleRegister(this.isRegister2, async() => {
+          let id = this.infoList[i].Id;
+          let data = await core.countUpData(id, 1, 0);
+          let user = await core.getStorage("userInfo");
+          if (data.isok) {
+            let curState = data.dataObj.curState;
+            let dzList = data.dataObj.dzList;
+            // this.infoList[i].DzBtnText = curState == 0 ? "取消" : "赞";
+            this.infoList[i].IsDzed = curState == 0 ? true : false;
+            // this.infoList[i].showBtn = false;
+            // this.infoList[i].DzUsers = dzList; 
+            this.infoList[i].DzCount = dzList.length; 
+
+            this.$apply();
+          } else {
+            tools.showModalCancle(data.Msg);
+          }
+        }, () => {
+          this.openLogin = true
+        });
+      },
+      async goHisAsset(cardId, userId) {
+        var checkAuth = await tools.checkRegister()
+        var result = await core.getStoreDetail({
+          type: 1,
+          myCardId: cardId
+        })
+        if (!result.isok && result.Msg == '店铺不存在') {
+          tools.handleRegister(checkAuth.isRegister, () => {
+            if (checkAuth.isCompleteCard) {
+              tools.goNewPage("/pages/connected/connected-detail/index?someoneId=" + userId)
+            } else {
+              tools.goNewPage("/pages/join/my/updateCard?formConnected=1")
+            }
+          }, () => {
+            this.openLogin = true
+          })
+        } else {
+          var platStore = result.dataObj.platStore
+          tools.goNewPage(
+            "/pages/home/shop-detail/index?storeId=" +
+            platStore.Id +
+            "&title=" + platStore.Name
+          )
+        }
+      }
+    };
+    //发表评论
+    async sendComment(value) {
+      let id = this.infoList[this.infoIndex].Id;
+      let data = await core.AddComment(id, 0, value);
+      let user = await core.getUserInfo();
+      if (data.isok) {
+        this.infoList[this.infoIndex].Comments = data.dataObj.comments;
+        tools.freeToast("评论成功", "success", 800);
+        this.showInput = false;
+        this.$apply();
+      } else {
+        tools.showModalCancle(data.Msg);
+      }
+    }
+    //关闭评论弹窗
+    closeMask(isShow) {
+      console.log(isShow);
+      if (!isShow) {
+        wx.showTabBar({
+          success: (res) => {
+            console.log("显示tabbar成功", res);
+          },
+          fail: (err) => {
+            console.log("显示tabbar失败", err);
+          }
+        })
+      }
+    }
+    onLoad() {
+      this.getReviewSetting();
+    }
+    readyGoDetail(i) {
+      let msgid = this.infoList[i].Id;
+      let cardid = this.infoList[i].MyCardId;
+      console.log(this.jumpPath + "?msgid=" + msgid + "&cardid=" + cardid);
+      tools.goNewPage(this.jumpPath + "?msgid=" + msgid + "&cardid=" + cardid);
+    }
+    onRead() {}
+    events = {};
+    //获取发帖配置 0:不需要审核  1:先审核后发布 2:先发布后审核
+    async getReviewSetting() {
+      let app = wepy.$instance;
+      http
+        .get(addr.GetCityReviewSetting, {
+          appId: app.globalData.appid
+        })
+        .then(data => {
+          if (data.isok) {
+            this.ReviewSetting = data.dataObj.obj.ReviewSetting;
+            this.$apply();
+          } else {
+            tools.showModal(data.Msg);
+          }
+        });
+    }
+  }
+</script>

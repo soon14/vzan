@@ -1,0 +1,178 @@
+<!--pages/shopping/goodInfo/goodInfo.wxml-->
+<import src='/script/template.wxml' />
+<import src='/script/wxParse/wxParse.wxml' />
+
+<!-- 头部 -->
+<swiper autoplay interval="3000" duration="1000" class='w750 h750' indicator-dots>
+  <block wx:for="{{pintuanInfo.imgAlbumList}}">
+    <swiper-item>
+      <image src="{{item}}" class="w750 h750" mode='aspectFill' data-url='{{item}}' bindtap='swiper_previewImg' />
+    </swiper-item>
+  </block>
+</swiper>
+
+<view class='header_b'>
+  <view class='fsb'>
+    <view class='f c'>
+      <text class='cf0033'>￥{{pintuanInfo.priceStr}}</text>
+      <view class='header_tips'>拼立返{{pintuanInfo.groupPrice/100}}</view>
+    </view>
+    <text class='t24 c999'>{{pintuanInfo.sales+pintuanInfo.virtualSales || 0}}人拼团 | 已拼{{pintuanInfo.sales+pintuanInfo.virtualSales || 0}}件</text>
+  </view>
+
+  <view class='fsb mt8 mb20'>
+    <text class='t30 c333 f-B'>{{pintuanInfo.name}}</text>
+    <button class='btn f-c fs c666 mpunset' bindtap='showshare_card'>
+      <text class='dzicon icon-icon_fenxiang-1 c333'></text>
+      <text class='t22'>分享</text>
+    </button>
+  </view>
+
+  <view class='fw mt10'>
+    <block wx:for="{{pintuanInfo.labelList}}">
+      <view class='header_lbs mt10'>{{item}}</view>
+    </block>
+  </view>
+</view>
+
+<!-- 评价 -->
+<!-- <view class='bgcfff mt20'>
+  <view class='fsb padl20 h88 bg_b_line'>
+    <text class='t28 c333'>商品评价(99999）</text>
+    <view class='f c999'>
+      <text class='t28'>查看更多</text>
+      <text class='dzicon icon-zhuanyebaniconkuozhan_Distribu2'></text>
+    </view>
+  </view>
+  <block wx:for="{{aprase}}">
+    <view class='f-c appraise_item'>
+      <view class='f c'>
+        <image src='{{item.userlogo}}' class='w60h60b mr10' mode='aspectFill'></image>
+        <text class='t32 c333'>{{item.username}}</text>
+      </view>
+      <text class='t24 c999 mt8'>{{item.data}}</text>
+      <text class='t30 c333 mt20'>{{item.content}}</text>
+    </view>
+  </block>
+</view> -->
+
+<!-- 店铺 -->
+<view class='h140 padl20 f bgcfff mt20 mb20 c' data-storeid='{{pintuanInfo.storeId}}' bindtap='store_nt'>
+  <image src="{{storeInfo.logo || 'http://i.vzan.cc/image/jpg/2018/7/23/15330231288f2fec92411099489b69dee49db7.jpg'}}" class='w100h100 mr20' mode='aspectFill'></image>
+  <view class='fsb f1'>
+    <view class='f-c'>
+      <text class='t28 c333 f-B vertical-2 l40'>{{storeInfo.storeName || '未命名'}}</text>
+      <text class='t22 c666'>商品数量:{{storeInfo.goodsCount || 0}}</text>
+    </view>
+    <view class='store_btn'>进店逛</view>
+  </view>
+</view>
+
+<!-- 店长推荐 -->
+<!-- <view class='h88 fc bgcfff bg_b_line'>
+  <view class='icon_bg'>
+    <text class='dzicon icon-zhuanyebanicon_zan cfff t22'></text>
+  </view>
+  <text class='f-B t28'>店长推荐</text>
+</view>
+<view class='f bgcfff groom_pad mb20'>
+  <block wx:for="{{goodtuijian}}">
+    <view class='f-c t26 c ml16'>
+      <image src='{{item.gimg}}' class='w230 h230' mode='aspectFill'></image>
+      <text class='vertical-1 w230 mt12'>{{item.gcontent}}</text>
+      <text class='f-B mt8'>￥{{item.price}}</text>
+    </view>
+  </block>
+</view> -->
+<!-- 商品详情 -->
+<view class='h88 fc bgcfff bg_b_line' wx:if="{{pintuanInfo.fuwenben.nodes.length>0}}">
+  <view class='icon_bg'>
+    <text class='dzicon icon-icon_xiangqing cfff'></text>
+  </view>
+  <text class='f-B t28'>商品详情</text>
+</view>
+<view class='bgcfff p20' wx:if="{{pintuanInfo.fuwenben.nodes.length>0}}">
+  <template is="wxParse" data="{{wxParseData:pintuanInfo.fuwenben.nodes}}" />
+</view>
+
+<!-- 热门推荐 -->
+<!-- <view class='h88 fc bgcfff bg_b_line mt20'>
+  <image src='/image/hotsell.png' class='w40h40 mr10'></image>
+  <text class='f-B t28'>热门推荐</text>
+</view>
+<view class='bgcfff'>
+  <template is="goodsList-classify" data="{{goods}}" />
+</view> -->
+<!-- 底部按钮 -->
+<view class='h153'></view>
+<view class='fsb bottom_btn'>
+  <block wx:for="{{bottom_btn}}">
+    <button class="btn bgcfff b_btn_item w100" id="{{index}}" open-type="{{index==2?'contact':''}}" bindtap='index_nt'>
+      <view class='f-c jsc h100'>
+        <text class="{{item.fontcss}}"></text>
+        <text class='c666 t22 mt4'>{{item.content}}</text>
+      </view>
+    </button>
+  </block>
+  <view wx:if="{{pintuanInfo.state==0}}">
+    <button class="btn w450 b_gopay bg666">{{pintuanInfo.auditState==1?'该商品已下架':'未审核'}}</button>
+  </view>
+  <view wx:else>
+    <button class="btn w450 b_gopay bg666 " wx:if="{{storeInfo.rz==0}}">店铺未认证</button>
+    <button class="btn w450 b_gopay bgf0033" bindtap='showgoodinfo' wx:else>立即购买</button>
+  </view>
+</view>
+
+
+<view wx:if="{{showgoodInfo}}">
+  <!-- 商品规格弹窗 -->
+  <view class='bg3' bindtap='showgoodinfo'></view>
+  <view class="goodinfo_modal {{pintuanInfo.SpecificationDetailList.length>0?'h760':'h480'}}">
+    <!-- 选择的商品属性 -->
+    <view class='f  jsb bobof0'>
+      <view class='f'>
+        <image src='{{shopcarData.imageUrl||pintuanInfo.img}}' mode='aspectFill' class='w200h200 gm_gimg'></image>
+        <view class='f-c jsc'>
+          <text class='t38 cf0033 f-B'>￥{{shopcarData.Price}}</text>
+          <text class='t26 c999'>{{shopcarData.specInfo}}</text>
+        </view>
+      </view>
+      <text class='dzicon icon-zhuanyebaniconkuozhan_Close cf0 t60 mt20' bindtap='showgoodinfo'></text>
+    </view>
+    <!-- 标签 -->
+    <scroll-view scroll-y class='goodinfo_sv'>
+      <block wx:for="{{pintuanInfo.pickspecificationArray}}" wx:for-item='this' wx:for-index='lineid'>
+        <text class='c1212 t28 l74'>{{this.name}}</text>
+        <view class='fw pb30 bg_bottom_line'>
+          <block wx:for="{{this.items}}">
+            <view class="lbs {{item.ischoose?'lb-inchoose':'lb-unchoose'}}" data-sort_lineid='{{lineid}}' data-spec_lineid='{{index}}' data-specid='{{item.id}}' data-sortname='{{this.name}}' data-sortinfo='{{item.name}}' bindtap='chooseLabels'>{{item.name}}</view>
+          </block>
+        </view>
+      </block>
+    </scroll-view>
+    <!-- 数量 -->
+    <view class='f fe c mt30'>
+      <view class='w46h46 t50 count-action' bindtap='reduce_num'>-</view>
+      <text class='mal16 t28'>{{shopcarData.Number}}</text>
+      <view class='w46h46 t44 count-action' bindtap='add_num'>+</view>
+    </view>
+    <!-- 立即购买按钮 -->
+    <button class='btn t36 cfefe goodinfo_gobuy' open-type='getUserInfo' bindgetuserinfo='getUserInfo' wx:if="{{userInfo.isNewUser}}">立即购买</button>
+    <button class='btn t36 cfefe goodinfo_gobuy' bindtap='payinfo_nt' wx:else>立即购买</button>
+  </view>
+</view>
+
+<!-- canvas -->
+<view wx:if="{{showshareCard}}">
+  <view class='bg3'></view>
+  <text class='dzicon icon-3 cancel-modal cfefe' style='position: absolute' bindtap='hideshare_card'></text>
+  <view class='new-sm-basecss-1 f-c jsb'>
+    <canvas class='h5005' canvas-id="gshare_Card"></canvas>
+    <view class='cavas_btn fsa'>
+      <button class='btn-1 canvas_basebtncss mounset bgb415' bindtap='save_goodImg' wx:if="{{AlbumUnset==false}}">保存到相册</button>
+      <button class='btn-1 canvas_basebtncss mounset bgb415' open-type='openSetting' wx:if="{{AlbumUnset==true}}">保存到相册</button>
+      <button class='btn-1 canvas_basebtncss mounset bgf0033' open-type='share'>分享好友</button>
+    </view>
+  </view>
+</view>
+<template is='apply_enter' />

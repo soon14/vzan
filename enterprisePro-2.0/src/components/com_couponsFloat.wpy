@@ -1,0 +1,110 @@
+<style lang="less">
+    .bg-gradient(@direction, @begin-c, @end-c) {
+        background: -webkit-linear-gradient(@direction, @begin-c, @end-c);
+        /* Safari 5.1 - 6.0 */
+        background: -o-linear-gradient(@direction, @begin-c, @end-c);
+        /* Opera 11.1 - 12.0 */
+        background: -moz-linear-gradient(@direction, @begin-c, @end-c);
+        /* Firefox 3.6 - 15 */
+        background: linear-gradient(to @direction, @begin-c, @end-c);
+        /* 标准的语法 */
+    }
+    .masking {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 99;
+        background-color: rgba(0, 0, 0, 0.5);
+        .coupfloat-box {
+            width: 560rpx;
+            min-height: 300rpx;
+            padding: 120rpx 24rpx 40rpx 24rpx;
+            border-radius: 16rpx;
+            .bg-gradient(top, #fb154a, #fe5816);
+            .header {
+                width: 560rpx;
+                height: 280rpx;
+                top: -200rpx;
+                left: 0;
+            }
+            .coup-item {
+                height: 120rpx;
+                border-radius: 10rpx;
+                background: url("http://j.vzan.cc/miniapp/img/enterprise/coup-bg.png?v1") no-repeat;
+                background-size: 512rpx 120rpx;
+                margin-bottom: 20rpx;
+                .info {
+                    width: 328rpx;
+                    .title {
+                        color: #824119;
+                    }
+                    .money {
+                        color: #f51313;
+                    }
+                }
+                .btn-box {
+                    width: 184rpx;
+                    .btn {
+                        width: 120rpx;
+                        height: 44rpx;
+                        line-height: 44rpx;
+                        border-radius: 22rpx;
+                        .bg-gradient(top,
+                        #fc2949,
+                        #fd9019);
+                    }
+                    .get-text{
+                         color: #f51313;
+                    }
+                }
+            }
+            .coupfloat-close {
+                top: -165rpx;
+                right: -30rpx;
+                -webkit-transform: translateX(-50%);
+                transform: translateX(-50%);
+            }
+        }
+    }
+</style>
+<template>
+    <view class="masking w-100 h-100 f fv fc fc-h" wx:if="{{coupHidden}}">
+        <view class="coupfloat-box rel ">
+            <image class="header abs" src="http://j.vzan.cc/miniapp/img/enterprise/coup_header.png"  />
+            <repeat for="{{couponsFloat}}" index="coupIndex">
+                <view class="coup-item w-100 h-100 f fc" wx:if='{{coupIndex<3}}'>
+                    <view class="info h-100 f fv fc-h pl20">
+                        <view class="title">{{item.CouponName}}</view>
+                        <view class="money f26" wx:if="{{item.CouponWay==0}}">{{item.Money_fmt}}元</view>
+                        <view class="money f26" wx:else>{{item.Money_fmt}}折</view>
+                    </view>
+                    <view class="btn-box h-100 f fc fv fc-h">
+                        <view class="btn tc cfff f24" @tap.stop="getCoup({{item.Id}},{{coupIndex}})" wx:if="{{item.CanGet}}">{{item.coupBtnText}}</view>
+                        <view class="get-text f22" wx:if="{{item.PersonNum>0}}">{{item.PersonNum}}人已领</view>
+                    </view>
+                </view>
+            </repeat>
+            <view class="dzicon icon-zhuanyebaniconkuozhan_Close cfff f60 abs coupfloat-close" @tap.stop="closeMask"></view>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../lib/core.js";
+    export default class com_couponsFloat extends wepy.component {
+        data = {
+            isGet: false,
+        }
+        methods = {
+            closeMask() {
+                this.$emit("closeMask")
+            },
+            getCoup(id, i) {
+                this.$emit("getCoup", id, i);
+            }
+        }
+    }
+</script>

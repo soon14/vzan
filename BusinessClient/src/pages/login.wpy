@@ -1,0 +1,239 @@
+<style>
+page {
+  background-color: #fff;
+}
+.login-logo {
+  width: 190rpx;
+  height: 190rpx;
+  display: inline-block;
+  margin-top: 130rpx;
+}
+.login-wrap {
+  padding: 110rpx;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+.login-inputbox {
+  border-bottom: 1rpx solid #dcdcdc;
+  margin-left: 10rpx;
+}
+.login-inputbox input {
+  text-align: left;
+  padding-left: 20rpx;
+}
+.login-authcode {
+  color: #53a3fe;
+}
+.login-wrap > .f {
+  margin-top: 50rpx;
+}
+.btn-login {
+  width: 510rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  background-color: #fe536f;
+  color: #fff;
+  border-radius: 6rpx;
+  font-size: 34rpx;
+  margin: 0 auto;
+  margin-top: 90rpx;
+}
+.placeholder {
+  color: #c6c6c6;
+}
+.countdown {
+  background-color: #c6c6c6;
+  border-radius: 6rpx;
+  color: #fff;
+  padding: 1px 10rpx;
+  min-width: 40rpx;
+  text-align: center;
+  margin-left: 10rpx;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="tc">
+    <image src="http://j.vzan.cc/miniapp/img/business/logo.png" class="login-logo"></image>
+    <view class='login-wrap'>
+      <view class='f fc'>
+        <view class='c333 f30 f fj' style="width:96rpx;">
+          <view>身</view>
+          <view>份</view>
+        </view>
+        <view class="f" style="padding-left:20rpx;">
+          <radio-group class="radio-group" bindchange="radioChange">
+            <label class="radio">
+              <radio value="0" checked="{{userType==0}}" /> 管理员
+            </label>
+            <label class="radio" style="margin-left:20rpx;">
+              <radio value="1" checked="{{userType==1}}" /> 客服
+            </label>
+          </radio-group>
+        </view>
+      </view>
+      <view class='f fc'>
+        <text class='c333 f30' style="width:96rpx;">手机号</text>
+        <view class='login-inputbox f f1 fc' style="padding-bottom:5rpx;">
+          <input class="f1" type="number" maxlength="11" placeholder-class="placeholder" @input="inputPhone" placeholder="请输入手机号" value="{{phone}}"></input>
+          <view wx:if="{{timer==null}}" class="login-authcode" @tap="getAuthCode">获取验证码</view>
+          <view wx:else class="countdown">{{countdown}}</view>
+        </view>
+      </view>
+      <view class='f fc'>
+        <text class='c333 f30' style="width:96rpx;">验证码</text>
+        <view class='login-inputbox f f1'>
+          <input type="number" maxlength="4" placeholder-class="placeholder" @input="inputAuthcode" value="{{authcode}}" placeholder="请输入验证码"></input>
+        </view>
+      </view>
+      <view class="btn-login" bindtap="clickLogin">登陆</view>
+    </view>
+  </view>
+  <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core } from "../lib/core";
+import baseMixin from "../mixins/base";
+let get = require("lodash.get");
+
+export default class login extends wepy.page {
+  config = {
+    navigationBarTitleText: "登陆",
+    enablePullDownRefresh: true,
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+    }
+  };
+  mixins = [baseMixin];
+  //第二步：声明组件
+  components = {};
+  data = {
+    authcode: "",
+    phone: "",
+    serverauthcode: "",
+    timer: null,
+    countdown: 60,
+    userType: 0
+  };
+  computed = {};
+  methods = {
+    radioChange(e) {
+      this.userType = e.detail.value;
+    },
+    async clickLogin() {
+      var that = this;
+      if (!/1\d{10}/g.test(this.phone)) {
+        this.ShowToast("请输入正确的手机号");
+        return;
+      }
+      if (this.authcode.length < 4) {
+        this.ShowToast("请输入验证码");
+        return;
+      }
+      // if (this.serverauthcode != this.authcode) {
+      //   this.ShowToast("验证码输入错误");
+      //   return;
+      // }
+      let result = await core.loginByPhone(
+        this.authcode,
+        this.phone,
+        this.userType
+      );
+      console.log(result);
+      if (result) {
+        if (result.isok) {
+          let userInfo = await core.getUserInfo();
+          if (userInfo) {
+            userInfo.TelePhone = that.phone;
+            that.$apply();
+            wx.setStorage({
+              key: "userInfo",
+              data: userInfo
+            });
+            wx.reLaunch({
+              url: "/pages/store"
+            });
+
+            // wx.removeStorage({
+            //   key: "userInfo",
+            //   success: function(res) {
+            //     wx.reLaunch({
+            //       url: "/pages/store"
+            //     });
+            //   }
+            // });
+          }
+        } else {
+          this.ShowToast(result.Msg);
+          return;
+        }
+      }
+    },
+    inputPhone(e) {
+      this.phone = e.detail.value;
+    },
+    inputAuthcode(e) {
+      this.authcode = e.detail.value;
+    },
+    async getAuthCode() {
+      var that = this;
+      if (that.timer) {
+        return;
+      }
+      if (!/1\d{10}/g.test(this.phone)) {
+        this.ShowToast("请输入正确的手机号");
+        return;
+      }
+      let code = await core.SendUserAuthCode(this.phone);
+
+      if (code) {
+        if (code.isok) {
+          this.serverauthcode = code.dataObj;
+          that.$apply();
+          that.timer = setInterval(function() {
+            that.countdown -= 1;
+            if (that.countdown <= 0) {
+              clearInterval(that.timer);
+              that.timer = null;
+
+              that.countdown = 60;
+            }
+            that.$apply();
+          }, 1000);
+        }
+        this.ShowToast(code.Msg);
+        return;
+      }
+    }
+  };
+  events = {};
+  async onLoad() {
+    await this.reLoad();
+  }
+  async onShow() {}
+  async reLoad() {
+    let userInfo = await core.getUserInfo();
+    if (userInfo) {
+      if (userInfo.TelePhone) {
+        console.log("已经绑定手机，跳转到store");
+        wx.reLaunch({
+          url: "/pages/store"
+        });
+        return;
+      }
+    }
+  }
+  async onPullDownRefresh() {
+    await this.reLoad();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+}
+</script>

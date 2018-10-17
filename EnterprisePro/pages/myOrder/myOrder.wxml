@@ -1,0 +1,51 @@
+<!--pages/myOrder/myOrder.wxml-->
+<view class='W {{currentSkin}}'>
+  <!-- 全部订单 待付款 待收货 已完成 -->
+  <view class="header">
+    <view class="header_col" wx:for="{{choose}}" bindtap="statusFunc" id="{{item.state}}">
+      <text class='{{condition==item.state?"pro-sel":"header_txt_black"}}'>{{item.title}}</text>
+      <view class="choose_bottom {{condition==item.state?'choose_bottom_view':''}}"></view>
+    </view>
+  </view>
+  <view style='height:100rpx;'></view>
+  <!-- 产品详情 -->
+  <view class='order_list' wx:if="{{listViewModel.list!=''}}" >
+    <block wx:for="{{listViewModel.list}}" wx:for-item="this">
+      <view class='order_num'>
+        <!-- 订单号 -->
+        <text>订单编号：{{this.orderNum}}</text>
+        <text>{{this.StateRemark}}</text>
+      </view>
+      <block wx:for="{{this.goodList}}">
+        <view class='order_item' id="{{item.FoodGoodsId}}" bindtap='detailGoto'>
+          <image mode='aspectFill' src='{{item.goodsMsg.img}}'></image>
+          <view class='order_content'>
+            <text class='order_content_1'>{{item.goodsMsg.name}}</text>
+            <text class='order_content_2' wx:if="{{item.SpecInfo!='undefined'}}">{{item.SpecInfo}}</text>
+            <view class='order_down'>
+              <view class='order_price'>
+                <text>￥</text>
+                <text>{{item.priceStr}}</text>
+              </view>
+              <text class='order_item_num'>x{{item.Count}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <!-- 底部总计 -->
+      <view class='bottom_order'>
+        <view class='bottom_price'>
+          <text>共{{this.goodList.length}}件 合计：</text>
+          <text>￥{{this.buyPrice}}</text>
+        </view>
+        <view style='display:flex;align-items:center;'>
+          <view class='bottom_btn shop_sel' id="{{this.citymorderId}}" wx:if="{{this.StateRemark=='待付款'}}" bindtap='gotopay' data-pid="{{this.orderId}}">去付款</view>
+          <view class='bottom_btn shop_sel' id="{{this.citymorderId}}" wx:if="{{this.StateRemark=='待收货'}}" bindtap='goodsFunc' data-pid="{{this.orderId}}">确认收货</view>
+          <view class='bottom_btn shop_sel' style='margin-left:14rpx' id="{{this.orderId}}" bindtap='orderGoto'>查看详情</view>
+        </view>
+      </view>
+    </block>
+  </view>
+  <view wx:else="{{listViewModel.list==''}}" class="oreder-no">暂无商品信息</view>
+</view>
+<!-- 购物详情列表 -->

@@ -1,0 +1,140 @@
+<style lang="less">
+  .c-bar {
+    padding: 0 20rpx;
+    background: #fff;
+    .c-bargaintitle {
+      width: 100%;
+      padding-top: 35rpx;
+      font-size: 32rpx;
+      color: #333;
+      .bargain-line {
+        width: 60rpx;
+        height: 2rpx;
+        background: #333;
+      }
+    }
+    .c-bargain {
+      padding: 35rpx 0;
+      width: 100%;
+      .c-bargainmain {
+        width: 100%;
+        image {
+          width: 100%;
+        }
+        .c-barImg {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 120rpx;
+          background-size: cover;
+          padding-left: 20rpx;
+        }
+        .bargain-time {
+          width: 34rpx;
+          height: 34rpx;
+          font-size: 24rpx;
+          position: relative;
+          margin-right: 18rpx;
+          background: #FFB049;
+          text-align: center;
+        }
+        .bargain-time:last-child {
+          margin-right: 10rpx;
+        }
+        .bargain-time::after {
+          content: ":";
+          position: absolute;
+          right: -12rpx;
+        }
+        .bargain-time:last-child::after {
+          content: "";
+        }
+      }
+      .c-bargainbottom {
+        width: 100%;
+        height: 100rpx;
+        background: #F7F7F7;
+        padding: 0 20rpx;
+        margin-bottom: 30rpx;
+        .bar-btn {
+          width: 150rpx;
+          height: 60rpx;
+          line-height: 60rpx;
+          text-align: center;
+          font-size: 28rpx;
+        }
+      }
+    }
+  }
+</style>
+<template>
+  <view class='c-bar'>
+    <view class='c-bargaintitle f fc fc-h t-b' wx:if='{{currentCom.title}}'><text class='bargain-line mr20' />{{currentCom.title}}<text class='bargain-line ml20' /></view>
+    <view class="c-bargain">
+      <repeat for="{{vm}}" item='bargain'>
+        <view class="c-bargainmain rel">
+          <image mode='widthFix' src='{{bargain.ImgUrl}}' />
+          <view class='c-barImg f fc-h fv cfff' style="background-image:url({{bargain.barImg}})">
+            <view class='f fj'>
+              <view class='f fv'>
+                <view class='f fc'>
+                  <text class="f28 mr10">最低价:</text>
+                  <wxc-price icon='sub' class='t-b f38 mr20'>{{bargain.FloorPriceStr}}</wxc-price>
+                  <wxc-price status="del" del-color="#fff">{{bargain.OriginalPriceStr}}</wxc-price>
+                </view>
+                <view class='f24'>剩余{{bargain.RemainNum}}份</view>
+              </view>
+              <view class='f fv fc'>
+                <text class='t-b f26'>{{bargain.txt}}</text>
+                <view class='f fc mt10' wx:if="{{bargain.time.length}}">
+                  <repeat for='{{bargain.time}}' item='bartime'>
+                    <text class='bargain-time'>{{bartime>99?99:bartime}}</text>
+                  </repeat>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class='c-bargainbottom f fc'>
+          <text class='line line1 f1'>{{bargain.BName}}</text>
+          <button class='bar-btn bgf2 cfff' wx:if="{{bargain.txt=='距离结束'&&user.avatarUrl==null&&user.nickName==null}}" open-type="getUserInfo" @getuserinfo="getUser({{bargain.Id}})">立即砍价</button>
+          <text class="bar-btn bgf2 cfff" wx:if="{{bargain.txt=='距离结束'&&user.avatarUrl!=null&&user.nickName!=null}}" @tap="goBar({{bargain.Id}})">{{bargain.btn}}</text>
+          <text class="bar-btn bge6 cfff" wx:if="{{bargain.txt!='距离结束'}}">{{bargain.btn}}</text>
+        </view>
+      </repeat>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    tools,
+    core
+  } from "../lib/core.js";
+  export default class com_bargain extends wepy.component {
+    methods = {
+      goBar(id) {
+        tools.goNewPage("/pages/bargain/bargain?id=" + id)
+      },
+      async getUser(id,e) {
+        let _u = e.detail
+        if (_u.errMsg == 'getUserInfo:fail auth deny') {
+          return;
+        }
+        let code = await core.login();
+        let vm = {
+          code,
+          phone: 0,
+          iv: _u.iv,
+          data: _u.encryptedData,
+          sign: _u.signature,
+        }
+        this.$parent.vm_com_user = await core.loginUserInfo(vm)
+        tools.goNewPage("/pages/bargain/bargain?id=" + id)
+        this.$apply()
+      },
+    };
+  }
+</script>

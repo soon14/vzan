@@ -1,0 +1,99 @@
+<style lang="less">
+.pay-center {
+    border-top: 1px solid #eee;
+    height: 100vh;
+    .list {
+        .item {
+            width:210rpx;
+            height:160rpx;
+            border: 1px solid #D0D0D0;
+        }
+    }
+    .null-data {
+      margin-top: 416rpx;
+    } 
+}
+</style>
+<template>
+  <view class="pay-center bg-w">
+     <view class="h45 f fc fe f26 c666 pr30 mt20" @tap="goRecord">
+        <text>账单记录</text><text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f40"></text>
+     </view>
+    <view class="null-data tc pr30" wx:if="{{topUpList.length == 0}}">
+      暂无数据
+    </view>
+     <view class="list cl pl30 mt30">
+        <view class="item mr30 mb30 fl f fv fc jc" wx:key="index" wx:for="{{topUpList}}" @tap="toTopUp({{item.Id}})">
+            <text class="c333 t-b f36">{{item.GiveMoneyStr}}元</text>
+            <text class="c666 f26 mt10">{{item.SetName}}</text>
+        </view>    
+     </view>
+     <comWait wx:if="{{isWait}}" />
+  </view>
+</template>   
+<script>
+import wepy from "wepy";
+import com_wait from '@/components/com_wait';
+import { http, tools, core, pay } from "@/lib/core";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "充值中心"
+  }; 
+
+  components = {
+    comWait: com_wait
+  }
+
+  data = {
+      isWait: false,
+      topUpList: []
+  }
+
+  methods = {
+      async toTopUp(id) {
+          tools.showLoading('处理中')
+          var res = await core.addSaveMoneySet(id)
+          if (res.isok) {
+              wx.hideLoading()
+              await pay.handleWxPay({
+                  orderid: res.orderid,
+                  success: async () => {
+                     await tools.freeToast('充值成功', 'success')
+                     wx.hideNavigationBarLoading()
+                     tools.goNewPage('./record')
+                  },
+                  fail: () => {
+                     wx.hideNavigationBarLoading()
+                     tools.freeToast('充值失败', 'none')
+                  }
+              })
+
+
+          } else {
+              wx.hideLoading()
+              tools.showModalCancle(res.msg)
+          }
+      },
+      goRecord() {
+          tools.goNewPage('./record')
+      }
+  }
+
+  onLoad() {
+      this.getSaveMoneySetListC()
+  }
+
+  async getSaveMoneySetListC() {
+      this.isWait = true
+      var result = await core.getSaveMoneySetList()
+      console.log(result)
+      if (result.isok) {
+          this.topUpList = result.saveMoneySetList
+      } else {
+          tools.showModalCancle(result.msg)
+      }
+      this.isWait = false
+      this.$apply()
+  }
+}
+</script>

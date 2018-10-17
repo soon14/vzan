@@ -1,0 +1,85 @@
+<!--pages/store/orderList/orderList.wxml-->
+<!-- 头部 -->
+<view class='h100 bgeb fsb h_search'>
+  <view class='bgcfff f'>
+    <view class='h_left c999 t28 pr' bindtap='choosetype'>{{searchVal[requestData.seltype-1] ||'订单号'}}
+      <text class='dzicon icon-xiajiantou_downarrow'></text>
+      <view class='f-c choose_type' wx:if="{{chooseType}}">
+        <block wx:for="{{searchVal}}">
+          <view class='l88 t28 c333 boboff' id='{{index+1}}' catchtap='choosetype'>{{item}}</view>
+        </block>
+      </view>
+    </view>
+    <view class='h_right c999 t28'>
+      <text class='dzicon icon-sousuo_rearch t40 ccc'></text>
+      <input placeholder='搜索' placeholder-class='ccc' value='{{requestData.val}}' bindinput='input_goodsName' class='t26 c666'></input>
+    </view>
+  </view>
+  <text class='c999 t28' bindtap="{{requestData.val?'search_good':''}}">{{requestData.val?'搜索':'取消'}}</text>
+</view>
+<!-- 头部 -->
+<scroll-view scroll-x class='fnw w-full bgcfff'>
+  <view class='fsa t32'>
+    <block wx:for="{{headerChoose}}">
+      <text class="{{headerType==item.state?'h_choose':'c666'}} l96 fs" data-id="{{item.id}}" data-state='{{item.state}}' data-datatype='{{item.datetype}}' bindtap='changeType'>{{item.content}}</text>
+    </block>
+  </view>
+</scroll-view>
+<!-- 订单列表 -->
+<block wx:for="{{storeOrderList}}" wx:if="{{storeOrderList.length>0}}">
+  <view class='bgcfff mt10'>
+
+    <view class='h100 fsb padl20 t28 bobof0'>
+      <text class='c1212'>{{item.addtimeStr}}</text>
+      <text class='cf0033'>{{item.lastState}}</text>
+    </view>
+    <view class='f-c pr20 pt24 pb24 ml20 bobof0 t26 l44'>
+      <text class='c666'>订单编号：<text class='c333'>{{item.outTradeNo}}</text></text>
+      <view class='f'>
+        <text class='c666'>订单商品：</text>
+        <view class='f-c f1'>
+          <text>{{item.goodsPhotoModel.name}}</text>
+          <view class='fsb'>
+            <text>{{item.specificationPhotoModel?item.specificationPhotoModel.name:''}}</text>
+            <text>x{{item.count}}</text>
+          </view>
+        </view>
+      </view>
+      <text class='c666'>订单金额：<text class='c333'>￥{{item.priceStr}}</text></text>
+      <text class='c666' wx:if="{{item.isReturnMoney==1}}">优惠金额：<text class='c333'>￥{{item.returnMoneyStr}}</text></text>
+      <text class='c666'>实收金额：<text class='c333'>￥{{item.moneyStr}}</text></text>
+      <text class='c666'>支付方式：<text class='c333'>{{item.paywayStr}}</text></text>
+      <text class='c666' wx:if="{{item.buyerRemark&&item.sendway==2}}">订单备注：<text class='c333'>{{item.buyerRemark}}</text></text>
+      <text class='c666'>配送方式：<text class='c333'>{{item.sendwayStr}}</text></text>
+    </view>
+
+    <view class='f-c t26 l44 ml20 pt24 pb24 pr20 bobof0' wx:if="{{item.sendway==0}}">
+      <view class='f'>
+        <text class='c666'>配送地址：</text>
+        <text class='c333 f1'>{{item.address}}</text>
+      </view>
+      <text class='c666'>收货人：<text class='c333'>{{item.consignee}}</text></text>
+      <text class='c666' data-phone='{{item.phone}}' bindtap='makephonecall'>收货电话：<text class='c333'>{{item.phone}}</text></text>
+      <text class='c666' wx:if="{{item.buyerRemark}}">订单备注：<text class='c333'>{{item.buyerRemark}}</text></text>
+    </view>
+
+    <view class='f-c t26 l44 ml20 pt24 pb24 pr20 bobof0' wx:if="{{item.sendway==1}}">
+      <text class='c666'>取货码  ：<text class='c333'>{{item.receivingNo}}</text></text>
+      <text class='c666' wx:if="{{item.storeName}}">取货店铺：<text class='c333'>{{item.storeName}}</text></text>
+      <view class='f'>
+        <text class='c666'>取货地址：</text>
+        <text class='c333 f1'>{{item.address}}</text>
+      </view>
+      <text class='c666'>收货人：<text class='c333'>{{item.consignee}}</text></text>
+      <text class='c666' data-phone='{{item.phone}}'  bindtap='makephonecall'>收货电话：<text class='c333'>{{item.phone}}</text></text>
+      <text class='c666' wx:if="{{item.buyerRemark}}">订单备注：<text class='c333'>{{item.buyerRemark}}</text></text>
+    </view>
+    <view class='f fe h94 pr20 c' wx:if="{{(item.state==-1||item.state==1||item.state==2||item.state==3)&&item.payState>0}}">
+      <view class='btn-item tk-btn' bindtap='control_good' data-item='{{item}}' data-id='-1' wx:if="{{(item.state>0&&item.state<4)&&item.payState!=2}}">退款</view>
+      <view class='btn-item fh-btn ml20' data-item='{{item}}' data-id='1' bindtap='control_good' wx:if="{{item.state==1}}">发货</view>
+      <view class='btn-item fh-btn ml20' data-item='{{item}}' data-id='4' bindtap='control_good' wx:if="{{item.state==3&&item.payState!=2}}">确认交易完成</view>
+    </view>
+  </view>
+</block>
+<import src='/script/template.wxml' />
+<template is='empty_data' data='{{data:storeOrderList}}' />

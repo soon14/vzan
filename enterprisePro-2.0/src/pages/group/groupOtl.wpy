@@ -1,0 +1,256 @@
+<style lang="less">
+    .d-status {
+        position: relative;
+        width: 100%;
+        height: 290rpx;
+        border-bottom: 1px solid #f5f5f5;
+        .d-img {
+            width: 100rpx;
+            height: 100rpx;
+        }
+        .d-btn {
+            width: 140rpx;
+            height: 54rpx;
+            line-height: 54rpx;
+            text-align: center;
+            color: #fff;
+            font-size: 22rpx;
+            border-radius: 8rpx;
+        }
+    }
+    .d-info {
+        background: #fff;
+        height: 180rpx;
+        margin-bottom: 20rpx;
+        .d-person {
+            font-size: 32rpx;
+            color: #111;
+            margin: 42rpx 23rpx 20rpx 65rpx;
+        }
+        .d-address {
+            font-size: 26rpx;
+            color: #666;
+            margin: 0 20rpx;
+        }
+    }
+    .d-price {
+        width: 100%;
+        background: #fff;
+        border-top: 1px solid #f3f3f3;
+        text-align: right;
+        padding: 35rpx 22rpx 35rpx 0;
+    }
+    .p-price {
+        color: #f20033;
+    }
+    .p-order::before {
+        content: "商品金额:";
+        margin-left: 20rpx;
+    }
+    .p-dis::before {
+        content: "优惠金额:-"
+    }
+    .p-pay::before {
+        color: #111;
+        content: "实付金额:"
+    }
+    /* 订单信息 */
+    .d-order {
+        padding: 23rpx;
+        background: #fff;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .d-left {
+        font-size: 26rpx;
+        color: #666;
+    }
+    .d-right {
+        margin-top: 2rpx;
+        width: 140rpx;
+        height: 50rpx;
+        text-align: center;
+        line-height: 50rpx;
+        border: 1px solid #666;
+        font-size: 24rpx;
+        color: #666;
+        border-radius: 25rpx;
+    }
+    .d-back {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        text-align: center;
+        color: #fff;
+        font-size: 36rpx;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+    }
+    .olt-bg {
+        width: 100%;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+    }
+    .olt-btn {
+        width: 200rpx;
+        height: 60rpx;
+        text-align: center;
+        line-height: 60rpx;
+        border: 1px solid #fff;
+        font-size: 26rpx;
+        border-radius: 30rpx;
+        z-index: 2;
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='{{currentSkin}}'>
+        <view class='d-status f fv fc fc-h skin_bg'>
+            <image src="http://j.vzan.cc/miniapp/img/sharebg/bg.png" class="olt-bg" />
+            <!-- 各状态值 -->
+            <view class="f fc">
+                <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-1.png" class="d-img" wx:if="{{vm_order.state==0}}" />
+                <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-3.png" class="d-img" wx:if="{{vm_order.state==1}}" />
+                <image mode="aspectFill" src="http://j.vzan.cc/miniapp/img/sharebg/icon-5.png" class="d-img" wx:if="{{vm_order.state==-1}}" />
+                <text class="cfff f32 ml10">{{vm_order.stateRemark}}</text>
+            </view>
+            <text class="cfff f26 mt30" wx:if="{{vm_order.state==0}}">订单已接收，请耐心等候发货</text>
+            <text class="cfff f26 mt30" wx:if="{{vm_order.state==-1}}">交易完成，感谢您的购买</text>
+            <text class="cfff f26 mt30 olt-btn" wx:if="{{vm_order.state==1}}" @tap="confirmBar" id="{{vm_order.goodOrder.Id}}" data-pid="{{vm_order.goodOrder.Id}}">确认收货</text>
+        </view>
+        <!-- 收货人 地址 -->
+        <view class='d-info f fv'>
+            <view class='d-person f fc fj'>
+                <text>收货人：{{vm_order.info.username}}</text>
+                <text>{{vm_order.info.phone}}</text>
+            </view>
+            <view class='d-address f fc'>
+                <text class="dzicon icon-dingwei f36 ccc"/>
+                <text>{{vm_order.info.Address}}</text>
+            </view>
+        </view>
+        <!-- 产品详情 -->
+        <view class="bg-w">
+            <repeat>
+                <comItem :currentCom.sync="vm_order.goodOrderDtl"></comItem>
+            </repeat>
+        </view>
+        <view class='d-price f fv f32'>
+            <view class="f fc f-end" >
+                <text>共{{vm_order.info.num}}件,</text>
+                <wxc-price class="p-order">{{vm_order.info.allPrice}}</wxc-price>
+            </view>
+            <wxc-price class="p-dis mt10">{{vm_order.info.disprice}}</wxc-price>
+            <wxc-price class="p-pay mt10 p-price">{{vm_order.info.BuyPrice}}</wxc-price>
+        </view>
+        <!-- 订单信息 -->
+        <view class='d-order f fj'>
+            <view class='d-left f fv'>
+                <text class="f">订单编号：{{vm_order.info.orderno}}</text>
+                <text class="mt10 f">下单时间：{{vm_order.info.CreateDate}}</text>
+            </view>
+            <view class='d-right' @tap='copy'>复制订单</view>
+        </view>
+        <view class="f1 d-order f26 c666 f fv">
+            <text>支付方式：{{vm_order.info.PayType==0?'微信支付':'储值支付'}}</text>
+            <text class='mt10' wx:if="{{vm_order.info.Note}}">买家留言：{{vm_order.info.Note}}</text>
+            <text class="mt10">支付时间：{{vm_order.info.PayTime}}</text>
+            <text class="mt10" wx:if="{{vm_order.state==1}}">发货时间：{{vm_order.info.SendGoodTime}}</text>
+            <text class="mt10" wx:if="{{vm_order.info.state==-1}}">成交时间：{{vm_order.info.RecieveGoodTime}}</text>
+        </view>
+        <!-- 联系商家 -->
+        <view style="height:100rpx"></view>
+        <view class='d-back skin_bg' @tap="goHome">返回首页</view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import com_goodItem from "../../components/com_goodItem";
+    import {
+        core,
+        pay,
+        tools
+    } from "../../lib/core";
+    //第一步： 引入组件文件
+    export default class groupOtl extends wepy.page {
+        config = {
+            navigationBarTitleText: "订单详情",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+            },
+        };
+        //第二步：声明组件
+        components = {
+            comItem: com_goodItem
+        };
+        data = {
+            currentSkin: {},
+            vm_order: {},
+        };
+        computed = {};
+        methods = {
+            goHome() {
+                tools.goLaunch("/pages/index/index?currentPageIndex=0")
+            },
+            // 复制订单
+            copy() {
+                tools.copy(this.vm_order.info.orderno)
+            },
+        };
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            let guid = options.guid || 0
+            await this.groupInfo(guid)
+        }
+        /**
+         * state
+         *  0为待发货
+         * 1为待收货
+         * -1为交易完成(已收货)
+         */
+        async groupInfo(guid) {
+            let info = await core.getOlt(guid)
+            if (info.isok) {
+                let _g = info.postdata
+                let price = 0
+                this.vm_order.goodOrderDtl = []
+                if (_g.isGroup == 0) {
+                    price = parseFloat(_g.OriginalPrice / 100).toFixed(2)
+                } else {
+                    price = parseFloat(_g.DiscountPrice / 100).toFixed(2)
+                }
+                this.vm_order.goodOrderDtl.push({
+                    ImgUrl: _g.ImgUrl,
+                    Introduction: _g.GroupName,
+                    SpecInfo: "",
+                    discountPrice: price,
+                    discount: 100,
+                    Count: _g.num
+                })
+                this.vm_order.state = _g.State
+                switch (_g.State) {
+                    case 0:
+                        this.vm_order.stateRemark = '待发货'
+                        break;
+                    case 1:
+                        this.vm_order.stateRemark = '待收货'
+                        break;
+                    case -1:
+                        this.vm_order.stateRemark = '交易完成'
+                        break;
+                }
+                _g.allPrice = parseFloat((_g.OriginalPrice / 100) * _g.num).toFixed(2)
+                _g.OriginalPrice = parseFloat(_g.OriginalPrice / 100).toFixed(2)
+                _g.BuyPrice = parseFloat(_g.BuyPrice / 100).toFixed(2)
+                _g.disprice = parseFloat(_g.allPrice - _g.BuyPrice).toFixed(2)
+                _g.DiscountPrice = parseFloat(_g.DiscountPrice / 100).toFixed(2)
+                this.vm_order.info = _g
+                this.$apply()
+            }
+        }
+    }
+</script>

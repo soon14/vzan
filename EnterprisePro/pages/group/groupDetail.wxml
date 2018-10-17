@@ -1,0 +1,227 @@
+<import src="/utils/wxParse/wxParse.wxml" />
+<import src="/template/shopcart.wxml" />
+<import src="/template/template.wxml" />
+
+<view class='{{currentSkin}} {{showModalStatus?"w-hidden":""}}'>
+<!--商品详情弹框推送-->
+<template is ="shopMessage" data="{{popinfo}}"/>
+<!--客服小图标-->
+<template is ="showWechat" data="{{popinfo}}"/>
+
+  <view class="groupTop">
+    <view class='rel' wx:if="{{msg.slideimgs.length>0}}">
+      <swiper class='groupImg' duration='300' bindchange="changeGroupImage" circular="true" autoplay='true' interval='3000' duration='500'>
+        <block wx:for="{{slideimgs_fmt}}">
+          <swiper-item>
+            <image src="{{item}}" class="groupImg" mode="aspectFill" bindtap='previewSwiper' id="{{index}}" />
+          </swiper-item>
+        </block>
+      </swiper>
+      <text class='groupimg-indicator'>{{currentGroupImg}}/{{slideimgs_fmt.length}}</text>
+    </view>
+    <image wx:else src='{{msg.img_fmt}}' mode='widthFix' class='w-full'></image>
+    <view class='p20'>
+      <view class='groupName line4 f38'>
+        {{groupdetail.name||""}}
+      </view>
+      <view class='d-flex d-flex-center'>
+        <view class='p-price mt10 flex1'>
+          <text class='f24'>￥</text>
+          <text class='f38'>{{msg.EntGroups.GroupPriceStr||""}}</text>
+          <text class='f24 ml20 c999 t-del'>￥{{msg.EntGroups.OriginalPriceStr||""}}</text>
+          <view style='color:#999'>
+            <text class='f26'>已团{{msg.EntGroups.GroupsNum}}件 · {{msg.EntGroups.GroupSize}}人团</text>
+          </view>
+        </view>
+        <button class='tc btn-none' open-type='share'>
+
+          <image style="height: 36rpx; width: 36rpx;" mode="widthFix" src="/image/share.png"></image>
+          <view class='f26 c999'>分享</view>
+        </button>
+      </view>
+      <!--价格和倒计时 end-->
+      <!-- <view class='mt20 d-flex d-flex-center groupUser'>
+        <view class='flex1 d-flex d-flex-center groupUser'>
+
+          <image src='{{item}}' mode='aspectFill' wx:for="{{groupdetail.GroupUserList}}"></image>
+        </view>
+      </view> -->
+    </view>
+  </view>
+  <!-- <view class='mt20 bg-w groupTopTwo' wx:if="{{groupdetail.GroupSponsorList!=null&&groupdetail.GroupSponsorList.length>0}}">
+    <view class='title f28'>以下小伙伴正在发起拼团，您可以直接参与：</view>
+    <view class='groupTopTwo-wrap'>
+      <view class='d-flex d-flex-center item' wx:for="{{groupdetail.GroupSponsorList}}">
+        <image src='{{item.UserLogo}}' mode='aspectFill' class=''></image>
+        <text class='f32 username flex1 line1'>{{item.UserName}}</text>
+        <view class='f24 des'>
+          <view class='cFFB049'>差
+            <text class='cF20033'>{{item.NeedNum}}</text> 人成团</view>
+          <view class='c999'>剩余{{item.countdown}}</view>
+        </view>
+        <view class='btn-joinGroup' bindtap='joinGroup' data-group='{{item}}'>去参团</view>
+      </view>
+    </view>
+  </view>  -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <view class='mt20 bg-w groupTopTwo' wx:if="{{GroupSponsorList.length!=0}}">
+    <view class='d-flex-end flex-rowsb' bindtap='showmore'>
+      <text>查看更多</text>
+      <image class='ml20' style='width:14rpx;height:22rpx;' src='https://j.vzan.cc/miniapp/img/group2/icon_right.png'></image>
+    </view>
+
+
+    <view class='groupTopTwo-wrap'>
+      <view class='d-flex d-flex-center item' wx:for="{{GroupSponsorList}}" wx:if="{{index<2}}">
+        <image src='{{item.UserLogo}}' mode='aspectFill' class=''></image>
+        <text class='f32 username flex1 line1'>{{item.UserName}}</text>
+        <view class='f24 des'>
+          <view class='cFFB049'>差
+            <text class='cF20033'>{{item.GroupSize-item.GroupUserList.length}}</text> 人成团</view>
+          <view class='c999'>剩余{{item.endtimeList}}</view>
+        </view>
+        <view class='btn-joinGroup btn_sel br0' bindtap='navtoG2Detail' data-goodid="{{item.GoodId}}" data-groupid='{{item.Id}}'>去参团</view>
+      </view>
+    </view>
+  </view>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <view class='mt20 bg-w groupDes'>
+    <view class='article-head f fc flex-rowsa'>
+      <view class="headtitle {{titletype==0?'title-choose':''}}" id='0' bindtap='change_titletype'>商品详情</view>
+      <view class="headtitle {{titletype==1?'title-choose':''}}" id='1' bindtap='change_titletype'>拼团规则</view>
+    </view>
+    <view class='content detail-info'>
+      <view class='richtext' wx:if="{{titletype==0}}">
+        <template is="wxParse" data="{{wxParseData:article.nodes}}" />
+      </view>
+      <view wx:if="{{titletype==1}}">
+        <view class='h3'>1.参与方式</view>
+        <text>开团邀请好友参团或参加别人的团，并在规定时间内成团，未达到拼团人数，钱款将自动原路退还。</text>
+        <view class='h3'>2.拼团成功</view>
+        <text>拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。</text>
+        <view class='h3'>3.拼团失败</view>
+        <text>拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+      </view>
+    </view>
+  </view>
+
+  <view class='blank-120'></view>
+  <view class='bg-w d-flex d-flex-center groupBottom'>
+    <navigator open-type='reLaunch' url="/pages/index/index" class='home f fc fc-h'>
+      <view >
+        <view class='dzicon icon-home3'></view>
+        <text class='f24'>首页</text>
+      </view>
+    </navigator>
+    <view class='home f fc fc-h' style='width:100rpx;text-align:center;color:#333333;' bindtap='gochat'  wx:if="{{imSwitch}}">
+      <view>
+        <view class='dzicon icon-contact2'></view>
+        <view class='f24' style='word-break:keep-all;'>客服</view>
+      </view>
+    </view>
+    <view class='flex1 notbegin disabled' wx:if="{{msg.stockLimit&&msg.stock<=0}}">
+      <text>库存不足</text>
+    </view>
+    <view wx:elif="{{msg.state==0}}">
+      <text>产品已下架</text>
+    </view>
+    <view wx:elif="{{msg.tag==-1}}">
+      <text>产品已删除</text>
+    </view>
+    <view class='flex1 d-flex d-flex-center' wx:else>
+      <form report-submit="true" bindsubmit='clidkAddGroupSingle' class='w1005' data-groupid='{{msg.Id}}'>
+        <button class='btn btnBuySingle flex1 cfff  d-flex d-flex-center br0' formType="submit">
+          <view>
+            <view>
+              <text class='f20'>￥</text>
+              <text class='f32' wx:if="{{msg.GASDetailList.length>0}}">{{msg.GASDetailList[0].price}}</text>
+              <text class='f32' wx:if="{{msg.GASDetailList.length==0}}">{{msg.priceStr}}</text>
+            </view>
+            <view class='f24'>单独购买</view>
+          </view>
+        </button>
+
+      </form>
+      <form report-submit="true" bindsubmit='clidkAddGroup' class='w1005' data-groupid='{{msg.Id}}'>
+        <button class='btn btnBuyGroup flex1 cfff d-flex d-flex-center pro_btn br0' formType="submit">
+          <view>
+            <view>
+              <text class='f20'>￥</text>
+              <text class='f32' wx:if="{{msg.GASDetailList.length>0}}">{{msg.GASDetailList[0].groupPrice}}</text>
+              <text class='f32' wx:if="{{msg.GASDetailList.length==0}}">{{msg.EntGroups.GroupPriceStr}}</text>
+            </view>
+            <view class='f24'>一键开团</view>
+          </view>
+        </button>
+      </form>
+    </view>
+  </view>
+
+  <!-- 购物车弹窗 -->
+  <template is="shopcart" data="{{msg,showModalStatus,pickspecification,animationData,discountTotal,oldprice,stock,specInfo,addshop,gobuy,totalCount}}" />
+
+
+
+
+
+
+
+
+
+  <!-- 弹窗 -->
+  <view class='bg' wx:if="{{showmoreGroup}}" style='z-index:2'></view>
+  <view class='showmore' wx:if="{{showmoreGroup}}" style='z-index:3'>
+    <text class='l100 flex-rowc f32 fontblod bobof3'>正在开团</text>
+    <scroll-view scroll-y class='maxh550'>
+      <block wx:for="{{GroupSponsorList}}">
+        <view class='h120 flex aic ml20 mr20 bobof3 jussb'>
+          <view class='flex'>
+            <image src='{{item.UserLogo}}' class='headlogo'></image>
+            <view class='flex-column ml10'>
+              <view class='flex'>
+                <text class='f28'>{{item.UserName}} </text>
+                <text class='f24 c999 ml20'>还差{{item.GroupSize-item.GroupUserList.length}}人</text>
+              </view>
+              <text class='f24 c999'>剩余{{item.endtimeList}}</text>
+            </view>
+          </view>
+          <view class='joingroup flex-rowc btn_sel br0' bindtap='navtoG2Detail' data-goodid="{{item.GoodId}}" data-groupid='{{item.Id}}'>去参团</view>
+        </view>
+      </block>
+    </scroll-view>
+    <text class='c999 f24 l68 flex-rowc'>仅显示最多10个在开团的人</text>
+  </view>
+  <image class='unshowmore' src='/image/a35.png' bindtap='showmore' wx:if="{{showmoreGroup}}" style='z-index:3'></image>
+
+
+
+
+</view>

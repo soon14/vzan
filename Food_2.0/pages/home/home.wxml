@@ -1,0 +1,108 @@
+<!--pages/home/home.wxml-->
+<view style="overflow:{{showCanvas?'unset':'hidden'}};height:99vh">
+
+  <!-- swiper -->
+  <swiper indicator-dots="{{indicatorDots}}" autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}" class='h350' wx:if="{{sliderImgs!=null}}">
+    <block wx:for="{{sliderImgs}}">
+      <swiper-item>
+        <image src="{{item}}" class='h350 w1005' mode='aspectFill' bindtap='previewSliderImgs' id="{{index}}" />
+      </swiper-item>
+    </block>
+  </swiper>
+  <view class='flex-columnc ptop24'>
+    <image src='{{postdata.Logo}}' class='w136h136b' mode='aspectFill'></image>
+    <text class='fontblod t38 c666 mbottom40 mtop10'>{{postdata.food.FoodsName}}</text>
+    <view class='flex-column w1005'>
+      <!-- 详细地址 -->
+      <view class='flex jussb aic' data-Lat="{{postdata.food.Lat}}" data-Lng="{{postdata.food.Lng}}" bindtap='openLocation'>
+        <view class='flex aic'>
+          <image src='/image/a26.png' class='w30h40 marle24 fleshr'></image>
+          <text class='c333 t26 marle20'>{{postdata.food.Address}}</text>
+        </view>
+        <image src='/image/a6.png' class='w14h25 marri24 fleshr'></image>
+      </view>
+      <!-- 时间 -->
+      <view class='flex-row aic a c333 t26 '>
+        <image src='/image/a27.png' class='w32h32 marle24'></image>
+        <text style='margin-left:14rpx'>{{postdata.food.OpenDateStr}},</text>
+        <text>{{postdata.food.getOpenTimeList[0].StartTime}}至{{postdata.food.getOpenTimeList[0].EndTime}}</text>
+      </view>
+      <!-- 电话号码 -->
+      <view class='flex-row aic a' id="{{postdata.food.TelePhone}}" bindtap='makePhoneCall'>
+        <image src='/image/a28.png' class='w32h32 marle24'></image>
+        <text class='c333 t26 marle20'>{{postdata.food.TelePhone}}</text>
+      </view>
+    </view>
+  </view>
+  <!-- 图标 -->
+  <!-- 提交模拟formId -->
+  <view class='flex-rowsa mtop80'>
+    <block wx:for="{{item}}" wx:if="{{item.condition}}">
+      <view class='flex-columnc bgcf2' id="{{item.id}}" bindtap='doSomething'>
+        <image src='{{item.iconPath}}' class='w120h120b'></image>
+        <text class='c333 t24 mtop8'>{{item.txt}}</text>
+      </view>
+    </block>
+  </view>
+  <!-- 分享图片 -->
+  <view style='position:fixed;z-index:3;top:2%'>
+    <view id="{{index}}" class='{{showCanvas?"share_Canvas_none":"share_Canvas"}}'>
+      <view class='Canvas_cancle' bindtap='onCancle'>
+        <image mode='aspectFit' src='/image/a19.png' class='w64h64'></image>
+      </view>
+      <canvas style='width:100%;height:75%;z-index:2' canvas-id="firstCanvas">
+      </canvas>
+      <view class='bg'></view>
+      <view class="canvas_bottom_btn t26 cfff">
+        <view class='canvas_save' bindtap='canvasToTempFilePath' id="0">
+          <view class='canvas_img'>
+            <image mode='aspectFit' src='/image/a42.png' class='w50h50'></image>
+          </view>
+          <text>保存</text>
+        </view>
+        <view class='canvas_save' style='margin-left:4%' bindtap='canvasToTempFilePath' id="1">
+          <view class='canvas_img'>
+            <image mode='aspectFit' src='/image/a43.png' class='w50h50'></image>
+          </view>
+          <text>发朋友圈</text>
+        </view>
+        <view class='canvas_save'>
+          <button class='canvas_img' open-type="share">
+            <image mode='aspectFit' src='/image/a44.png' class='w42h50'></image>
+          </button>
+          <text>分享给朋友</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 门店照片 -->
+  <view class='t38 c666 tea mtop100 mbottom40' wx:if="{{postdata.food.funJoinModel.pictureShowType>0&&storeImgs!=null}}">门店照片</view>
+  <!-- 小图 -->
+  <view class='flex-row pale24' wx:if="{{postdata.food.funJoinModel.pictureShowType==2}}">
+    <block wx:for="{{storeImgs}}">
+      <image src='{{item}}' class='b marri24 mtop24' mode='aspectFill' bindtap='previewStoreImgs' id="{{index}}"></image>
+    </block>
+  </view>
+  <!-- 大图 -->
+  <view class='flex-column' wx:if="{{postdata.food.funJoinModel.pictureShowType==1}}">
+    <block wx:for="{{storeImgs}}">
+      <image src='{{item}}' class='h500 w1005 mbottom24' mode='aspectFill' bindtap='previewStoreImgs' id="{{index}}"></image>
+    </block>
+  </view>
+  <!-- 轮播图 -->
+  <scroll-view class='h200 w1005' scroll-x wx:if="{{postdata.food.funJoinModel.pictureShowType==3}}">
+    <view class='flexnowrap pale24'>
+      <block wx:for="{{storeImgs}}">
+        <image src='{{item}}' class='h200 d fleshr marri24' mode='aspectFill' bindtap='previewStoreImgs' id="{{index}}"></image>
+      </block>
+    </view>
+  </scroll-view>
+  <!-- 水印 -->
+  <view class="bgcf7 t20 flex-columnc c999 fontnor ptop40 pbottom40 mtop60" wx:if="{{AgentConfig.IsOpenAdv==1}}">
+    <image src="{{AgentConfig.LogoImgUrl}}" class='c' mode='widthFix'></image>
+    <view class="mtop10" wx:if="{{AgentConfig.isdefaul==1}}">{{AgentConfig.LogoText}}</view>
+    <view class="mtop8" wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[0]}}</view>
+    <view class="mtop8" wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[2]}}</view>
+  </view>
+</view>

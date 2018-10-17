@@ -1,0 +1,362 @@
+<style lang="less">
+  .c-barLst {
+    width: 100%;
+    .c-barLst-top {
+      width: 100%;
+      height: 100rpx;
+      background-color: #fff;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      padding: 0 50rpx;
+      >view {
+        font-size: 30rpx;
+        text-align: center;
+      }
+    }
+    .c-barLst-main {
+      width: 100%;
+      margin-top: 20rpx;
+      .c-barLst-item:last-child {
+        margin-bottom: 0;
+      }
+      .c-barLst-item {
+        width: 100%;
+        background-color: #fff;
+        margin-bottom: 20rpx;
+        padding-left: 30rpx;
+        .c-barLst-item-top {
+          width: 100%;
+          padding: 30rpx 30rpx 30rpx 0;
+          border-bottom: 1px solid #eee;
+        }
+        .c-barLst-item-pro {
+          width: 100%;
+          padding: 30rpx 30rpx 30rpx 0;
+          border-bottom: 1px solid #eee;
+          >image {
+            width: 130rpx;
+            height: 130rpx;
+            border-radius: 5rpx;
+            margin-right: 30rpx;
+            flex-shrink: 0;
+          }
+        }
+        .c-barLst-item-bottom {
+          width: 100%;
+          padding: 30rpx;
+          .c-barLst-item-btn {
+            width: 100%;
+            margin-top: 50rpx;
+            >text,
+            button {
+              width: 146rpx;
+              height: 50rpx;
+              text-align: center;
+              line-height: 50rpx;
+              font-size: 26rpx;
+              border-radius: 25rpx;
+              border: 1px solid #a1a2a3;
+            }
+          }
+        }
+      }
+    }
+    .c-barLst-mask {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      .c-barLst-mask-bg {
+        width: 100vh;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4)
+      }
+      .c-barLst-mask-main {
+        position: fixed;
+        width: 500rpx;
+        height: 630rpx;
+        top: 50%;
+        left: 50%;
+        margin-left: -250rpx;
+        margin-top: -315rpx;
+        .c-barLst-mask-main-item {
+          width: 500rpx;
+          height: 630rpx;
+          background-color: #fff;
+          border-radius: 16rpx;
+          padding-top: 80rpx;
+          .c-barLst-mask-main-logo {
+            position: absolute;
+            top: -80rpx;
+            left: 50%;
+            width: 168rpx;
+            margin-left: -84rpx;
+          }
+          scroll-view {
+            width: 100%;
+            height: 550rpx;
+            padding: 0 30rpx;
+            .c-barLst-mask-scroll {
+              width: 100%;
+              margin-bottom: 40rpx;
+              .c-barLst-mask-scroll-userImg {
+                width: 58rpx;
+                height: 58rpx;
+                margin-right: 20rpx;
+                border-radius: 50%;
+              }
+            }
+          }
+        }
+      }
+      .c-barLst-icon {
+        position: fixed;
+        bottom: 10%;
+        left: 43%;
+        font-size: 80rpx;
+        color: #fff;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="c-barLst {{currentSkin}}">
+    <view class="c-barLst-top f fc fj" style="border-bottom:1px solid {{vm.scroll!=0?'#eee':'none'}}">
+      <repeat for="{{vm.topHead}}">
+        <view @tap="changeState({{item.state}})">
+          <text class="{{vm.state==item.state?'skin_bottom':''}}" style="padding-bottom: 10rpx;">{{item.name}}</text>
+        </view>
+      </repeat>
+    </view>
+    <view style="height:100rpx" />
+    <view class="c-barLst-main">
+      <repeat for="{{vm.list}}">
+        <view class="c-barLst-item">
+          <view class="c-barLst-item-top f fj">
+            <text>{{item.CreateDateStr[0]}}</text>
+            <text>{{item.StateStr}}</text>
+          </view>
+          <view class="c-barLst-item-pro f fc fj">
+            <image src="{{item.ShopLogoUrl}}" @tap="preView({{item.ShopLogoUrl}})" />
+            <view class="f fv f1 fj f24" style="height:130rpx;">
+              <text class="line line1">{{item.BName}}</text>
+              <view class="f fc">
+                <text class="f28 skin_txt">￥{{item.CurrentPriceStr}}</text>
+                <text class="f24 ml20 c666 line-thor rel">￥{{item.OriginalPrice}}</text>
+              </view>
+              <text class="c666">已有<text class="skin_txt">{{item.HelpNum}}</text>位好友帮您砍价</text>
+            </view>
+          </view>
+          <view class="c-barLst-item-bottom">
+            <view class="f fc f-end">
+              <text>应付总额：</text>
+              <text class="skin_txt">{{item.PayAmount}}</text>
+            </view>
+            <view class="c-barLst-item-btn f fc f-end">
+              <text class='ml20' @tap='pathCut({{item.Id}})'>帮砍记录</text>
+              <text class='ml20' wx:if="{{item.State!=0}}" @tap='pathOrder({{item.Id}})'>查看详情</text>
+              <text class="ml20" wx:if="{{item.State==0&&item.IsEnd==0}}" @tap.stop='pathBuy({{index}})'>现价购买</text>
+              <text class="skin_bg ml20" style="border:none;" wx:if="{{item.State==5&&item.IsEnd==0}}" @tap="goPay({{item.CityMordersId}},{{item.Id}})">去支付</text>
+              <button class='skin_bg ml20 f28' style="border:none;" @tap='onShareAppMessage({{item}})' open-type="share" wx:if="{{item.State==0&&item.IsEnd==0}}">立即邀请</button>
+              <text class="skin_bg ml20" style="border:none;" wx:if="{{item.State==6}}" @tap='pathComfig({{item.Id}})'>确认收货</text>
+            </view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <!-- 加载状态 -->
+    <view class="loding w-100 f fc-h" style="padding:20rpx 0" wx:if="{{vm.list.length&&vm.loadall==false}}">
+      <text class="loading-icon" />
+      <text class="c999 f26 ml20">正在加载中...</text>
+    </view>
+    <!-- 加载完毕 -->
+    <view class="w-100 tc c123 f24 ph20" wx:if="{{vm.loadall&&vm.list.length}}">到底啦~</view>
+    <view class="w-100 f fc fc-h c123 f24" style="height:80vh" wx:if="{{vm.list.length==0}}">暂无数据~</view>
+    <view class="c-barLst-mask" wx:if="{{vm.showShare}}">
+      <view class="c-barLst-mask-bg" @tap="pathCloes" />
+      <view class="c-barLst-mask-main">
+        <view class="c-barLst-mask-main-item rel">
+          <image class="c-barLst-mask-main-logo" mode="widthFix" src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180927/88bf23a1b3404b83b1a6af1c7abc2f4f.png" />
+          <scroll-view scroll-y>
+            <repeat for="{{vm.HelpCut}}">
+              <view class="c-barLst-mask-scroll f fj">
+                <view class="f">
+                  <image class="c-barLst-mask-scroll-userImg" src="{{item.UserLogo||'http://j.vzan.cc/content/city/images/voucher/10.jpg'}}" />
+                  <view class="f fv">
+                    <text class="f26">{{item.UserName||'神秘用户'}}</text>
+                    <text class="f20 mt5 c999">{{item.CreateDate}}</text>
+                  </view>
+                </view>
+                <view class="f26 t-b" style="color:#FF6F30">-￥{{item.AmountStr}}</view>
+              </view>
+            </repeat>
+          </scroll-view>
+        </view>
+      </view>
+      <view class="dzicon icon-zhuanyebaniconkuozhan_Close c-barLst-icon" @tap="pathCloes" />
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    pay,
+    tools
+  } from "../../lib/core";
+  // import
+  //第一步： 引入组件文件
+  export default class bargainList extends wepy.page {
+    config = {
+      navigationBarTitleText: "我的砍价单",
+      enablePullDownRefresh: true,
+    };
+    data = {
+      currentSkin: {},
+      vm: {
+        pageindex: 1,
+        pagesize: 10,
+        list: [],
+        ispost: false,
+        loadall: false,
+        state: -2,
+        scroll: 0,
+        HelpCut: [],
+        showShare: false,
+        topHead: [
+          //标题
+          {
+            name: "全部",
+            state: -2
+          },
+          {
+            name: "待发货",
+            state: 7
+          },
+          {
+            name: "待收货",
+            state: 6
+          },
+          {
+            name: "已完成/退款",
+            state: 8
+          }
+        ]
+      },
+    };
+    methods = {
+      preView(img) {
+        let imgUrls = [];
+        imgUrls.push(img);
+        tools.preViewShow(img, imgUrls);
+      },
+      // 查看不同状态
+      async changeState(state) {
+        await tools.showLoading()
+        this.vm = await tools.resetArray(this.vm)
+        this.vm.state = state;
+        await tools.onPageScroll()
+        await core.bargainList(this);
+        wx.hideLoading();
+      },
+      //帮砍记录
+      async pathCut(id) {
+        await core.barShare(id, this)
+        this.vm.showShare = true
+        this.$apply()
+      },
+      // 关闭
+      pathCloes() {
+        this.vm.showShare = false
+        this.$apply()
+      },
+      //查看详情
+      pathOrder(buid) {
+        tools.goNewPage("../good/goodOlt?buid=" + buid)
+      },
+      // 微信二次付款
+      async goPay(oradid, buid) {
+        wx.showNavigationBarLoading();
+        let newparam = {
+          orderid: oradid,
+          'type': 1,
+        }
+        let wxInfo = await pay.PayOrder(newparam)
+        if (wxInfo != '' && wxInfo.errMsg.includes("requestPayment:ok")) {
+          tools.loading("支付成功")
+          setTimeout(resTime => {
+            tools.goRedirecto("../good/goodOlt?buid=" + buid)
+          }, 1000)
+          wx.hideNavigationBarLoading()
+        } else {
+          tools.loading("取消支付")
+          wx.hideNavigationBarLoading()
+        }
+      },
+      //现价购买
+      pathBuy(index) {
+        let vm = this.vm.list[index]
+        let tmp = {
+          list: [],
+          buid: vm.Id,
+          totalCount: 1,
+          fee: vm.GoodsFreightStr,
+          totalPrice: vm.CurrentPriceStr,
+          originalPrice: vm.CurrentPriceStr,
+        }
+        tmp.list.push({
+          ImgUrl: vm.ShopLogoUrl,
+          oldPrice: "",
+          SpecInfo: "",
+          Introduction: vm.BName,
+          discount: 100,
+          discountPrice: vm.CurrentPriceStr,
+          Count: 1,
+        })
+        this.$preload('vm_order', tmp);
+        this.$navigate("/pages/bargain/bargainOrder");
+      },
+      //确认收货
+      async pathComfig(index) {
+        let showModal = await tools.showModal('亲，是否确认收货?')
+        showModal.confirm ? core.confirmBar(index, this, 0) : ""
+      },
+    }
+    async onShow() {
+      await tools.setPageSkin(this);
+      this.vm = tools.resetArray(this.vm)
+      await core.bargainList(this);
+    }
+    onReachBottom() {
+      core.bargainList(this);
+    }
+    onPageScroll(e) {
+      this.vm.scroll = e.scrollTop
+      this.$apply();
+    }
+    async onPullDownRefresh() {
+      wx.showNavigationBarLoading()
+      this.vm = tools.resetArray(this.vm)
+      await core.bargainList(this);
+      setTimeout(() => {
+        wx.stopPullDownRefresh();
+        wx.hideNavigationBarLoading();
+      }, 1000);
+    }
+    onShareAppMessage(tmp) {
+      if (tmp.target) {
+        let item = tmp.target.dataset.wpyonshareappmessageA
+        return {
+          title: "我发现了一件好货，最低可砍至" + item.FloorPrice + "元",
+          imageUrl: item.ShopLogoUrl,
+          path: "/pages/bargain/bargain?scene=" + item.Id + "_" + item.BId
+        };
+      }
+    }
+  }
+</script>

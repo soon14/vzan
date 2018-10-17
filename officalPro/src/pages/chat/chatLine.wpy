@@ -1,0 +1,297 @@
+<style lang="less">
+    page {
+        background: #f6f6f6;
+    }
+    .line {
+        width: 100%;
+        height: 100vh;
+        .chat {
+            width: 100%;
+            height: 92vh;
+            padding-bottom: 30rpx;
+            .userImg {
+                width: 90rpx;
+                height: 90rpx;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+            .content {
+                max-width: 470rpx;
+                word-break: break-all;
+                font-size: 30rpx;
+                padding: 31rpx 29rpx 28rpx 29rpx;
+                border-radius: 5rpx;
+            }
+            .orther {
+                padding: 0 30rpx;
+                margin-bottom: 30rpx;
+            }
+            .orther:last-child {
+                margin-bottom: 0;
+            }
+            .upImg {
+                max-width: 350rpx;
+                max-height: 350rpx;
+                vertical-align: middle;
+                border-radius: 5rpx;
+            }
+        }
+        .opera {
+            width: 100%;
+            height: 8vh;
+            border-radius: 5rpx;
+            background: #fff;
+            >input {
+                height: 64rpx;
+                background: #eee;
+            }
+        }
+        .loginMask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            .login-main {
+                width: 440rpx;
+                height: 230rpx;
+                background: #fff;
+                border-radius: 5rpx;
+                >button {
+                    width: 100%;
+                    height: 88rpx;
+                    font-weight: bold;
+                    line-height: 88rpx;
+                    text-align: center;
+                    color: #ff3838;
+                    border-top: 1px solid #eee;
+                    font-size: 30rpx;
+                }
+                >view {
+                    font-size: 30rpx;
+                    margin-top: 30rpx;
+                }
+            }
+        }
+        .default-logo {
+            width: 110rpx;
+            height: 110rpx;
+            border-radius: 50%;
+            background: #eee;
+            font-size: 80rpx;
+            color: #a1a2a3;
+            text-align: center;
+            line-height: 140rpx;
+        }
+    }
+</style>
+
+<template>
+    <view class='line'>
+        <scroll-view scroll-y class='chat' enable-back-to-top='true' scroll-into-view="msg{{vm.lastids}}" @scrolltoupper="loadMore">
+            
+            <repeat for="{{vm.list}}">
+                <view class='f fc-h f24 c999' style='margin:30rpx 0'>{{item.sendDate}}</view>
+                <!-- 对方 -->
+                <view class='orther f' wx:if="{{item.fuserId!=fuserInfo.userid}}" id="msg{{item.ids}}">
+                    <image src='{{tuserInfo.headimg}}' class='userImg' wx:if="{{tuserInfo.headimg}}" />
+                    <text class="default-logo dzicon icon-wo" wx:if="{{tuserInfo.headimg==''}}" />
+                    <text class='content ml20 bgw' wx:if="{{item.msgType==0||item.msgType==3||item.msgType==4}}" selectable="true">{{item.msg}}</text>
+                    <image wx:if="{{item.msgType==1}}" src='{{item.msg}}' mode="aspectFill" @tap='previewImage({{item.msg}})' class="upImg ml20" />
+                </view>
+                <view class='orther f f-end' wx:if="{{item.fuserId==fuserInfo.userid&&item.msgType!=3}}" id="msg{{item.ids}}">
+                    <text class='content bge' wx:if="{{item.msgType==0||item.msgType==4}}" selectable="true">{{item.msg}}</text>
+                    <image wx:if="{{item.msgType==1}}" src='{{item.msg}}' mode="aspectFill" @tap='previewImage({{item.msg}})' class="upImg" />
+                    <image mode='aspectFill' src='{{fuserInfo.headimg}}' class='userImg ml20' />
+                </view>
+            </repeat>
+        </scroll-view>
+        <view class='opera f fc'>
+            <text class='dzicon icon-tupian1 f60 c1a12' style='margin:0 30rpx;' @tap.stop='clickImgBtn' />
+            <input type='text' cursor-spacing='10' class='f1 pw20' @input='inputTxtMsg' @confirm="clickToSend" value="{{msg}}" confirm-type="Send" />
+            <view class="t-b tc" style="color:#444;height:8vh;width:100rpx;line-height:8vh;" @tap="clickToSend">发送</view>
+        </view>
+        <view class="loginMask f fc fc-h" wx:if="{{userInfo.newUser}}">
+            <view class='login-main f fv fc fj'>
+                <view class='c666 f fc fv'>
+                    <text>请先授权</text>
+                    <text>获得更多操作</text>
+                </view>
+                <button open-type="getUserInfo" @getuserinfo="getUser">登陆</button>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools
+    } from "../../lib/core.js"
+    import _get from "../../lib/lodash.get.js"
+    export default class chatLine extends wepy.page {
+        config = {
+            navigationBarTitleText: "最近联系人",
+            navigationBarBackgroundColor: "#fff",
+        };
+        components = {};
+        data = {
+            msg: "",
+            vm: {
+                list: [],
+                ispost: false,
+                loadall: false,
+                pageindex: 1,
+                pagesize: 20,
+                lastid: 0,
+                lastids: "",
+            },
+            tuserInfo: {},
+            fuserInfo: {},
+            userInfo: {},
+        }
+        methods = {
+            async getUser(e) {
+                let _u = e.detail
+                if (_u.errMsg == 'getUserInfo:fail auth deny') {
+                    return;
+                }
+                let code = await core.login();
+                let vm = {
+                    code,
+                    phone: 0,
+                    iv: _u.iv,
+                    data: _u.encryptedData,
+                    sign: _u.signature,
+                }
+                let userInfo = await core.loginUserInfo(vm)
+                this.fuserInfo = {
+                    userid: userInfo.Id,
+                    nickname: userInfo.NickName,
+                    headimg: userInfo.HeadImgUrl,
+                }
+                this.userInfo = userInfo
+                this.$apply()
+                core.onShareUp('客户授权了头像昵称，快去和他打个招呼吧')
+            },
+            inputTxtMsg(e) {
+                var txt = e.detail.value || "";
+                if (txt.replace(/\s/gi, "").length == 0) {
+                    txt = txt.replace(/\s/gi, "");
+                }
+                this.msg = txt
+            },
+            clickToSend() {
+                var txt = this.msg;
+                txt = txt.replace(/\s/gi, "");
+                if (txt.length == 0) {
+                    tools.showModalCancle("不能发送空白消息")
+                    return;
+                }
+                this.sendMsg(0, txt);
+            },
+            clickImgBtn() {
+                var that = this;
+                tools.upload().then(function(res) {
+                    if (res && (Object.prototype.toString.call(res) === "[object Array]") && res.length > 0) {
+                        for (var i = 0, len = res.length; i < len; i++) {
+                            that.sendMsg(1, res[i]);
+                        }
+                    }
+                });
+            },
+            previewImage(img) {
+                let current = img;
+                let _imgArray = []
+                _imgArray.push(current);
+                tools.preViewShow(current, _imgArray);
+            }
+        }
+        /**
+         * @param {tuserInfo 对方信息}
+         * @param {fuserInfo 自己信息}
+         */
+        async onLoad(options) {
+            let app = wepy.$instance
+            let userid = _get(options, "userid", "");
+            let nickname = _get(options, "nickname", "神秘客户");
+            let headimg = _get(options, "headimg", "");
+            let userInfo = _get(app.globalData, "userInfo", "")
+            if (userInfo == "") {
+                userInfo = await core.getUserInfo()
+            }
+            if (userid) {
+                this.tuserInfo = {
+                    userid,
+                    nickname,
+                    headimg,
+                }
+                tools.setPageTitle(nickname)
+            } else {
+                tools.goBack(1)
+                return;
+            }
+            this.fuserInfo = {
+                userid: userInfo.Id,
+                nickname: userInfo.NickName,
+                headimg: userInfo.HeadImgUrl,
+            }
+            this.userid = userid
+            this.userInfo = userInfo
+            this.$apply()
+            Promise.all([
+                core.AddContact(userid),
+                core.getHistory(userid, this.vm, this),
+                core.sendMsg(this.fuserInfo.userid, this.tuserInfo.userid, '', 2, 1)
+            ])
+        }
+         loadMore() {
+            
+             core.getHistory(this.tuserInfo.userid, this.vm, this)
+        }
+        onShow() {
+            let app = wepy.$instance
+            if (!app.globalData.ws) {
+                core.reConnect();
+            }
+        }
+        onUnload() {
+            let app = wepy.$instance
+            app.globalData.tuserInfo = this.tuserInfo
+            core.sendMsg(this.fuserInfo.userid, this.tuserInfo.userid, '', 2, 0)
+        }
+        onHide() {
+            let app = wepy.$instance
+            app.globalData.tuserInfo = this.tuserInfo
+            core.sendMsg(this.fuserInfo.userid, this.tuserInfo.userid, '', 2, 0)
+        }
+        async sendMsg(msgtype, msg) {
+            var app = wepy.$instance;
+            var ws = _get(app, "globalData.ws") || false;
+            var fuserid = _get(this.fuserInfo, "userid");
+            var tuserid = _get(this.tuserInfo, "userid");
+            if (!ws) {
+                core.reConnect()
+                wx.showLoading({
+                    title: '连接中',
+                })
+                return;
+            }
+            await core.sendMsg(fuserid, tuserid, msg, msgtype)
+            this.msg = ""
+            this.$apply()
+        }
+        selectNode(selector) {
+            let query = wx.createSelectorQuery();
+            query.select(selector).boundingClientRect();
+            return new Promise(function(resolve, reject) {
+                query.exec(function(res) {
+                    resolve(res);
+                })
+            })
+        }
+    }
+</script>

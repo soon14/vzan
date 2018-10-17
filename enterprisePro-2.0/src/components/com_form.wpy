@@ -1,0 +1,182 @@
+
+<style lang="less">
+  .c-form {
+    font-size: 30rpx;
+    background-color: #ffffff;
+    margin-bottom: 20rpx;
+    padding: 0 30rpx 30rpx 30rpx;
+    .c-form-main {
+      width: 100%;
+      color: #666;
+      .c-form-main-name {
+        width: 100%;
+        margin-top: 30rpx;
+        .pickItem,
+        input {
+          padding: 0 20rpx;
+          width: 100%;
+          height: 90rpx;
+          color: #333;
+          font-size: 28rpx;
+          background-color: #F2F2F2;
+          border-radius: 5rpx;
+          margin-top: 20rpx;
+        }
+        .c-form-icon {
+          position: absolute;
+          top: 45%;
+          right: 20rpx;
+          z-index: 1;
+        }
+        .c-form-iconChange {
+          -webkit-transform: rotate(180deg);
+          transform: rotate(180deg);
+          -webkit-transition: -webkit-transform 0.2s linear;
+          transition: transform 0.2s linear;
+        }
+        .c-form-iconHidden {
+          -webkit-transform: rotate(0);
+          transform: rotate(0);
+          -webkit-transition: -webkit-transform 0.2s linear;
+          transition: transform 0.2s linear;
+        }
+      }
+      button {
+        width: 260rpx;
+        height: 70rpx;
+        line-height: 70rpx;
+        text-align: center;
+        margin:50rpx auto 0 auto;
+        border-radius: 5rpx;
+        font-size: 28rpx;
+      }
+    }
+  }
+</style>
+<!-- form -->
+
+<template>
+  <form @submit="sumbitFormFuc({{currentCom.title}})" report-submit="true">
+    <view class="c-form">
+      <view class='component-title f fc fc-h' wx:if='{{currentCom.title}}'><text class='component-title-left dzicon icon-_xiegan skin_txt' />{{currentCom.title}}<text class='component-title-right dzicon icon-_xiegan skin_txt' /></view>
+      <view class="c-form-main">
+        <repeat for="{{currentCom.items}}">
+          <!-- 姓名 -->
+          <view class='c-form-main-name f fv' wx:if="{{item.type=='text'}}">
+            <text class="f26">{{item.name}}</text>
+            <input @input="inputFy({{index}})" value="{{vm.name[index]}}" type='{{item.type}}' placeholder='{{item.placeholder}}' placeholder-class='c99 f24' name="{{item.name}}" />
+          </view>
+          <!-- 号码 -->
+          <view class='c-form-main-name f fv' wx:if="{{item.type=='number'}}">
+            <text class="f26">{{item.name}}</text>
+            <input @input="inputFp({{index}})" value="{{vm.phone[index]}}" type='{{item.type}}' placeholder='{{item.placeholder}}' placeholder-class='c99 f24' name="{{item.name}}" />
+          </view>
+          <!-- 代理产品 -->
+          <view class='c-form-main-name f fv' wx:if="{{item.type=='radio'}}">
+            <text class="f26">{{item.name}}</text>
+            <picker class="w-100 rel" @cancel="pickCancle({{index}})" @tap="pickShow({{index}})" @change="pickFunc({{index}})" range="{{item.array}}" value="{{vm.pickIndex[index]}}">
+              <input class="pickItem" value='{{item.array[vm.pickIndex[index]]}}' type='text' placeholder='{{item.name}}' placeholder-class='c99 f24' disabled name="{{item.name}}" />
+              <text class="dzicon icon-xialax c-form-icon {{vm.showXia[index]?'c-form-iconChange':'c-form-iconHidden'}}" />
+            </picker>
+          </view>
+          <!-- 时间 -->
+          <view class='c-form-main-name fv' wx:if="{{item.type=='date'}}">
+            <text class="f26">{{item.name}}</text>
+            <input value="{{vm.pickTime[index]}}" placeholder="请选择时间" type='text' placeholder='请选择时间' placeholder-class='c99 f24' disabled @tap='showData({{index}})' name="{{item.name}}" />
+            <comPicker @closeData.user="closeData" wx:if="{{vm.showPicker[index]}}" :vm.sync="vm.time" :formIndex.sync="index" />
+          </view>
+        </repeat>
+        <button class='skin_bg' formType="submit">提交</button>
+      </view>
+    </view>
+  </form>
+</template>
+
+
+<script>
+  import wepy from "wepy";
+  import {
+    core
+  } from "../lib/core";
+  import {
+    timeTools
+  } from "@/lib/utils.js"
+  import com_pickerTime from "../components/com_pickerTime";
+  export default class com_form extends wepy.component {
+    components = {
+      comPicker: com_pickerTime
+    };
+    data = {
+      vm: {
+        time: {},
+        name: {},
+        phone: {},
+        pickIndex: {},
+        pickTime: {},
+        showPicker: {},
+        showXia: {},
+      },
+    };
+    methods = {
+      pickCancle(index) {
+        this.vm.showXia[index] = false
+        this.$apply();
+      },
+      pickShow(index) {
+        this.vm.showXia[index] = true
+        this.$apply();
+      },
+      inputFy(index, e) {
+        this.vm.name[index] = e.detail.value;
+        this.$apply();
+      },
+      inputFp(index, e) {
+        this.vm.phone[index] = e.detail.value;
+        this.$apply();
+      },
+      pickFunc(index, e) {
+        this.vm.pickIndex[index] = parseInt(e.detail.value);
+        this.vm.showXia[index] = false
+        this.$apply();
+      },
+      // 表单提交，提交真是姓名和手机号码
+      async sumbitFormFuc(name, e) {
+        core.formId(e.detail.formId);
+        for (let key in e.detail.value) {
+          let formItem = e.detail.value[key]
+          if (formItem == "") {
+            this.$emit("ShowToast", "信息未填写完整");
+            return;
+          }
+        }
+        let info = await core.formRequest(JSON.stringify(e.detail.value), name);
+        if (info.isok) {
+          this.$emit("ShowToast", "提交成功");
+          Object.assign(this.vm, {
+            name: '',
+            phone: '',
+            pickIndex: {},
+            pickTime: {},
+          })
+          this.$apply();
+        } else {
+          this.$emit("ShowToast", "提交失败");
+        }
+      },
+      showData(index) {
+        this.vm.showPicker[index] = true;
+        this.timeConfig();
+      },
+      closeData(_p, index) {
+        this.vm.pickTime[index] = _p
+        this.vm.showPicker[index] = false;
+        this.$apply()
+      }
+    };
+    // 获取当前时间
+    timeConfig() {
+      this.vm.time = timeTools.formTimeSpan()
+      this.$apply();
+    }
+  }
+</script>

@@ -1,0 +1,428 @@
+<style>
+.order-item {
+  margin-top: 20rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #f2f2f2;
+}
+.order-item__head {
+  padding: 35rpx 20rpx;
+}
+.order-item__state {
+  color: #53a3fe;
+}
+.w150 {
+  width: 150rpx;
+}
+.order-item__content {
+  padding: 0 0 30rpx 20rpx;
+  border-bottom: 1rpx solid #f2f2f2;
+  border-top: 1rpx solid #f2f2f2;
+}
+.order-item__group {
+  border-top: 1rpx solid #f2f2f2;
+  line-height: 42rpx;
+  padding-right: 20rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+}
+.gooditem {
+  border-bottom: 1rpx solid #f2f2f2;
+}
+.order-item__group:first-child {
+  border: 0;
+}
+.order-item__group .c333 {
+  word-break: break-all;
+  word-wrap: normal;
+}
+
+.order-item_action {
+  text-align: right;
+  padding: 30rpx 0;
+}
+.order-item_action .btn-plain {
+  margin-right: 20rpx;
+}
+.ico40 {
+  vertical-align: middle;
+  margin-right: 10rpx;
+}
+.page-head {
+  background-color: #fe536f;
+  color: #fff;
+}
+.tab-type {
+  word-break: keep-all;
+  white-space: nowrap;
+}
+.tab-type .sel {
+  border-bottom-color: #fff;
+}
+.tab-type > view {
+  display: inline-block;
+  margin-right: 20px;
+}
+
+.search-type {
+  width: 140rpx;
+  border-radius: 6rpx;
+  background-color: #f5f5f5;
+  position: absolute;
+  left: 0;
+  top: 102%;
+  z-index: 999;
+}
+.search-type > view {
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-top: 1px solid #fff;
+}
+.search-type > view:first-child {
+  border-top: 0;
+  color: #333333;
+  font-size: 28rpx;
+}
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class="">
+
+    <view class=''>
+      <block wx:for="{{vm.list}}" wx:for-index="index1">
+        <!--普通订单-->
+        <view class='order-item' wx:for="{{item}}" wx:for-item="orderitem" wx:for-index="index2" wx:if="{{orderitem.OrderType==0}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.CreateDateStr}}</view>
+            <view class="order-item__state">{{orderitem.StateStr}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单号：</view>
+                <view class="c333 f1">{{orderitem.OrderNum}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单商品：</view>
+                <view class="c333 f1">
+
+                  <view class="gooditem" wx:for="{{orderitem.goodsCarts}}" wx:for-item="unitgood">
+                    <view class="gooditem-name"><text wx:if="{{unitgood.goodsMsg.StockNo}}">(货号：{{unitgood.goodsMsg.StockNo}})</text>{{unitgood.goodsMsg.name}}</view>
+                    <view class="f c999">
+                      <view class="f1">￥{{unitgood.goodsMsg.priceStr}} {{unitgood.goodsMsg.unit}}{{unitgood.SpecInfo}}</view>
+                      <view>x{{unitgood.Count}}</view>
+                    </view>
+                  </view>
+
+                </view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单金额：</view>
+                <view class="c333 f1">￥{{orderitem.GoodsMoney}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">优惠金额：</view>
+                <view class="c333 f1">￥{{orderitem.ReducedPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">实收金额：</view>
+                <view class="c333 f1">￥{{orderitem.BuyPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">支付方式：</view>
+                <view class="c333 f1">{{orderitem.BuyModeStr}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">配送方式：</view>
+                <view class="c333 f1">{{orderitem.GetWayStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">送货地址：</view>
+                <view class="c333 f1">{{orderitem.Address}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货人：</view>
+                <view class="c333 f1">{{orderitem.AccepterName}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货电话：</view>
+                <view class="c333 f1">{{orderitem.AccepterTelePhone}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单备注：</view>
+                <view class="c333 f1">{{orderitem.Remark||""}}</view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==1}}">
+
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},3,{{orderitem.State}},{{orderitem.OrderType}},{{index1}},{{index2}})">
+              <view class="ico40 ico-car__small"></view>确认核销</view>
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==8}}">
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},3,{{orderitem.State}})">
+              <view class="ico40 ico-car__small"></view>确认收货</view>
+          </view>
+        </view>
+        <!--/普通订单-->
+
+        <!--拼团订单-->
+        <view class='order-item' wx:for="{{item}}" wx:for-item="orderitem" wx:for-index="index2" wx:if="{{orderitem.OrderType==3}}">
+          <view class="f order-item__head">
+            <view class="f1 c999">{{orderitem.CreateDateStr}}</view>
+            <view class="order-item__state">{{orderitem.StateStr}}</view>
+          </view>
+          <view class="order-item__content">
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单号：</view>
+                <view class="c333 f1">{{orderitem.OrderNum}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">订单商品：</view>
+                <view class="c333 f1">
+
+                  <view class="gooditem" wx:for="{{orderitem.goodsCarts}}" wx:for-item="unitgood">
+                    <view class="gooditem-name"><text wx:if="{{unitgood.goodsMsg.StockNo}}">(货号：{{unitgood.goodsMsg.StockNo}})</text>{{unitgood.goodsMsg.name}}</view>
+                    <view class="f c999">
+                      <view class="f1">￥{{unitgood.goodsMsg.priceStr}} {{unitgood.goodsMsg.unit}}{{unitgood.SpecInfo}}</view>
+                      <view>x{{unitgood.Count}}</view>
+                    </view>
+                  </view>
+
+                </view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单金额：</view>
+                <view class="c333 f1">￥{{orderitem.GoodsMoney}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">优惠金额：</view>
+                <view class="c333 f1">￥{{orderitem.ReducedPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">实收金额：</view>
+                <view class="c333 f1">￥{{orderitem.BuyPriceStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">支付方式：</view>
+                <view class="c333 f1">{{orderitem.BuyModeStr}}</view>
+              </view>
+            </view>
+
+            <view class="order-item__group">
+              <view class="f">
+                <view class="w150 c666">配送方式：</view>
+                <view class="c333 f1">{{orderitem.GetWayStr}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">送货地址：</view>
+                <view class="c333 f1">{{orderitem.Address}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货人：</view>
+                <view class="c333 f1">{{orderitem.AccepterName}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">收货电话：</view>
+                <view class="c333 f1">{{orderitem.AccepterTelePhone}}</view>
+              </view>
+              <view class="f">
+                <view class="w150 c666">订单备注：</view>
+                <view class="c333 f1">{{orderitem.Remark||""}}</view>
+              </view>
+            </view>
+
+          </view>
+          <view class="order-item_action" wx:if="{{orderitem.State==1}}">
+            <view class="btn-plain btn-plain__red" @tap="updateOrderState({{orderitem.Id}},3,{{orderitem.State}},{{orderitem.OrderType}},{{index1}},{{index2}})">
+              <view class="ico40 ico-car__small"></view>确认核销</view>
+          </view>
+        </view>
+        <!--/拼团订单-->
+
+      </block>
+    </view>
+    <wxc-loadmore is-end="{{!vm.ispost&&vm.loadall}}" icon="{{true}}"></wxc-loadmore>
+    <wxc-toast is-show="{{$toast.show}}" text="{{$toast.msg}}"></wxc-toast>
+    <view class="h45"></view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import "wepy-async-function";
+import { core, vm } from "../lib/core";
+import baseMixin from "../mixins/base";
+// import
+//第一步： 引入组件文件
+
+export default class hexiao_list extends wepy.page {
+  config = {
+    navigationBarTitleText: "线下核销",
+    // 引入min组件
+    usingComponents: {
+      "wxc-toast": "../../packages/@minui/wxc-toast/dist/index",
+      "wxc-loadmore": "../../packages/@minui/wxc-loadmore/dist/index"
+    },
+    enablePullDownRefresh: true
+  };
+  //第二步：声明组件
+  components = {};
+  mixins = [baseMixin];
+  data = {
+    vm: JSON.parse(JSON.stringify(vm)),
+    type: "",
+    kw: ""
+  };
+  computed = {};
+  methods = {
+    async searchOrder(e) {
+      this.vm = JSON.parse(JSON.stringify(vm));
+      await this.loadMore();
+    },
+    async updateOrderState(
+      orderId,
+      state,
+      oldState,
+      OrderType,
+      index1,
+      index2
+    ) {
+      let that = this;
+      wx.showModal({
+        title: "提示",
+        content: "核销后不能撤销，确定此操作吗？",
+        success: async function(res) {
+          if (res.confirm) {
+            // core
+            //   .UpdteOrderState(
+            //     OrderType == 0 ? 0 : 2,
+            //     orderId,
+            //     state,
+            //     oldState,
+            //     ""
+            //   )
+            //   .then(function(result) {
+            //     if (result) {
+            //       if (result.isok) {
+            //         let key = "vm.list[" + index1 + "][" + index2 + "].State";
+            //         that.setData({
+            //           [key]: state
+            //         });
+            //       }
+            //       that.ShowToast(result.Msg);
+            //       await that.reLoad();
+
+            //     }
+            //   });
+            var result = await core.UpdteOrderState(
+              OrderType == 0 ? 0 : 2,
+              orderId,
+              state,
+              oldState,
+              ""
+            );
+            if (result) {
+              // if (result.isok) {
+              //   let key = "vm.list[" + index1 + "][" + index2 + "].State";
+              //   that.setData({
+              //     [key]: state
+              //   });
+              // }
+              that.ShowToast(result.Msg);
+              await that.reLoad();
+            }
+          } else if (res.cancel) {
+          }
+        }
+      });
+    }
+  };
+  events = {};
+  onLoad(options) {
+    if (options.scene) {
+      var scene = decodeURIComponent(options.scene);
+
+      var scene_array = scene.split("_");
+      this.type = scene_array[0];
+      this.kw = scene_array[1];
+    } else {
+      this.type = options.type;
+      this.kw = options.kw;
+    }
+  }
+  async onShow() {
+    await this.loadMore();
+    this.$apply();
+  }
+  //上拉加载更多
+  async onReachBottom() {
+    await this.loadMore();
+  }
+  async loadMore() {
+    var that = this;
+
+    if (that.vm.ispost || that.vm.loadall) return;
+    //wx.showNavigationBarLoading();
+    let result = await core.GetOrderByTableNo(
+      //that.orderType,
+      //that.searchTypeIndex,
+      //that.searchValue,
+      //that.vm.pageindex,
+      //that.vm.pagesize,
+      //that.state,
+      //that.dateType
+      that.type,
+      that.kw
+    );
+    console.log(result);
+    if (result) {
+      if (result.isok) {
+        that.vm.ispost = false;
+        let key = "vm.list[" + that.vm.pageindex + "]";
+        if (result.dataObj.length >= that.vm.pagesize) {
+          that.vm.pageindex += 1;
+        } else {
+          that.vm.loadall = true;
+        }
+        that.setData({
+          [key]: result.dataObj,
+          "vm.pageindex": that.vm.pageindex,
+          "vm.loadall": that.vm.loadall
+        });
+      } else {
+        that.ShowToast(result.Msg);
+        setTimeout(() => {
+          wx.navigateBack({
+            delta: 1
+          });
+        }, 1000);
+      }
+    }
+    //wx.hideNavigationBarLoading();
+  }
+  async reLoad() {
+    this.vm = JSON.parse(JSON.stringify(vm));
+    await this.loadMore();
+  }
+  //下拉刷新
+  async onPullDownRefresh() {
+    await this.reLoad();
+    setTimeout(() => {
+      wx.stopPullDownRefresh();
+    }, 1000);
+  }
+}
+</script>

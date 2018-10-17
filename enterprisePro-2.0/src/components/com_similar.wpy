@@ -1,0 +1,191 @@
+<style lang="less">
+.similar {
+  overflow: hidden;
+  position: fixed;
+  top: -100vh;
+  width: 100%;
+  height: 100vh;
+  z-index: 5000;
+  transition: top 0.5s cubic-bezier(0.4, 0, 0, 1);
+
+  @keyframes breathe {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(0.9);
+    }
+    80% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .animation-breathe {
+    animation: breathe 3s linear infinite;
+  }
+  .fadeIn {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  .arrow-top {
+    font-size: 48rpx;
+    color: #999;
+    border: 2px solid #999;
+    border-radius: 100%;
+    width: 60rpx;
+    height: 60rpx;
+    transition: all 0.35s ease-in-out 0.2s;
+    text-align: center;
+    line-height: 55rpx;
+    font-weight: bold;
+    box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.16), 0 0 1px 0 rgba(0, 0, 0, 0.12);
+  }
+  .similar-header {
+    background-color: #ddd;
+    height: 90rpx;
+    border-radius: 28rpx;
+    padding: 5rpx 30rpx;
+    transition: all 0.35s ease-in-out 0.4s;
+    .input {
+      flex-grow: 1;
+      height: 80rpx;
+      line-height: 80rpx;
+      padding: 0 20rpx;
+    }
+  }
+  .width80 {
+    width: 80%;
+  }
+  .list {
+    box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.16), 0 0 1px 0 rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    transition: all 0.35s ease-in-out 0.6s;
+    border-bottom: 1px solid #ccc;
+    padding: 0 20rpx;
+    .item {
+      border-bottom: 1px solid #ccc;
+      padding: 20rpx 20rpx;
+      .label {
+        padding: 5rpx 10rpx;
+        border-radius: 4px;
+        background-color: #b7d133;
+        box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.16), 0 0 1px 0 rgba(0, 0, 0, 0.12);
+      }
+    }
+  }
+}
+.top0-similar {
+  top: 0vh;
+}
+</style>
+<template>
+    <view class="similar f fv fc {{isCancel ? 'top0-similar' : ''}}" style="{{'background-color:' + bgColor}}">
+        <button class="bg-w dzicon icon-xiala-copy arrow-top mt40 {{isCancel ? '' : 'fadeIn'}} animation-breathe"  @tap="show"></button>
+        <view class="bg-w similar-header mt40 f fj fc width80 {{isCancel ? '' : 'fadeIn'}}">
+            <input type="text" class="input f30" bindinput="handleInput" placeholder="{{placeholder}}" placeholder-class="c999"/><text class="dzicon f50 icon-sousuo_rearch cfff"></text>
+        </view>
+        <view class="bg-w mt40 width80 list {{isCancel ? '' : 'fadeIn'}}">
+            <scroll-view style="height:70vh;" scroll-y>   
+                <view class="item f fj" wx:for="{{list}}" wx:key="{{index}}">
+                    <text>{{item.title}}</text><text class="f24 label cfff" data-item="{{item}}" @tap="select">选择</text>
+                </view>
+            </scroll-view>     
+        </view>
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+export default class ComSimilar extends wepy.component {
+  props = {
+    //点击选择之后的回调，回调值为list的元素， this指向父级对象
+    onSelectAfter: {
+      type: Function,
+      default: null
+    },
+    //以[{title: '', index: ''}]这种形式
+    list: {
+      type: Array,
+      default: []
+    },
+    //是否显示搜索组件
+    isCancel: {
+      type: [Boolean, String],
+      default: false,
+      twoWay: true
+    },
+    //搜索栏placeholder
+    placeholder: {
+      type: String,
+      default: "搜索"
+    },
+    //背景颜色
+    bgColor: {
+      type: String,
+      default: "#fff"
+    }
+  };
+
+  data = {
+    cacheList: [],
+    isStretch: false
+  };
+
+  methods = {
+    show() {
+      this.isCancel = !this.isCancel;
+    },
+    select(e) {
+      var item = e.currentTarget.dataset.item;
+      var vm = this;
+      var parent = this.$parent || null;
+      wx.showToast({
+        title: "选择成功",
+        icon: "success",
+        duration: 666
+      });
+      //启动回调 传参item，父组件通过回调获值
+      typeof this.onSelectAfter === "function" &&
+        this.onSelectAfter.call(parent, item);
+      setTimeout(() => {
+        vm.isCancel = !vm.isCancel;
+        vm.$apply();
+      }, 666);
+    },
+    handleInput(e) {
+      var currentValue = e.detail.value;
+      var matchArray = this.list;
+      var resultArray = [];
+
+      if (currentValue == "") {
+        this.list = this.cacheList;
+        return;
+      }
+
+      matchArray.forEach(function(val) {
+        var name = val.title;
+        var regex = new RegExp("^(" + currentValue + ")");
+        if (regex.test(name)) {
+          resultArray.push(val);
+        }
+      });
+
+      if (resultArray.length) {
+        this.list = resultArray;
+      } else {
+        wx.showToast({
+          title: "匹配失败",
+          icon: "loading",
+          duration: 500
+        });
+        this.list = this.cacheList;
+      }
+    },
+    setList(arr) {
+      this.cacheList = this.list = arr;
+    }
+  };
+}
+</script>
+

@@ -1,0 +1,281 @@
+<style lang="less">
+  .appeal {
+    padding-bottom: 88rpx;
+    /*正方形*/
+    .rect150 {
+      height: 150rpx;
+      width: 150rpx;
+    }
+    .pt20 {
+      padding-top: 20rpx;
+    }
+    .width75 {
+      width: 75%;
+    }
+    .header {
+      padding: 0rpx 31rpx 20rpx 20rpx;
+      .commodity-avator {
+        background-color: #eee;
+      }
+      .title {
+        font-size: 28rpx;
+      }
+    }
+    .appeal-item {
+      height: 100rpx;
+      .picker {
+        height: 100rpx;
+        flex: 1;
+        line-height: 100rpx;
+        text-align: right;
+      }
+      &:nth-of-type(1) {
+        border-bottom: 1px solid #eee;
+      }
+    }
+    .tips {
+      height: 64rpx;
+      line-height: 64rpx;
+      background-color: #f7f7f7;
+    }
+    .upload {
+      padding-bottom: 27rpx;
+      padding-top: 27rpx;
+      .btn-upload {
+        border: 1px dotted #999;
+        justify-content: center;
+      }
+      .upload-img {
+        // &:nth-of-type(4) {
+        //   margin-top: 20rpx;
+        //   margin-left: 0;
+        // }
+        // &:nth-of-type(5) {
+        //   margin-top: 20rpx;
+        // }
+        // &:nth-of-type(6) {
+        //   margin-top: 20rpx;
+        // }
+        .close {
+          right: -10rpx;
+          top: -10rpx;
+          height: 30rpx;
+          width: 30rpx;
+          background: rgba(191, 184, 187, 0.8);
+          border-radius: 100%;
+          text-align: center;
+          line-height: 30rpx;
+        }
+      }
+      .upload-img.ml0 {
+        margin-left: 0;
+      }
+    }
+    .btn-confirm {
+      width: 100%;
+      height: 88rpx;
+      line-height: 88rpx;
+      position: fixed;
+      bottom: 0;
+    }
+    .bgD32A7C {
+      background-color: rgb(201, 32, 26);
+    }
+  }
+</style>
+<template>
+  <view class="appeal {{currentSkin}}">
+    <view class="bg-w pt20">
+      <repeat for="{{orderList}}">
+        <view class="f fj header">
+          <image class="commodity-avator rect150" src="{{item.goodImgUrl}}" />
+          <view class="f fv ml20 width75">
+            <view class="title">
+              <text class="line line2">{{item.goodname}}</text>
+            </view>
+            <view class="specification c999 mt10 f22 f fj">
+              <text>{{item.orderDtl.SpecInfo}}</text><text>x{{item.orderDtl.Count}}</text>
+            </view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <view class="appeal-list mt20 bg-w f fv">
+   
+      <view class="appeal-item pl20 pr20 f fj fc">
+        <text>退货原因:</text>
+        <picker class="picker" bindchange="bindReturnGoodReasonChange" value="{{returnGoodReason.activeIndex}}" range="{{returnGoodReason.range}}">
+          <view class="f24 c999">
+            <text wx:if="{{!returnGoodReason.isSelect}}"><text>请选择</text>
+            <text class="dzicon icon-xiala-copy-right"/>
+            </text>
+            <text wx:else>{{returnGoodReason.range[returnGoodReason.activeIndex]}}</text>
+          </view>
+        </picker>
+      </view>
+      <view class="appeal-item pl20 pr20 f fc" wx:if="{{typeID == 0}}">
+        <text>退款金额:</text>
+        <text class="skin_txt ml10">￥{{buyPrice}}</text>
+      </view>
+      <view class="tips f24 c999 pl20">
+      </view>
+      <view class="appeal-item pl20 pr20 f fj fc">
+        <text>退换说明:</text>
+        <input class="f1 ml20" bindinput="bindReplaceInput" placeholder="选填" />
+      </view>
+    </view>
+    <view class="mt20 bg-w pl20 pr20 f fv upload">
+      <view>
+        上传凭据
+      </view>
+      <view class="mt20 f fw">
+        <view wx:if="{{uploadFlag}}" class="btn-upload f fv fc rect150" @tap="uploadImg">
+          <text class="dzicon f38 icon-Photo_zhaopian">
+                  </text>
+          <text class="f22 c999">上传凭据</text>
+          <text class="f22 c999">(最多6张)</text>
+        </view>
+        <repeat for="{{uploadImgs}}" item="item" index="index">
+          <view class="upload-img ml20 rel {{index == 3 && 'ml0'}} {{index >= 3 && 'mt20'}}" style="{{!uploadFlag && index == 3 && 'margin-left: 20rpx; margin-top: 0;'}}">
+            <image class="rect150" src="{{item}}" />
+            <text class="f24 dzicon close icon-guanbi abs cfff" @tap="removeImg" data-index="{{index}}"></text>
+          </view>
+        </repeat>
+      </view>
+    </view>
+    <form bindsubmit="formSubmit" report-submit="true">
+      <button formType="submit" hover-class="bgD32A7C" class="btn-confirm skin_bg f36 cfff" @tap.stop="submit">确定</button>
+    </form>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http,
+    tools
+  } from "@/lib/core";
+  import addr from "@/lib/addr.js";
+  export default class Appeal extends wepy.page {
+    //基础配置层
+    config = {
+      navigationBarTitleText: "申请退款",
+      usingComponents: {
+      }
+    };
+    data = {
+      uploadFlag: true,
+      currentSkin: "",
+      returnGoodReason: {
+        range: ["多拍/拍错/不想", "不满意", "其他"],
+        activeIndex: 0,
+        isSelect: false
+      },
+      orderList: [],
+      typeID: 0, //0为退款 1为换货，
+      idListL: [], //商品ID数组
+      remark: "", //备注
+      uploadImgs: [], //上传图片,
+      orderid: 0,
+      buyPrice: 0
+    };
+    methods = {
+      bindReplaceInput(e) {
+        this.remark = e.detail.value;
+      },
+      submit: async function() {
+        const vm = this;
+        const reason = vm.returnGoodReason;
+        //获取商品id数组
+        var idList = vm.orderList.map(val => {
+          return val.orderDtl.Id;
+        });
+        //假如没选退货原因
+        if (!vm.returnGoodReason.isSelect) {
+          tools.showModal("未选择退货原因",false);
+          return;
+        }
+        var userInfo = await core.getUserInfo();
+        var aid = wepy.$instance.globalData.appid;
+        var attchData = {
+          GoodsId: idList.join(),
+          Reason: reason.range[reason.activeIndex],
+          Remark: vm.remark,
+          UploadPics: vm.uploadImgs.join(),
+          ReturnType: Number(vm.typeID)
+        };
+        //提交表单
+        http
+          .post(addr.submitReturnGoodAppeal, {
+            appId: aid,
+            openId: userInfo.OpenId,
+            orderId: Number(vm.orderid),
+            State: 13, //13为退换申请
+            attchData: JSON.stringify(attchData)
+          })
+          .then(res => {
+            if (res.isok == 1) {
+              wx.setStorageSync("serveType", vm.typeID)
+              tools.goRedirecto("appealResult?orderId=" + vm.orderid);
+            } else {
+              tools.showModal("提交失败,请检查所填项",false);
+            }
+          });
+      },
+      uploadImg: function(e) {
+        const vm = this;
+        var tem;
+        tools.upload().then(res => {
+          if (typeof res === "object" && Array.isArray(res)) {
+            if (vm.uploadImgs.length < 6) {
+              vm.uploadImgs = vm.uploadImgs.concat(res).slice(0, 6);
+              vm.uploadImgs.length == 6 && (vm.uploadFlag = false);
+            }
+          }
+          vm.$apply();
+        });
+      },
+      formSubmit(e) {
+        core.formId(e.detail.formId);
+      },
+      removeImg(e) {
+        var index = e.currentTarget.dataset.index;
+        this.uploadImgs.splice(index, 1);
+        this.uploadFlag = true;
+      },
+      bindReturnGoodReasonChange(e) {
+        this.returnGoodReason.activeIndex = e.detail.value;
+        this.returnGoodReason.isSelect = true;
+      }
+    };
+    //生命钩子层
+    onShow() {
+      tools.setPageSkin(this);
+    }
+    async onLoad(query) {
+      await tools.showLoading();
+      var vm = this;
+      this.typeID = query.typeID;
+      this.orderid = query.orderId;
+      if (this.typeID == 0) {
+        //退款退货
+        this.orderList = wx.getStorageSync("allList")
+      } else {
+        //仅换货
+        this.orderList = wx.getStorageSync("selectList")
+      }
+      var userInfo = await core.getUserInfo();
+      var aid = wepy.$instance.globalData.appid;
+      //返回数据
+      var result = await http.get(addr.getMiniappGoodsOrderById, {
+        appid: aid,
+        openid: userInfo.OpenId,
+        orderid: vm.orderid
+      });
+      vm.buyPrice = result.postdata.buyPrice;
+      wx.hideLoading();
+      this.$apply();
+    }
+    //自定义方法层
+  }
+</script>

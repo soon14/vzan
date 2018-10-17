@@ -1,0 +1,455 @@
+<style lang="less">
+.my-index {
+  padding-bottom: 100rpx;
+  .top-bar {
+    height: 260rpx;
+  }
+  .card {
+    border-top-left-radius: 20rpx;
+    border-top-right-radius: 20rpx;
+    width: 630rpx;
+    height: 260rpx;
+    background: url("https://j.vzan.cc/miniapp/img/platformPro/vip_bg3.png")
+      no-repeat;
+    background-size: 100%;
+    padding: 30rpx;
+  }
+  .avator {
+    overflow: hidden;
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #eee;
+  }
+  .btn-vip {
+    width: 166rpx;
+    height: 48rpx; 
+    border-radius: 24rpx;
+    border: 1px solid #fff;
+  }
+  .right-arrow {
+    right: 5rpx;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .mr5 {
+    margin-right: 5rpx;
+  }
+  .vip-recard {
+    width: 690rpx;
+    height: 142rpx;
+    background: rgba(255, 255, 255, 1);
+    border-radius: 10rpx;
+    margin-top: 24rpx;
+    .line {
+      right: 0;
+      width: 1px;
+      height: 70rpx;
+      background: rgba(238, 238, 238, 1);
+      top: 50%;
+      margin-top: -35rpx;
+    }
+  }
+  .order {
+    height: 238rpx;
+    background: rgba(255, 255, 255, 1);
+    margin-top: 24rpx;
+    .title {
+      padding-left: 30rpx;
+      padding-right: 30rpx;
+      padding-top: 20rpx;
+    }
+  }
+  .arrow {
+    top: 50%;
+    margin-top: -30.5rpx;
+  }
+  .select-list {
+    justify-content: space-around;
+  }
+  .wp20 {
+    width: 20%;
+  }
+  .serve {
+    margin-top: 24rpx;
+    height: 360rpx;
+    background: rgba(255, 255, 255, 1);
+  }
+  .count {
+    border-radius: 50%;
+    width: 28rpx;
+    height: 28rpx;
+    border: 1rpx solid #ff6f30;
+    right: 20rpx;
+    top: -15rpx;
+    line-height: 24rpx;
+  }
+  .vip-jetso-mask {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    .modal {
+      background: url("http://j.vzan.cc/miniapp/img/platformPro/vip_jetso.png")
+        no-repeat;
+      background-size: 100%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 470rpx;
+      height: 600rpx;
+    }
+    .mt125 {
+      margin-top: 250rpx;
+    }
+    .mt100 {
+      margin-top: 100rpx;
+    }
+  }
+  .x-getWxCard {
+    width: 230rpx;
+    height: 70rpx;
+    border-radius: 35rpx;
+    display: flex;
+    line-height: 70rpx;
+    background-color: white;
+    justify-content: center;
+  }
+  .w230 {
+    width: 230rpx;
+  }
+}
+</style>
+<template leng="wxml">
+  <view class="my-index {{currentSkin}}">
+    <view class="top-bar skin_bg">
+      <view wx:if="{{!vm.wxCard}}" class="card block-center cfff" style="background-color: {{model.levelInfo.bgcolor}};">
+        <view class="f">
+          <view class="avator mr30">
+            <open-data type="userAvatarUrl"></open-data>
+          </view>
+          <view class="f fv">
+            <view class="f34 t-b">{{model.levelInfo.name}}</view>
+            <view class="f26 mt10">
+              <open-data type="userNickName"></open-data>
+            </view>
+          </view>
+        </view>
+        <view class="block-center btn-vip mt40 f jc fc rel" @tap="switchMask">
+          <text class="f26 mr20">查看权益</text>
+          <text class="f40 right-arrow dzicon icon-zhuanyebaniconkuozhan_Distribu2 abs"></text>
+        </view>
+      </view>
+      <view wx:if="{{vm.wxCard}}" class="card block-center cfff" style="background-color:#666">
+        <view class="f">
+          <view class="avator mr30 {{userInfo.HeadImgUrl ? '' : 'dzicon icon-mine_wode f90 tc'}}">
+            <open-data type="userAvatarUrl" wx:if="{{userInfo.HeadImgUrl}}"></open-data>
+          </view>
+
+        </view>
+        <view class="block-center w230 mt40">
+          <button class="btn-none x-getWxCard" open-type="getUserInfo" bindgetuserinfo="authUserInfo">
+            <text class="dzicon icon-huangguan"></text>
+            <text class="f24 ml10">{{userInfo.TelePhone ? '申领会员卡' : '成为会员'}}</text>
+          </button>
+        </view>
+      </view>
+    </view>
+    <view class="vip-recard block-center f">
+      <view class="fg1 c333 f fc jc fv rel">
+        <view class="f50">{{AccountMoneyStr}}</view>
+        <view class="f26 c666">储值余额</view>
+        <view class="line abs"></view>
+      </view>
+      <view class="fg1 c333 f fc jc fv">
+        <view class="f50">{{model.pricestr}}</view>
+        <view class="f26 c666">累计消费</view>
+      </view>
+    </view>
+    <view class="order">
+      <view class="title lh15 f fc fj" @tap="goMyOrder">
+        <text class="c333 tb f34 t-b">我的订单</text>
+        <view class="c666 f26 h45 rel pr30">
+          <text>查看全部</text>
+          <text class="dzicon icon-zhuanyebaniconkuozhan_Distribu2 f40 abs arrow"></text>
+        </view>
+      </view>
+      <view class="select-list f mt40 pw30">
+        <view class="f fv rel wp20 fc fj h100" @tap="goOrderListByState(0, 1)">
+          <view class="top skin_txt">
+            <text class="dzicon icon-daifukuan1 f50"></text>
+          </view>
+          <!-- <text class="abs count f20 tc skin_txt ">1</text> -->
+          <text class="c666 f26 mt5">待付款</text>
+        </view>
+        <view class="f fv rel wp20 fc fj h100" @tap="goOrderListByState(1, 2)">
+          <view class="top skin_txt">
+            <text class="dzicon icon-daifahuo1 f50"></text>
+          </view>
+          <!-- <text class="abs count f20 tc skin_txt ">1</text> -->
+          <text class="c666 f26 mt5">待发货</text>
+        </view>
+        <view class="f fv rel wp20 fc fj h100" @tap="goOrderListByState(3, 3)">
+          <view class="top skin_txt">
+            <text class="dzicon icon-daishouhuo1 f50"></text>
+          </view>
+          <!-- <text class="abs count f20 tc skin_txt ">1</text> -->
+          <text class="c666 f26 mt5 ">待收货</text>
+        </view>
+        <view class="f fv rel wp20 fc fj h100" @tap="goOrderListByState(4, 4)">
+          <view class="top skin_txt">
+            <text class="dzicon icon-yiwancheng1 f50"></text>
+          </view>
+          <!-- <text class="abs count f20 tc skin_txt ">1</text> -->
+          <text class="c666 f26 mt5">已完成</text>
+        </view>
+      </view>
+    </view>
+    <view class="serve pt20 pb20">
+      <view class="c333 f34 pl30 t-b">
+        我的服务
+      </view>
+      <view class="select-list f fw mt40 pw30">
+        <button class="f fv wp20 fc fj h100" open-type="getUserInfo" bindgetuserinfo="updateAndTopUp">
+          <view class="top rel cblue">
+            <text class="dzicon icon-chongzhi f50"></text>
+          </view>
+          <text class="c666 f26 mt5">充值中心</text>
+        </button>
+        <view class="f fv wp20 fc fj h100" @tap="goShopCart">
+          <view class="top rel cFE8D5C">
+            <text class="dzicon icon-wodegouwuche f50"></text>
+          </view>
+          <text class="c666 f26 mt5">购物车</text>
+        </view>
+        <view class="f fv wp20 fc fj h100" @tap="goAddress">
+          <view class="top rel cblue">
+            <text class="dzicon icon-shouhuodizhi f50"></text>
+          </view>
+          <text class="c666 f26 mt5">收货地址</text>
+        </view>
+        <!-- <view class="f fv wp20 fc">
+          <view class="top rel cblue">
+            <text class="dzicon icon-zhuanyebaniconkuozhan_Consulta1 f50"></text>
+          </view>
+          <text class="c666 f26 mt5 ">我的评价</text>
+        </view> -->
+        <view class="f fv wp20 fc fj h100" @tap="goMyCoupon">
+          <view class="top rel colorFFC047">
+            <text class="dzicon icon-zhuanyebaniconkuozhan_youhuiquan f50"></text>
+          </view>
+          <text class="c666 f26 mt5">优惠券</text>
+        </view>
+      </view>
+      <view class="select-list f fw mt30 pw30">
+        <button class="f fv wp20 fc fj h100" open-type="contact">
+          <view class="top rel colorFF6F30">
+            <text class="dzicon icon-huodong f50"></text>
+          </view>
+          <text class="c666 f26 mt5">客服</text>
+        </button>
+        <view class="f fv wp20 fc fj h100" @tap="clearCache">
+          <view class="top rel cblue">
+            <text class="dzicon icon-qinglihuancun f50"></text>
+          </view>
+          <text class="c666 f26 mt5 ">清理缓存</text>
+        </view>
+        <view class="f fv wp20 fc">
+          <!-- <view class="top rel colorFFC047">
+            <text class="dzicon icon-zhuanyebaniconkuozhan_youhuiquan f50"></text>
+          </view>
+          <text class="c666 f26 mt5">优惠券</text> -->
+        </view>
+        <view class="f fv wp20 fc">
+
+        </view>
+      </view>
+    </view>
+    <view class="vip-jetso-mask" wx:if="{{openMask}}">
+      <view class="dzicon icon-zhuanyebaniconkuozhan_Close f60 cfff tc mt100" @tap="switchMask"></view>
+      <view class="modal">
+        <view class="f26 c333 tc mt125">恭喜您升级为{{model.levelInfo.name}}！</view>
+        <block wx:if="{{model.levelInfo.type != '0'}}">
+          <view class="f24 c666 tc mt15">享受以下会员权益</view>
+          <view class="f30 c333 tc t-b mt50" wx:if="{{model.levelInfo.type == 1}}">全场商品{{model.levelInfo.discount}}折</view>
+          <view class="f30 c333 tc t-b mt50" wx:if="{{model.levelInfo.type == 2}}">部分商品{{model.levelInfo.discount}}折</view>
+        </block>
+        <block wx:else>
+          <view class="f24 c666 tc mt15">享受以下会员权益</view>
+          <view class="f30 c333 tc t-b mt50">优惠即将降临</view>
+        </block>
+      </view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+    <comBottomBar />
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import com_bottomBar from "@/components/com_bottomBar";
+import com_wait from "@/components/com_wait";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "个人中心",
+    enablePullDownRefresh: false
+  };
+
+  components = {
+    comWait: com_wait,
+    comBottomBar: com_bottomBar
+  };
+
+  data = {
+    currentSkin: "",
+    isWait: false,
+    openMask: false,
+    model: {}, //vip模型
+    AccountMoneyStr: 0, //储值金额
+    currentSkin: "",
+    vm: {
+      wxCard: true
+    },
+    userInfo: {}
+  };
+  methods = {
+    goMyOrder() {
+      tools.goNewPage("../my-order/index");
+    },
+    goShopCart() {
+      tools.goNewPage("../../shoppingCarts/shoppingCarts-index/index");
+    },
+    goAddress() {
+      tools.goNewPage("../my-address/index");
+    },
+    switchMask() {
+      this.openMask = !this.openMask;
+    },
+    goMyCoupon() {
+      tools.goNewPage("../my-coupon/index");
+    },
+    goOrderListByState(currentState, tabIndex) {
+      tools.goNewPage(
+        "../my-order/index?currentState=" +
+          currentState +
+          "&tabIndex=" +
+          tabIndex
+      );
+    },
+    clearCache() {
+      tools.showLoading("清除中");
+      try {
+        wx.hideLoading();
+        wx.clearStorageSync();
+        tools.freeToast("清除成功", "none");
+      } catch (error) {
+        wx.hideLoading();
+        tools.freeToast("清除失败", "none");
+      }
+    }
+  };
+
+  async updateAndTopUp(e) {
+    if ("rawData" in e.detail) {
+      var userInfo = e.detail.userInfo;
+      core.updateUserInfo(userInfo.nickName, userInfo.avatarUrl);
+      tools.goNewPage("../pay-center/index");
+    } else {
+      tools.freeToast("请先授权", "none");
+    }
+  }
+
+  onLoad() {
+    tools.setThemeColor(this);
+  }
+
+  async onShow() { 
+    var myVm = wx.getStorageSync('myVm')
+
+    if ( typeof myVm === 'object' &&  ('wxCard' in myVm) ) {
+      this.vm = myVm
+    } else {
+      tools.showLoading() 
+      await core.updateWxCard(this);
+      wx.hideLoading()
+    }
+
+    this.userInfo = await core.getUserInfo(true)
+    var result = await core.getVipInfo();
+    
+    //获取消费额
+    if (result.isok) {
+      this.model = result.model;
+      var discount = Number(this.model.levelInfo.discount);
+      this.model.levelInfo.discount = discount ? discount.div(10) : 0;
+    } else {
+      tools.showModalCancle(result.msg);
+    }
+    var result2 = await core.getSaveMoneySetUser();
+    //获取储值金额
+    if (result2.isok) {
+      this.AccountMoneyStr = result2.saveMoneySetUser.AccountMoneyStr;
+    } else {
+      tools.showModalCancle(result2.msg);
+    }
+    this.$apply();
+  }
+
+  async authUserInfo(e) {
+    var user = this.userInfo;
+    if (user.TelePhone) {
+      //有手机号的
+      await this.getWxCard();
+    } else {
+      //没有的滚去授权
+      this.handleAuth(e.detail);
+    }
+  }
+
+  async getWxCard() {
+    var that = this
+    tools.showLoading()
+    core.getCardSign().then(data => {
+      wx.hideLoading()
+      if (data.isok) {
+        let cardext = {
+          signature: data.obj.signature,
+          timestamp: data.obj.timestamp
+        };
+        cardext = JSON.stringify(cardext);
+        wx.addCard({
+          cardList: [
+            {
+              cardId: data.obj.cardId,
+              cardExt: cardext
+            }
+          ],
+          success: async function(res) {
+            await core.saveWxCard(res.cardList[0].code, that);
+          }
+        });
+      } else {
+        tools.showModalCancle(data.msg)
+      }
+    });
+  }
+
+  handleAuth(info) {
+    console.log(info)
+    if ("userInfo" in info) {
+      var userInfo = info.userInfo;
+      core.updateUserInfo(userInfo.nickName, userInfo.avatarUrl);
+      tools.cacheGlobalData("userInfoByAuth", {
+        avatarUrl: userInfo.avatarUrl,
+        nickName: userInfo.nickName
+      });
+      tools.goNewPage("../register-vip/index");
+    } else {
+      tools.freeToast("请先授权", "none");
+    }
+  }
+}
+</script>

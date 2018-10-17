@@ -1,0 +1,154 @@
+<style lang="less">
+    .phcolor {
+        color: #999;
+    }
+    .search-wrap {
+        .search {
+            width: 690rpx;
+            height: 60rpx;
+            border-radius: 30rpx;
+            padding: 0 20rpx;
+            background-color: #eee;
+            .address {
+                width: 28%;
+                line-height: 40rpx;
+                padding: 0 10rpx;
+                border-right: 1px solid #D9D8D9;
+            }
+            .input-area {
+                width: 72%;
+            }
+        }
+    }
+</style> 
+<template lang="wxml">
+    <view>
+        <view class="search-wrap f fc fc-h h100 bg-w">
+            <view class="search f fc c666">
+                <view class="address f fc fj" @tap="jumpLocation">
+                    <text class="line line1" style="width:120rpx;">{{cityParam.cityName}}</text>
+                    <text class="f47 dzicon icon-xiajiantou_downarrow"></text>
+                </view>
+                <input class="input-area hl100 pl20" placeholder-class="phcolor" placeholder="搜索你需要的店铺或信息" focus="true" @confirm="searchKey" />
+            </view>
+        </view>
+        <comTab :list.sync="tabList" onClickAfter="selectTab" lineColor="#3FD481" activeColor="#3FD481" mode="textTrace"></comTab>
+        <comShopItem :shopList.sync="shopList"></comShopItem>
+        <comLoading :showBottom.sync="showBottom_" wx:if="{{isShowBottom}}" />
+        <comWait :isShow.sync="showWait" />
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import com_tab from "@/components/com_tab";
+    import com_shopItem from "@/components/com_shopItem";
+    import com_loading from "@/components/com_loading";
+    import com_wait from "@/components/com_wait";
+    export default class HomeSearch extends wepy.page {
+        config = {
+            navigationBarTitleText: "商户列表",
+        };
+        components = {
+            comTab: com_tab,
+            comShopItem: com_shopItem,
+            comLoading: com_loading,
+            comWait: com_wait,
+        };
+        data = {
+            title: "",
+            tabList: [{
+                    title: "人气排行",
+                    state: 0
+                },
+                {
+                    title: "附近商户",
+                    state: 1
+                },
+                {
+                    title: "筛选",
+                    state: 2
+                }
+            ],
+            cityParam: {
+                cityCode: "",
+                cityName: "",
+            },
+            shopListRequestParam: {
+                orderType: 0, //默认0,距离1,时间2
+                isBigType: 0, //是否大类,小类0,大类1
+                categoryId: 0, //默认0,其他代表某个类别
+                cityCode: 0, //全部0,其他代表某个地区
+                keyMsg: "", //搜索的关键字
+                pageIndex: 1,
+                pageSize: 10,
+            },
+            shopList: [],
+            showBottom_: true,
+            isShowBottom: false,
+            isOnReach: false,
+            showWait: true,
+        };
+        methods = {
+            jumpLocation() {
+                tools.goRedirecto("../location/index?isHome=false");
+            },
+            searchKey(e) {
+                console.log(e);
+                this.shopListRequestParam.keyMsg = e.detail.value;
+                this.GetStoreList();
+            },
+            clickCategory(i) {
+                this.categoryNum = i;
+            },
+            lower() {
+                console.log("加载中了喂");
+            }
+        };
+        selectTab(state) {
+            console.log("我点的", state);
+            if (state == 2) {
+                tools.goRedirecto("../home-search/index");
+                return;
+            } else {
+                this.shopListRequestParam.orderType = state;
+                this.GetStoreList();
+            }
+        }
+        //获取商户列表
+        async GetStoreList() {
+            let result = await core.GetStoreList(this.shopListRequestParam);
+            tools.handleResult(result, (res) => {
+                let dataList = res.list;
+                let pageIndex = this.shopListRequestParam.pageIndex;
+                this.isLoading = (dataList.length == 0 && pageIndex > 1) ? false : true;
+                this.isShowBottom = (dataList.length == 0 && pageIndex > 1) ? true : false;
+                this.shopList = this.isOnReach ? this.shopList.concat(dataList) : dataList;
+                this.$apply();
+            })
+        }
+        events = {};
+        async onLoad(option) {
+            this.cityParam = await core.getStorage("cityParams");
+            this.shopListRequestParam.cityCode = this.cityParam ? this.cityParam.cityCode : 0;
+            this.shopListRequestParam.categoryId = option.shopType || 0;
+            this.shopListRequestParam.isBigType = option.isBigType ? option.isBigType : 0;
+            this.shopListRequestParam.keyMsg = option.keyMsg ? option.keyMsg : "";
+            this.GetStoreList();
+        };
+        onReady() {
+            this.$invoke("comTab", "init");
+            this.showWait = false;
+        };
+        //上拉触底
+        onReachBottom() {
+            this.shopListRequestParam.pageIndex++;
+            this.isOnReach = true;
+            this.isLoading ? this.GetStoreList() : '';
+        }
+    }
+</script>

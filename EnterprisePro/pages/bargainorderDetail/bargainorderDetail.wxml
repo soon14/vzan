@@ -1,0 +1,127 @@
+<view class='W {{currentSkin}}'>
+
+  <view class="pink pink-sel">
+    <view class="pinkinsd">
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==-1}}">已关闭</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==0}}">该订单未付款</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==1}}">待发货</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==2}}">退款中</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==3}}">退款成功</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==4}}">退款失败</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==5}}">仍未支付</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==6}}">待收货</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==7}}">待发货</text>
+      <text style="font-size:36rpx" wx:if="{{OrderDetail.State==8}}">交易成功</text>
+      <!-- 快速配送 -->
+      <view class="pininsd2">
+        <view class="pininsd3" wx:if="{{OrderDetail.SendGoodsName!=''}}">{{OrderDetail.SendGoodsName}}</view>
+        <text wx:if="{{OrderDetail.State==-1}}">买家仍未付款</text>
+        <text wx:if="{{OrderDetail.State==0}}">买家仍未付款</text>
+        <text wx:if="{{OrderDetail.State==1}}">买家在{{OrderDetail.BuyTimeStr1}}付款，等待商家发货</text>
+        <text wx:if="{{OrderDetail.State==2}}">该商品退款中</text>
+        <text wx:if="{{OrderDetail.State==3}}">退款成功</text>
+        <text wx:if="{{OrderDetail.State==4}}">退款失败</text>
+        <text wx:if="{{OrderDetail.State==5}}">该商品仍未支付</text>
+        <text wx:if="{{OrderDetail.State==6}}">买家已支付，待收货</text>
+        <text wx:if="{{OrderDetail.State==7}}">买家在{{OrderDetail.BuyTimeStr1}}付款，等待商家发货</text>
+        <text wx:if="{{OrderDetail.State==8}}">交易完成</text>
+      </view>
+    </view>
+    <image src="../../image/a20.png" class="pinicon"></image>
+  </view>
+  <!-- 订单状态 -->
+  <view class="ordercondition">
+    <!-- 线条 -->
+    <view class="greyline"></view>
+    <!-- 第一状态 -->
+    <view class="ordercondition_item">
+      <image src="{{OrderDetail.State==7||OrderDetail.State==1?'../../image/a21.png':'../../image/a22.png'}}" class="conditionicon"></image>
+      <text>已支付</text>
+    </view>
+    <!-- 第二状态 -->
+    <view class="ordercondition_item">
+      <image src="{{OrderDetail.State==6?'../../image/a21.png':'../../image/a22.png'}}" class="conditionicon"></image>
+      <text>已发货</text>
+    </view>
+    <!-- 第三状态 -->
+    <!-- ../../image/a22.png -->
+    <view class="ordercondition_item">
+      <image src="{{OrderDetail.State==8?'../../image/a21.png':'../../image/a22.png'}}" class="conditionicon"></image>
+      <text>已完成</text>
+    </view>
+  </view>
+  <!-- 收货地址 -->
+  <view class="Address">
+    <image src="../../image/a23.png" class="Addressicon"></image>
+    <view class="addressline1">
+      <view class="addressline2">
+        <text>收货人：{{WxAddress.userName}}</text>
+        <text>{{WxAddress.telNumber}}</text>
+      </view>
+      <text style="font-size:26rpx;color:#666">{{WxAddress.provinceName}}{{WxAddress.cityName}}{{WxAddress.countyName}}{{WxAddress.detailInfo}}</text>
+    </view>
+  </view>
+  <!-- body1 -->
+  <view class="body1">
+    <view class="body2" style="border-bottom: 1rpx solid #f3f3f3;">
+      <image src="{{OrderDetail.ImgUrl}}" class="body2_img" mode="aspectFill"></image>
+      <view class="body2_content">
+        <text style="line-height: 30rpx;">{{OrderDetail.BName}}</text>
+        <view class="body2_content1">
+          <text wx:if="{{this.orderDtl.SpecInfo==null||this.orderDtl.SpecInfo=='undefined'}}"></text>
+        </view>
+        <view class="body2_content2">
+          <view style="display:flex;">
+            <text>￥</text>
+            <text>{{OrderDetail.CurrentPriceStr}}</text>
+          </view>
+          <text>x1</text>
+        </view>
+      </view>
+    </view>
+    <view class="body1_bottom">
+      <text>运费：￥{{OrderDetail.GoodsFreightStr}}</text>
+      <view style="display:flex; justify-content: flex-end">
+        <text>实付款：￥{{cutpriceAllprice}}</text>
+      </view>
+    </view>
+    <!-- 订单的流程时间明细 -->
+    <view class="TDetail">
+      <view class="timedetail" style=' position: relative;'>
+        <view class="copy" bindtap="copylistNums" id="0">复制</view>
+        <text>订单编号：{{OrderDetail.OrderId}}</text>
+        <text wx:if="{{OrderDetail.State>0}}">下单时间：{{OrderDetail.CreateOrderTimeStr}}</text>
+      </view>
+      <view class="timedetail">
+        <text>支付方式：{{OrderDetail.PayType==2?'储值支付':'微信支付'}}</text>
+        <view style="display:flex;margin:unset">
+          <text style='flex-shrink:0;display:flex'>支付时间：</text>
+          <text style='flex-shrink:0;display:flex' wx:if="{{OrderDetail.State!=0&&OrderDetail.State!=5}}">{{OrderDetail.BuyTimeStr1}}</text>
+        </view>
+      </view>
+      <view class="timedetail">
+        <view style="display:flex;margin:unset">
+          <text style='flex-shrink:0;display:flex'>快递单号：</text>
+          <text style='flex-shrink:0;display:flex'>{{OrderDetail.WayBillNo}}</text>
+        </view>
+        <text>配送方式：{{OrderDetail.SendGoodsName}}</text>
+        <text style='flex-shrink:0' wx:if="{{OrderDetail.Remark!=''}}">买家留言：{{OrderDetail.Remark}}</text>
+        <view style="display:flex;margin:unset;">
+          <view style='flex-shrink:0;display:flex'>发货时间：</view>
+          <view style='flex-shrink:0;display:flex' wx:if="{{OrderDetail.State>7}}">{{OrderDetail.SendGoodsTimeStr}}</view>
+        </view>
+        <view style="display:flex;margin:unset">
+          <text style='flex-shrink:0;display:flex'>成交时间：</text>
+          <text style='flex-shrink:0;display:flex' wx:if="{{OrderDetail.State==8}}">{{OrderDetail.ConfirmReceiveGoodsTimeStr}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+
+
+  <!-- 返回主页按钮 -->
+  <view class='positionbtn' style='bottom:50rpx;' bindtap='siwchtoIndex'>
+    <image src='http://j.vzan.cc/miniapp/img/enterprise/a30.png' style='width:48rpx;height:52rpx;'></image>
+  </view>
+</view>

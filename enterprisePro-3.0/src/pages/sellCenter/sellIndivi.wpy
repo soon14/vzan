@@ -1,0 +1,351 @@
+<style lang="less">
+    page {
+        box-sizing: border-box;
+    }
+    .person {
+        width: 100%;
+        height: 270rpx;
+        font-size: 36rpx;
+        background-size: cover;
+        image {
+            width: 130rpx;
+            height: 130rpx;
+            border-radius: 50%;
+        }
+    }
+    .main {
+        width: 690rpx;
+        position: absolute;
+        top: 235rpx;
+        color: #333;
+        left: 50%;
+        margin-left: -345rpx;
+        .m-price {
+            width: 100%;
+            height: 250rpx;
+            background: #fff;
+            text-align: center;
+        }
+        .m-pricebtn {
+            height: 100rpx;
+            line-height: 100rpx;
+            background: #fff;
+            border-top: 1px solid #f7f7f7;
+            padding: 0 20rpx;
+        }
+        .icon-icon_yongjin {
+            background: -webkit-linear-gradient(top, #FFC823, #FFAE22);
+            -webkit-background-clip: text;
+            color: transparent;
+            font-size: 45rpx;
+            margin-right: 20rpx;
+        }
+        .m-sell {
+            width: 100%;
+            height: 190rpx;
+            margin: 15rpx 0;
+            background: #fff;
+        }
+        .m-sellitem {
+            width: 50%;
+        }
+        .icon1 {
+            background: -webkit-linear-gradient(top, #FFC823, #FFAE22);
+            -webkit-background-clip: text;
+            color: transparent;
+            font-size: 60rpx;
+        }
+        .m-method {
+            width: 100%;
+            height: 130rpx;
+            background: #fff;
+            padding: 0 20rpx;
+            .icon2 {
+                background: -webkit-linear-gradient(top, #4AC2FF, #22B4FF);
+                -webkit-background-clip: text;
+                color: transparent;
+                margin-right: 20rpx;
+            }
+            .icon3 {
+                background: -webkit-linear-gradient(top, #FFC823, #FFAE22);
+                -webkit-background-clip: text;
+                color: transparent;
+                margin-right: 20rpx;
+            }
+            .icon4 {
+                background: -webkit-linear-gradient(top, #F76161, #FF978F);
+                -webkit-background-clip: text;
+                color: transparent;
+                margin-right: 20rpx;
+            }
+            .icon5 {
+                background: -webkit-linear-gradient(top, #94D972, #6AD9B4);
+                -webkit-background-clip: text;
+                color: transparent;
+                margin-right: 20rpx;
+            }
+        }
+    }
+    .qrcode-mask {
+        width: 100%;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 560rpx;
+        z-index: 1;
+        .qrcode-main {
+            width: 560rpx;
+            position: fixed;
+            top: 100rpx;
+            left: 50%;
+            margin-left: -280rpx;
+            z-index: 2;
+            canvas {
+                width: 560rpx;
+                height: 556rpx;
+            }
+            .qrcodeBtn {
+                width: 100%;
+                height: 120rpx;
+                background: #fff;
+                .qrcode-btn {
+                    width: 450rpx;
+                    height: 88rpx;
+                    line-height: 88rpx;
+                    text-align: center;
+                    font-size: 36rpx;
+                    border-radius: 8rpx;
+                    margin: 0 auto;
+                }
+            }
+            .vas-cancle {
+                margin-top: 30rpx;
+                font-size: 80rpx;
+                color: #fff;
+            }
+        }
+        .bg {
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            position: fixed;
+            top: 0;
+            z-index: -1;
+            left: 0;
+        }
+    }
+</style>
+<template>
+    <view class='{{currentSkin}}'>
+        <view class='person skin_bg f fc-h fc rel' style="background-image: url('http://j.vzan.cc/miniapp/img/enterprise/sell-bg.png');">
+            <view class='f fv fc'>
+                <image src='{{vm.headerImg}}' />
+                <text>{{vm.nickName}}</text>
+            </view>
+            <view class='main'>
+                <!-- 收益 -->
+                <view class='m-price f fv fc-h'>
+                    <text class='f32 c999'>当前累计收益</text>
+                    <text class='f70'>￥{{vm.totalIncome}}</text>
+                </view>
+                <view class='m-pricebtn f fj'>
+                    <view class='f32 f fc'><text class="dzicon icon-icon_yongjin" />可提现佣金{{vm.useCashStr}}元</view>
+                    <view class='f28 f fc ccc' @tap='goMoney'>立即提现<text class='dzicon icon-jiantou f44' /></view>
+                </view>
+                <!-- 分销 -->
+                <view class='m-sell f fc fc-h'>
+                    <view class='m-sellitem f fv fc' @tap='mysell'>
+                        <text class='dzicon icon-icon_wodefenxiao icon1' />
+                        <text class='f28 c999'>我的分销</text>
+                    </view>
+                    <view class='m-sellitem f fv fc' style='border-left:1px solid #EFEFEF' @tap='goSecond' wx:if="{{vm.secondSate}}">
+                        <text class='dzicon icon-icon_xiajifenxiao icon1' />
+                        <text class='f28 c999'>下级分销</text>
+                    </view>
+                </view>
+                <!-- 招募下级分销商 -->
+                <view class='m-method f fc' @tap='goMore' wx:if="{{vm.secondSate}}">
+                    <view class='f fc f1'>
+                        <text class='dzicon icon-icon_xiajifenxiao icon3' style='font-size:55rpx' />
+                        <view class='f fv'>
+                            <text class='f32'>招募下级分销商</text>
+                            <text class='f22 mt10 c999'>可获得下级销售佣金分成</text>
+                        </view>
+                    </view>
+                    <view class='f28 c999 f fc'>去招募<text class='dzicon icon-jiantou f44' /></view>
+                </view>
+                <!-- 招募下级分销商码 -->
+                <view class='m-method f fc' style='border-top:1px solid #f7f7f7' @tap='openSell' wx:if="{{vm.secondSate}}">
+                    <view class='f fc f1'>
+                        <text class='dzicon icon-xPX_erweima icon5 f47' />
+                        <view class='f fv'>
+                            <text class='f32'>邀请码</text>
+                            <text class='f22 mt10 c999'>下载分销邀请码</text>
+                        </view>
+                    </view>
+                    <view class='f28 c999 f fc'>去下载<text class='dzicon icon-jiantou f44' /></view>
+                </view>
+                <!-- 整店推广 -->
+                <view class='m-method f fc' style='border-top:1px solid #f7f7f7' @tap='goPro'>
+                    <view class='f fc f1'>
+                        <text class='dzicon icon-xPX_dianpu icon4 f44' />
+                        <view class='f fv'>
+                            <text class='f32'>整店推广</text>
+                            <text class='f22 mt10 c999'>一键分享所有分销商品</text>
+                        </view>
+                    </view>
+                    <view class='f28 c999 f fc'>去分享<text class='dzicon icon-jiantou f44' /></view>
+                </view>
+                <!-- 推广码 -->
+                <view class='m-method f fc' style='border-top:1px solid #f7f7f7' @tap='openShare'>
+                    <view class='f fc f1'>
+                        <text class='dzicon icon-xPX_erweima icon5 f47' />
+                        <view class='f fv'>
+                            <text class='f32'>推广码</text>
+                            <text class='f22 mt10 c999'>下载分销商品推广码</text>
+                        </view>
+                    </view>
+                    <view class='f28 c999 f fc'>去下载<text class='dzicon icon-jiantou f44' /></view>
+                </view>
+                <!-- 推广商品 -->
+                <view class='m-method f fc' style='border-top:1px solid #f7f7f7' @tap='navPro'>
+                    <view class='f fc f1'>
+                        <text class='dzicon icon-icon_tuiguang icon2 f47' />
+                        <view class='f fv'>
+                            <text class='f32'>推广商品</text>
+                            <text class='f22 mt10 c999'>赚取直接销售佣金</text>
+                        </view>
+                    </view>
+                    <view class='f28 c999 f fc'>去推广<text class='dzicon icon-jiantou f44' /></view>
+                </view>
+            </view>
+        </view>
+        <view class="qrcode-mask" wx:if="{{showMask}}">
+            <view class="bg" />
+            <view class="qrcode-main f fc fv">
+                <canvas canvas-id="sellCanvas"></canvas>
+                <view class="qrcodeBtn">
+                    <view class='qrcode-btn skin_bg' @tap="saveQrcode">下载到相册</view>
+                </view>
+                <view class="dzicon icon-zhuanyebaniconkuozhan_Close vas-cancle" @tap="hidemask"></view>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        canvas
+    } from "../../lib/core.js";
+    import _get from "@/lib/lodash.get.js"
+    export default class sellIndivi extends wepy.page {
+        config = {
+            navigationBarTitleText: "我的",
+            enablePullDownRefresh: true,
+        }
+        data = {
+            currentSkin: {},
+            vm: {},
+            showMask: false,
+            record: ""
+        }
+        methods = {
+            // 保存画布的图片
+            saveQrcode() {
+                let record = _get(this, "record", "")
+                wx.canvasToTempFilePath({
+                    x: 0,
+                    y: 0,
+                    canvasId: 'sellCanvas',
+                    quality: 1,
+                    success: data => {
+                        wx.saveImageToPhotosAlbum({
+                            filePath: data.tempFilePath,
+                            success: res => {
+                                if (record) {
+                                    core.updateRecordId(record)
+                                }
+                                tools.showModal("保存已保存成功！您可以用该图片去分享朋友圈哦", false)
+                            },
+                            fail: res => {
+                                tools.showModal("授权后才可使用,请点击右上角‘关于小程序’进行相关设置", false)
+                            }
+                        })
+                    }
+                })
+            },
+            //推广码
+            openShare() {
+                canvas.getSellCanvas(this.vm.Id, this)
+            },
+            openSell() {
+                canvas.getSellQrcode(this.vm.Id, this)
+            },
+            hidemask() {
+                this.showMask = false
+                this.$apply()
+            },
+            goPro() {
+                if (this.vm.state == -1) {
+                    tools.showModal("你已被清退", false)
+                    return;
+                }
+                tools.goNewPage("./sellProLst?sale=1")
+            },
+            goSecond() {
+                tools.goNewPage("/pages/sellCenter/sellSecond")
+            },
+            mysell() {
+                if (this.vm.state == -1) {
+                    tools.showModal("你已被清退", false)
+                    return;
+                }
+                tools.goNewPage("/pages/sellCenter/sellShow")
+            },
+            navPro(type) {
+                if (this.vm.state == -1) {
+                    tools.showModal("你已被清退", false)
+                    return;
+                }
+                tools.goNewPage("/pages/sellCenter/sellMain?type=" + 3)
+            },
+            goMoney() {
+                this.$navigate("/pages/sellCenter/sellPostCash")
+            },
+            goMore() {
+                if (this.vm.state == -1) {
+                    tools.showModal("你已被清退", false)
+                    return;
+                }
+                tools.goNewPage("/pages/sellCenter/sell?second=true")
+            }
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            this.userInfo()
+        }
+        async userInfo() {
+            let app = wepy.$instance
+            let _g = await core.getSaleInfo()
+            if (_g.isok) {
+                app.globalData.saleId = _g.obj.Id
+                this.vm = _g.obj
+                this.vm.secondSate = app.globalData.secondSate
+                this.$apply()
+            } else {
+                tools.showModal(_g.msg, false)
+            }
+        }
+        onPullDownRefresh() {
+            wx.showNavigationBarLoading()
+            this.userInfo()
+            setTimeout(() => {
+                wx.stopPullDownRefresh();
+                wx.hideNavigationBarLoading();
+            }, 1000);
+        }
+    }
+</script>

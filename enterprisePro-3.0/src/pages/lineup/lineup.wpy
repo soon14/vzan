@@ -1,0 +1,203 @@
+<style lang="less">
+    .l-main {
+        .l-num {
+            height: 100rpx;
+            color: #333;
+            background: #fff;
+            font-size: 30rpx;
+            padding: 0 20rpx;
+            margin-bottom: 20rpx;
+            image {
+                width: 24rpx;
+                height: 30rpx;
+            }
+        }
+        .l-btn {
+            width: 92%;
+            height: 100rpx;
+            line-height: 100rpx;
+            margin-top: 200rpx;
+        }
+    }
+    .l-now {
+        .l-item {
+            height: 180rpx;
+            padding: 0 24rpx;
+        }
+        .l-num {
+            height: 100rpx;
+            color: #333;
+            background: #fff;
+            font-size: 30rpx;
+            padding: 0 20rpx;
+            margin-bottom: 20rpx;
+            image {
+                width: 24rpx;
+                height: 30rpx
+            }
+        }
+        .l-btn {
+            width: 100%;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            form {
+                width: 50%;
+                button {
+                    font-size: 36rpx;
+                    color: white;
+                    height: 100rpx;
+                    line-height: 100rpx;
+                }
+            }
+        }
+    }
+    .bgc535f {
+        background-color: #ff535f
+    }
+    .o8 {
+        opacity: 0.8
+    }
+</style>
+
+<template>
+    <view class="{{currentSkin}}">
+        <view class="l-main" wx:if="{{isonOrder==false}}">
+            <view class="l-num f fc fj">
+                <view class='f fc'>
+                    <image src='http://j.vzan.cc/miniapp/img/enterprise/new_a1.png' />
+                    <text class='ml20'>当前排队数量</text>
+                </view>
+                <text>{{dataObj.befterSortCount}}人</text>
+            </view>
+            <view class="l-num f fc fj">
+                <image src='http://j.vzan.cc/miniapp/img/enterprise/new_a3.png' />
+                <text class='ml20'>手机号码</text>
+                <input placeholder='请输入您的手机号码' maxlength='11' type='number' placeholder-class='c999 f28' class='ml20 f1' @input='inputPhonenumber'></input>
+            </view>
+            <form @submit="formaline" report-submit="true" class="w-100">
+                <view class="w-100 f fc-h">
+                    <button class='l-btn skin_bg f36' formType="submit">立即取号</button>
+                </view>
+            </form>
+        </view>
+        <view class="l-now" wx:else>
+            <view class='l-item skin_bg f fc fj'>
+                <view class="f fc">
+                    <icon size='25' type='success' color='#FFFEFE'></icon>
+                    <text class='f30 cfff ml20'>取号成功</text>
+                </view>
+                <text class='t-b f90 cfff'>{{dataObj.sortQueue.sortNo}}</text>
+            </view>
+            <view class="l-num f fc fj">
+                <view class='f fc'>
+                    <view class="dzicon icon-zhuanyebaniconkuozhan_trends f38" style="color:#5cb2fd"></view>
+                    <text class='ml20'>取号时间</text>
+                </view>
+                <text class='t28'>{{dataObj.sortQueue.createDateStr}}</text>
+            </view>
+            <view class="l-num f fc fj">
+                <view class='f fc'>
+                    <text class="dzicon icon-zhuanyebaniconkuozhan_shouhuodizhi f38" style="color:#ff9645"></text>
+                    <text class='ml20'>商家地址</text>
+                </view>
+                <view class='line line2' @tap='openlocation'>{{dataObj.address}}</view>
+            </view>
+            <view class='l-btn f'>
+                <form @submit="cancelqueue" report-submit="true">
+                    <button class='bgc535f o8' formType="submit">取消排队</button>
+                </form>
+                <form @submit="refreshqueue" report-submit="true">
+                    <button class='bgc535f' formType="submit">刷新排队</button>
+                </form>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import {
+        core,tools
+    } from "../../lib/core.js"
+    export default class lineup extends wepy.page {
+        config = {
+            navigationBarTitleText: "排队拿号",
+        };
+        components = {};
+        data = {
+            phonenumber: 0,
+            isonOrder: false,
+            dataObj: {},
+            numsindex: 0,
+            currentSkin: {}
+        }
+        methods = {
+            inputPhonenumber(e) {
+                this.phonenumber = e.detail.value
+                this.$apply()
+            },
+            async formaline(e) {
+                // 提交备用formId
+                var formId = e.detail.formId
+                await core.formId(formId)
+                if (this.phonenumber != 0) {
+                    let _g = await core.PutSortQueueMsg(this.phonenumber)
+                    if (_g.isok) {
+                        await core.GetUserInSortQueuesPlanMsg(this)
+                    }
+                } else {
+                    tools.showModal("信息未完善",false)
+                }
+            },
+            async openlocation() {
+                let store = await core.getStoreConfig()
+                wx.openLocation({
+                    latitude: store.storeInfo.Lat,
+                    longitude: store.storeInfo.Lng,
+                    address: store.storeInfo.Address,
+                    scale: 14
+                })
+            },
+            async refreshqueue(e) {
+                // 提交备用formId
+                var formId = e.detail.formId
+                await core.formId(formId)
+                await core.GetUserInSortQueuesPlanMsg(this)
+                await tools.loading("刷新成功",'success')
+            },
+            async cancelqueue(e) {
+                // 提交备用formId
+                var formId = e.detail.formId
+                await core.formId(formId)
+                let showInfo = await tools.showModal("是否确认取消排队？")
+                if (showInfo.confirm) {
+                    let cancle = await core.CancelSortQueue(this.dataObj.sortQueue.id)
+                    if (cancle.isok) {
+                        await core.GetUserInSortQueuesPlanMsg(this)
+                    }
+                }
+            },
+        }
+        async onLoad() {
+            await tools.setPageSkin(this);
+            await core.GetUserInSortQueuesPlanMsg(this)
+        }
+        onShow() {
+            var that = this
+            setTimeout(function() {
+                that.timeInter = setInterval(function() {
+                    if (that.isonOrder == true) {
+                        core.GetUserInSortQueuesPlanMsg(that)
+                    }
+                }, 5000)
+            }, 5000)
+        }
+        onHide() {
+            clearInterval(this.timeInter)
+        }
+        onUnload() {
+            clearInterval(this.timeInter)
+        }
+    }
+</script>

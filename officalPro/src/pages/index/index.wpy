@@ -1,0 +1,269 @@
+<style lang="less">
+  .home {
+    width: 100%;
+    .header {
+      width: 100%;
+      height: 600rpx;
+      image {
+        width: 100%;
+        height: 600rpx;
+      }
+    }
+    .company {
+      margin-top: 30rpx;
+      .content {
+        width: 100%;
+        padding: 40rpx 0;
+        font-size: 30rpx;
+        color: #333;
+      }
+    }
+    .devlst {
+      margin-top: 30rpx;
+      .dev-wrap {
+        padding: 40rpx 30rpx 30rpx 30rpx;
+      }
+      .dev-morebtn {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        border-top: 1px solid #eee;
+        color: #333;
+        font-size: 30rpx;
+      }
+    }
+    .concact {
+      width: 100%;
+      margin-top: 30rpx;
+      .concact-lst {
+        width: 100%;
+        padding: 40rpx 30rpx 0 30rpx;
+        .concact-wrap {
+          width: 100%;
+          margin-bottom: 50rpx;
+          >text {
+            font-size: 36rpx;
+            margin-right: 56rpx;
+            color: #a1a2a3;
+          }
+          .concact-btn {
+            width: 84rpx;
+            height: 48rpx;
+            line-height: 48rpx;
+            text-align: center;
+            border: 1px solid #d9d8d9;
+          }
+        }
+      }
+    }
+    .kefu {
+      width: 100%;
+      .kefulst {
+        width: 100%;
+        margin-top: 40rpx;
+        padding: 0 50rpx;
+        .kefu-item {
+          width: 33.3%;
+          margin-bottom: 30rpx;
+          >image {
+            width: 90rpx;
+            height: 90rpx;
+            border-radius: 50%;
+          }
+        }
+      }
+      .booImg {
+        width: 260rpx;
+        height: 260rpx;
+        border-radius: 50%;
+      }
+    }
+  }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+  <view class='home'>
+    <swiper wx:if="{{vm.BannersImgUrls.length}}" indicator-dots="true" indicator-active-color='#fff' indicator-color='rgba(238, 238, 238, .3)' autoplay="true" interval="5000" duration="1000" class='header'>
+      <repeat for="{{vm.BannersImgUrls}}">
+        <swiper-item>
+          <image src="{{item}}" @tap="openImg({{item}},{{vm.BannersImgUrls}})" />
+        </swiper-item>
+      </repeat>
+    </swiper>
+    <!-- 公司简介 -->
+    <view class='company'>
+      <view class='t-b f34 c333' style="padding: 0 30rpx;">公司简介</view>
+      <view class='content'>
+        <repeat>
+          <comRichtxt :currentCom.sync="vm" />
+        </repeat>
+      </view>
+    </view>
+    <view style='width:100%;height:24rpx;background:#f6f6f6' />
+    <!-- 发展历程 -->
+    <view class='devlst f fv' wx:if="{{dev.list.length}}">
+      <view class='t-b f34 c333' style='padding:0 30rpx'>发展历程</view>
+      <view class='dev-wrap'>
+        <repeat for="{{dev.list}}" index="devIndex">
+          <comDev :current.sync="item" :devIndex.sync="devIndex" wx:if="{{devIndex<5}}" :show.sync="showMore" />
+        </repeat>
+      </view>
+      <view class='f fc fc-h dev-morebtn' wx:if="{{dev.list.length>5}}" @tap="goMore">
+        <text>查看更多</text>
+        <text class='dzicon icon-zhuanyebaniconkuozhan_Distribu2 f47' />
+      </view>
+    </view>
+    <view style='width:100%;height:24rpx;background:#f6f6f6' />
+    <!-- 联系我们 -->
+    <view class='concact'>
+      <view class='t-b f34 c333' style='padding:0 30rpx'>联系我们</view>
+      <view class='concact-lst f fv'>
+        <view class='concact-wrap f fc'>
+          <text class='dzicon icon-dianhua3' />
+          <view class='f fv f1'>
+            <text>{{vm.Phone}}</text>
+            <text class='f24 mt20 c999'>公司电话</text>
+          </view>
+          <view class='concact-btn f24 c666' @tap="makePhone({{vm.Phone}})">拨打</view>
+        </view>
+        <view class='concact-wrap f fc'>
+          <text class='dzicon icon-dizhi' />
+          <view class='f fv f1'>
+            <text class='line line2'>{{vm.Address}}</text>
+            <text class='f24 mt20 c999'>地址</text>
+          </view>
+          <view class='concact-btn f24 c666' @tap="openMap">导航</view>
+        </view>
+      </view>
+    </view>
+    <!-- 客服 -->
+    <view class='kefu'>
+      <view class='t-b f34 c333' style='padding:0 30rpx' wx:if="{{vm.ListKeFu.length}}">客服</view>
+      <view class='kefulst f fc fw' wx:if="{{vm.ListKeFu.length}}">
+        <repeat for="{{vm.ListKeFu}}">
+          <view class='kefu-item f fv fc' @tap="goChat({{item}})" wx:if="{{item.UserId!=dev.userInfo.Id&&item.UserId!=0}}">
+            <image src="{{item.Avatar}}" />
+            <text class='f24 c999 mt20'>{{item.Name}}</text>
+          </view>
+        </repeat>
+      </view>
+      <view class='w-100 f fc-h' style='margin:40rpx 0 50rpx 0' wx:if="{{vm.ImgUrl}}">
+        <image mode="withFix" src="{{vm.ImgUrl}}" class='w-100 booImg' @tap="openImg({{vm.ImgUrl}},'')" />
+      </view>
+    </view>
+    <view class='w-100 tc ph20 f24' style="color:#d9d8d9">v1.0.8</view>
+    <repeat>
+      <comMess :vm.sync="chatLst" wx:if="{{chatLst.showMask}}" @goChat.user="goChat" />
+    </repeat>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import _get from "@/lib/lodash.get.js";
+  import com_dev from "@/components/com_dev";
+  import com_richtxt from "@/components/com_richtxt";
+  import com_message from "@/components/com_message";
+  import {
+    core,
+    tools
+  } from "@/lib/core.js";
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "",
+      enablePullDownRefresh: true,
+      // 引入min组件
+    };
+    //第二步：声明组件
+    components = {
+      comMess: com_message,
+      comDev: com_dev,
+      comRichtxt: com_richtxt,
+    };
+    data = {
+      showMore: false,
+      vm: {},
+      dev: {
+        list: [],
+        pageindex: 1,
+        pagesize: 9,
+        ispost: false,
+        loadall: false,
+        userInfo: {}
+      },
+    };
+    methods = {
+      goChat(item) {
+        let vm = {
+          id: item.UserId || item.fuserId,
+          name: item.Name || item.fnickName,
+          img: item.Avatar || item.fheadImg,
+        }
+        core.gochat(vm)
+      },
+      openImg(img, imglst) {
+        tools.preViewShow(img, imglst)
+      },
+      goMore() {
+        tools.goNewPage("./indexDev?type=show")
+      },
+      // 拨打电话
+      makePhone(number) {
+        tools.makePhone(number, 'nosend')
+      },
+      // 导航
+      openMap() {
+        let _v = {
+          lat: Number(this.vm.Location[0]),
+          lng: Number(this.vm.Location[1]),
+          name: this.vm.StoreName,
+          address: this.vm.Address
+        }
+        tools.openMap(_v)
+      },
+      //富文本
+      wxParseImgTap(e) {
+        tools.preViewShow(e.currentTarget.dataset.src);
+      },
+    }
+    async onLoad() {
+      let app = wepy.$instance
+      let aid = _get(app.globalData, "aid", "")
+      if (aid == '') {
+        aid = await core.getAid()
+      }
+      let vm = {
+        id: aid,
+        action: 3,
+        type: 8
+      }
+      await core.connectSocket()
+      await core.CustomerBindEmployee()
+      await core.GetQiyeInfo(this)
+      Promise.all([
+        core.AddFavorite(vm, this),
+        core.GetDevelopmentDataList(this.dev, this),
+      ])
+    
+    }
+    async onPullDownRefresh() {
+      this.dev = tools.resetArray(this.dev)
+      wx.showNavigationBarLoading();
+      Promise.all([core.GetQiyeInfo(this), core.GetDevelopmentDataList(this.dev, this)])
+      wx.hideNavigationBarLoading();
+      wx.stopPullDownRefresh();
+    }
+    onShareAppMessage() {
+      let _v = this.vm
+      return {
+        title: _v.StoreName,
+        path: "/pages/index/index",
+        imageUrl: _v.ImgUrl,
+        success: function(res) {
+          tools.wxShowToast("转发成功")
+        }
+      };
+    }
+  }
+</script>

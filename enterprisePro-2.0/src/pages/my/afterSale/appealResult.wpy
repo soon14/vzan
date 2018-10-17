@@ -1,0 +1,324 @@
+<style lang="less">
+  .appeal-result {
+    padding-bottom: 88rpx;
+    .rect150 {
+      height: 150rpx;
+      width: 150rpx;
+    }
+    .width75 {
+      width: 75%;
+    }
+    .pl37 {
+      padding-left: 37rpx;
+    }
+    .hl100 {
+      height: 100rpx;
+      line-height: 100rpx;
+    }
+    .cblue {
+      color: #53a3fe;
+    }
+    .bbgray {
+      border-bottom: 1px solid #eee;
+    }
+    .bggray {
+      background-color: #ccc !important;
+    }
+    .waiting-tips {
+      height: 169rpx;
+      justify-content: center;
+      .point {
+        height: 10rpx;
+        width: 10rpx;
+        border-radius: 100%;
+        background: #999;
+        display: inline-block;
+        vertical-align: middle;
+        margin-bottom: 4rpx;
+      }
+    }
+    .btn-logistics {
+      width: 154rpx;
+      height: 60rpx;
+      border-radius: 4rpx;
+      color: #53a3fe;
+      border: 1px solid #53a3fe;
+      display: inline-block;
+      line-height: 60rpx;
+      text-align: center;
+      margin-top: 20rpx;
+    }
+    .returnInfo {
+      .header {
+        padding: 20rpx 31rpx 0rpx 20rpx;
+        .commodity-avator {
+          background-color: #eee;
+        }
+        .title {
+          font-size: 28rpx;
+        }
+      }
+      .info-detail {
+        padding: 20rpx 30rpx;
+      }
+    }
+    .btn-contact {
+      width: 100%;
+      bottom: 0;
+      border-top: 1px solid #eee;
+      background-color: #fff;
+      .contactSaler {
+        display: inline-block;
+        vertical-align: top;
+        padding-top: 1rpx;
+      }
+    }
+  }
+</style>
+<template>
+  <view class="appeal-result {{currentSkin}}">
+    <view class="skin_bg f32 pl37 hl100">
+      {{status.title}}
+    </view>
+    <view class="bg-w">
+      <view class="hl100 bbgray pl20">
+        {{status.content}}
+      </view>
+      <!-- <view wx:if="{{status.isShowTips && serveType == 0}}" class="f fv waiting-tips f24 c999 pl20">
+                  <text><text class="point mr20"></text>商家统一或者超时未处理，系统将退款给您</text>
+                  <text class="mt10"><text class="point mr20"></text>如果商家拒绝，您可以修改退换申请后再次发起，商家会重新
+      处理</text>
+              </view> -->
+      <view wx:if="{{status.title == '用户退货退款成功'}}" class="success-tips">
+        <view class="hl100 f fj pr20 bbgray pl20">
+          <text>退款总金额</text>
+          <text class="skin_txt">￥{{ReturnInfo.ReturnAmount}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="returnInfo mt20 f fv">
+      <view class="bg-w hl100 pl20 pr20">
+        <text>退换信息</text>
+        <!-- 15 - 18 都可以查看物流信息 包含用户发货 商家换货 -->
+        <text class="btn-logistics f30 fr ml20" wx:if="{{OrderState > 14 && OrderState < 19}}" @tap="checkLogistics">查看物流</text>
+        <!-- 13 为通过商户审核 通过发货进行下一步 14 -->
+        <text class="btn-logistics f30 fr" wx:if="{{OrderState == 14}}" @tap="goShipments">我要发货</text>
+        <text class="btn-logistics f30 fr" wx:if="{{OrderState == 16}}" @tap="getGood">确认收货</text>
+      </view>
+      <view style="padding-bottom: 20rpx;">
+        <repeat for="{{GoodList}}">
+          <view class="f fj header">
+            <image class="commodity-avator rect150" src="{{item.Img}}" />
+            <view class="f fv ml20 width75">
+              <view class="title">
+                <text class="line line2">{{item.Name}}</text>
+              </view>
+              <view class="specification c999 mt10 f22 f fj ">
+                <text>{{item.Attr}}</text>
+                <text>x{{item.Count}}</text>
+              </view>
+            </view>
+          </view>
+        </repeat>
+      </view>
+      <view class="bg-w info-detail f22 c999 f fv">
+        <text>退换原因：{{ReturnInfo.Reason}}</text>
+        <!-- 只在退款退货显示 -->
+        <text class="mt10" wx:if="{{serveType == 0}}">退款金额：￥{{ReturnInfo.ReturnAmount}}</text>
+        <text class="mt10">申请时间：{{ReturnInfo.ApplyTime}}</text>
+        <!-- 只在退款退货显示 -->
+        <text class="mt10" wx:if="{{serveType == 0}}">退款编号：{{ReturnInfo.Id}}</text>
+      </view>
+    </view>
+    <form bindsubmit="formSubmit" report-submit="true">
+      <button formType="submit" class="btn-contact abs hl100" hover-class="bggray" open-type='contact'>
+              <text class="cblue dzicon f34 icon-zhuanyebaniconkuozhan_Consulta"/>
+              <text class="ml10 f26 contactSaler">联系卖家</text>
+            </button>
+    </form>
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http,
+    tools
+  } from "@/lib/core";
+  import addr from "@/lib/addr.js";
+  export default class AppealResult extends wepy.page {
+    //基础配置层
+    config = {
+      navigationBarTitleText: "退换详情",
+      usingComponents: {
+      }
+    };
+    data = {
+      currentSkin: "",
+      orderid: 0, //订单id
+      serveType: 0, //服务类型
+      ReturnInfo: {
+        //退货信息
+        Id: 0,
+        ApplyTime: "",
+        Reason: "",
+        Remark: "",
+        UploadPics: "",
+        ReturnAmount: 0
+      },
+      GoodList: [
+        //退货商品信息列表
+        {
+          Img: "",
+          Name: "",
+          Count: "",
+          Attr: "" //规格
+        }
+      ],
+      status: {
+        //提示状态
+        title: "",
+        content: "",
+        isShowTips: false
+      },
+      OrderState: 0 //订单状态
+    };
+    methods = {
+      checkLogistics(e) {
+        var type;
+        var OrderState = parseInt(this.OrderState)
+        if (OrderState == 15 || OrderState == 18) type = 1;
+        if (OrderState >= 16 && OrderState < 18) type = 2;
+        tools.goNewPage(
+          "../myLogistics?orderId=" +
+          this.orderid +
+          "&type=" +
+          type +
+          "&imgUrl=" +
+          this.GoodList[0].Img +
+          "&count=" +
+          this.GoodList.length
+        );
+      },
+      goShipments(e) {
+        wx.setStorageSync("shipments", this.GoodList)
+        tools.goRedirecto("returnCargo?orderId=" + this.orderid);
+      },
+      async getGood(e) {
+        const vm = this;
+        var aid = wepy.$instance.globalData.appid;
+        var userInfo = await core.getUserInfo();
+        tools.showModal("确定收货？").then(res => {
+          if (res.confirm) {
+            http
+              .post(addr.submitReturnGoodAppeal, {
+                appId: aid,
+                openId: userInfo.OpenId,
+                orderId: Number(vm.orderid),
+                State: 17 //17为确认收货 用户换货成功
+              })
+              .then(res => {
+                wx.showToast({
+                  title: "收货成功",
+                  icon: "success",
+                  duration: 1000
+                });
+                vm.init();
+              });
+          }
+        });
+      },
+      formSubmit(e) {
+        core.formId(e.detail.formId)
+      }
+    };
+    //生命钩子层
+    onShow() {
+      tools.setPageSkin(this);
+    }
+    onLoad(query) {
+      var vm = this;
+      vm.orderid = query.orderId;
+      vm.serveType = (wx.getStorageSync("serveType")) || "0";
+      vm.init();
+    }
+    //自定义方法层
+    mappingStatus(state) {
+      var temp;
+      var type = this.serveType == 0 ? "退款退货" : "换货";
+      switch (state) {
+        case 13:
+          temp = {
+            title: "请等待商家处理",
+            content: "您已成功发起" + type + "申请，请耐心等待商家处理",
+            isShowTips: true
+          };
+          break;
+        case 14:
+          temp = {
+            title: "等待用户发货",
+            content: "商家同意" + type + "申请，等待用户发货",
+            isShowTips: false
+          };
+          break;
+        case 15:
+          temp = {
+            title: "用户已发货",
+            content: "等待商家收货",
+            isShowTips: false
+          };
+          break;
+        case 16:
+          temp = {
+            title: "商家已发货",
+            content: "请您耐心等待",
+            isShowTips: false
+          };
+          break;
+        case 17:
+          temp = {
+            title: "用户换货成功",
+            content: "换货成功！",
+            isShowTips: false
+          };
+          break;
+        case 18:
+          temp = {
+            title: "用户退货退款成功",
+            content: "退货退款成功！",
+            isShowTips: false
+          };
+          break;
+        case -5:
+          temp = {
+            title: "退货失败",
+            content: "商家不同意退货，如有疑问，请与商家联系",
+            isShowTips: false
+          };
+          break;
+      }
+      typeof temp !== "undefined" && Object.assign(this.status, temp);
+    }
+    async init() {
+      await tools.showLoading();
+      var vm = this;
+      var aid = wepy.$instance.globalData.appid;
+      var userInfo = await core.getUserInfo();
+      //返回数据
+      var result = await http.post(addr.getReturnGoodDetail, {
+        appid: aid,
+        openid: userInfo.OpenId,
+        orderid: vm.orderid
+      });
+      var json = result.dataObj;
+      if (json) {
+        vm.ReturnInfo = json.ReturnInfo;
+        vm.GoodList = json.GoodList;
+        vm.OrderState = json.OrderState;
+        vm.mappingStatus(vm.OrderState);
+      }
+      wx.hideLoading();
+      vm.$apply();
+    }
+  }
+</script>

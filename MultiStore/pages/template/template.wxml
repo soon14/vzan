@@ -1,0 +1,1203 @@
+<!--**************************Index****************************** -->
+<template name="topTemp">
+  <view wx:if="{{showChoose}}">
+    <!-- 配送（包括同城&&快递） -->
+    <view class='header flex-r h9vh' wx:if="{{cityStatus==true||expressStatus==true}}">
+      <view class='flex-r m10-l head-let'>
+        <view class='dzicon icon-address f38'></view>
+        <view>配送至：</view>
+      </view>
+      <view class='f26 basis-text2 flex-r head-min'>{{address}}</view>
+      <view class='flex-r f26 m10-l head-let' bindtap='addressGoto' data-id="0">
+        <text>切换地址</text>
+        <text class='dzicon icon-jiantou f38'></text>
+      </view>
+    </view>
+    <!-- 自取 -->
+    <view class='header flex-r-c-sb h9vh' wx:if="{{selfStatus==true}}">
+      <view class='flex-r-c'>
+        <view class='dzicon icon-addƒress m20-l f40'></view>
+        <text class='m10-l'>自取门店：{{currentPage.StoreName}}</text>
+      </view>
+      <view class='flex-r-c' bindtap='addressGoto' data-id="1">
+        <text>切换门店</text>
+        <text class='dzicon icon-jiantou f38'></text>
+      </view>
+    </view>
+    <!-- 配送方式全部关闭显示 -->
+    <view class='w100 header flex-r-c-sb h9vh' bindtap='addressGoto' data-id="0" wx:if="{{cityStatus==false&&expressStatus==false&&selfStatus==false}}">
+      <view class='flex-r-c'>
+        <view class='dzicon icon-address m20-w f40'></view>
+        <text>店铺已打烊，请重新选择位置</text>
+      </view>
+      <view class='dzicon icon-jiantou f38 m20-r'></view>
+    </view>
+  </view>
+  <button open-type="openSetting" wx:if="{{showChoose==false}}" class='openTopbtn'>获取位置信息</button>
+</template>
+<!-- banner -->
+<template name="banTemp">
+  <swiper wx:if="{{this.type=='slider'}}" autoplay="true" interval="5000" duration="1000">
+    <block wx:for="{{this.items}}">
+      <swiper-item>
+        <image src="{{item.img}}" class="slide-image" data-img="{{item.img}}" data-imgList="{{this.items}}" bindtap='preViewShow' />
+      </swiper-item>
+    </block>
+  </swiper>
+</template>
+<!-- img nav -->
+<template name="navTemp">
+  <view class='w100 flex-r-c-w bgff' wx:if="{{this.type=='imgnav'}}">
+    <block wx:for="{{this.navlist}}">
+      <view class='nav-item w25 flex-c-c m20-h' bindtap='classifyGoto' data-condition="{{item.url}}">
+        <image wx:if="{{item.img!=''}}" mode='aspectFill' src='{{item.img}}'></image>
+        <text else:if="{{item.img==''}}" class='dzicon {{item.icon}} f50'></text>
+        <text class='m5-h'>{{item.name}}</text>
+      </view>
+    </block>
+  </view>
+</template>
+<!-- pro list -->
+<template name="proTemp">
+  <view class='w100 bgff flex-c-c m20-t' wx:if="{{this.type=='good'}}">
+    <view class='cff8 flex-r-c m20-h'>
+      <view class='pro-line bgff8'></view>
+      <text class='m20-w f32'>{{this.comHead}}</text>
+      <view class='pro-line bgff8'></view>
+    </view>
+    <view class='w100 flex-r-wrap-sb p20-w'>
+      <block wx:for="{{proList}}">
+        <view class='pro-items flex-c m20-h' data-pid="{{item.id}}" bindtap='{{selfStatus==false&&cityStatus==false&&expressStatus==false?"":"detailsGoto"}}'>
+          <image mode='aspectFill' src='{{item.img}}'></image>
+          <view class='w100 bg00 cfff tcenter absolute' wx:if="{{selfStatus==false&&cityStatus==false&&expressStatus==false}}">已售罄</view>
+          <text class='basis-text2 m10-h h78nl'>{{item.name}}</text>
+          <view class='w100 cff flex-r-c-sb'>
+            <view>
+              <text class='price f30'>{{item.discountPricestr}}</text>
+              <text wx:if="{{item.unit}}">/{{item.unit}}</text>
+            </view>
+            <view class='dzicon icon-gouwuche f47'></view>
+          </view>
+          <view class='price fprice' wx:if="{{item.discount!=100}}">{{item.priceStr}}/{{item.unit}}</view>
+        </view>
+      </block>
+    </view>
+  </view>
+</template>
+<!-- richtxt -->
+<template name="rtxTemp">
+  <block wx:if="{{this.type=='richtxt'}}">
+    <view class="p20 f32 w100" style='word-break: break-all;'>
+      <template is="wxParse" data="{{wxParseData:this.content.nodes}}" />
+    </view>
+  </block>
+</template>
+<!--**************************classify******************************  -->
+<template name="lefTemp">
+  <scroll-view scroll-y class='w25 bgfaf scroll-left'>
+    <block wx:for="{{typesList}}">
+      <view class='sl-item flex-c-j-c {{condition==item.id?"click-change":"click-no"}}' data-id='{{item.id}}' bindtap='typesFunc'>
+        <text class='basis-text2'>{{item.name}}</text>
+      </view>
+    </block>
+    <view style='height:100rpx;width:100%'></view>
+  </scroll-view>
+</template>
+<!-- right scroll -->
+<template name="rigTemp">
+  <scroll-view scroll-y class='right-sl bgff w75 p20-w' bindscrolltolower="onLoadMore" enable-back-to-top scroll-top="{{scrolltop}}">
+    <block wx:for="{{goodListViewModal.list}}">
+      <view class='list-item flex-r m20-t w100 p20-b bdown-f5' data-pid="{{item.id}}" bindtap='{{selfStatus==false&&cityStatus==false&&expressStatus==false?"":"detailsGoto"}}'>
+        <image mode='aspectFill' src='{{item.img}}'></image>
+        <view class='bg00 cfff tcenter absolute h100 br50 f24 op5' wx:if="{{selfStatus==false&&cityStatus==false&&expressStatus==false}}">已售罄</view>
+        <view class='w60 m20-l flex-c'>
+          <text class='basis-text'>{{item.name}}</text>
+          <view class='{{item.plabelstr_array==0?"m20-h":""}}'>
+            <template is="labTemp" data="{{item}}" />
+          </view>
+          <!-- 折扣价 -->
+          <view class='w100 flex-r-sb cff'>
+            <view>
+              <text class='price f30'>{{item.discountPricestr}}</text>
+              <text wx:if="{{item.unit}}">/{{item.unit}}</text>
+            </view>
+            <view class='dzicon icon-gouwuche f47'></view>
+          </view>
+          <!-- 原价 -->
+          <view wx:if="{{item.discount!=100}}" class='price fprice'>
+            <text>{{item.priceStr}}</text>
+            <text wx:if="{{item.unit}}">/{{item.unit}}</text>
+          </view>
+          <!-- <view class='price fprice' wx:if="{{item.discount!=100}}">{{item.priceStr}}/{{item.unit}}</view> -->
+        </view>
+      </view>
+    </block>
+    <!-- 加载提示 -->
+    <view class='c66 tcenter m20-t' wx:if="{{goodListViewModal.list!=0}}">
+      <text wx:if="{{goodListViewModal.ispost}}">加载中</text>
+      <text wx:if="{{goodListViewModal.ispost==false&&goodListViewModal.loadall==true}}">数据加载完毕</text>
+    </view>
+    <view wx:if="{{goodListViewModal.list==0}}" class='h100 w100 tcenter'>暂无数据</view>
+    <view style='height:100rpx;width:100%'></view>
+    <template is="btpTemp" data="{{goodListViewModal}}" />
+  </scroll-view>
+</template>
+<!-- label -->
+<template name="labTemp">
+  <view class='pla-list flex-r-wrap m20-h'>
+    <block wx:for="{{item.plabelstr_array}}">
+      <text class='p10 f20'>{{item}}</text>
+    </block>
+  </view>
+</template>
+<!--**************************shopCart******************************  -->
+<template name="heaTemp">
+  <view class='choose-address flex-r-c-sb p20-w bgff' wx:if="{{cityStatus==true}}">
+    <view class='flex-r'>
+      <text class='dzicon icon-dingwei f40 cd6 m10-r'></text>
+      <text class='address-bf address-af'>{{currentPage.StoreName}}</text>
+    </view>
+    <view class='cff9' bindtap='changGoto' data-id="0" wx:if="{{showChoose}}">更改地址</view>
+     <button open-type="openSetting" wx:if="{{showChoose==false}}" class='headbutton cff9 f28'>更改地址</button>
+  </view>
+
+  <view class='choose-address flex-r-c-sb p20-w bgff' wx:if="{{expressStatus==true}}">
+    <view class='flex-r'>
+      <text class='dzicon icon-dingwei f40 cd6 m10-r'></text>
+      <text class='address-bf address-af'>{{currentPage.StoreName}}</text>
+    </view>
+  </view>
+
+  <view class='choose-address flex-r-c-sb p20-w bgff' wx:if="{{selfStatus==true}}">
+    <view class='flex-r'>
+      <text class='dzicon icon-dingwei f40 cd6 m10-r'></text>
+      <text>自取门店 {{currentPage.StoreName}}</text>
+    </view>
+    <view class='cff9' bindtap='changGoto' data-id="1">更改自取门店</view>
+  </view>
+  <view class='choose-address flex-r-c-sb p20-w bgff' wx:if="{{cityStatus==false&&expressStatus==false&&selfStatus==false}}">
+    <view class='flex-r'>
+      <text class='dzicon icon-dingwei f40 cd6 m10-r'></text>
+      <text>店铺已打样</text>
+    </view>
+  </view>
+</template>
+<!-- postage -->
+<template name="expTemp">
+  <view wx:if="{{cityStatus==true&&cityPrice!=0}}">
+    <view wx:if="{{total<cityPrice}}" class='price-bf price-af cfff bgffb tcenter h60 m20-t op6'>￥{{cityPrice}}</view>
+    <view wx:if="{{total>=cityPrice}}" class='cfff bgffb tcenter h60 m20-t op6'>您已满{{cityPrice}}元免运费</view>
+  </view>
+  <view wx:if="{{expressStatus==true&&expressPrice!=0}}">
+    <view wx:if="{{total<expressPrice}}" class='price-bf price-af cfff bgffb tcenter h60 m20-t op6'>￥{{expressPrice}}</view>
+    <view wx:if="{{total>=expressPrice}}" class='cfff bgffb tcenter h60 m20-t op6'>您已满{{expressPrice}}元免运费</view>
+  </view>
+</template>
+<!-- IMAGE line -->
+<template name="imgTemp">
+  <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/a36.png' style='width:100%;height:8rpx;display:block'></image>
+</template>
+<!--shopCar pro-->
+<template name="scpTemp">
+  <scroll-view scroll-y wx:if="{{goodlist.length!=0}}">
+    <block wx:for="{{goodlist}}" wx:for-index="parentindex">
+      <view class='shop-item flex-r-c-sb w100 m20-t bgff'>
+        <!-- 选择按钮 -->
+        <text class='dzicon {{item.goodsMsg.sel?"icon-zhifuchenggong":"icon-kongxinyuan"}} f50 cFFC m20-l' hidden="{{item.showModalStatus2}}" bindtap='itemSelectFunc' data-parentindex="{{parentindex}}"></text>
+        <view class='cff4 f22 m20-w flex-c-c' wx:if="{{item.showModalStatus2}}" data-parentindex="{{parentindex}}" bindtap='deleteFunc'>
+          <text class='dzicon icon-iconfontlajitong f40'></text>
+          <text>删除</text>
+        </view>
+        <!-- 商品图 -->
+        <image mode='aspectFill' src='{{item.goodsMsg.img}}' class='shop-mainImg'></image>
+        <!-- 内容 -->
+        <view class='shop-content flex-c-sb m20-r' hidden="{{item.showModalStatus2}}">
+          <view class='flex-r-c c11'>
+            <text class='basis-text w100'>{{item.goodsMsg.name}}</text>
+            <view class='dzicon icon-bianji c66 f35' catchtap='showEditorFunc' id='{{item.Id}}' data-parentindex="{{parentindex}}"></view>
+          </view>
+          <text wx:if="{{item.SpecInfo!=''}}" class='f26 c66 {{item.GoodsState==3?"m20-t":""}}'>{{item.SpecInfo}}</text>
+          <view class='f22 c66 bgf2 tcenter m20-h sold-no' wx:if="{{item.GoodsState==3}}">该商品已售罄</view>
+          <view class='shop-down flex-r-sb cff9'>
+            <view>
+              <text>￥{{item.priceStr}}</text>
+              <text class='fprice m10-l' wx:if="{{item.discount!=100}}">￥{{item.originalPriceStr}}</text>
+            </view>
+            <text class='c66'>x{{item.Count}}</text>
+          </view>
+        </view>
+        <!-- 更改商品信息 -->
+        <view class='editor-item flex-r' wx:if="{{item.showModalStatus2}}" animation="{{animationDataRight}}">
+          <view class="editor flex-c-sb">
+            <view class="editor-top flex-r">
+              <text data-parentindex="{{parentindex}}" bindtap='lessViewFunc' class='editor-same'>-</text>
+              <input data-parentindex="{{parentindex}}" bindinput='setValueFunc' type="number" value="{{item.Count}}" class='editor-same' />
+              <text data-parentindex="{{parentindex}}" bindtap='addViewFunc' class='editor-same'>+</text>
+            </view>
+            <view wx:if="{{item.SpecInfo!=''}}" bindtap="showShopcarFunc" data-parentindex="{{parentindex}}" data-statu="open" class='h78 tcenter bgf3'>
+              <text>{{item.SpecInfo}}</text>
+              <text class='dzicon icon-jiantou1 f32 c99 m10-l'></text>
+            </view>
+            <view wx:if="{{item.SpecInfo==''}}" class='h78 tcenter bgf3'>暂无规格</view>
+          </view>
+          <view class="w122 bgff9 cfff f30 tcenter h160" id='{{parentindex}}' bindtap='updateEditorFunc'>完成</view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+  <!-- 无商品时显示 -->
+  <view wx:if="{{goodsList.length==0 || _userShow==false}}" class='no-shop flex-c-c-j w100'>
+    <image mode='aspectFit' src='https://j.vzan.cc/miniapp/img/multistore/noShop.png'></image>
+  </view>
+</template>
+<!-- shopCar bottom btn -->
+<template name="scbTemp">
+  <view class='w100 h100 m20-t'></view>
+  <view class="bottomnav w100 h100nl bgff flex-r-sb btop-f5">
+    <view class="w70 flex-r-c">
+      <text class='dzicon {{selectedAllStatus?"icon-zhifuchenggong":"icon-kongxinyuan"}} f50 cFFC m20-w' bindtap='allSelectFunc'></text>
+      <text class='f30 m30-r'>全选</text>
+      <text>合计：</text>
+      <text class='w49 cef price'>{{total}}</text>
+    </view>
+    <!-- 打样时 -->
+    <view class='w30 h100 bgd9 cfff f34 tcenter' wx:if="{{cityStatus==false&&expressStatus==false&&selfStatus==false}}">去结算({{shopNum}})</view>
+    <block wx:if="{{cityStatus==true}}">
+      <!-- 同城配送按钮 -->
+      <view class='w30 h100nl bgd9 cfff flex-c-c-j' wx:if="{{total<takeStartPrice}}">
+        <text class='f32'>去结算({{shopNum}})</text>
+        <text class='f22'>起步价￥{{takeStartPrice}}</text>
+      </view>
+      <form class='w30 form-btn1' report-submit='true' bindsubmit='goPlayFunc' wx:if="{{total>=takeStartPrice}}">
+        <button class='form-btn3 button bgffc cfff f34' form-type='submit'>去结算({{shopNum}})</button>
+      </form>
+    </block>
+    <!-- 快递配送按钮 -->
+    <form class='w30 form-btn1' report-submit='true' bindsubmit='goPlayFunc' wx:if="{{expressStatus==true}}">
+      <button class='form-btn3 button bgffc cfff f34' form-type='submit'>去结算({{shopNum}})</button>
+    </form>
+    <!-- 自取 -->
+    <form class='w30 form-btn1' report-submit='true' bindsubmit='goPlayFunc' wx:if="{{cityStatus==false&&expressStatus==false&&selfStatus==true}}">
+      <button class='form-btn3 button bgffc cfff f34' form-type='submit'>去结算({{shopNum}})</button>
+    </form>
+  </view>
+</template>
+<!--**************************Me******************************  -->
+<template name="mehTemp">
+  <view class='bgff p20-h'>
+    <view class='user-info cfff br20' style='background-color:{{modelUser.levelInfo.bgcolor}};'>
+      <view class="h320nl flex-c-c-j" bindtap='showVipFunc' data-statu="open" wx:if="{{user.avatarUrl!=null&&user.nickName!=null}}">
+        <image mode='aspectFill' src='{{user.avatarUrl}}' class='user-image'/>
+        <text class='m10-t'>{{user.nickName}}</text>
+        <text class='f24 m5'>{{modelUser.levelInfo.name}}</text>
+        <text class='f22 m20-t'>查看会员权益 ></text>
+      </view>
+       <view class="h320nl flex-c-c-j" wx:if="{{user.avatarUrl==null&&user.nickName==null}}">
+        <view mode='aspectFill' src='{{user.avatarUrl}}' class='dzicon icon-mine_wode' style="font-size:110rpx;"/>
+        <button class="m-login" open-type='getUserInfo' bindgetuserinfo="wxlogin">点击登录</button>
+      </view>
+    </view>
+    <!-- <view class='sync-btn h60 tcenter cfff bgff9 br30'>领取微信会员卡</view> -->
+    <!-- <view class='me-value flex-r m20-t f26 w100 btop-f5'>
+    <view class='flex-c-c-j bright-f3 w50'>
+      <text class='c99'>储值余额</text>
+      <text class='cff9 f30'>￥300</text>
+    </view>
+    <view class='flex-c-c-j w50'>
+      <text class='c99'>累计消费</text>
+      <text class='cff9 f30'>￥500</text>
+    </view>
+  </view> -->
+  </view>
+
+</template>
+<!-- Stored value -->
+<template name="vuaTemp">
+  <view class='value-Img w100 tcenter m20-t' bindtap='storedGoto'>
+    <image mode='aspectFill' src='https://j.vzan.cc/miniapp/img/a45.png'></image>
+  </view>
+</template>
+<!-- order navigator -->
+<template name="megTemp">
+  <view class='w100 bgff p20-w m20-t'>
+    <view class='flex-r-sb h88'>
+      <text class='f30'>我的订单</text>
+      <text class='f24 c99' bindtap='moreOrderGoto'>查看更多订单 ></text>
+    </view>
+  </view>
+
+  <view class='flex-r-c w100 bgff p20-h btop-f5 c66'>
+    <block wx:for="{{showMode}}">
+      <view class='flex-c-c w25' data-url="{{item.url}}" bindtap='orderGoto'>
+        <text class='{{item.img}}'></text>
+        <text class='f24'>{{item.context}}</text>
+      </view>
+    </block>
+  </view>
+</template>
+<!-- play mode -->
+<template name="memTemp">
+  <view class='w100 p20-w m20-t bgff flex-r-c-sb h100 bdown-f5' bindtap='mePageGoto' wx:if="{{showChoose}}">
+    <text class='f30'>收货地址</text>
+    <text class='dzicon icon-jiantou f47 ccc'></text>
+  </view>
+  <button class='headbutton w100 p20-w m20-t bgff flex-r-c-sb h100 bdown-f5'  open-type="openSetting" wx:if="{{showChoose==false}}">
+    <view  class='f30'>更改地址</view>
+    <text class='dzicon icon-jiantou f47 ccc'></text>
+  </button>
+  <view class='w100 h100 flex-r-c-sb bgff p20-w customer'>
+    <view class='f30'>联系客服</view>
+    <view class='dzicon icon-jiantou f47 ccc'></view>
+    <button class='button w100' open-type="contact"></button>
+  </view>
+  <view class='w100 h60'></view>
+</template>
+<!-- vip windowm -->
+<template name="vipTemp">
+  <view class='stock-bg' data-statu="close" wx:if="{{showModalStatus}}" bindtap='showVipFunc'></view>
+  <view class='vip-flex w500 flex-c-c' wx:if="{{showModalStatus}}" animation="{{animationData}}">
+    <view class='vip-show w500 bgff br12'>
+      <image mode='aspectFit' src='http://j.vzan.cc/miniapp/img/enterprise/a46.png'></image>
+      <view class='w100 vip-header flex-c-c'>
+        <text class='fw'>{{modelUser.levelInfo.name}}</text>
+        <text class='w100 p10-h bdown-f3 c66 tcenter'>享受以下会员权益</text>
+        <image src='http://j.vzan.cc/miniapp/img/enterprise/a47.png' class='vipicon'></image>
+      </view>
+      <view class='vip-txt' wx:if="{{modelUser.levelInfo.discount==100}}">暂无折扣</view>
+      <view class='vip-txt' wx:if="{{modelUser.levelInfo.discount!=100&&modelUser.levelInfo.type==2}}">购买一下商品享受{{modelUser.levelInfo.discount*0.1}}折</view>
+      <view class='vip-txt' wx:if="{{modelUser.levelInfo.discount!=100&&modelUser.levelInfo.type==1}}">全场商品享受{{modelUser.levelInfo.discount*0.1}}折</view>
+      <view class='vip-txt' wx:if="{{modelUser.levelInfo.discount!=100&&modelUser.levelInfo.type==0}}">无</view>
+      <scroll-view scroll-y wx:if="{{modelUser.levelInfo.discount!=100}}">
+        <view class="p20-h tcenter">
+          <view class='f26' wx:for="{{modelUser.levelInfo.entGoodsList}}">
+            {{item.name}}
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    <view class='dzicon icon-3 f70 cfff m20-t' bindtap='showVipFunc' data-statu="close"></view>
+  </view>
+</template>
+<!--**************************addMyAddress******************************  -->
+<template name="addTemp">
+  <view class='bgff'>
+    <block wx:for="{{addressList}}">
+      <view class='flex-c bdown-f5 p20' bindtap='selectFunc' data-id='{{item.Id}}' data-lat="{{item.Lat}}" data-lng="{{item.Lng}}">
+        <!-- name -->
+        <view class='flex-r-sb'>
+          <text>{{item.NickName}}</text>
+          <text>{{item.TelePhone}}</text>
+        </view>
+        <!-- address -->
+        <view class='m20-t w100'>{{item.Address}}</view>
+      </view>
+    </block>
+    <template is="nolTemp" data="{{addressList}}" />
+  </view>
+  <view class='w100 h100'></view>
+</template>
+<!-- no location show -->
+<template name="nolTemp">
+  <view class='flex-r-c-c' wx:if="{{addressList==0}}">
+    <image mode='aspectFit' class='noStoreAddress' src='https://j.vzan.cc/miniapp/img/multistore/noLocation.png'></image>
+  </view>
+</template>
+<!-- address btn -->
+<template name="abnTemp">
+  <view class='w100 address-btn flex-r bgff h100 btop-f5'>
+    <view class='w50 cff9 flex-r-c-c' bindtap='managerGoto'>
+      <text class='dzicon icon-fenlei f40'></text>
+      <text class='m10-l f30'>管理地址</text>
+    </view>
+
+    <view class='w50 cff9 flex-r-c-c' bindtap='addressGoto'>
+      <text class='dzicon icon-jiahao f40'></text>
+      <text class='m10-l f30'>添加地址</text>
+    </view>
+  </view>
+</template>
+<!-- no pro window -->
+<template name="nopTemp">
+  <view class='w100 stock-popup bgff' wx:if="{{showModalStatus}}" animation="{{animationData}}">
+    <view class='p20 f30 bdown-f5'>以下商品因缺货无法购买：</view>
+    <view class='p20-w c99'>
+      <scroll-view scroll-y style='max-height:50vh;padding-bottom:50rpx'>
+        <block wx:for="{{list}}">
+          <view class='pro-item flex-r p20-h'>
+            <image mode='aspectFill' src='{{item.goodsMsg.img}}'></image>
+            <view class='pro-content flex-c'>
+              <text class='basis-text2'>{{item.GoodName}}</text>
+              <view class='pro-down flex-r'>
+                <text class='f26'>{{item.SpecInfo}}</text>
+                <text>X{{item.Count}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
+    <view class='flex-r h100 w100 tcenter btop-f5'>
+      <view class='w50 bgff cFFC f32' bindtap='confirmFunc'>继续购买</view>
+      <view class='w50 bgffc cfff f32' bindtap='hideFunc'>重新选择</view>
+    </view>
+  </view>
+  <view class='stock-bg' wx:if="{{showModalStatus}}" bindtap='hideFunc'></view>
+</template>
+<!--**************************addressChange******************************  -->
+<template name="acgTemp">
+  <block wx:for="{{addressList}}">
+    <view class='flex-c bdown-f5 p20 bgff'>
+      <!-- name -->
+      <view class='flex-r-sb'>
+        <text>{{item.NickName}}</text>
+        <text>{{item.TelePhone}}</text>
+      </view>
+      <!-- address -->
+      <view class='m20-t'>{{item.Address}}</view>
+    </view>
+    <view class='editor flex-r-c p20 m20-b bgff'>
+      <view class='flex-r-c' bindtap='deleteFunc' data-id='{{item.Id}}'>
+        <text class='dzicon icon-shanchu f40 ccc'></text>
+        <text>删除</text>
+      </view>
+      <view class='flex-r-c' bindtap='editGoto' data-id="{{item.Id}}">
+        <text class='dzicon icon-bianji1 f50 ccc'></text>
+        <text>编辑</text>
+      </view>
+    </view>
+  </block>
+  <template is="nolTemp" data="{{addressList}}" />
+  <view class='w100 h100'></view>
+</template>
+<!-- addressChange btn -->
+<template name="acbTemp">
+  <view class='w100 h100 bgff change-btn flex-r-c-c cff9 btop-f5' bindtap='addressGoto'>
+    <view class='dzicon icon-jiahao f40'></view>
+    <text class='m10-l f30'>添加地址</text>
+  </view>
+</template>
+<!--**************************addressEdit Form******************************  -->
+<template name="forTemp">
+  <form bindsubmit="sumbitFormFuc">
+    <view class='bgff p20-w'>
+      <!-- 姓名 -->
+      <view class='flex-r-c bdown-f5 p20-h'>
+        <text>收货人</text>
+        <input class='w80 m48-l' placeholder='姓名' placeholder-class='c66 f26' name="NickName" value="{{name}}"></input>
+      </view>
+      <!-- 号码 -->
+      <view class='flex-r-c bdown-f5 p20-h'>
+        <text>联系电话</text>
+        <input class='w80  m20-l' placeholder='联系电话' placeholder-class='c66 f26' name="TelePhone" value="{{phone}}" type="number" maxlength='11'></input>
+      </view>
+      <!-- 收货地址 -->
+      <view class='w100 flex-r-c-sb bdown-f5 p20-h'>
+        <text>收货地址</text>
+        <view class='flex-r-c w83'>
+          <input class='w100 basis-text' disabled placeholder='选择收货地址' placeholder-class='c66 f26' bindtap='chooseLocFunc' name="address" value='{{address}}'></input>
+          <text class='dzicon icon-jiantou f40'></text>
+        </view>
+      </view>
+      <!-- 补充说明 -->
+      <view class='flex-r-c bdown-f5 p20-h'>
+        <text>补充说明</text>
+        <input class='w80  m20-l' placeholder='详细地址' placeholder-class='c66 f26' name="detailAddress" value="{{detailAddress}}"></input>
+      </view>
+    </view>
+    <view class='sub-btn flex-r w100 bgff9'>
+      <view class='w30 bgff cFFC tcenter' bindtap='clearFunc'>重置</view>
+      <button class='w70 h100 bgff9 cfff f32' formType="submit">保存地址</button>
+    </view>
+  </form>
+</template>
+<!--**************************addressSelect******************************  -->
+<template name="selTemp">
+  <view class='select-model w100 bgff8 cfff flex-r-c-c'>
+    <view class='select-show flex-r h60'>
+      <block wx:for="{{Mode}}">
+        <text class='{{condition==item.id?"select":"select-none"}}' data-id='{{item.id}}' bindtap='changModeFunc'>{{item.mode}}</text>
+      </block>
+    </view>
+  </view>
+</template>
+<!-- location -->
+<template name="locTemp">
+  <view class='w100 bgff m20-t p20' bindtap='chooseLocFunc'>
+    <view class='flex-r-c-sb' wx:if="{{showopen!=true}}">
+      <text class='f26 c99'>当前位置</text>
+      <view class='address-logo flex-r-c'>
+        <view class='dzicon icon-address f40 cff'></view>
+        <text class='f26 cff'>重新定位</text>
+      </view>
+    </view>
+
+    <view class='m20-t'>{{address}}</view>
+    <view class='m20-t c66 f26' wx:if="{{address==undefined}}">暂无地址</view>
+  </view>
+</template>
+<!-- near address -->
+<template name="abrTemp">
+  <view wx:if="{{condition==0}}">
+    <block wx:if="{{showMyAddress==true}}">
+      <view class='f26 c99 m20'>附近收货地址</view>
+      <block wx:for="{{msg}}">
+        <view class='bgff p30h20w c66 bdown-f2' bindtap='addrFunc' data-address="{{item.Address}}" data-lat="{{item.Lat}}" data-lng="{{item.Lng}}" data-id="{{item.Id}}">{{item.Address}}</view>
+      </block>
+    </block>
+    <view class='flex-r-c-c' wx:else="{{showMyAddress!=true}}">
+      <image mode='aspectFit' class='noStoreAddress' src='https://j.vzan.cc/miniapp/img/multistore/noAddress.png'></image>
+    </view>
+    <!-- 添加地址 -->
+    <view wx:if="{{showLocation}}" class='loc-btn w100 h100 bgff9 cfff tcenter f32' bindtap='addressGoto'>添加地址</view>
+  </view>
+</template>
+<!-- near store -->
+<template name="strTemp">
+  <view class='w100 m20-t' wx:if="{{condition==1}}">
+    <block wx:if="{{showStore==true}}">
+      <block wx:for="{{storeList}}">
+        <view class='address-item p20 m20-b bgff'>
+          <view class='w100 flex-r-c-sb'>
+            <text>{{item.StoreName}}</text>
+            <view class='address-logo flex-r-c' bindtap='openLocaFunc' data-lat="{{item.Lat}}" data-lng="{{item.Lng}}" data-add="{{item.StoreName}}" data-address="{{item.Address}}">
+              <view class='dzicon icon-address f40 cff'></view>
+              <text class='f26 cff'>{{item.takeOutWayModel.TakeRangedistanceStr}}</text>
+            </view>
+          </view>
+          <view class='p20-b flex-c bdown-f2'>
+            <view class='flex-r-c m10-h'>
+              <view class='dzicon icon-address f40 ccc'></view>
+              <text class='f26 c99 m10-l'>{{item.Address}}</text>
+            </view>
+            <view class='flex-r-c'>
+              <view class='dzicon icon-shijian f40 ccc'></view>
+              <text class='f26 c99 m10-l' wx:if="{{item.switchModel.OpenAllDay==false}}">{{item.shopDays}},{{item.ShopTime}}</text>
+              <text class='f26 c99 m10-l' wx:else="{{item.switchModel.OpenAllDay==true}}">{{item.shopDays}}24小时营业</text>
+            </view>
+          </view>
+          <view class='w100 flex-r-c-e m20-t'>
+            <view class='flex-r-c cff  m30-r' bindtap='phoneFunc' data-phone="{{item.TelePhone}}">
+              <view class='dzicon icon-dianhua1 f40'></view>
+              <text class='f26 m10-l'>联系客服</text>
+            </view>
+            <view class='locatio-choose h60 bgff95 cfff tcenter f26' bindtap='storeFunc' data-shopname="{{item.StoreName}}" data-id="{{item.Id}}" data-homeid="{{item.HomeId}}">选择该店</view>
+          </view>
+        </view>
+      </block>
+    </block>
+    <view class='flex-r-c-c' wx:else="{{showStore!=true}}">
+      <image mode='aspectFit' class='noStore' src='https://j.vzan.cc/miniapp/img/multistore/noStore.png'></image>
+    </view>
+  </view>
+</template>
+<!--**************************details ******************************  -->
+<template name="dbrTemp">
+  <swiper wx:if="{{msg.slideimgs!=0}}" indicator-dots="{{indicatorDots}}" autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}">
+    <block wx:for="{{msg.slideimgs}}">
+      <swiper-item>
+        <image src="{{item}}" class="slide-image" data-img="{{item.img}}" bindtap='preViewShow' />
+      </swiper-item>
+    </block>
+  </swiper>
+  <image wx:if="{{msg.slideimgs==0}}" mode='widthFix' src='{{msg.img}}' class='w100' data-img="{{msg.img}}" bindtap='preViewShow'></image>
+</template>
+<!-- info -->
+<template name="difTemp">
+  <view class='bgff p20'>
+    <text class='basis-text2 f32'>{{msg.name}}</text>
+    <view class='pla-list flex-r-wrap m20-h'>
+      <block wx:for="{{pla}}">
+        <text class='p10 f20'>{{item}}</text>
+      </block>
+    </view>
+    <view class='flex-r-c f30 cff'>
+      <text>￥{{msg.discountPricestr}}</text>
+      <text wx:if="{{msg.unit!=''}}">/{{msg.unit}}</text>
+    </view>
+
+    <view class='flex-r-c fprice m10-l' wx:if="{{msg.discount!=100}}">
+      <text>￥{{msg.priceStr}}</text>
+      <text wx:if="{{msg.unit!=''}}">/{{msg.unit}}</text>
+    </view>
+  </view>
+</template>
+<!-- pro info -->
+<template name="dprTemp">
+  <view class='w100 bgff m20-t p20-h detail-info'>
+    <view class='flex-r-c-c'>
+      <view class='pro-line m10-r cd9'></view>
+      <view class='dzicon icon-news2 f32 cd9'></view>
+      <text class='f26 m10-l c99'>商品详情</text>
+      <view class='pro-line m10-l cd9'></view>
+    </view>
+    <!-- wxParse -->
+    <view class='w100 p20-w m20-h'>
+      <template is="wxParse" data="{{wxParseData:article.nodes}}" wx:if="{{msg.description!=''}}" />
+      <text wx:else="{{msg.description==''}}">暂无介绍</text>
+    </view>
+  </view>
+  <view class='h100 w100'></view>
+</template>
+<!-- detail btn -->
+<template name="dbnTemp">
+  <view class='btn-view w100 flex-r-c f32 btop-f5'>
+    <view class='go-btn h100 bgff tcenter cFFC f40 dzicon icon-Shopping3' bindtap='shopCarGoto'> </view>
+    <form wx:if="{{userInfo.nickName&&userInfo.avatarUrl}}" class='add-btn' report-submit='true' bindsubmit='addShopFunc' data-show="false" data-statu="open">
+      <button class='form-btn button  bgff tcenter cFFC' form-type='submit'>加入购物车</button>
+    </form>
+    <form class='buy-btn' wx:if="{{userInfo.nickName&&userInfo.avatarUrl}}" report-submit='true' bindsubmit='addShopFunc' data-show="true" data-statu="open">
+      <button class='form-btn button  bgffc tcenter cfff' form-type='submit'>立即购买</button>
+    </form>
+    <button class='add-btn form-btn button  bgff tcenter cFFC' open-type='getUserInfo' bindgetuserinfo="getlogin" wx:if="{{userInfo.nickName==null&&userInfo.avatarUrl==null}}">加入购物车</button>
+    <button class='buy-btn form-btn button  bgffc tcenter cfff' open-type='getUserInfo' bindgetuserinfo="getlogin" wx:if="{{userInfo.nickName==null&&userInfo.avatarUrl==null}}">立即购买</button>
+  </view>
+</template>
+<!--**************************order ******************************  -->
+<template name="oadTemp">
+  <view class='chose-address flex-r-c-sb p20-w bgff'  wx:if="{{_orderSync.cityStatus==true||_orderSync.expressStatus==true}}">
+    <view class='flex-r' wx:if="{{chooseShow}}" bindtap='chooseGoto'>
+      <text class='dzicon icon-dingwei f40 cd6 m10-r'></text>
+      <text>{{_orderSync.addressName}}</text>
+    </view>
+     <button open-type="openSetting" wx:if="{{chooseShow==false}}" class='headbutton f28 cd6'>获取位置信息</button>
+    <view class='dzicon icon-jiantou f50 ccc'></view>
+  </view>
+</template>
+<!-- choose store -->
+<template name="ostTemp">
+  <view class='chose-address flex-r-c-sb p20-w bgff' wx:if="{{_orderSync.cityStatus==false&&_orderSync.expressStatus==false&&_orderSync.selfStatus==true}}">
+    <view class='flex-r'>
+      <text class='dzicon icon-dingwei f40 cd6 m10-r'></text>
+      <text>自取门店：{{_orderSync.shopName}}</text>
+    </view>
+    <view class='cff9' bindtap='storeGoto'>更改自取门店</view>
+  </view>
+</template>
+<!-- total price&&product Info -->
+<template name="oprTemp">
+  <view class='p20-w bgff  m20-t'>
+    <view class='flex-r-sb p20-h w100 bdown-f5'>
+      <text>购物清单</text>
+      <view class='flex-r-sb w43'>
+        <text>共{{_orderSync.totalCount}}件</text>
+        <text class='priceAll cff9'>￥{{_orderSync.totalPrice}}</text>
+      </view>
+    </view>
+    <template is="pioTemp" data="{{menuList}}" />
+  </view>
+</template>
+<!-- Delivery mode -->
+<template name="omeTemp">
+  <view class='flex-r-c-sb p30h20w bgff m20-t bdown-f5'>
+    <text class='f32'>配送方式</text>
+    <text class='c66'>{{_orderSync.showText}}</text>
+  </view>
+</template>
+<!-- payment mode -->
+<template name="opyTemp">
+  <view class='flex-r-c-sb p30h20w bgff bdown-f5 w100'>
+    <text class='f32'>支付方式</text>
+    <view class='flex-r-c-sb'>
+      <!-- <block wx:for="{{payment}}"> -->
+      <view class='flex-r-c' bindtap='payModeFunc' data-id="{{item.id}}">
+        <!-- <text class='dzicon {{condition==item.id?"icon-zhifuchenggong":"icon-kongxinyuan"}} f40 cFFC m10-r'></text> -->
+        <text class='dzicon icon-zhifuchenggong f40 cFFC m10-r'></text>
+        <!-- <text>{{item.mode}}</text> -->
+        <text>微信支付</text>
+      </view>
+      <!-- </block> -->
+    </view>
+  </view>
+</template>
+<!-- input message -->
+<template name="oinTemp">
+  <view class='flex-r p30h20w bgff'>
+    <text class='w20 f32 m20-r'>留言说明</text>
+    <input class='flex-1' placeholder='填写您的留言内容' maxlength="20" placeholder-class='c99' bindblur='setMessageFunc'></input>
+  </view>
+</template>
+<!-- price&&Delivery price&&discount -->
+<template name="ompTemp">
+  <view class='w100 bgff m20-t'>
+    <block wx:for="{{_orderSync.price}}">
+      <view class='flex-r-c-sb p30h20w bgff bdown-f5'>
+        <text class='f32 m20-r'>{{item.totalModel}}</text>
+        <text class='c66'>{{item.price}}</text>
+      </view>
+    </block>
+    <view class="flex-r-c-sb p20-w h100 bdown-f5" wx:if="{{vmMycoupon.list.length>0}}">
+      <text class="f32 c12">优惠券</text>
+      <view class='f28 cf3' bindtap='chooseCoupons'>
+        <view wx:if="{{pickCoupon==null}}" class='cff9'>选择卡券</view>
+        <view wx:else class='line1' style='max-width:500rpx;text-align:right;'>{{pickCoupon.CouponName}}： - {{money_coupon}}</view>
+      </view>
+    </view>
+  </view>
+  <view class='w100 h100 m20-t'></view>
+</template>
+<!-- sumit price -->
+<template name="obnTemp">
+  <view class='w100 flex-r bgff m20-t h100 p20-l fixed'>
+    <text class='w70 cff price-sumbit btop-f5'>￥{{_orderSync.totalPrice}}</text>
+    <form class='w30' report-submit='true' bindsubmit='payGoto'>
+      <!-- <button class='form-btn button {{_orderSync.showBan?"bge6":"bgffc"}} cfff tcenter f40' form-type='submit'>{{payment[0].mode}}</button> -->
+      <button class='form-btn button {{_orderSync.showBan?"bge6":"bgffc"}} cfff tcenter f40' form-type='submit'>微信支付</button>
+    </form>
+  </view>
+</template>
+<!--**************************orderList ******************************  -->
+<template name="lheTemp">
+  <view class='w100 h100 bgff flex-r-c-sb p20-w fixed bdown-f3'>
+    <block wx:for="{{status}}">
+      <view class='{{condition==item.id?"select-order":"c66"}}' bindtap='changFunc' data-id="{{item.id}}">{{item.context}}</view>
+    </block>
+  </view>
+</template>
+<!-- orderList prolist -->
+<template name="lprTemp">
+  <view class='w100 h100'></view>
+  <view class='w100' wx:if="{{goodListViewModal.list!=0}}">
+    <block wx:for="{{goodListViewModal.list}}" wx:for-item="this">
+      <view class='bgff m20-t'>
+        <view class='h88 flex-r-sb bdown-f0 p20-w'>
+          <text>{{this.CreateDateStr}}</text>
+          <text class='cff'>{{this.StateStr}}</text>
+        </view>
+        <view class='pro-img w100 m20-t flex-r p20-w' bindtap='orderGoto' data-dborder="{{this.Id}}">
+          <block wx:for="{{this.goodsCarts}}">
+            <image class='m10-r' mode='aspectFill' src='{{item.goodsMsg.img}}'></image>
+          </block>
+          <view class='pro-num w25 bgfaf flex-r-c-sb p20-w' wx:if="{{this.goodsCart.length>4}}">
+            <text>共{{this.Count}}件</text>
+            <text class='dzicon icon-jiantou f32'></text>
+          </view>
+        </view>
+        <view class='flex-r-e p20 bdown-f0'>
+          <text>合计：</text>
+          <text class='f32'>￥{{this.BuyPriceStr}}</text>
+        </view>
+        <view class='w100 flex-r-c-sb f24 p20'>
+          <view class='flex-r-c cff' bindtap='phoneFunc'>
+            <view class='dzicon icon-contact f40 m10-r'></view>
+            <text>联系客服</text>
+          </view>
+          <view class='flex-r-c-sb'>
+            <form wx:if="{{this.State==0}}" report-submit='true' bindsubmit='canCleFunc' data-dborder="{{this.Id}}" data-storeid=" {{this.StoreId}}" data-id="1">
+              <button class='button bgff f24 c99' form-type='submit'>取消订单</button>
+            </form>
+            <form wx:if="{{this.State==8||this.State==1||this.State==9}}" report-submit='true' bindsubmit='orderFunc' data-dborder="{{this.Id}}" data-storeid="{{this.StoreId}}">
+              <button class='button bgff f24 c99' form-type='submit'>申请退款</button>
+            </form>
+            <form wx:if="{{this.State==0}}" report-submit='true' bindsubmit='gotopay' data-dborder="{{this.Id}}" data-orderId="{{this.OrderId}}">
+              <button class='button f24 p20-w h54 tcenter cfff bgff9 br6 m20-l' form-type='submit'>继续支付</button>
+            </form>
+            <form wx:if="{{this.State==8}}" report-submit='true' bindsubmit='orderGoto' data-dborder="{{this.Id}}">
+              <button class='button f24 p20-w h54 tcenter cfff bgff9 br6 m20-l' form-type='submit'>查看门店</button>
+            </form>
+            <form wx:if="{{this.State==2}}" report-submit='true' bindsubmit='canCleFunc' data-dborder="{{this.Id}}" data-storeid=" {{this.StoreId}}" data-id="3">
+              <button class='button f24 p20-w h54 tcenter cfff bgff9 br6 m20-l' form-type='submit'>确认收货</button>
+            </form>
+            <form wx:if="{{this.State==12}}" report-submit='true' bindsubmit='canCleFunc' data-dborder="{{this.Id}}" data-storeid=" {{this.StoreId}}" data-id="4">
+              <button class='button f24 p20-w h54 tcenter cfff bgff9 br6 m20-l' form-type='submit'>确认送达</button>
+            </form>
+          </view>
+        </view>
+      </view>
+    </block>
+    <!-- 加载提示 -->
+    <view class='c66 tcenter p20-h'>
+      <view wx:if="{{goodListViewModal.list.length}}">
+        <text wx:if="{{goodListViewModal.ispost}}">加载中</text>
+        <text wx:if="{{goodListViewModal.ispost==false&&goodListViewModal.loadall}}">数据加载完毕</text>
+      </view>
+    </view>
+    <template is="btpTemp" data="{{goodListViewModal}}" />
+  </view>
+  <view class='w100 tcenter' wx:else="{{goodListViewModal.list==0}}">
+    <image mode='aspectFit' src='https://j.vzan.cc/miniapp/img/multistore/orderNo.png' class='order-img'></image>
+  </view>
+</template>
+<!--**************************orderStatus ******************************  -->
+<template name="staTemp">
+  <!-- 同城配送状态已付款 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==9}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/payExpress.png"></image>
+    <view class='tcenter f26 cfff bgffb4 h66 position-btn' bindtap='_refuFunc'>申请退款</view>
+  </view>
+  <!-- 同城配送状态未付款 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==0}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/pay-No.png  "></image>
+    <view class='posi-btn flex-r-c-c'>
+      <view class='tcenter f26 cfff bgffb4 h66 status-btn' bindtap='_sPageFuc' data-id="1">取消订单</view>
+      <view class='tcenter f26 cfff bgffb4 h66 status-btn' bindtap='_sUseFunc' data-orderid="{{_orDetail.user.orderId}}" data-dborder="{{_orDetail.user.dborderId}}" id="2">继续付款</view>
+    </view>
+  </view>
+  <!-- 待发货 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==1}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/post.png"></image>
+    <view class='tcenter f26 cfff bgffb4 h66 position-btn' bindtap='_refuFunc'>申请退款</view>
+  </view>
+  <!-- 待配送 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==11}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/pay-peisong.png"></image>
+    <view class='tcenter f26 cfff bgffb4 h66 position-btn' bindtap='_refuFunc'>申请退款</view>
+  </view>
+  <!-- 待收货 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==2}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/pay-shou.png"></image>
+    <view class='tcenter f26 cfff bgffb4 h66 status-btn position-btn' bindtap='_sPageFuc' data-id="3">确认收货</view>
+  </view>
+  <!-- 待收货 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==12}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/pay-song.png"></image>
+    <view class='tcenter f26 cfff bgffb4 h66 status-btn position-btn' bindtap='_sPageFuc' data-id="4">确认送达</view>
+  </view>
+  <!-- 退款审核申请 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==10}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/pay-refurn.png"></image>
+  </view>
+  <!-- 退款中 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==-2}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/loading.png"></image>
+  </view>
+  <!-- 自取情况 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==8}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/paySelf.png"></image>
+  </view>
+  <!-- 已取消 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==-1}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/close.png"></image>
+  </view>
+  <!-- 已取消 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==3}}">
+    <image mode="aspectFit" class='w100 h256' src="https://j.vzan.cc/miniapp/img/multistore/paySuccess.png"></image>
+  </view>
+  <!-- 退款成功 -->
+  <view class="w100 h256 order-status" wx:if="{{_orDetail.state==-4}}">
+    <image mode="aspectFit" class='w100 h256' src="/image/out.png"></image>
+  </view>
+</template>
+<!-- status address name -->
+<template name="sneTemp">
+  <view class='w100 bgff flex-r-c p20-h m20-t' wx:if="{{_orDetail.state!=8&&_orDetail.user.name!=''}}">
+    <view class='dzicon icon-address m20-w f40'></view>
+    <view class='m30-r w100'>
+      <view class='flex-r-c-sb w100'>
+        <text>收货人：{{_orDetail.user.name}}</text>
+        <text>{{_orDetail.user.phone}}</text>
+      </view>
+      <view class='c66 m20-t'>{{_orDetail.user.address}}</view>
+    </view>
+  </view>
+</template>
+<!-- status store -->
+<template name="stoTemp">
+  <view class='flex-c bgff p20' wx:if="{{_orDetail.state==8||_orDetail.order.multiStoreGetWayStr=='到店自取'}}">
+    <view>自取门店：{{_orDetail.store.StoreName}}</view>
+    <view class='flex-r-c c99 f26 m20-h'>
+      <text class="dzicon icon-address f32 m10-r"></text>
+      <text>{{_orDetail.store.Address}}</text>
+    </view>
+    <view class='flex-r-c c99 f26'>
+      <text class="dzicon icon-shijian f32 m10-r"></text>
+      <text wx:if="{{_orDetail.store.switchModel.OpenAllDay==false}}">{{_orDetail.store.shopDays}},{{_orDetail.store.ShopTime}}</text>
+      <text wx:else="{{_orDetail.store.switchModel.OpenAllDay==true}}">{{_orDetail.store.shopDays}}24小时营业</text>
+    </view>
+  </view>
+</template>
+<!-- status pro info -->
+<template name="spiTemp">
+  <view class='w100 bgff p20 m20-t'>
+    <template is="odrTemp" data="{{_orDetail}}" />
+    <!-- 价格信息 -->
+    <view class='w100 flex-c-e p20-t'>
+      <view class='w60 flex-r-sb'>
+        <text class='c66'>共{{_orDetail.price.QtyCount}}件</text>
+        <view class='flex-r'>
+          <text class='c66'>商品金额：</text>
+          <text>￥{{_orDetail.price.totalOld}}</text>
+        </view>
+      </view>
+      <view class='flex-r' wx:if="{{_orDetail.price.discountPrice!='0.00'}}">
+        <text class='c66'>优惠折扣：</text>
+        <text>￥{{_orDetail.price.discountPrice}}</text>
+      </view>
+      <view class='flex-r' wx:if="{{_orDetail.price.FreightPriceStr!='0.00'}}">
+        <text class='c66'>快递费：</text>
+        <text>￥{{_orDetail.price.FreightPriceStr}}</text>
+      </view>
+      <view class='flex-r'>
+        <text>合计：</text>
+        <text class='cff'>￥{{_orDetail.price.BuyPriceStr}}</text>
+      </view>
+    </view>
+  </view>
+</template>
+<!-- status order info -->
+<template name="soiTemp">
+  <view class='w100 bgff p20 m20-h f26'>
+    <view class='w100 h100nl flex-r-c-sb  bup-e0'>
+      <view>
+        <view class='flex-r-c'>
+          <text class='c66'>订单编号：</text>
+          <text>{{_orDetail.order.orderNum}}</text>
+        </view>
+        <view class='flex-r-c m5-t'>
+          <text class='c66'>下单时间：</text>
+          <text>{{_orDetail.order.createDateStr}}</text>
+        </view>
+      </view>
+      <view class='order-btn f24 c66 p10' bindtap='_copyFunc' data-id='{{_orDetail.order.orderNum}}'>复制订单号</view>
+    </view>
+    <view class='h100nl bup-e0 flex-c-j-c'>
+      <view class='flex-r'>
+        <text class='c66'>支付方式：</text>
+        <text>{{_orDetail.order.buyModeStr}}</text>
+      </view>
+      <view class='flex-r m5-t'>
+        <text class='c66'>支付时间：</text>
+        <text>{{_orDetail.order.payDateStr}}</text>
+      </view>
+    </view>
+    <view class='h100nl flex-c-j-c {{_orDetail.state==3?"bup-e0":""}}'>
+      <view class='flex-r'>
+        <text class='c66'>配送方式：</text>
+        <text>{{_orDetail.order.multiStoreGetWayStr}}</text>
+      </view>
+      <view class='flex-r m5-t'>
+        <text class='c66'>买家留言：</text>
+        <text wx:if="{{_orDetail.order.Message!=null}}">{{order.Message}}</text>
+      </view>
+    </view>
+    <view class='flex-r m10-h' wx:if="{{_orDetail._orDetail.state==3}}">
+      <text class='c66'>成交时间：</text>
+      <text>{{_orDetail.order.AcceptDateStr}}</text>
+    </view>
+  </view>
+  <view class='w100 h100'></view>
+</template>
+<!-- status phone home -->
+<template name="sphTemp">
+  <!-- 联系商家 -->
+  <view class='w100 h100 bgff cff flex-r-c-c store-phoe' bindtap='_sUseFunc' id="0">
+    <view class='dzicon icon-contact3 f40 m10-w'></view>
+    <text>联系商家</text>
+  </view>
+  <!-- 回到首页 -->
+  <view class='dzicon icon-home1 f50 bgff br50 home cff8' bindtap='_sUseFunc' id="1"></view>
+</template>
+<!-- shopCar window  -->
+<template name="winTemp">
+  <view class='shop-popup w100' wx:if="{{showModalStatus}}" animation="{{animationData}}">
+    <view class='shop-dialog p20-t bgff'>
+      <image mode='aspectFill' src='{{msg.img}}'></image>
+      <view class='dzicon icon-3 f50 shop-delete c99' data-statu="close" bindtap='hideFunc'></view>
+      <view class='shop-specinfo flex-c'>
+        <view class='price f32 cff'>
+          <!-- 折扣价 -->
+          <text class='f40'>{{newPrice}}</text>
+          <text class='f22' wx:if="{{msg.unit!=''}}">/{{msg.unit}}</text>
+          <!-- 原价 -->
+          <view class='flex-r-c price fprice m10-l' wx:if="{{msg.discount!=100}}">
+            <text>{{oldPrice}}</text>
+            <text wx:if="{{msg.unit!=''}}">/{{msg.unit}}</text>
+          </view>
+          <!-- <text class='price fprice m10-l' wx:if="{{msg.discount!=100}}">{{oldPrice}}/{{msg.unit}}</text> -->
+        </view>
+        <view class='m10-h h30'>
+          <text class='f26 c99' wx:if="{{specInfo!=undefined&&specInfo!=''}}">已选:{{specInfo}}</text>
+        </view>
+      </view>
+      <scroll-view class='scroll' scroll-y>
+        <view class='m30-w m50-t c12'>
+          <view class='flex-c'>
+            <block wx:for="{{msg.pickspecification}}" wx:for-item="this" wx:for-index="parentIndex">
+              <view>{{this.name}}</view>
+              <view class="select-item w100 flex-r-wrap m20-h f24">
+                <block wx:for="{{this.items}}" wx:for-index="childIndex">
+                  <text class='{{item.sel?"select":"select-none"}}' data-p="{{parentIndex}}" data-c="{{childIndex}}" bindtap='chooseFunc'>{{item.name}}</text>
+                </block>
+              </view>
+            </block>
+          </view>
+          <view class='flex-r-sb m30-t'>
+            <text>购买数量</text>
+            <view class='num-control flex-r-c c99'>
+              <image mode='aspectFill' src='https://j.vzan.cc/miniapp/img/multistore/less.png' bindtap='lessFunc'></image>
+              <input value='{{totalCount}}' disabled></input>
+              <image mode='aspectFill' src='https://j.vzan.cc/miniapp/img/multistore/add.png' bindtap='addFunc'></image>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class='w100 h100 tcenter bgffc cfff f32 m30-t' bindtap="shopCarFunc" wx:if="{{showWho==false}}">确定</view>
+      <block wx:if="{{showWho==true}}">
+        <!-- 同城配送起步价 -->
+        <block wx:if="{{cityStatus==true}}">
+          <view class='w100 h100nl tcenter bgd9 cfff m30-t flex-c-c-j' wx:if="{{newPrice<takeStartPrice}}">
+            <text class='f32'>立即购买</text>
+            <text class='f22'>起步价￥{{takeStartPrice}}</text>
+          </view>
+          <form report-submit='true' bindsubmit='shopCarFunc' wx:if="{{newPrice>=takeStartPrice}}">
+            <button class='form-btn button w100 tcenter bgffc cfff f32 m30-t' form-type='submit'>立即购买</button>
+          </form>
+        </block>
+        <!-- 快递配送 -->
+        <form report-submit='true' bindsubmit='shopCarFunc' wx:if="{{expressStatus==true}}">
+          <button class='form-btn button w100 tcenter bgffc cfff f32 m30-t' form-type='submit'>立即购买</button>
+        </form>
+        <!-- 自取 -->
+        <form report-submit='true' bindsubmit='shopCarFunc' wx:if="{{selfStatus==true}}">
+          <button class='form-btn button w100 tcenter bgffc cfff f32 m30-t' form-type='submit'>立即购买</button>
+        </form>
+      </block>
+    </view>
+  </view>
+  <view class='shop-bg w100 bg00 op4' wx:if="{{showModalStatus}}" data-statu="close" catchtap="hideFunc"></view>
+</template>
+<!-- proList Info -->
+<template name="pioTemp">
+  <scroll-view scroll-y>
+    <block wx:for="{{menuList}}">
+      <view class='pro-item flex-r p20-h'>
+        <image mode='aspectFill' src='{{item.goodsMsg.img}}'></image>
+        <view class='pro-content flex-c'>
+          <text class='basis-text2'>{{item.GoodName}}</text>
+          <text class='f26 c66 {{item.GoodsState==3?"m20-h":""}}'>{{item.SpecInfo}}</text>
+          <view class='f22 c66 bgf2 tcenter m20-h sold-no' wx:if="{{item.GoodsState==3}}">该商品已售罄</view>
+          <view class='pro-down flex-r'>
+            <view>
+              <text class='cff9'>￥{{item.priceStr}}</text>
+              <text class='fprice m10-l' wx:if="{{item.discount!=100}}">￥{{item.originalPriceStr}}</text>
+            </view>
+            <text>x{{item.Count}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+</template>
+<!-- proList Info -->
+<template name="odrTemp">
+  <scroll-view scroll-y>
+    <block wx:for="{{_orDetail.menuList}}">
+      <view class='pro-item flex-r p20-h'>
+        <image mode='aspectFill' src='{{item.goodsMsg.img}}'></image>
+        <view class='pro-content flex-c'>
+          <text class='basis-text2'>{{item.GoodName}}</text>
+          <text class='f26 c66 {{item.GoodsState==3?"m20-h":""}}'>{{item.SpecInfo}}</text>
+          <view class='f22 c66 bgf2 tcenter m20-h sold-no' wx:if="{{item.GoodsState==3}}">该商品已售罄</view>
+          <view class='pro-down flex-r'>
+            <view>
+              <text class='cff9'>￥{{item.priceStr}}</text>
+              <text class='fprice m10-l' wx:if="{{_orDetail.discount!=100}}">￥{{item.originalPriceStr}}</text>
+            </view>
+            <text>x{{item.Count}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+</template>
+<!-- showToast -->
+<template name="toaTemp">
+  <view class='toast w100 flex-c-c-j' wx:if="{{showToast}}">
+    <view class='toast-show flex-c-c-j cfff'>
+      <view class='dzicon icon-shibai m20-b f60'></view>
+      <text class='f26 p20-w tcenter'>{{toast}}</text>
+    </view>
+  </view>
+</template>
+<!-- backTo Top -->
+<template name="btpTemp">
+  <view class='dzicon icon-zhiding f70 back-top' wx:if="{{goodListViewModal.pageindex>2}}" bindtap="backFunc"></view>
+</template>
+
+
+<!-- 立减金 -->
+<template name="couTemp">
+  <view class='bg_show' wx:if="{{_couShow}}"></view>
+  <view class='p-f' wx:if="{{_couShow}}">
+    <view class='p-r w570'>
+      <view class="dzicon icon-3 f90 cfff p-ab-r" bindtap='_coupFunc' id="0"></view>
+      <image src='http://j.vzan.cc/miniapp/img/lijianjin/smoneybg1.png' class='w570' mode='widthFix'></image>
+      <text class='f70 p-ab-b' bindtap='_coupFunc' id="1">開</text>
+    </view>
+  </view>
+</template>
+<!-- 优惠券 -->
+<template name="couponList">
+  <view class='coupon-list'>
+    <view class='coupon-item {{vm.listname=="pickmycoupon"|| vm.listname=="mycoupon"?(item.CanUse?"":"disable"):(vm.listname=="storecoupon"?(item.CanGet?"":"disable"):"")}}' wx:for="{{vm.list}}">
+
+      <view class=' d-flex d-flex-center'>
+        <view class='coupon-left d-flex d-flex-center jusc'>
+          <view class='d-flex cfff' wx:if="{{item.CouponWay==0}}">
+            <view class='f30 ptop24'>￥</view>
+            <view class='f70'>{{item.Money_fmt}}</view>
+          </view>
+          <view wx:else class='d-flex cfff'>
+            <view class='f70'>{{item.Money_fmt}}</view>
+            <view class='f24' style='align-self:flex-end;'>折</view>
+          </view>
+        </view>
+        <view class='coupon-right d-flex d-flex-center'>
+          <view class='d-flex d-flex-center flex1'>
+            <view class='flex1'>
+              <view class='c333 t30 coupon-name line2 fb'>{{item.CouponName}}</view>
+              <view class='f26 c666 mtop10'>
+                <block wx:if="{{item.LimitMoney>0}}">满{{item.LimitMoney/100}}元可用</block>
+                <block wx:if="{{item.LimitMoney==0}}">不限金额</block>
+              </view>
+              <view class='f22 c666 ' wx:if="{{vm.listname=='pickmycoupon'||vm.listname=='mycoupon'}}">
+                {{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}
+              </view>
+              <view wx:else class='f22 c666 '>
+                <block wx:if="{{item.ValType==1}}">领券次日开始{{item.ValDay}}天内有效</block>
+                <block wx:elif="{{item.ValType==2}}">领券当日开始{{item.ValDay}}天内有效</block>
+                <block wx:elif="{{item.ValType==0}}">
+                  {{item.StartUseTimeStr}} - {{item.EndUseTimeStr}}
+                </block>
+              </view>
+            </view>
+            <view>
+              <!--领券中心-->
+              <block wx:if="{{vm.listname=='storecoupon'}}">
+                <view class='btn-getcoupon marri24' bindtap='getCoupon' data-id='{{item.Id}}' wx:if="{{item.CanGet}}">领取</view>
+                <view class='btn-getcoupon marri24 disable' wx:else>已领取</view>
+              </block>
+              <!--我的优惠券-->
+              <block wx:elif="{{vm.listname=='mycoupon'}}">
+
+                <block wx:if="{{item.CanUse}}">
+                  <view class='btn-getcoupon marri24' bindtap='useCoupon' data-id='{{item.Id}}' wx:if="{{item.State==0}}">去使用</view>
+                </block>
+                <block wx:else>
+                  <view class='btn-getcoupon disable marri24'>
+                    <block>{{item.State==1?"已使用":"不可用"}}</block>
+                  </view>
+                </block>
+
+              </block>
+              <!--选择优惠券-->
+              <block wx:elif="{{vm.listname=='pickmycoupon'}}">
+                <block wx:if="{{item.CanUse}}">
+                  <view class='btn-getcoupon marri24' bindtap='useMyCoupon' data-index='{{index}}' data-id='{{item.Id}}' wx:if="{{item.State==0}}">使用</view>
+                </block>
+                <block wx:else>
+                  <view class='btn-getcoupon disable marri24'>不可用</view>
+                </block>
+              </block>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class='tc f28 loading' wx:if="{{vm.ispost}}">加载中...</view>
+    <view class='tc f28 loading' wx:if="{{vm.loadall&&vm.list.length>=0}}">已加载全部优惠券</view>
+    <view class='tc' wx:if="{{vm.loadall&&vm.list.length==0&&vm.listname!='storecoupon'}}">
+      <!-- <navigator open-type='navigate' hover-class='none' class='link' url='storecouponlist'>没有券，去领取</navigator> -->
+    </view>
+  </view>
+</template>
+<import src="../../utils/wxParse/wxParse.wxml" />

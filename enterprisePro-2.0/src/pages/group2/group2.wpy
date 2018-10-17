@@ -1,0 +1,588 @@
+<style lang="less">
+    .c-group {
+        width: 100%;
+        .c-group-main {
+            width: 100%;
+            .c-group-top {
+                width: 100%;
+                padding: 20rpx 30rpx;
+            }
+            .c-group-title {
+                width: 100%;
+                padding: 30rpx;
+                background-color: #fff;
+            }
+            .c-group-now {
+                width: 100%;
+                margin-top: 25rpx;
+                background-color: #fff;
+                padding-left: 30rpx;
+                .c-group-now-item {
+                    width: 100%;
+                    padding: 30rpx 30rpx 30rpx 0;
+                    border-bottom: 1px solid #eee;
+                    .c-group-now-logo {
+                        width: 82rpx;
+                        height: 82rpx;
+                        border-radius: 50%;
+                        margin-right: 20rpx;
+                    }
+                    .c-group-now-btn {
+                        width: 120rpx;
+                        height: 46rpx;
+                        line-height: 46rpx;
+                        border-radius: 23rpx;
+                        font-size: 26rpx;
+                        margin-left: 30rpx;
+                        text-align: center;
+                    }
+                }
+                .c-group-now-more {
+                    width: 100%;
+                    padding: 30rpx 0;
+                    font-size: 24rpx;
+                    .c-group-now-up {
+                        transform: rotate(180deg);
+                        -webkit-transform: rotate(180deg);
+                        transition: all .2s linear;
+                        -webkit-transition: -webkit-transform .2s linear;
+                    }
+                    .c-group-now-down {
+                        transform: rotate(0);
+                        -webkit-transform: rotate(0);
+                        transition: all .2s linear;
+                        -webkit-transition: -webkit-transform .2s linear;
+                    }
+                }
+            }
+            .c-group-mode {
+                width: 100%;
+                margin-top: 25rpx;
+                background-color: #fff;
+                padding-left: 30rpx;
+                .c-group-mode-title {
+                    width: 100%;
+                    padding: 30rpx 30rpx 30rpx 0;
+                    border-bottom: 1px solid #f6f6f6;
+                }
+                .c-group-mode-main {
+                    width: 100%;
+                    padding: 50rpx 0 50rpx 0;
+                    .num {
+                        width: 40rpx;
+                        height: 40rpx;
+                        border-radius: 50%;
+                        border: 1px solid #333;
+                        font-size: 24rpx;
+                        font-weight: bold;
+                        flex-shrink: 0;
+                    }
+                }
+            }
+            .c-group-mask {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 2;
+                .bg {
+                    width: 100%;
+                    height: 100vh;
+                    background-color: rgba(0, 0, 0, 0.4);
+                }
+                .main {
+                    color: #666;
+                    width: 480rpx;
+                    background-color: #fff;
+                    position: fixed;
+                    top: 20%;
+                    left: 50%;
+                    margin-left: -240rpx;
+                    z-index: 3;
+                    padding: 30rpx;
+                    .main-title {
+                        font-size: 34rpx;
+                        width: 100%;
+                        margin-bottom: 40rpx;
+                        text-align: center;
+                    }
+                    .main-btn {
+                        width: 100%;
+                        text-align: center;
+                        font-size: 30rpx;
+                        margin-top: 30rpx;
+                    }
+                }
+            }
+            .c-group-btn {
+                width: 100%;
+                height: 100rpx;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                z-index: 1;
+                background-color: #fff;
+                .c-good-btn-icon {
+                    color: #777;
+                    width: 125rpx;
+                    height: 100rpx;
+                    font-size: 24rpx;
+                }
+                .c-group-btn-main {
+                    height: 100rpx;
+                    text-align: center;
+                    font-size: 30rpx;
+                    color: #fff;
+                }
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="c-group {{currentSkin}}">
+        <repeat>
+            <comSlider :currentCom.sync="vm" wx:if="{{vm.slideimgs_fmt}}" />
+            <image src="{{vm.img_fmt}}" wx:if="{{vm.slideimgs_fmt==''&&vm.img_fmt!=''}}" mode="widthFix" class="w-100" />
+        </repeat>
+        <view class="c-group-main">
+            <view class="c-group-top fj f fc skin_bg">
+                <view class="f fv ">
+                    <text class="f40 t-b">￥{{vm.EntGroups.GroupPriceStr||0}}</text>
+                    <text class="mt10 f24">单买价￥{{vm.EntGroups.OriginalPriceStr||0}}</text>
+                </view>
+                <view class="f30 t-b">{{vm.EntGroups.GroupSize||0}}人团</view>
+            </view>
+            <view class="c-group-title f">
+                <view class="f fv f1">
+                    <text class="f30 line line2">{{vm.name||''}}</text>
+                    <text class="f24 c999 mt20">已售{{(vm.salesCount+vm.virtualSalesCount)||0}}</text>
+                </view>
+                <view class="f fv c999" @tap="openCanvas">
+                    <text class="dzicon icon-Forward_fenxiang f47" />
+                    <text class='f24 mt10'>分享</text>
+                </view>
+            </view>
+            <!-- 已开团 -->
+            <view class="c-group-now">
+                <repeat for="{{vm.groupNow}}">
+                    <view class="c-group-now-item f fc" wx:if="{{index<vm.showNum}}">
+                        <view class="f fc f1">
+                            <image class="c-group-now-logo" src="{{item.UserLogo||'http://j.vzan.cc/content/city/images/voucher/10.jpg'}}" />
+                            <text>{{item.UserName||'神秘用户'}} </text>
+                        </view>
+                        <view class="f fv">
+                            <text class='f26'>还差<text class="skin_txt">{{item.GroupSize-item.GroupUserList.length}}</text>人成团</text>
+                            <text class="f22 c999 mt10">剩余{{item.countdown}}</text>
+                        </view>
+                        <form report-submit="true" @submit="navCheck({{item.GoodId}},{{item.Id}})" wx:if="{{item.moreJoin}}">
+                            <button class="c-group-now-btn skin_bg" formType="submit">去参团</button>
+                        </form>
+                        <view class="c-group-now-btn skin_bg" @tap="goShare({{item.Id}})" wx:if="{{item.moreJoin==false}}">详情</view>
+                    </view>
+                </repeat>
+                <view class="c-group-now-more f fc fc-h" @tap="showMoreGroup" wx:if="{{vm.groupNow.length>3}}">
+                    <text>{{vm.showGroupMore?'收起':'更多'}}</text>
+                    <text class="dzicon icon-xiala {{vm.showGroupMore?'c-group-now-up':'c-group-now-down'}}" />
+                </view>
+            </view>
+            <!-- 拼团玩法 -->
+            <view class="c-group-mode">
+                <view class="c-group-mode-title f fj">
+                    <text class="f30 t-b">拼团玩法</text>
+                    <text class="f26 c666" @tap="showRule">详细规则<text class="dzicon icon-xiala-copy-right"/></text>
+                </view>
+                <view class="c-group-mode-main f fc">
+                    <text class="num f fc fc-h">1</text>
+                    <text class="ml10">开团/参团</text>
+                    <text class="dzicon icon-xiala-copy-right c123" style="margin:0 30rpx" />
+                    <text class="num f fc fc-h">2</text>
+                    <text class="ml10">邀请好友</text>
+                    <text class="dzicon icon-xiala-copy-right c123" style="margin:0 30rpx" />
+                    <view class="f fv">
+                        <view class="f">
+                            <text class="num f fc fc-h">3</text>
+                            <text class="ml10">满员发货</text>
+                        </view>
+                        <view class="f22 c999 mt10">不满自动退款</view>
+                    </view>
+                </view>
+            </view>
+            <view class="c-group-mask" wx:if="{{vm.showRule}}">
+                <view class="bg" @tap="showRule" />
+                <view class="main">
+                    <view class="main-title">拼团活动规则</view>
+                    <view class="f fv">
+                        <text>1.拼团有效期是自开团起的{{vm.EntGroups.ValidDateLength}}小时内，如果距离活动结束时间小于{{vm.EntGroups.ValidDateLength}}小时，则已活动时间为准。</text>
+                        <text class="mt10">2.拼团有效期内，支付人数达到规定人数视为拼团成功，商家即进入发货流程。拼团成功后不可退款，如有异议请自行与商家协商。</text>
+                        <text class="mt10">3.拼团有效期内支付人数未能达到规定人数视为拼团失败，拼团失败的订单，系统会在1-7个工作日内发起退款，发起退款后1-10个工作日内订单金额将原路退回。</text>
+                    </view>
+                    <view class="main-btn skin_txt" @tap="showRule">确定</view>
+                </view>
+            </view>
+            <repeat>
+                <comShop :disable="disable" :currentCom.sync="vm" @hideMask.user="hideMask" @changeSpec.user="changeSpec" @add.user="add" @less.user="less" @goShop.user="goShop" @setNum.user="setNum" wx:if="{{showShopCar}}" />
+                <comValue :current.sync="vm.valueLst" :vm.sync="vm.valueLst.list[0]" class="mt20" wx:if="{{vm.valueLst.list.length}}" />
+                <comRich :vm.sync="vm" wx:if="{{vm.IndutypeList.length||vm.content_fmt}}" />
+            </repeat>
+            <view style="height:120rpx" />
+            <view class="c-group-btn f">
+                <navigator class="c-good-btn-icon f fc fc-h fv" url="/pages/index/index" open-type="reLaunch">
+                    <text class='dzicon icon-shouye2 f40' />
+                    <text class="mt5">首页</text>
+                </navigator>
+                <repeat>
+                    <comImBtn :false.sync="false" wx:if="{{vm.imswitch}}" @getUser.user="getUser" :wxServer.sync="vm.wxServer" :vm.sync="vm.userInfo" />
+                </repeat>
+                <view class="f1 f fc" wx:if="{{vm.userInfo.newUser==false}}">
+                    <form report-submit="true" @submit='goBuy(0)' class='f1' wx:if="{{showGroup}}">
+                        <button class='c-group-btn-main btnBuySingle f fv fc-h' formType="submit"><text>单独购买</text><text>￥{{vm.priceStr}}</text></button>
+                    </form>
+                    <form report-submit="true" @submit='goBuy(1)' class='f1' wx:if="{{showGroup}}">
+                        <button class='c-group-btn-main btnBuyGroup f fv fc-h' formType="submit"><text>一键开团</text><text>￥{{vm.GASDetailList.length>0?vm.GASDetailList[0].groupPrice:vm.EntGroups.GroupPriceStr}}</text></button>
+                    </form>
+                    <form report-submit="true" @submit='goBuy(1)' class='f1' wx:if="{{showGroup==false}}">
+                        <button class='c-group-btn-main btnBuyGroup f fv fc-h' formType="submit"><text>去参团</text><text>￥{{vm.GASDetailList.length>0?vm.GASDetailList[0].groupPrice:vm.EntGroups.GroupPriceStr}}</text></button>
+                    </form>
+                </view>
+                <view class="f1 f fc" wx:if="{{vm.userInfo.newUser}}">
+                    <button class='c-group-btn-main btnBuySingle f fv fc-h' open-type="getUserInfo" @getuserinfo="getUser" wx:if="{{showGroup}}"><text>单独购买</text><text>￥{{vm.priceStr}}</text></button>
+                    <button class='c-group-btn-main btnBuyGroup f fv fc-h' open-type="getUserInfo" @getuserinfo="getUser" wx:if="{{showGroup}}"><text>一键开团</text><text>￥{{vm.GASDetailList.length>0?vm.GASDetailList[0].groupPrice:vm.EntGroups.GroupPriceStr}}</text></button>
+                    <button class='c-group-btn-main btnBuyGroup f fv fc-h' open-type="getUserInfo" @getuserinfo="getUser" wx:if="{{showGroup==false}}"><text>去参团</text><text>￥{{vm.GASDetailList.length>0?vm.GASDetailList[0].groupPrice:vm.EntGroups.GroupPriceStr}}</text></button>
+                </view>
+            </view>
+            <comCanvas hidden="{{showCanvas==false}}" @hideCanvas.user="hideCanvas" />
+            <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}" />
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import com_canvas from "@/components/com_canvas";
+    import com_shopCar from "@/components/com_shopCar";
+    import com_imSwitch from "@/components/com_imSwitch";
+    import com_goodrich from "@/components/com_goodrich";
+    import com_goodValue from "@/components/com_goodValue";
+    import com_slider_in from "@/components/com_slider_in";
+    import {
+        core,
+        tools,
+        pro,
+        canvas,
+    } from "@/lib/core.js";
+    //第一步： 引入组件文件
+    export default class group2 extends wepy.page {
+        config = {
+            navigationBarTitleText: "商品详情",
+            // 引入min组件
+            usingComponents: {
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            }
+        };
+        //第二步：声明组件
+        components = {
+            comShop: com_shopCar,
+            comCanvas: com_canvas,
+            comRich: com_goodrich,
+            comImBtn: com_imSwitch,
+            comValue: com_goodValue,
+            comSlider: com_slider_in,
+        };
+        data = {
+            vm: {},
+            toast: {},
+            showGroup: true,
+            showCanvas: false,
+            showShopCar: false, //购物车是否显示
+            currentSkin: {},
+        };
+        methods = {
+            // 分享
+            openCanvas() {
+                tools.showLoading();
+                let parm = {
+                    pid: this.vm.id,
+                    type: '',
+                    recordId: 0,
+                    showprice: 0,
+                    protype: 1,
+                };
+                canvas.getQrcode(parm, this);
+            },
+            hideCanvas() {
+                this.showCanvas = false;
+                this.$apply()
+            },
+            //更多&&收起
+            showMoreGroup() {
+                let vm = this.vm
+                vm.showGroupMore = !vm.showGroupMore
+                vm.showNum = vm.showGroupMore ? vm.groupNow.length : 3;
+                this.vm = vm
+                this.$apply()
+            },
+            //显示规则
+            showRule() {
+                this.vm.showRule = !this.vm.showRule
+                this.$apply()
+            },
+            //授权
+            async getUser(e) {
+                this.vm.userInfo = await tools.getRnUser(e);
+                this.$apply()
+            },
+            //正在开团查看详情
+            goShare(id) {
+                tools.goNewPage("/pages/group2/group2Share?id=" + id)
+            },
+            //正在开团参团
+            navCheck(id, groupId, e) {
+                core.formId(e.detail.formId);
+                tools.goNewPage("../group2/group2?id=" + id + "&showGroup=1" + "&groupId=" + groupId)
+            },
+            wxParseImgTap(e) {
+                tools.preViewShow(e.currentTarget.dataset.src)
+            },
+            //显示购物车
+            async goBuy(isgroup, e) {
+                core.formId(e.detail.formId)
+                let _g = await pro.resetPro(this.vm, 'buy', 'group', isgroup)
+                this.isgroup = isgroup
+                this.vm = _g
+                this.showShopCar = true
+                this.$apply()
+            },
+            //隐藏
+            hideMask() {
+                this.showShopCar = false;
+                this.$apply()
+            },
+            //选择事件
+            async changeSpec(p, c) {
+                this.vm = await pro.choosePro(this.vm, p, c, "group", this.isgroup)
+                this.$apply()
+            },
+            // +事件
+            async add() {
+                let group = this.vm
+                let _add = await pro.addPro(group, "group", this, this.isgroup)
+                if (_add) {
+                    if (Number(this.isgroup) == 0) {
+                        group.danMaiPrice = parseFloat((_add.price).mul(_add.count)).toFixed(2)
+                    } else {
+                        group.groupPrice = parseFloat((_add.price).mul(_add.count)).toFixed(2)
+                    }
+                    group.totalCount = _add.count
+                    this.vm = group
+                    this.price = _add.price
+                    this.$apply()
+                }
+            },
+            // -事件
+            async less() {
+                if (this.vm.totalCount == 1) {
+                    tools.ShowToast("亲,不要再减啦", this)
+                    return;
+                }
+                let _less = await pro.lessPro(this.vm, this);
+                if (this.price) {
+                    if (Number(this.isgroup) == 0) {
+                        this.vm.danMaiPrice = parseFloat((this.price).mul(_less)).toFixed(2)
+                    } else {
+                        this.vm.groupPrice = parseFloat((this.price).mul(_less)).toFixed(2)
+                    }
+                    this.vm.totalCount = _less;
+                    this.$apply();
+                }
+            },
+            // input输入数量
+            setNum(e) {
+                let _g = this.vm
+                let price = 0
+                let count = Number(e.detail.value)
+                if (_g.pickspecification.length) {
+                    let _goodTemp = _g.GASDetailList.find(f => f.id == _g.specId)
+                    if (_goodTemp) {
+                        price = this.isgroup == 1 ? _goodTemp.groupPrice : _goodTemp.price
+                    } else {
+                        price = 0
+                    }
+                } else {
+                    price = this.isgroup == 1 ? (_g.EntGroups.GroupPrice).div(100) : _g.price
+                }
+                if (count != 0) {
+                    if (Number(this.isgroup) == 0) {
+                        _g.danMaiPrice = parseFloat((price).mul(count)).toFixed(2)
+                    } else {
+                        _g.groupPrice = parseFloat((price).mul(count)).toFixed(2)
+                    }
+                    _g.totalCount = count;
+                    this.price = price;
+                    this.vm = _g
+                    this.$apply();
+                }
+            },
+            goShop(e) {
+                let vm = this.vm
+                core.formId(e.detail.formId)
+                let specTemp = vm.GASDetailList.find(f => f.id == vm.specId)
+                if (vm.pickspecification.length) {
+                    if (vm.specId == '') {
+                        tools.loading("请选择商品规格")
+                        return;
+                    }
+                    if (specTemp == undefined) {
+                        tools.loading("未选择完")
+                        return;
+                    }
+                    if (vm.stockLimit) {
+                        if (vm.totalCount > specTemp.stock) {
+                            tools.loading("库存不足")
+                            return;
+                        } else {
+                            this.addOrder()
+                        }
+                    } else {
+                        this.addOrder()
+                    }
+                } else {
+                    if (vm.stockLimit) {
+                        if (vm.totalCount > vm.stockStr) {
+                            tools.loading("库存不足")
+                            return;
+                        } else {
+                            this.addOrder()
+                        }
+                    } else {
+                        this.addOrder()
+                    }
+                }
+            },
+        }
+        /**
+         * showGroup用于判断该拼团是否来自分享
+         * shareGroupId拼团Id，来自分享则>0,否则都为0
+         */
+        onLoad(options) {
+            let id = 0
+            let scene = _get(options, "scene")
+            let show = _get(options, "showGroup", 0)
+            if (scene) {
+                let array = decodeURIComponent(scene);
+                array = array.split("_");
+                id = _get(array, '0')
+            } else {
+                id = _get(options, "id", 0);
+            }
+            this.id = id
+            this.shareGroupId = _get(options, "groupId", 0)
+            this.showGroup = show == "1" ? false : true
+            this.$apply()
+        }
+        async onShow() {
+            await tools.setPageSkin(this);
+            this.groupInfo(this.id)
+        }
+        async groupInfo(id) {
+            let storeInfo = _get(wepy.$instance.globalData, 'storeConfig', '') || await core.getStoreConfig()
+            let vm = await core.getGoodInfo(id)
+            vm.specId = "" //初始选择分类Id
+            vm.type = 'group';
+            vm.showNum = 3; //正在开团显示数量
+            vm.showGroupMore = false; //显示更多
+            vm.showRule = false; //显示规则
+            vm.totalCount = 1
+            vm.stockStr = vm.stock //初始库存
+            vm.danMaiPrice = vm.priceStr //单买
+            vm.yuanJiaPrice = vm.EntGroups.OriginalPriceStr //原价
+            vm.groupPrice = vm.GASDetailList.length ? vm.GASDetailList[0].groupPrice : vm.EntGroups.GroupPriceStr //拼团价
+            vm.imswitch = storeInfo.storeInfo.funJoinModel.imSwitch
+            vm.wxServer = storeInfo.storeInfo.funJoinModel.wxServer
+            vm.isgroup = 0
+            this.vm = vm
+            this.$apply()
+            this.goodValue(id)
+            this.cutDown(vm)
+        }
+        async goodValue(id) {
+            let info = await core.getShowGoodValue(id)
+            if (info.isok) {
+                this.vm.valueLst = info.dataObj
+                this.$apply()
+            }
+        }
+        // 定时器
+        async cutDown(vm) {
+            let that = this
+            if (Object.keys(vm).length) {
+                let userInfo = await core.getUserInfo()
+                that.timeInter = setInterval(async res => {
+                    that.vm.groupNow = await core.initCountDown(vm.EntGroups)
+                    if (that.vm.groupNow) {
+                        for (let i = 0, len = that.vm.groupNow.length; i < len; i++) {
+                            if (that.vm.groupNow[i].SponsorUserId == userInfo.Id) {
+                                that.vm.groupNow[i].moreJoin = false
+                            } else {
+                                that.vm.groupNow[i].moreJoin = true
+                            }
+                        }
+                    } else {
+                        clearInterval(that.timeInter)
+                    }
+                    that.$apply()
+                }, 1000);
+            }
+        }
+        onHide() {
+            clearInterval(this.timeInter);
+        }
+        onUnload() {
+            clearInterval(this.timeInter);
+        }
+        onShareAppMessage() {
+            let [title, img, id] = [this.vm.name, this.vm.img, this.vm.id]
+            return {
+                title: title,
+                path: '/pages/group2/group2?id=' + id,
+                imageUrl: img
+            }
+        }
+        //前往订单页
+        async addOrder() {
+            let _g = this.vm
+            let para = {
+                pid: _g.id,
+                specId: _g.specId,
+                SpecInfo: _g.specInfo,
+                count: _g.totalCount,
+                record: 1,
+                isgroup: this.isgroup,
+                img: _g.selImg || _g.imgurl
+            }
+            let shopInfo = await core.addShopCar(para, this)
+            if (shopInfo.isok == 1) {
+                let orderGroup = 0
+                if (this.showGroup == false) {
+                    orderGroup = 3
+                } else {
+                    this.isgroup == 0 ? orderGroup = 0 : orderGroup = 1
+                }
+                let _pro = await pro.orderPro(_g, "group", this.isgroup)
+                _pro.vipDiscount = _g.discount //会员折扣
+                _pro.HeadDeductStr = _g.EntGroups.HeadDeductStr //团长减价
+                _pro.goodtype = _g.goodtype //商品类型
+                _pro.groupId = this.shareGroupId
+                _pro.cartid = shopInfo.cartid
+                _pro.message = ""
+                this.$preload('vm_goods', _pro);
+                this.$navigate("../group2/group2Order?isgroup=" + orderGroup)
+                this.showShopCar = false;
+            } else {
+                tools.showModal(shopInfo.msg, false)
+            }
+        }
+    }
+</script>

@@ -1,0 +1,77 @@
+<style lang="less">
+.com-login {
+  line-height: 1;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  top: 0;
+  background: rgba(0, 0, 0, 0.3);
+  .modal {
+    position: absolute;
+    width: 443rpx;
+    height: 227rpx;
+    background: rgba(255, 255, 255, 1);
+    border-radius: 5rpx;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    .top {
+      height: 126rpx;
+    }
+    .bottom {
+      height: 100rpx;
+    }
+    .color {
+      color: #3fd983;
+    }
+  }
+  z-index: 1000;
+}
+</style>
+<template>
+  <view class="com-login" @tap.stop="closeMask" wx:if="{{openLogin}}">
+      <view class="modal">
+          <view class="top f fv fc jc bbeee">
+              <text class="c666 f30">你还没有名片哦</text>
+              <text class="c666 f30 mt10">先注册创建一张吧</text>
+          </view> 
+          <button class="bottom f fv fc jc f30 color" open-type="getUserInfo" @getuserinfo.stop="authUserInfo2Register">
+              <text>注册</text>
+          </button>
+      </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { tools } from "@/lib/core";
+const app = wepy.$instance;
+export default class com_login extends wepy.component {
+  props = {
+    openLogin: {
+      type: Boolean,
+      default: false,
+      twoWay: true
+    }
+  };
+
+  methods = {
+    closeMask() {
+      this.openLogin = false;
+    },
+    authUserInfo2Register(e) {
+      if (!("userInfo" in e.detail)) {
+        wx.showToast({
+          title: "请先授权",
+          icon: "none",
+          duration: 1000
+        });
+        return;
+      }
+      console.log(e.detail.userInfo, "来自微信的用户信息");
+      app.globalData.userInfo = e.detail.userInfo;
+      tools.goNewPage("/pages/join/bindPhone/register");
+    }
+  };
+}
+</script> 

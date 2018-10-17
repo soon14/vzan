@@ -1,0 +1,142 @@
+<style lang="less">
+@import "css/base.wxss";
+@import "css/iconfont.wxss";
+@import "fonts/dzicon.wxss";
+@import "lib/wxParse/wxParse.wxss";
+@import "css/main.less";
+@import "css/sprite.wxss";
+</style>
+
+<script>
+import wepy from "wepy";
+import Promise from "promise-polyfill";
+import "wepy-async-function";
+import { core } from "./lib/core";
+var aldstat = require("./utils/san.js");
+let get = require("lodash.get");
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      "pages/index",
+      "pages/order",
+      "pages/product",
+      "pages/product_edit",
+      "pages/order_list",
+      "pages/user",
+      "pages/store",
+      "pages/me",
+      "pages/me_setting",
+      "pages/hexiao",
+      "pages/hexiao_list",
+      "pages/message",
+      "pages/message_list",
+      "pages/login",
+      "pages/im/contact",
+      "pages/im/chat",
+      "pages/richtxt_edit",
+      "pages/deliver"
+    ],
+    window: {
+      backgroundTextStyle: "light",
+      navigationBarBackgroundColor: "#FE536F",
+      navigationBarTitleText: "#ffffff",
+      navigationBarTextStyle: "white"
+    },
+    tabBar: {
+      color: "#999",
+      selectedColor: "#fe536f",
+      list: [
+        {
+          pagePath: "pages/index",
+          iconPath: "img/home.png",
+          selectedIconPath: "img/home_on.png",
+          text: "首页"
+        },
+        {
+          pagePath: "pages/order",
+          iconPath: "img/order.png",
+          selectedIconPath: "img/order_on.png",
+          text: "订单"
+        },
+        {
+          pagePath: "pages/product",
+          iconPath: "img/product.png",
+          selectedIconPath: "img/product_on.png",
+          text: "商品"
+        },
+        {
+          pagePath: "pages/user",
+          iconPath: "img/user.png",
+          selectedIconPath: "img/user_on.png",
+          text: "用户"
+        },
+
+        {
+          pagePath: "pages/me",
+          iconPath: "img/me.png",
+          selectedIconPath: "img/me_on.png",
+          text: "我的"
+        }
+      ]
+    }
+  };
+
+  globalData = {
+    userInfo: "",
+    vipInfo: "",
+    ws: false, //websocket链接
+    msgQueue: [],
+    unreadmsg: {},
+    unreadmsgcount: 0
+  };
+
+  constructor() {
+    super();
+
+    this.use("promisify");
+  }
+
+  onLaunch() {
+    console.log("app onLaunch");
+    var exconfig = wx.getExtConfigSync();
+    if (exconfig) {
+      this.globalData.appid = exconfig.appid;
+
+    } else {
+      wx.showModal({
+        title: "提示",
+        content: "小程序未绑定公众号，不能使用！",
+        showCancel: false
+      });
+      return;
+    }
+  }
+  async onShow() {
+    let that = this;
+
+    let userInfo = await core.getUserInfo();
+    //let vipInfo = await core.getVipInfo();
+    console.log(userInfo);
+    if (userInfo) {
+      if (!userInfo.TelePhone) {
+        console.log("没有绑定手机，跳转到login");
+        wx.reLaunch({
+          url: "/pages/login"
+        });
+        return;
+      }
+    }
+
+    let currentStore = wx.getStorageSync("currentStore") || "";
+    console.log(currentStore);
+    if (!currentStore) {
+      console.log("没有选择店铺，跳转到store");
+      wx.reLaunch({
+        url: "/pages/store"
+      });
+      return;
+    }
+  }
+}
+</script>

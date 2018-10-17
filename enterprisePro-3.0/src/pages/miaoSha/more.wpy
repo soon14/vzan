@@ -1,0 +1,248 @@
+<style lang="less">
+    page {
+        background: #fff !important;
+    }
+    .header {
+        image {
+            width: 100%;
+        }
+        .cutdown {
+            width: 100%;
+            height: 160rpx;
+            background: rgba(0, 0, 0, 0.4);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            color: #fff;
+        }
+        .cutNum {
+            width: 34rpx;
+            height: 34rpx;
+            line-height: 34rpx;
+            font-size: 24rpx;
+            background: #fff;
+            color: #333;
+            text-align: center;
+            margin: 0 5rpx;
+        }
+    }
+    .k-lst {
+        padding: 0 20rpx;
+        background: #fff;
+        .k-wrap {
+            padding: 30rpx 0;
+            border-bottom: 1px solid #f7f5f5;
+            image {
+                width: 200rpx;
+                height: 200rpx;
+                flex-shrink: 0;
+            }
+            .k-subtn {
+                width: 139rpx;
+                height: 60rpx;
+                font-size: 24rpx;
+                text-align: center;
+            }
+            .k-content {
+                width: 100%;
+                height: 200rpx;
+                margin-left: 20rpx;
+            }
+        }
+        .miaoshaBtn {
+            width: 100%;
+            padding: 40rpx 0;
+            .miaoshaMore {
+                width: 480rpx;
+                height: 60rpx;
+                text-align: center;
+                line-height: 60rpx;
+                color: #999999;
+                font-size: 26rpx;
+                border: 1px solid #bfbfbf;
+            }
+        }
+    }
+    .k-logo {
+        width: 100rpx;
+        height: 100rpx;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        color: #fff;
+        font-size: 26rpx;
+        position: fixed;
+        right: 30rpx;
+        top: 10%;
+    }
+    .rolue-mask {
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        position: fixed;
+        top: 0;
+        left: 0;
+        .wrap-main {
+            width: 600rpx;
+            background: #fff;
+            border-radius: 10rpx;
+            .wrap-title {
+                width: 100%;
+                padding: 34rpx 0;
+                text-align: center;
+                font-weight: bold;
+                color: #333;
+                font-size: 32rpx;
+                border-bottom: 1px solid #eee;
+            }
+            .wrap-lst {
+                padding: 0 20rpx;
+                line-height: 1.5;
+                max-height: 600rpx;
+                min-height: 300rpx;
+            }
+        }
+        .mask-icon {
+            position: absolute;
+            top: 25%;
+            font-size: 70rpx;
+            color: #fff;
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='{{currentSkin}}'>
+        <view class='header rel'>
+            <image mode='widthFix' src='{{vm.Banner}}' />
+            <view class='cutdown f fv fc fc-h'>
+                <view class='f fc' wx:if="{{vm.State!=3}}">
+                    <text class='dzicon icon-icon_huiyuan-_shijian f36' />
+                    <text>正在开抢</text>
+                </view>
+                <view class='f fc f24' style='margin-top:27rpx;'>
+                    <text wx:if="{{vm.State==1}}">距开始</text>
+                    <text wx:if="{{vm.State==2}}">距离结束</text>
+                    <text wx:if="{{vm.State==3}}">已结束</text>
+                    <text class='cutNum'>{{vm.countDownArray[0]||'00'}}</text>
+                    <text>天</text>
+                    <text class='cutNum'>{{vm.countDownArray[1]||'00'}}</text>
+                    <text>时</text>
+                    <text class='cutNum'>{{vm.countDownArray[2]||'00'}}</text>
+                    <text>分</text>
+                    <text class='cutNum'>{{vm.countDownArray[3]||'00'}}</text>
+                    <text>秒</text>
+                </view>
+            </view>
+        </view>
+        <view class='k-lst'>
+            <repeat for="{{vm.Item}}">
+                <view class='k-wrap f'>
+                    <image mode='aspectFill' src='{{item.Img}}' />
+                    <view class='k-content f fv fj'>
+                        <text class='line line1'>{{item.Title}}</text>
+                        <view class='f fc fj'>
+                            <progress percent="{{item.saleRate}}" stroke-width='10' activeColor='#ffbaba' style='width:310rpx;border-radius:100px;overflow:hidden' />
+                            <text class='f22 skin_txt'>剩余:{{item.saleRate}}%</text>
+                        </view>
+                        <view class='w-100 f fc'>
+                            <view class='f fc f1'>
+                                <text class='skin_txt'>￥{{item.DealPrice}}</text>
+                                <wxc-price status="del" del-color="#CECECE" class='f20 ml10'>{{item.OrigPrice}}</wxc-price>
+                            </view>
+                            <view class='k-subtn f24 f fc-h fc' style='background-color:#d9d9d9;color:#666' wx:if="{{vm.countDownArray[0]>7&&vm.countDownArray[4]}}">未开始</view>
+                            <view class='k-subtn f fc fc-h skin_bg' wx:if="{{vm.countDownArray[0]<=7&&vm.State==1&&item.IsNotify==false&&vm.countDownArray[4]}}" @tap='goTip({{item.FlashItemId}},{{vm.Id}})'>
+                                <text class='dzicon icon-zhuanyebaniconkuozhan_Reservat1 f36' />
+                                <text class='f24 ml5'>提醒我</text>
+                            </view>
+                            <view class='k-subtn f fc fc-h skin-br' wx:if="{{vm.countDownArray[0]<=7&&vm.State==1&&item.IsNotify&&vm.countDownArray[4]}}">
+                                <text class='dzicon icon-zhuanyebaniconkuozhan_Reservat1 f36' />
+                                <text class='f24 ml5'>已提醒</text>
+                            </view>
+                            <view class='k-subtn skin_bg  f fc fc-h' wx:if="{{(item.StockLimit&&item.saleRate!=0||item.StockLimit==false)&&vm.State==2&&vm.countDownArray[4]==false}}" @tap='goDeal({{item.FlashItemId}})'>
+                                <text>马上抢</text>
+                                <text class='f36 dzicon icon-jiantou' />
+                            </view>
+                            <view class='k-subtn f24 f fc-h fc' style='background-color:#d9d9d9;color:#666' wx:if="{{vm.State==2&&item.StockLimit&&item.saleRate==0&&vm.countDownArray[4]==false}}">已售罄</view>
+                            <view class='k-subtn f24 f fc-h fc' style='background-color:#d9d9d9;color:#666' wx:if="{{vm.State==3}}">已结束</view>
+                        </view>
+                    </view>
+                </view>
+            </repeat>
+        </view>
+        <view class='k-logo f fv fc fc-h' @tap='showClick'>
+            <text>活动</text>
+            <text>规则</text>
+        </view>
+        <wxc-toast is-show="{{toast.show}}" text="{{toast.msg}}"></wxc-toast>
+        <view class='rolue-mask f fc fc-h rel' wx:if='{{showMask}}'>
+            <view class='dzicon icon-zhuanyebaniconkuozhan_Close mask-icon' @tap='showClick' />
+            <view class='wrap-main'>
+                <view class='wrap-title'>活动规则</view>
+                <scroll-view scroll-y class='wrap-lst'>
+                    <view class='f fv'>
+                        <repeat for='{{vm.description}}'>
+                            <text class='mt10'>{{item}}</text>
+                        </repeat>
+                    </view>
+                </scroll-view>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js"
+    import {
+        core,
+        pro,
+        tools
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class more extends wepy.page {
+        config = {
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+                "wxc-toast": "../../packages/@minui/wxc-toast/dist/index"
+            },
+            navigationBarTitleText: "限时秒杀",
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            currentSkin: {},
+            vm: {},
+            toast: {
+                show: false,
+                msg: ""
+            },
+            showMask: false
+        };
+        computed = {};
+        methods = {
+            showClick() {
+                this.showMask = !this.showMask
+                this.$apply()
+            },
+            goDeal(id) {
+                tools.goNewPage("/pages/miaoSha/detail?id=" + id)
+            },
+            goTip(id, miashaId) {
+                core.miaoShaTip(id, this, '2', miashaId)
+            }
+        }
+        async onLoad(options) {
+            let id = _get(options, 'id', '')
+            await tools.setPageSkin(this);
+            core.getMiaoShaMore(id, this)
+        }
+        onUnload() {
+            clearInterval(this.miaoShaCutDown);
+        }
+        onHide() {
+            clearInterval(this.miaoShaCutDown);
+        }
+    }
+</script>

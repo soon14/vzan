@@ -1,0 +1,161 @@
+<style lang="less">
+  .my-comment {
+    .item {
+      width: 100%;
+      margin-bottom: 30rpx;
+      padding-left: 30rpx;
+      padding-right: 30rpx;
+      border-bottom: 1px solid #eee;
+      .ptos {
+        .pto {
+          width: 224rpx;
+          height: 232rpx;
+          background: rgba(217, 216, 217, 1);
+          margin-right: 9rpx;
+          margin-bottom: 9rpx;
+          &:nth-child(3n) {
+            margin-right: 0rpx; 
+          }
+        }
+      }
+    }
+    .mb0imp {
+      margin-bottom: 0 !important;
+    }
+    .height129 {
+      height: 149rpx;
+    }
+    .comment {
+      line-height: 1.2;
+      margin: 5rpx 0;
+    }
+    .null-data {
+      margin-top: 481rpx;
+    }
+  }
+</style>
+<template>
+  <view class="my-comment">
+    <view class="null-data tc pr30" wx:if="{{listInfo.totalCount == 0}}">
+      暂无数据
+    </view>
+    <view class="bg-w">
+      <view class="item mb0imp" wx:for="{{listInfo.list}}" wx:key="{{index}}" @tap="goDetail({{item.MsgId}})">
+        <view class="f fj fc height129">
+          <view class="my-track fc wp70 f">
+            <image class="wh100r mr15 fs" mode="aspectFill" src="{{item.HeaderImg}}"></image>
+            <view class="f fv jc c666 wp85">
+              <text class="f26 ib ellipsis">
+                  <text class="mr10">{{item.NickName}}</text>
+              <text class="mr10">评论了</text>
+              <text class="c333">{{item.ToNickName}}</text>
+              </text>
+              <!-- 评论才有 -->
+              <block wx:if="{{item.Datatype == 0 && item.CommentDetail != ''}}">
+                <view class="f20 ellipsisLine2 comment c333">{{item.CommentDetail}}</view>
+                <view class="f20">
+                  <text>{{item.ShowTimeStr}}</text>
+                  <text class="ml10" @tap.stop="delMsgCommentC({{index}})">删除</text>
+                </view>
+              </block>
+            </view>
+          </view>
+          <block wx:if="{{item.Datatype == 0}}">
+            <!-- 假如有图片的话 -->
+            <image wx:if="{{item.MsgFirstImg}}" src="{{item.MsgFirstImg}}" class="wh100g"></image>
+            <view wx:else class="wh100 c333 f20 p10 ellipsisLine3 lh15">{{item.MsgTxt}}</view>
+          </block>
+        </view>
+      </view>
+      <comLoading :showLoading.sync="loadMore" :showBottom.sync="loadAll" />
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    http,
+    tools,
+    core
+  } from "@/lib/core";
+  import com_wait from '@/components/com_wait';
+  import com_loading from '@/components/com_loading'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "发帖评论"
+    };
+    data = {
+      isWait: false,
+      listInfo: {
+        list: [],
+        totalCount: 0
+      },
+      loadMore: false,
+      loadAll: false,
+      pageIndex: 1
+    }
+    components = {
+      comLoading: com_loading,
+      comWait: com_wait
+    }
+    methods = {
+      goDetail(msgid) {
+        tools.goNewPage('../../classify/classify-details/index?msgid=' + msgid)
+      },
+      async delMsgCommentC(i) {
+        tools.loading();
+        var id = this.listInfo.list[i].Id;
+        var result = await core.delMsgComment(id);
+        tools.handleResult(result,res=>{
+          wx.hideLoading();
+          this.listInfo.list.splice(i, 1);
+          this.$apply();
+        },(err)=>{
+           tools.showModalCancle(err.Msg);
+        })
+      }
+    }
+    async onLoad(query) {
+      var cardId = query.cardId
+      if (!cardId) {
+        tools.goBack()
+        return
+      }
+      //记得补翻参数
+      this.isWait = true
+      await this.getMsgCommentC()
+      this.isWait = false
+      this.$apply()
+    }
+    async getMsgCommentC() {
+      var user = await core.getUserInfo()
+      var result = await core.getMsgComment({
+        actiontype: 0,
+        userId: user.Id,
+        pageIndex: this.pageIndex
+      })
+      tools.handleResult(result, res => {
+        console.log(res)
+        this.listInfo.totalCount = res.totalCount
+        if (res.list.length > 0) {
+          this.listInfo.list = this.listInfo.list.concat(res.list)
+          this.pageIndex > 1 && res.list.length < 10 && (this.loadAll = true)
+        } else {
+          this.pageIndex > 1 && (this.loadAll = true)
+        }
+      }, (err) => {
+        tools.showModalCancle(err.Msg);
+      })
+    }
+    async onReachBottom() {
+      if (this.listInfo.totalCount > 10 && !this.loadAll) {
+        this.loadMore = true
+        this.pageIndex++
+          await this.getMsgCommentC()
+        this.loadMore = false
+        this.$apply()
+      }
+    }
+  }
+</script>

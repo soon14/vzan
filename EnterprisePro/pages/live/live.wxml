@@ -1,0 +1,149 @@
+<!--pages/live/live.wxml-->
+<import src="/template/template.wxml" />
+<!-- 详情页 -->
+<view style='display:{{showModalStatus?"none":"block"}}'>
+  <video class='l-show' src="{{liveUrl}}" poster="{{pageImg}}" controls='true'></video>
+  <scroll-view scroll-x>
+    <view class="w100 flex-r p20-t p20-l">
+      <block wx:for="{{product}}">
+        <view class="h180nl p-re m20-r" bindtap='firstScrollFunc' data-id="{{item.id}}" data-statu="open">
+          <image mode='aspectFill' src='{{item.img_fmt}}' class='w180nl h180nl br10'></image>
+          <view class='p10 cfff bg00 op4 center p-abot pr-price f26'>{{item.discountPricestr}}</view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>
+
+
+
+<!-- 弹窗选择规格 -->
+<view animation="{{animationData}}" wx:if="{{showModalStatus}}" class="p-re {{showModalStatus3?'h-over':'h100vh'}}">
+
+  <view animation="{{animationData2}}" class='l-h80'>
+    <image class='w55nl h55nl p-abr30' src='http://j.vzan.cc/miniapp/img/enterprise/delete_pink.png' catchtap='firstScrollFunc' data-statu="close" />
+    <view class='w100 flex-r p20-w m20-t'>
+      <image mode='aspectFill' src='{{liveData.img_fmt}}' class='w40 h250nl br10'></image>
+      <view class='flex-c-sb cfff m20-l w60'>
+        <text class='f32 br-txt'>{{liveData.name}}</text>
+
+        <view class='flex-r-c-sb'>
+          <view class='cfa6 pr-price f36'>{{discountPrice}}</view>
+
+          <view class="flex-r-c">
+            <!-- 减号 -->
+            <text bindtap="bindMinusFunc" class='w66nl h58-l center f42 bg7d7 br10'>-</text>
+            <!-- 数值 -->
+            <input bindchange="bindManualFunc" value="{{num}}" disabled class='w90nl center cfa6' />
+            <!-- 加号 -->
+            <text bindtap="bindPlusFunc" class='w66nl h58-l center f42 bg7d7 br10'>+</text>
+          </view>
+
+        </view>
+      </view>
+    </view>
+
+    <block wx:if="{{liveData.pickspecification!=''}}">
+      <block wx:for="{{liveData.pickspecification}}" wx:for-item="this" wx:for-index="parentindex">
+        <view class='w100 cb2a m20-h p20-w'>{{this.name}}</view>
+        <scroll-view scroll-x>
+          <view class="w100 flex-r p20-w">
+            <block wx:for="{{this.items}}" wx:for-index="childindex">
+              <view class="m10-r flex-r">
+                <text bindtap='selectFunc' data-parentindex="{{parentindex}}" data-childindex="{{childindex}}" data-name="{{item.name}}" id='{{item.id}}' class='w150nl h83-l br10 center cfff  p10-w br-txt {{item.sel?"bgfa":"bg7d7"}}'>{{item.name}}</text>
+              </view>
+            </block>
+          </view>
+        </scroll-view>
+      </block>
+    </block>
+
+    <view wx:else="{{liveData.pickspecification==''}}" class='flex-c-c-sr c66 h470nl'>
+      <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/no_pro.png' class='w200nl h180nl'></image>
+      <text class='c928'>请把我加入购物车吧</text>
+    </view>
+
+    <view class='flex-r-c p20-w m38-h'>
+      <view class='w275nl h100-l bg7d7 br12 center cfff f32' bindtap="verdictCartFunc" id='0'>加入购物车</view>
+      <view class='w275nl h100-l bg7d7 br12 center cfff m10-l f32' bindtap='verdictCartFunc' id='1'>立即购买</view>
+      <view wx:if="{{status._shopRed==false}}" class='dzicon icon-gouwuche w102nl h100-l br10 m10-l f50 bg7d7 cfff center' bindtap='showShopFunc' data-statu="open"></view>
+      <image wx:else="{{status._shopRed!=true}}" mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/shop_select.png' bindtap='showShopFunc' data-statu="open" class='w102nl h102nl br10 m10-l'> </image>
+    </view>
+  </view>
+
+
+  <scroll-view scroll-x class='p20-h bg7d7'>
+    <view class="w100 flex-r p20-l">
+      <block wx:for="{{product}}">
+        <view class="h180nl p-re m20-r" bindtap='secondScrollFunc' data-id="{{item.id}}">
+          <image mode='aspectFill' src='{{item.img_fmt}}' class='w180nl h180nl br10'></image>
+          <view class='p10 cfff bg00 op4 center p-abot pr-price f26'>{{item.discountPricestr}}</view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 第二层弹窗 -->
+<view class='w100 p-fbot' wx:if="{{showModalStatus3}}">
+  <view class='w100 bg00 op4 h100vh p-ftop' bindtap='showShopFunc' data-statu="close"></view>
+  <view animation="{{animationDataSecond}}">
+
+    <view class='w100 bgff z-4'>
+
+      <view class='p-re h100-l bd-f5'>
+        <view class='f32 center'>我的购物车</view>
+        <text class='dzicon icon-iconset0127 f40 p-ab30' data-statu="close" bindtap='showShopFunc'></text>
+      </view>
+
+      <scroll-view scroll-y class='w100 h470nl bgff p20-b' wx:if="{{shopCartList!=''}}">
+
+        <block wx:for="{{shopCartList}}" wx:for-item="this" wx:for-index="im1">
+          <block wx:for="{{this.GoodsCar}}" wx:for-item="this" wx:for-index="im2">
+
+            <view class='flex-r-c m30-t p20-w'>
+
+              <view class='dzicon {{this.choose?"icon-zhifuchenggong":"icon-kongxinyuan"}} f50 cfa6' data-idf="{{im1}}" data-ids="{{im2}}" bindtap='selectItemFunc'></view>
+
+              <image mode='aspectFill' src='{{this.goodsMsg.img}}' class='w200nl h200nl br10 m20-l'></image>
+
+              <view class='w60 h200nl flex-c-sb m20-l'>
+                <!-- 标题内容 -->
+                <view class='w100 flex-r-sb f26'>
+                  <text class='w80 br-txt2'>{{this.goodsMsg.name}}</text>
+                  <text class='dzicon icon-iconfontlajitong f40 ccc' data-id="{{this.Id}}" catchtap='deleteCartFunc'></text>
+                </view>
+                <!-- 规格 -->
+                <view class='f26 ccc' wx:if="{{this.SpecInfo!='undefined'}}">{{this.SpecInfo}}</view>
+                <!-- 价钱数量选择 -->
+                <view class='flex-r-sb'>
+                  <text>￥{{this.goodsMsg.discountPricestr}}</text>
+                  <view class='flex-r-c'>
+                    <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/less.png' data-idf="{{im1}}" data-ids="{{im2}}" bindtap='bindMinusCart' data-count="{{this.Count}}" class='w55nl h45nl'></image>
+                    <input type="number" disabled value='{{this.Count}}' class='f26 w55nl center'></input>
+                    <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/add.png' bindtap='bindPlusCart' data-count="{{this.Count}}" data-idf="{{im1}}" data-ids="{{im2}}" class='w55nl h45nl'></image>
+                  </view>
+                </view>
+              </view>
+
+            </view>
+          </block>
+        </block>
+      </scroll-view>
+      <view wx:else="{{shopCartList=='' }} " class='flex-c-c-sr h470nl m30-t'>
+        <image mode='aspectFill' src='http://j.vzan.cc/miniapp/img/enterprise/no_pro.png' class='w200nl h180nl'></image>
+        <text>购物车是空的,去选购吧</text>
+      </view>
+      <!-- 支付 -->
+      <view class='w100 h100-l p20-w flex-r-c-sb bt-f3'>
+
+        <view class='dzicon {{selectedAllStatus?"icon-zhifuchenggong":"icon-kongxinyuan"}} f50 cfa6' bindtap='selectAllFunc'></view>
+        <view class='flex-r-c f30 cfa6'>
+          <text>￥{{total}}</text>
+          <view class='w150nl h83-l br12 m20-l cfff bgfa center' bindtap='navOrderFunc'>去支付</view>
+        </view>
+      </view>
+    </view>
+
+  </view>
+</view>

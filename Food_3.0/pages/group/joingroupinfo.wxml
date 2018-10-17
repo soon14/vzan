@@ -1,0 +1,73 @@
+<!--pages/group/joingroupinfo.wxml-->
+
+<view class='bgcfff p20 flex'>
+  <image src='{{postdata.GroupImage}}' class='w220 h220 marri20' mode='aspectFill'></image>
+  <view class='flex-column jusa flex1' wx:if="{{postdata.groupstate==2}}">
+    <text class='vertical-2 t32'>{{postdata.GroupName}}</text>
+    <text class='cf0033 t38 price'>{{postdata.GroupPrice}}</text>
+    <text class='t24 c999'>拼团立省￥{{postdata.OriginalPrice-postdata.GroupPrice}}</text>
+  </view>
+
+  <view class='flex-column jusa flex1' wx:if="{{postdata.groupstate!=2}}">
+    <text class='t40'>仅剩{{postdata.GroupSize-postdata.GroupUserList.length}}个名额</text>
+    <text class='cf0033 t38 price'>{{postdata.GroupPrice}}</text>
+    <text class='t28 c666'>￥{{postdata.OriginalPrice}}</text>
+  </view>
+</view>
+
+
+
+
+
+<view class='p30 bgcfff mtop20 '>
+  <view class='flex-row aic jusc'>
+    <block wx:for="{{userImg}}">
+      <view class='posre flex-rowc'>
+        <image src="{{item!=''?item:'http://j.vzan.cc/miniapp/img/group2/icon_blankuser.png'}}" mode='aspectFill' class="w100h100b marri21 mtop16"></image>
+        <view class='captain-icon' wx:if="{{index==0&&item!=''}}">团长</view>
+      </view>
+    </block>
+  </view>
+  <view class='mtop50'>
+    <button class='cfff t28 bgf0033 btn w925 borra4 h88 l88' open-type='share' wx:if="{{postdata.groupstate==1&&haveJoin}}">邀请好友拼团 {{postdata.endtime}} 后结束</button>
+    <button class='cfff t28 bgf0033 btn w925 borra4 h88 l88' data-groupid="{{postdata.Id}}" data-goodid="{{postdata.GoodId}}" wx:if="{{postdata.groupstate==1&&!haveJoin&&islogin}}" bindtap='go_joingroup'>去参团</button>
+    <button class='cfff t28 bgf0033 btn w925 borra4 h88 l88' open-type="getUserInfo" bindgetuserinfo="getUserInfo" wx:if="{{!islogin}}">去参团</button>
+
+    <button class='cfff t28 bgf0033 btn w925 borra4 h88 l88' wx:if="{{postdata.groupstate==2&&haveJoin}}" bindtap='navtoindex'>拼团人数已够 去首页看看吧</button>
+
+  </view>
+</view>
+
+
+<!-- 查看更多 -->
+<view class='moregroup mtop20' wx:if="{{!isSponsor&&islogin}}">
+  <text class='t28 c999 marri10' bindtap='showmore'>查看更多</text>
+  <image src='/image/a6.png' class='w16' mode='widthFix'></image>
+</view>
+<template is='groupSponsorList' data="{{GroupSponsorList}}" wx:if="{{GroupSponsorList.length!=0&&!isSponsor&&islogin}}" />
+
+
+
+<view class='bgcfff l100 t32 padl30 mtop20'>
+  <view class='flex-rowsb'>
+    <text>商品名称</text>
+    <text class='t28'>{{postdata.GroupName}}</text>
+  </view>
+  <view class='flex-rowsb'>
+    <text>参团时间</text>
+    <text class='t28'>{{postdata.StartDateStr}}</text>
+  </view>
+  <view class='flex-rowsb'>
+    <text>拼团须知</text>
+    <text class='t28' bindtap='showpublic'>参与方式、拼团成功、拼团失败 ></text>
+  </view>
+</view>
+
+
+
+
+
+
+<import src="/template/template.wxml" />
+<template is="group-showmore-modal" data="{{showmoregroup,GroupSponsorList}}" />
+<template is="joingroup-tips" data="{{showmoregroup}}" data="{{showpublic}}" />

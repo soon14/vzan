@@ -1,0 +1,102 @@
+<style lang="less">
+.favorite-shop {
+    border-top: 1px solid #eee;
+  .null-data {
+    margin-top: 481rpx;
+  }
+}
+</style>
+
+<template> 
+    <view> 
+        <view class="favorite-shop">
+             <view class="null-data tc " wx:if="{{count == 0}}">
+                暂无数据
+             </view>
+             <view class="shop-list" wx:else>
+                <comShopItem jumpPath="../../home/shop-detail/index"  :shopList.sync="shopList" />
+             </view>
+             <comLoading :isShowLoading.sync="loadMore" :isShowBottom.sync="loadAll" />
+        </view>
+        <comWait wx:if="{{isWait}}" /> 
+    </view> 
+</template>
+ 
+<script>
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import addr from "@/lib/addr";
+import com_wait from "@/components/com_wait";
+import com_loading from "@/components/com_loading"; 
+import com_shopItem from '@/components/com_shopItem';
+const globalData = wepy.$instance.globalData
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "收藏店铺"
+  };
+  components = {
+    comShopItem: com_shopItem,
+    comWait: com_wait,
+    comLoading: com_loading
+  };
+  data = {
+    pageIndex: 1,
+    cardId: 0,
+    count: 0,
+    shopList: [],
+    loadAll: false,
+    loadMore: false,
+    isWait: false
+  };
+  methods = {};
+
+  async onLoad(query) {
+   this.cardId = query.cardId
+    if (!this.cardId) {
+        tools.goBack()
+        return
+    }
+    this.isWait = true
+    await this.getOtherFavoriteListC();
+    this.isWait = false
+    this.$apply()
+  }
+  
+
+  async getOtherFavoriteListC() {
+    var result = await core.getOtherFavoriteList({
+      actiontype: 0,
+      mycardid: this.cardId,
+      datatype: 4,
+      pageindex: this.pageIndex,
+      type: 1,
+      lat: globalData.location.lat,
+      lng: globalData.location.lng
+    });
+    tools.handleResult(result, res => {
+      console.log(res);
+      this.count = res.count
+      if (res.list.length > 0) {
+          this.shopList = this.shopList.concat(res.list)
+          this.pageIndex > 1 && res.list.length < 8 && (this.loadAll = true)
+        } else {
+          this.pageIndex > 1 && (this.loadAll = true)
+        }
+    }, (err) => {
+        tools.showModalCancle(err.Msg);
+      });
+  }
+
+  async onReachBottom() {
+      if (this.count > 8 && !this.loadAll) {
+        this.loadMore = true
+        this.pageIndex++
+        await this.getOtherFavoriteListC()
+        this.loadMore = false
+        this.$apply()
+      }
+ }
+
+  events = {};
+}
+</script>

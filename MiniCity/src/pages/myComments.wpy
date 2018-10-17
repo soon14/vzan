@@ -1,0 +1,174 @@
+
+<style lang="less">
+  view {
+    box-sizing: border-box;
+  }
+  page {
+    background-color: #f7faf8;
+  }
+  .mycomments-wrap {
+    .no-content {
+      height: 190rpx;
+      position: relative;
+      .bg-line {
+        width: 550rpx;
+        border-bottom: 1rpx solid #ededed;
+      }
+      .text {
+        z-index: 3;
+        background: #f7faf8;
+        display: block;
+        padding: 0 40rpx;
+      }
+    }
+    .mycomments-list {
+      .item {
+        padding: 10rpx 20rpx;
+        margin-bottom: 10rpx;
+        .user-img {
+          &>image {
+            width: 110rpx;
+            height: 110rpx;
+            background-color: #f2f2f2;
+          }
+        }
+        .retext {
+          margin-left: 20rpx;
+          &>image {
+            width: 110rpx;
+            height: 110rpx;
+            background-color: #f2f2f2;
+          }
+          .text {
+            width: 110rpx;
+            height: 110rpx;
+            padding: 10rpx;
+            line-height: 1.5;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+          }
+        }
+      }
+    }
+  }
+</style>
+ 
+<template>
+  <view class="mycomments-wrap">
+    <view class="mycomments-list mt10">
+      <repeat for="{{commentsList}}" key="index">
+        <view class="item bg-w f fc" @tap="gotoDetail({{index}})">
+          <view class="user-img f fc">
+            <image src="{{item.HeaderImg}}" mode="aspectFill"></image>
+          </view>
+          <view class="pl20 f fv fj w-full">
+            <view class="f24"><text class="c666">{{item.NickName}}<text class="c333" space="emsp"> 评论了</text><text space="emsp"> {{item.ToNickName}}</text></text>
+            </view>
+            <view class="f26 line line1" style="margin:10rpx 0;">{{item.CommentDetail}}</view>
+            <view class="f22 c666"><text>{{item.ShowTimeStr}}</text><text space="emsp" @tap.stop="delComments({{index}})"> 删除</text></view>
+          </view>
+          <view class="retext f fc">
+            <image src="{{item.MsgFirstImg}}" mode="aspectFill" wx:if="{{item.MsgFirstImg!=null}}"></image>
+            <view class="text f20" wx:if="{{item.MsgFirstImg==null}}">{{item.MsgTxt}}</view>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <view class="no-content tc f fc fc-h" wx:if="{{showNoContent}}">
+      <view class="bg-line abs"></view>
+      <text class="text c-c6c8cc f24 abs">{{NoContentText}}</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    http
+  } from "@/lib/core";
+  import addr from "@/lib/addr";
+  export default class myComments extends wepy.page {
+    config = {
+      navigationBarTitleText: "我的评论",
+      // enablePullDownRefresh: true,
+    };
+    components = {};
+    data = {
+      commentsParam: {
+        pageIndex: 1,
+        pageSize: 10,
+      },
+      commentsList: [],
+      isReachBottom: true,
+      showNoContent: false,
+      NoContentText: "",
+    };
+    methods = {
+      gotoDetail(i) {
+        var msgId = this.commentsList[i].MsgId;
+        wx.navigateTo({
+          url: "classifyDetails?msgId=" + msgId
+        });
+      },
+      delComments(i) {
+        var commentsId = this.commentsList[i].Id;
+        this.deleteComments(commentsId, i);
+      }
+    };
+    events = {};
+    onLoad(option) {
+      this.getCommentsList()
+    };
+    // onPullDownRefresh() {
+    //   this.commentsParam.pageIndex = 1;
+    //   this.getCommentsList();
+    //   wx.stopPullDownRefresh();
+    // }
+    onReachBottom() {
+      if (this.isReachBottom) {
+        this.commentsParam.pageIndex++;
+        this.getCommentsList();
+      }
+    }
+    async getCommentsList() {
+      core.loading();
+      var data = await core.GetMsgComment(this.commentsParam);
+      if (data.isok) {
+        wx.hideLoading();
+        var pageIndex = this.commentsParam.pageIndex;
+        var dataList = data.dataObj.list;
+        if (pageIndex == 1 && dataList.length > 0) {
+          this.commentsList = dataList;
+        } else if (pageIndex > 1 && dataList.length > 0) {
+          this.commentsList = this.commentsList.concat(dataList);
+        } else if (pageIndex > 1 && dataList.length == 0) {
+          this.isReachBottom = false;
+          this.showNoContent = true;
+          this.NoContentText = "我是有底线的"
+        } else if (pageIndex == 1 && dataList.length == 0) {
+          this.showNoContent = true;
+          this.NoContentText = "暂无内容"
+        }
+        this.$apply();
+      } else {
+        core.showModal(data.Msg);
+      }
+    }
+    async deleteComments(id, index) {
+      core.loading();
+      var data = await core.DeleteMsgComment(id);
+      if (data.isok) {
+        wx.hideLoading();
+        this.commentsList.splice(index, 1);
+        this.$apply();
+      } else {
+        core.showModal(data.Msg);
+      }
+      console.log(data)
+    }
+  }
+</script>

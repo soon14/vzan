@@ -1,0 +1,172 @@
+<style lang="less">
+view {
+  box-sizing: border-box;
+}
+page {
+  background-color: #fff;
+}
+.dots-style(@bg-color,@active-color) {
+  .swipe-btn-wrapper {
+    position: absolute;
+    left: 0;
+    bottom: 20rpx;
+    width: 100%;
+    height: 12rpx;
+    .swipe-btn-list {
+      height: 100%;
+      .dots {
+        width: 10rpx;
+        height: 10rpx;
+        border-radius: 50%;
+        margin-left: 14rpx;
+        display: inline-block;
+        background-color: @bg-color;
+      }
+      .on { 
+        width: 22rpx;
+        height: 10rpx;
+        border-radius: 10rpx;
+        background-color: @active-color;
+      }
+    }
+  }
+}
+.imgNavSwp-box {
+  background-color: rgba(255, 255, 255, 1);
+  .item{
+     padding-bottom:60rpx;
+     box-sizing:border-box;
+     height:auto!important;
+  }
+  .dots-style(rgba(109, 204,79,0.5),rgba(109, 204,79,1));
+  .imgNav {
+    display: inline-block;
+    width:25%;
+    padding-top: 30rpx;
+    image{
+      width:110rpx;
+      height:110rpx;
+      border-radius:50%;
+    }
+  }
+}
+.btn-box {
+  .btn {
+    width: 470rpx;
+    height: 88rpx;
+    line-height: 88rpx;
+    color: #fff;
+    border-radius: 50rpx;
+    background-color: #34c658;
+    box-shadow: 0 0 10rpx #34c658;
+  }
+}
+</style>
+
+<template >
+    <view>
+        <view class="f30 tc pt10">选择您要发布的信息分类</view>
+        <!-- 图片分类导航 -->
+        <view class="imgNavSwp-box rel mt40">
+            <swiper bindchange="imgNavSwpChange"  style="height:900rpx;">
+                <block wx:for="{{imgNavSwp.imgNav}}" wx:for-item="imgNav">
+                    <swiper-item class="f fw item"  >
+                        <block wx:for="{{imgNav}}">
+                            <view class="imgNav f fv fc tc" @tap="gotoEditorial({{index}})">
+                                <image src="{{item.materialPath}}"  mode="aspectFill"/>
+                                <view class="tc w-100 mt16 f24" ><text class="pw20 line line1">{{item.name}}</text></view>
+                            </view>
+                        </block>
+                    </swiper-item>
+                </block>
+            </swiper>
+            <view class="swipe-btn-wrapper">
+                <view class="swipe-btn-list f fc fc-h">
+                    <block wx:for="{{imgNavSwp.dotsClass}}">
+                        <view  class="dots {{imgNavSwp.dotsClass[index]}}" ></view>
+                    </block>
+                </view>
+            </view>
+        </view>
+        <!-- <view class="btn-box f fc-h mt40" @tap="gotoEditorial">
+            <view class="btn tc f30">下一步</view>
+        </view> -->
+    </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { core, http } from "../lib/core";
+import addr from "../lib/addr";
+export default class publishMsgClassify extends wepy.page {
+  config = {
+    navigationBarTitleText: "信息发布"
+  };
+
+  data = {
+    imgNavSwp: {
+      appid:"",
+      pagesIndex: 0,
+      dotsClass: ["on"],
+      imgNav: []
+    }
+  };
+  methods = {
+    imgNavSwpChange: function(event) {
+      console.log(event.detail);
+      var dotsClass = [];
+      for (var i = 0; i < this.imgNavSwp.imgNav.length; i++) {
+        dotsClass.push("");
+      }
+      dotsClass[event.detail.current] = "on";
+      this.imgNavSwp.dotsClass = dotsClass;
+      this.imgNavSwp.pagesIndex = event.detail.current;
+    },
+    gotoEditorial: function(index) {
+      var pagesIndex = this.imgNavSwp.pagesIndex;
+      var classifyName = this.imgNavSwp.imgNav[pagesIndex][index].name;
+      var classifyId = this.imgNavSwp.imgNav[pagesIndex][index].Id;
+      wx.navigateTo({
+        url: "editorial?name=" + classifyName+"&id="+classifyId
+      });
+    },
+
+  };
+
+  events = {};
+  onLoad() {
+    var app=wepy.$instance;
+    this.appid=app.globalData.appid;
+    this.getClassify();
+  }
+  //获取分类
+  getClassify() {
+    core.loading();
+    http
+      .post(addr.ApiCity, {
+        appId: this.appid,
+        groupPageSize: 16
+      })
+      .then(data => {
+        //console.log(data);
+         wx.hideLoading();
+        if (data.isok) {
+          var classifyArrL = data.dataObj.listCity_StoreMsgTypes.length;
+          if (classifyArrL > 0) {
+            this.imgNavSwp.imgNav = data.dataObj.listCity_StoreMsgTypes;
+            core.getSwiperLength(this.imgNavSwp.dotsClass, classifyArrL);
+          }
+          this.$apply();
+        } else {
+          wx.showModal({
+            title: "提示",
+            content: data.msg
+          });
+          if (data.isok == false && data.msg === "登陆秘钥过期") {
+            core.getUserInfo();
+          }
+        }
+      });
+  }
+}
+</script>

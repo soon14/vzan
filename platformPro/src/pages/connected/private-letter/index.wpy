@@ -1,0 +1,263 @@
+<style lang="less">
+  .private-letter {
+    .base {
+      padding-top: 60rpx;
+      &:last-child {
+        padding-bottom: 60rpx;
+      }
+    }
+    .avator {
+      width: 100rpx;
+      height: 100rpx;
+      border-radius: 50%;
+      background-color: rgba(217, 216, 217, 1);
+    }
+
+    .chat {
+      width: 430rpx;
+      min-height: 100rpx;
+      border-radius: 30rpx;
+      padding: 30rpx;
+      line-height: 1.3; 
+      word-break: break-word;
+      white-space: wrap;
+    } 
+
+    .arrow_box {
+      position: relative;
+    }
+
+    .left_arrow:before {
+      right: 100%;
+      top: 50rpx;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .right_arrow:before {
+      left: 100%;
+      top: 50rpx;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .right_arrow:before {
+      border-color: rgba(194, 225, 245, 0);
+      border-left-color: rgba(238, 238, 238, 1);
+      border-width: 14rpx;
+      margin-top: -14rpx;
+    }
+
+    .left_arrow:before {
+      border-color: rgba(194, 225, 245, 0);
+      border-right-color: #fff;
+      border-width: 14rpx;
+      margin-top: -14rpx;
+    }
+    .bg-gray {
+      background: rgba(238, 238, 238, 1);
+    }
+    .bottom-input {
+      width: 100%;
+      height: 100rpx;
+      position: fixed;
+      bottom: 0;
+      input {
+        width: 590rpx;
+        height: 60rpx;
+        line-height: 60rpx;
+        padding: 0 30rpx;
+        background: rgba(238, 238, 238, 1);
+        border-radius: 30rpx;
+      }
+      .btn-send {
+        height: 100rpx;
+        width: 60rpx;
+        line-height: 100rpx;
+      }
+    }
+    .bg {
+      width: 100%;
+      height: 91.5vh;
+    }
+  }
+</style>
+<template>
+  <view class="private-letter">
+    <scroll-view class="bg" scroll-y="true" scroll-into-view="msg{{vm.lastids}}" enable-back-to-top="true" scroll-with-animation="true"
+      bindscrolltoupper="loadMore">
+      <view class="pw30">
+        <comLoading :showLoading.sync="isLoading" hide="Yes" color="#666" text="加载更多聊天记录"/>
+        <repeat wx:for="{{vm.list}}" wx:key="{{index}}">
+          <view class="base f {{item.fuserId == fuserInfo.userid ? 'fe' : 'flex-start'}}" id="msg{{item.ids}}">
+            <image class="avator mr30" mode="aspectFill" wx:if="{{item.fuserId != fuserInfo.userid}}" src="{{tuserInfo.avator}}"></image>
+            <view class="mr30 chat arrow_box  {{item.fuserId == fuserInfo.userid ? 'bg-gray right_arrow' : 'left_arrow bg-w'}}">
+              <text class="ib">{{item.msg}}</text>
+            </view>
+            <image mode="aspectFill" wx:if="{{item.fuserId == fuserInfo.userid}}" class="avator" src="{{fuserInfo.avator}}"></image>
+          </view>
+        </repeat>
+      </view>
+    </scroll-view>
+    <view class="bottom-input bg-w f jc fc">
+      <input value="{{msg}}" cursor-spacing="50" type="text" @input="inputMsg" confirm-type="send" @confirm="sendMsg" placeholder="请输入..." />
+      <view class="btn-send ml30 c666 tc" @tap="sendMsgByBtn">发送</view>
+    </view>
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import {
+    core,
+    tools
+  } from "@/lib/core";
+  import com_wait from '@/components/com_wait'
+  import com_loading from '@/components/com_loading'
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: ""
+    };
+
+
+    components = {
+      comWait: com_wait,
+      comLoading: com_loading
+    }
+
+    data = {
+      isWait: false,
+      vm: {
+        list: [],
+        lastids: ''
+      },
+      fuserInfo: {
+        // Id: '',
+        // ImgUrl: '',
+        // UserId: '',
+        userid: '',
+        avator: '',
+        name: ''
+      },
+      tuserInfo: {
+        userid: '',
+        avator: "",
+        name: ''
+      },
+      msg: "",
+      isLoadAll: false,
+      preid: 0,
+      msgByInput: '',
+      isLoading: false
+    }
+
+    methods = {
+      sendMsg(e) {
+        this.postMsg(e.detail.value)
+      },
+      sendMsgByBtn() {
+        this.postMsg(this.msgByInput)
+      },
+      inputMsg(e) {
+        this.msgByInput = e.detail.value
+      }
+    }
+
+    async postMsg(v) {
+      var aid = await core.getAid()
+      var msg = v
+      var sendObj = {
+        appId: wepy.$instance.globalData.appid,
+        aid: aid,
+        fuserId: this.fuserInfo.userid,
+        tuserId: this.tuserInfo.userid,
+        msgType: 0,
+        msg: msg,
+        tuserType: 0
+      }
+      this.setData({
+        msg: ''
+      })
+      core.sendMessage(sendObj)
+    }
+
+
+    async loadMore() {
+      if (this.isLoading) return
+      if (this.isLoadAll) {
+        wx.showToast({
+          icon: 'none',
+          title: '加载完啦'
+        })
+        return
+      }
+      this.isLoading = true
+      await this.getHistoryC(this.preid)
+      this.isLoading = false
+      this.$apply()
+    }
+
+    async onLoad(query) {
+      this.isWait = true
+      this.injectToUserInfo(query).injectFromUserInfo()
+      tools.setPageTitle(this.tuserInfo.name)
+      await core.addContact(this.tuserInfo.userid)
+      await this.getHistoryC(0)
+      this.isWait = false
+      this.$apply()
+    }
+
+    //方法名最后一个字母有C代表它是控制器（controller）
+    async getHistoryC(lastId) {
+      var model = this
+      var result = await core.getHistory(this.tuserInfo.userid, lastId)
+      if (result.isok) {
+        var data = result.data
+        if (data.length == 0) {
+          return;
+        }
+        if (data.length < 20) {
+          model.isLoadAll = true
+        }
+        model.preid = data[0].Id
+        model.vm.lastids = data[data.length - 1].ids
+        model.vm.list = data.concat(model.vm.list)
+        return model.vm.lastids
+      } else {
+        tools.showModalCancle(result.msg)
+      }
+    }
+
+    async injectFromUserInfo() {
+      var vm = this
+      var result = await core.getMyCard()
+      tools.handleResult(result, (res) => {
+        vm.fuserInfo.userid = res.UserId
+        vm.fuserInfo.avator = res.ImgUrl
+        vm.fuserInfo.name = res.Name
+      }, (err) => {
+        tools.showModalCancle(err.Msg);
+      })
+    }
+
+    injectToUserInfo(data) {
+      if ('userid' in data) {
+        for (var key in this.tuserInfo) {
+          this.tuserInfo[key] = data[key]
+        }
+      }
+      return this;
+    }
+
+
+
+  }
+</script>

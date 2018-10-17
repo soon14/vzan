@@ -1,0 +1,79 @@
+<block wx:if="{{glo_is_load}}">
+  <view class="glo_load_view">
+    <text class="iconfont icon-loading animated infinite rotate mr5"></text>
+    <text>正在努力加载</text>
+  </view>
+</block>
+<block wx:else>
+  <view class="top-select flex tc mb10">
+    <view class="sub {{this_group_val == '-1' ? 'active':''}}" bindtap="select_status_show" data-val='-1'>全部</view>
+    <view class="sub {{this_group_val == '0' ? 'active':''}}" bindtap="select_status_show" data-val='0'>未确认</view>
+    <view class="sub {{this_group_val == '1' ? 'active':''}}" bindtap="select_status_show" data-val='1'>已确认</view>
+    <view class="sub {{this_group_val == '2' ? 'active':''}}" bindtap="select_status_show" data-val='2'>已完成</view>
+  </view>
+  <block wx:if="{{postlist == null}}">
+    <!--暂无内容提示 start-->
+    <view class="no-content tc">
+      <text class="no-content-icon iconfont icon-yemianwuneirong"></text>
+      <view class="no-content-font">暂无订单信息</view>
+    </view>
+    <!--暂无内容提示 end-->
+  </block>
+  <block wx:else>
+    <view class="r-o">
+      <block wx:for="{{postlist}}">
+        <view class="ro-item">
+          <view class="dish-msg gridXb">
+            <view class="r-logo" bindtap="user_orderinfo_bind" id="{{item.id}}">
+              <image src="{{item.dish_logo}}" class="r-logo-img" mode="aspectFill"></image>
+            </view>
+            <view class="sub lineText r-i-name" bindtap="user_orderinfo_bind" id="{{item.id}}" data-dish_id="{{item.dish_id}}">
+              <text class="r-i-n">{{item.dish_name}}<block wx:if="{{item.dish_quyu}}">（{{item.dish_quyu}}）</block></text>
+            </view>
+            <view class="order-status status-red status-orange">{{item.order_status_txt}}</view>
+          </view>
+          <view class="r-info gridXb" bindtap="user_orderinfo_bind" id="{{item.id}}" data-dish_id="{{item.dish_id}}">
+            <view class="goods-item-box">
+              <block wx:for="{{item.glist}}" wx:for-item="gitem">
+                <view class="goods-item">
+                  <image class="goods-item-img" src="{{gitem.goods_img}}" mode="aspectFill"></image>
+                  <view class="goods-item-name">{{gitem.goods_name}}</view>
+                  <view class="goods-item-num">{{gitem.goods_number}}×</view>
+                  <view class="goods-item-num">{{gitem.goods_price}}</view>
+                </view>
+              </block>
+            </view>
+            <view class="goods-total">
+              <text class="grey" style='float:left;'>{{item.add_time}}</text>总价:
+              <text class="goods-total-price">￥{{item.settlement_total_fee}}</text>
+            </view>
+            <!-- <view class="grey" bindtap="user_orderinfo_bind" id="{{item.id}}">
+              <view>下单时间：{{item.add_time}}</view>
+              <view>总价：￥{{item.order_amount}}</view>
+          </view> -->
+          </view>
+          <view class="r-info-b">
+            <!--<button class="order-mini-btn">退款</button>
+        <button class="order-mini-btn">再来一单</button>-->
+            <block wx:if="{{item.order_action_list.cancel}}">
+              <button class="order-mini-btn btn-grey" bindtap="delete_user_order" id="{{item.id}}">取消</button>
+            </block>
+            <block wx:if="{{item.order_action_list.pay}}">
+              <button class="order-mini-btn btn-fill" bindtap="user_orderinfo_bind" id="{{item.id}}" data-dish_id='{{item.dish_id}}' loading="{{submitIsLoading}}" disabled="{{buttonIsDisabled}}">支付</button>
+            </block>
+            <block wx:if="{{item.order_action_list.comment}}">
+              <button class="order-mini-btn btn-fill" bindtap="order_go_comment_bind" id="{{item.id}}" data-dish_id='{{item.dish_id}}'>去评价</button>
+            </block>
+            <block wx:if="{{item.order_action_list.yes_comment}}">
+              <button class="order-mini-btn">已评价</button>
+            </block>
+          </view>
+        </view>
+      </block>
+      <view class="m20 tc grey loading" wx:if="{{showLoading}}">
+        <text class="iconfont icon-loading animated infinite rotate mr5"></text>
+        <text>正在加载...</text>
+      </view>
+    </view>
+  </block>
+</block>

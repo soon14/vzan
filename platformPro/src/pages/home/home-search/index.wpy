@@ -1,0 +1,101 @@
+<style lang="less">
+
+</style>
+<template leng="wxml">
+    <view>
+        <comSearch :firstLevelNum.sync="firstLevelNum" :categoryLevel.sync="level" :firstLevelList.sync="firstList" :secondLevelList.sync="secondList" onClickCategory="clickCategory" onSearch="search" jumpCategory="jumpSingleCategory" jumpType="jumpSingleType"
+        />
+        <comWait :isShow.sync="showWait" />
+    </view>
+</template>
+<script>
+    import wepy from "wepy";
+    import {
+        core,
+        tools,
+        http
+    } from "@/lib/core";
+    import com_search from "@/components/com_search";
+    import com_wait from "@/components/com_wait";
+    export default class HomeSearch extends wepy.page {
+        config = {
+            navigationBarTitleText: "搜索", 
+        };
+        components = {
+            comSearch: com_search,
+            comWait: com_wait,
+        };
+        data = {
+            searchValue: "",
+            level: 1, //判断是开启一级还是二级分类 
+            firstLevelNum: 0,
+            firstList: [],
+            secondList: [],
+            categoryRequestParam: {
+                isFirstType: 2,
+                parentId: "",
+            },
+            showWait: true,
+        };
+        search(value) {
+            // let title = "商户列表"
+            tools.goRedirecto("../shop-list/index?keyMsg=" + value);
+        };
+        clickCategory(i) {
+            this.firstLevelNum = i;
+            this.categoryRequestParam.isFirstType = 3;
+            this.categoryRequestParam.parentId = this.firstList[i].Id;
+            this.GetSecondLevelList();
+        };
+        jumpSingleCategory() {
+            let title = this.firstList[this.firstLevelNum].Name;
+            let categoryId = this.firstList[this.firstLevelNum].Id;
+            tools.goRedirecto("../shop-list/index?shopType=" + categoryId + "&isBigType=" + 1);
+        };
+        jumpSingleType(i) {
+            let title = this.secondList[i].Name;
+            let typeId = this.secondList[i].Id;
+            tools.goRedirecto("../shop-list/index?shopType=" + typeId);
+        };
+        events = {};
+        async onLoad() {
+            this.level = await core.GetStoreCategoryLevel();
+            if (this.level === 1) {
+                this.categoryRequestParam.isFirstType = 2;
+                this.GetSecondLevelList();
+            } else {
+                this.categoryRequestParam.isFirstType = 1;
+                this.GetFirstLevelList()
+            }
+            // this.level === 1 ? (this.categoryRequestParam.isFirstType = 2, this.GetSecondLevelList()) : (this.categoryRequestParam.isFirstType = 1, this.GetFirstLevelList());
+            // this.showWait=false;
+            this.$apply();
+        };
+        //获取大类
+        async GetFirstLevelList() {
+            let data = await core.GetStoreCategory(this.categoryRequestParam);
+            tools.handleResult(data, (res) => {
+                this.firstList = res.list;
+                this.$apply();
+            }, (err) => {
+                tools.showModalCancle(err.Msg);
+            })
+            this.categoryRequestParam.isFirstType = 3;
+            this.categoryRequestParam.parentId = this.firstList[0].Id;
+            this.GetSecondLevelList(this.categoryRequestParam);
+        }
+        //获取小类
+        async GetSecondLevelList() {
+            this.showWait = true;
+            let data = await core.GetStoreCategory(this.categoryRequestParam);
+            tools.handleResult(data, (res) => {
+                this.secondList = res.list;
+                this.showWait = false;
+                this.$apply();
+            }, (err) => {
+                tools.showModalCancle(err.Msg);
+            })
+        }
+        onReady() {}
+    }
+</script>

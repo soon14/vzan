@@ -1,0 +1,252 @@
+<style lang="less">
+  page {
+    background: #d65840;
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .re-bg {
+    background: url('http://i.vzan.cc/image/png/2018/1/16/170401fb3f483d5a444b33bfb110cbed9421de.png') no-repeat;
+    background-size: 100%;
+    width:710rpx;
+    height:1100rpx;
+    .re-btn {
+      border-radius: 44rpx;
+      width: 300rpx;
+      height: 88rpx;
+      border: 2rpx solid #f2be50;
+      line-height: 88rpx;
+      background-color: white;
+      color: #f2be50;
+      position: absolute;
+      bottom: 266.8rpx;
+      left: 50%;
+      transform: translateX(-50%); 
+      text-align: center;
+    }
+    .re-txt {
+      width: 80%;
+      position: absolute;
+      top: 533.6rpx;
+      left: 50%;
+      transform: translateX(-50%);
+       text-align: center;
+    }
+    .time {
+      position: absolute;
+      bottom: 173.42rpx;
+      left: 50%;
+      transform: translateX(-50%);
+       text-align: center;
+    }
+    .re-bottom {
+      color: #999;
+      font-size: 24rpx;
+      position: absolute;
+      bottom: 106.72rpx;
+      left: 50%;
+      transform: translateX(-50%);
+       text-align: center;
+    }
+    .re-home {
+      position: absolute;
+      bottom: 106.72rpx;
+      color: #f4b23e;
+      font-size: 28rpxl;
+      left: 50%;
+      transform: translateX(-50%);
+       text-align: center;
+    }
+    .re-userList {
+      position: absolute;
+      top: 400.2rpx;
+      left: 50%;
+      transform: translateX(-50%);
+       text-align: center;
+    }
+    .re-success {
+      position: absolute;
+      top: 400.2rpx;
+      left: 50%;
+      transform: translateX(-50%);
+       text-align: center;
+      .re-sc1 {
+        font-size: 46rpx;
+        color: #ff6161
+      }
+      .re-sc2 {
+        font-size: 24rpx;
+        color: #999
+      }
+    }
+    .re-user {
+      width: 98rpx;
+      height: 98rpx;
+      border-radius: 50%;
+    }
+    .re-noUser {
+      color: #ccc;
+      border: 1px solid #ccc;
+      width: 98rpx;
+      height: 98rpx;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 98rpx;
+    }
+    .re-price {
+      position: absolute;
+       text-align: center;
+      top: 667rpx;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+</style>
+<template>
+  <view class='re-bg rel'>
+    <!-- 条件未成立时 -->
+    <view wx:if="{{vm.isok&&vm.peoNum!=0}}" class="re-userList f fc">
+      <view class="f fc">
+        <repeat for="{{vm.userList}}">
+          <image class="re-user mr20" mode="aspectFill" src="{{item.HeadImgUrl}}" />
+        </repeat>
+      </view>
+      <view class="f fc">
+        <repeat for="{{vm.peoNum}}">
+          <view class='re-noUser mr20'>?</view>
+        </repeat>
+      </view>
+    </view>
+    <!-- 成立时 -->
+    <view wx:if="{{vm.isok&&vm.peoNum==0}}" class="re-success f fv fc">
+      <text class="re-sc1">满{{vm.coup.LimitMoneyStr}}立减{{vm.coup.MoneyStr}}元立减金</text>
+      <text class="re-sc2 mt10">已发放在您的【优惠券】中</text>
+      <text class="re-sc2 mt10">可在本小程序店铺中抵扣</text>
+    </view>
+    <!-- 满员时 -->
+    <view class="re-userList f40 cred" wx:if="{{vm.show}}">亲,下次点快点吧~</view>
+    <text wx:if="{{vm.isok&&vm.peoNum!=0}}" class="re-txt f30 t-b tc">还差{{vm.peoNum}}人即可成功领取立减金</text>
+    <text wx:if="{{vm.isok==false}}" class="re-txt">{{vm.Msg}}</text>
+    <button class='re-btn f28' open-type='share' wx:if="{{vm.isok&&vm.peoNum!=0}}">邀请好友一起领取</button>
+    <view class='re-btn tc' wx:if="{{vm.isok&&vm.peoNum==0}}" @tap="goHome">立即使用</view>
+    <repeat wx:if="{{vm.isok}}">
+      <text class='time' wx:if="{{vm.coup.ValType==0}}">还剩 {{time.timeInter}} 结束</text>
+      <text class='f24 time' wx:if="{{vm.coup.ValType==1}}">活动期限在领取成功后次日开始{{vm.coup.ValDay}}天内有效</text>
+      <text class='f24 time' wx:if="{{vm.coup.ValType==2}}">活动期限在领取成功后开始{{vm.coup.ValDay}}天内有效</text>
+    </repeat>
+    <repeat wx:if="{{vm.isok==false}}">
+      <view class='time'>该立减金不存在</view>
+    </repeat>
+    <repeat wx:if="{{vm.show}}">
+      <view class='time'>{{vm.txt}}</view>
+    </repeat>
+    <text class="re-bottom" wx:if="{{vm.peoNum!=0}}">快邀请好友来领取</text>
+    <navigator url="/pages/index/index" class="re-home" open-type='reLaunch' wx:if="{{vm.peoNum==0}}">去首页逛逛</navigator>
+    <comBackHome wx:if="{{fromShare}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import com_backHome from "@/components/com_backHome"
+  import {
+    core,
+    tools
+  } from "@/lib/core";
+  import _get from "@/lib/lodash.get.js"
+  // import
+  //第一步： 引入组件文件
+  export default class reduction extends wepy.page {
+    config = {
+      navigationBarTitleText: "社交立减金",
+      navigationBarBackgroundColor: "#d65840",
+      navigationBarTextStyle: "#ffffff",
+    };
+    components = {
+      comBackHome: com_backHome
+    };
+    data = {
+      vm: {},
+      time: {},
+      fromShare: false,
+      share: {}
+    }
+    methods = {
+      goHome() {
+        tools.goLaunch("/pages/home/shop-detail/index")
+      }
+    }
+    onLoad(options) {
+      let orderid = _get(options, "orderid", 0);
+      let couponsid = _get(options, "couponsid", 0);
+      this.fromShare = options.fromShare ? true : false
+      let vm = {
+        orderid: orderid,
+        couponsid: couponsid,
+      }
+      this.share = vm
+      console.log(this.share, '参数')
+      this.$apply()
+    }
+    onShow() {
+      this.reductionInfo(this.share)
+    }
+    async reductionInfo(vm) {
+      let result = await core.getReductionCardV2(vm)
+      console.log(result, '返回结果')
+      let Info = result.dataObj
+      if (result.isok) {
+        if (Info.userInfo == null) {
+          tools.showModalCancle("该活动已满员")
+          this.vm.txt = "啊哦，活动已满员"
+          this.vm.show = true
+          this.$apply()
+          return;
+        }
+        if (Info.coupon.SatisfyNum - Info.userList.length == 0) {
+          tools.showModalCancle("领取成功")
+        }
+        this.vm.peoNum = Info.coupon.SatisfyNum - Info.userList.length
+        this.vm.isok = result.isok
+        this.vm.coup = Info.coupon
+        this.vm.userList = Info.userList
+        this.cutDown(Info.coupon)
+      } else {
+        wx.hideShareMenu()
+        this.vm.isok = result.isok
+        this.vm.Msg = result.Msg
+        tools.showModalCancle(result.Msg)
+      }
+      this.$apply()
+    }
+    //倒计时
+    cutDown(coup) {
+      let that = this
+      if (coup.ValType == 0) {
+        let star = coup.StartUseTimeStr
+        let end = coup.EndUseTimeStr
+        that.reCutDown = setInterval(async res => {
+          that.time = tools.TimeShow(star, end, "reduction")
+          that.$apply()
+        }, 1000);
+      }
+    }
+    onHide() {
+      clearInterval(this.reCutDown);
+    }
+    onUnload() {
+      clearInterval(this.reCutDown);
+    }
+    onShareAppMessage() {
+      return {
+        title: "",
+        path: "/pages/my/my-coupon/reduction?couponsid=" + this.share.couponsid + "&orderid=" + this.share.orderid + "&fromShare=1",
+        imageUrl: "",
+        success: function (res) {
+          tools.wxToast("转发成功")
+        }
+      }
+    }
+  }
+</script>

@@ -1,0 +1,81 @@
+<style lang="less">
+    .goodslst {
+        width: 100%;
+        padding: 0 20rpx;
+        .main {
+            background: #fff;
+            width: 345rpx;
+            margin-bottom: 20rpx;
+            >image {
+                width: 345rpx;
+                height: 345rpx;
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class="goodslst f fw fj {{currentSkin}}">
+        <repeat for="{{vm}}">
+            <view class="main" @tap="goDlt({{item.id}})">
+                <image src="{{item.img}}" />
+                <view class="p20 line line1">{{item.name}}</view>
+                <view class="f fc fj" style="padding:0 20rpx 20rpx 20rpx">
+                    <text class="t-b" style="color:#F20033;">￥{{item.priceStr}}</text>
+                    <text class="f24 c999">已售{{item.virtualSalesCount+item.salesCount}}</text>
+                </view>
+            </view>
+        </repeat>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "../../lib/lodash.get.js";
+    import addr from "../../lib/addr.js";
+    import {
+        core,
+        tools,
+        http
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class goodProItem extends wepy.page {
+        config = {};
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm: []
+        };
+        methods = {
+            goDlt(id) {
+                tools.pathGood(id, 'buy', true)
+            }
+        }
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            let title = _get(options, 'title', '')
+            let ids = _get(options, 'ids', '')
+            tools.setPageTitle(title)
+            this.goodsInfo(ids)
+        }
+        async goodsInfo(ids) {
+            let app = wepy.$instance
+            let vipinfo = _get(app.globalData, 'vipInfo', '')
+            if (vipinfo == '') {
+                vipinfo = await core.getVipInfo()
+            }
+            http.post(addr.GetGoodsByids, {
+                ids,
+                levelid: vipinfo.levelid,
+                goodShowType: ''
+            }).then(goodsInfo => {
+                if (goodsInfo.isok) {
+                    this.vm = goodsInfo.msg;
+                    this.$apply();
+                }
+            })
+        }
+    }
+</script>

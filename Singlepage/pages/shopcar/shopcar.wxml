@@ -1,0 +1,120 @@
+<!--pages/shopcar/shopcar.wxml-->
+<import src="../../public/template.wxml" />
+<import src="../../utils/wxParse/wxParse.wxml" />
+
+<block wx:for="{{obj}}" wx:for-item="this" wx:for-index="pindex">
+  <!-- 轮播图 type==banner-->
+  <swiper indicator-dots="{{indicatorDots}}" autoplay="{{autoplay}}" interval="3000" duration="1000" wx:if="{{this.type=='banner'}}" class="newSwiper" bindtap="previewImageAPI" id="{{pindex}}">
+    <block wx:for="{{this.items}}">
+      <swiper-item>
+        <image src="{{item.imgurl}}" class="newSwiper_image" mode="aspectFill" hidden="{{item.imgurl==''}}" data-index="{{index}}" />
+      </swiper-item>
+    </block>
+  </swiper>
+  <!-- 富文本 type==editor-->
+  <block wx:if="{{this.type=='editor'}}" wx:for="{{this.items}}">
+    <view class="basis-rich">
+      <template is="wxParse" data="{{wxParseData:item.txt.nodes}}" />
+    </view>
+  </block>
+  <!-- 视频 type==video -->
+  <block wx:if="{{this.type=='video'}}" wx:for="{{this.items}}" id="{{pindex}}">
+    <view class='video-item'>
+      <video src="{{item.videoUrl}}" style='width:98%;margin-left:1%' autoplay="{{item.isAutoPlay==1}}" poster='{{item.videoCover}}'></video>
+      <!-- <video src="{{item.videoUrl}}" style='width:98%;margin-left:1%' autoplay='{{item.isAutoPlay==1}}' wx:if="{{item.isAutoPlay==1}}"></video> -->
+      <!-- <image src='{{item.videoCover}}' class='video-img' wx:if="{{item.isAutoPlay==0}}"></image> -->
+      <!-- <image src='/image/a8.png' class='video-icon' wx:if="{{item.isAutoPlay==0}}" id="{{pindex}}" bindtap='setautoPlay' mode='aspectFill'></image> -->
+    </view>
+  </block>
+
+
+  <!-- 地图 type==map -->
+  <view class='typemap' bindtap='markertap' id="{{pindex}}" data-address='{{this.title}}' wx:if="{{this.type=='map'}}">
+    <view class='flex aic h100'>
+      <image src='/image/a5.png' class='w44 h44 fleshr'></image>
+      <text class='vertical-1 l88 t32 map-title'>{{this.title}}</text>
+    </view>
+    <image src='/image/a6.png' class='fleshr' style='width:34rpx;height:34rpx;'></image>
+  </view>
+  <!-- <view wx:if="{{this.type=='map'}}" wx:for="{{this.items}}">
+    <map id="map" longitude="{{item.mapLng}}" latitude="{{item.mapLat}}" scale="{{item.mapZoom}}" style="width: 98%;margin-left:1%; height:400rpx;" id="{{pindex}}" markers="{{this.markers}}"></map>
+  </view> -->
+  <!-- 广告组建 type==ad -->
+  <block wx:if="{{this.type==ad}}" wx:for="{{this.items}}">
+    <ad unit-id='{{item.unitid}}' />
+  </block>
+
+  <!-- 单张图片 type==img -->
+  <block wx:if="{{this.type=='img'}}" wx:for="{{this.items}}">
+    <image mode="widthFix" src="{{item.imgPath}}" bindtap="previewSingleImage" data-img="{{item.imgPath}}" style='width:100%;'></image>
+  </block>
+  <!-- 表单 type==form-->
+  <view style="font-size:32rpx;font-weight: bold;text-align:center;line-height:111rpx;background-color:white;font-family:PingFang-SC-Bold;color:rgba(18,18,18,1);" hidden="{{this.type=='map'}}">{{this.title}}</view>
+  <form bindsubmit="formSubmit" wx:if="{{this.type=='form'}}" report-submit="true">
+    <block wx:for="{{this.items}}">
+      <block wx:for="{{item.items}}">
+        <view class="hidden_content">
+          <!-- 输入框 -->
+          <view class="newitem" wx:if="{{item.type=='formInput'}}">
+            <text style="margin-left:30rpx;">{{item.filedName}}</text>
+            <input placeholder="" placeholder-style="color: rgba(194, 195, 204, 1); font-size: 28rpx;" data-name="{{item.filedName}}" class="hidden_input" bindchange="" id="{{pindex}}" name="{{item.filedName}}" maxlength="20" />
+          </view>
+          <!-- 时间选择 -->
+          <view class="newitem" wx:if="{{item.type=='DateTimePicker'}}">
+            <text style="margin-left:30rpx;">{{item.filedName}}</text>
+            <input bindtap="timesure" wx:if="{{hidden==0}}" class="hidden_input" style="padding:0 30rpx;color: rgba(194, 195, 204, 1);" id="{{index}}" data-id="{{item.sys_index}}" name="{{item.filedName}}" disabled="{{inputDisable}}" />
+            <input bindtap="timesure" value="{{alltime[index]}}" class="hidden_input" placeholder="" wx:if="{{hidden==1}}" name="{{item.filedName}}" id="{{index}}" data-id="{{item.sys_index}}" disabled="{{inputDisable}}" />
+          </view>
+          <!-- 数字输入框   -->
+          <view class="newitem" wx:if="{{item.type=='NumberPicker'}}">
+            <text style="margin-left:30rpx;">{{item.filedName}}</text>
+            <input id="{{pindex}}" type="number" placeholder-style="color: rgba(194, 195, 204, 1); font-size: 28rpx;" class="hidden_input" name="{{item.filedName}}" maxlength="3" />
+          </view>
+        </view>
+      </block>
+      <view class="new_checkbox">
+        <text style="margin-left:30rpx;">{{item.title}}</text>
+        <!-- <radio-group class="radio_group" style="flex-direction:{{item.items[1].filedName.length>7?'column':'unset'}}" bindchange="" name="{{item.title}}">
+          <label wx:if="{{item.type=='CheckBox'}}" wx:for="{{item.items}}" class="radio" value="{{item.index}}">
+            <radio value="{{item.filedName}}" checked/>{{item.filedName}}</label>
+        </radio-group>  -->
+
+        <picker wx:if="{{item.items[pickerArray[index].id].type=='CheckBox'}}" bindchange="bindPickerChange" value="{{pickerArray[index].id}}" range="{{item.items}}" range-key="{{'filedName'}}" data-name="{{item.items[pickerArray[index].id].filedName}}" data-title="{{item.title}}"
+          data-index="{{index}}">
+          <input disabled='true' class="picker" name="{{item.title}}" value="{{item.items[pickerArray[index].id].filedName}}"></input>
+        </picker>
+
+      </view>
+    </block>
+    <button class="new_submit" formType="submit" data-name="{{this.title}}">确认提交</button>
+  </form>
+  <!-- 电话 type == Call -->
+  <view class="type_Call">
+    <block wx:for="{{this.items}}" wx:if="{{this.type=='Call'}}">
+      <view class="new_postionPhone" bindtap="makePhoneCall" hidden="{{phoneNumber==''}}">
+        <image src="../../image/a3.png" style="width:31rpx;height:31rpx;margin:24rpx 21rpx 0 35rpx;flex-shrink:0"></image>
+        <view style="width:5em;">{{item.phoneBtnTitle}}</view>
+      </view>
+    </block>
+  </view>
+  <!-- 背景音乐 type == bmg -->
+  <view class="type_bmg" bindtap='playvoice'>
+    <block wx:for="{{this.items}}" wx:if="{{this.type=='bmg'}}">
+      <view>
+        <image src='/image/a7.png' style='height:40rpx;width:40rpx'></image>
+      </view>
+    </block>
+  </view>
+</block>
+<!-- 选择时间模板 -->
+<template is="timePicker" wx:if="{{!conditiontime}}" data="{{value:value,years:years,months:months,days:days,ours:ours,minues:minues}}"></template>
+<!-- 水印 -->
+<view class="bottomtxt" wx:if="{{AgentConfig.IsOpenAdv==1}}">
+  <image src="{{AgentConfig.LogoImgUrl}}" style="max-width:80rpx;margin-bottom:12rpx" mode='widthFix'></image>
+  <view style='margin-top:10rpx' wx:if="{{AgentConfig.isdefaul==1}}">{{AgentConfig.LogoText}}</view>
+  <view class="" wx:if="{{AgentConfig.isdefaul==0}}">{{AgentConfig.LogoText[0]}}</view>
+  <view class="" wx:if="{{AgentConfig.isdefaul==0}}"> {{AgentConfig.LogoText[2]}}</view>
+  <view wx:if="{{AgentConfig.QrcodeId>0&&AgentConfig.OpenExtension==0}}" style='text-align:center;' bindtap='navo_webview'>
+    <view class='btn-promote'>我也要做小程序</view>
+  </view>
+</view>

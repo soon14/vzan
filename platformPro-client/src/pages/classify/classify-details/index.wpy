@@ -1,0 +1,337 @@
+<style lang="less">
+    .details-wrap {
+        .details {
+            padding: 30rpx;
+            .header {
+                .img-box {
+                    &>image {
+                        width: 100rpx;
+                        height: 100rpx;
+                        border-radius: 50%;
+                        background-color: #eee;
+                    }
+                }
+            }
+            .images {
+                &>image {
+                    width: 690rpx;
+                    height: 498rpx;
+                    background-color: #eee;
+                    margin-bottom: 10rpx;
+                }
+            }
+            .read {
+                margin-top: 60rpx;
+                .count {
+                    color: #FF6F30;
+                }
+            }
+            .btn-warp {
+                margin-top: 70rpx;
+                .btn {
+                    width: 216rpx;
+                    height: 90rpx;
+                    border-radius: 60rpx;
+                    border: 1px solid #D9D8D9;
+                }
+                .active {
+                    color: #FF6F30;
+                    border: 1px solid #ffa076; 
+                }
+            }
+        }
+        .comment {
+            &>.header {
+                padding: 30rpx;
+                //padding-bottom: 0;
+            }
+            &>.content {
+                min-height: 65rpx;
+                .item {
+                    padding: 30rpx 0;
+                    border-bottom: 1px solid #eee;
+                    &>.header {
+                        image {
+                            width: 50rpx;
+                            height: 50rpx;
+                            background-color: #eee;
+                            border-radius: 50%;
+                        }
+                    }
+                    &>.content {
+                        padding: 20rpx 0;
+                    }
+                }
+                .item:first-child{
+                    padding-top: 0;
+                }
+                .dzitem:first-child{
+                    padding-top: 0;
+                }
+                .dzitem {
+                    padding: 30rpx 0;
+                    border-bottom: 1px solid #eee;
+                    image {
+                        width: 70rpx;
+                        height: 70rpx;
+                        background-color: #eee;
+                        border-radius: 50%;
+                        margin-right: 14rpx;
+                    }
+                }
+            }
+            &>.content :last-child {
+                border: none;
+            }
+        }
+        .bottom-input {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100rpx;
+            background-color: #fff;
+            border-top: 1px solid #eee;
+            input {
+                width: 620rpx;
+                height: 60rpx;
+                background-color: #eee;
+                border-radius: 30rpx;
+                padding: 0 30rpx;
+            }
+        }
+    }
+</style>
+<template leng="wxml">
+    <view class="details-wrap">
+        <view class="details bg-w">
+            <view class="header f fc">
+                <view class="img-box">
+                    <image src="{{infoDetail.UserHeaderImg}}" mode="aspectFill"></image>
+                </view>
+                <view class="ml30 w-full">
+                    <view class="f30">{{infoDetail.UserName}}</view>
+                    <view class="f fc mt10" @tap="clickLocation()">
+                        <view class="dzicon icon-dingwei c666 f22"></view>
+                        <view class="line line1 wp85 ml10 f20 c666">{{infoDetail.Location}}</view>
+                    </view>
+                </view>
+            </view>
+            <view class="text mt30 mb20">
+                <text class="c666">#{{infoDetail.MsgTypeName}}#</text>
+                <text>{{infoDetail.MsgDetail}}</text>
+            </view>
+            <view class="images tc f fv fc">
+                <repeat for="{{infoDetail.ImgList}}" item="imgItem" index="imgIndex">
+                    <image src="{{imgItem}}" mode="aspectFill" @tap="openImg({{imgIndex}})"></image>
+                </repeat>
+            </view>
+            <view class="read tc"><text class="c666">阅读数 </text><text class="count">{{infoDetail.ViewCount}}</text></view>
+            <view class="btn-warp f fc fj">
+                <view class="btn {{infoDetail.IsDzed?'active':''}} f fc fc-h c666" @tap="clickLike()">
+                    <view class="dzicon icon-aixin "></view>
+                    <view class=" ml10">{{dzcommentList.length}}人喜欢</view>
+                </view>
+                <view class="btn {{infoDetail.IsFavorited?'active':''}} f fc fc-h c666" @tap="clickCollect()">
+                    <view class="dzicon icon-five-star f36"></view>
+                    <view class=" ml10">收藏</view>
+                </view>
+                <view class="btn contact f fc fc-h c666" @tap="contactHim({{infoDetail.UserId}}, {{infoDetail.UserHeaderImg}}, {{infoDetail.UserName}})">
+                    <view class="dzicon icon-trends1 f30"></view>
+                    <view class=" ml10">联系TA</view>
+                </view>
+            </view>
+        </view>
+        <view class="comment mt20 bg-w">
+            <view class="header c666 f fc tc">
+                <repeat for="{{commentOptions}}" item="option">
+                    <view class="f1 {{commentIndex==index?'c333 t-b':''}}" @tap="selectComment({{index}})">{{option}}</view>
+                </repeat>
+            </view>
+            <view class="content ml30" wx:if="{{commentIndex==0}}">
+                <view class="c666 tc" wx:if="{{commentList==''}}">留下你的评论吧</view>
+                <repeat for="{{commentList}}" item="item" wx:if="{{commentIndex==0}}">
+                    <view class="item">
+                        <view class="header f fc">
+                            <image src="{{item.HeaderImg}}" mode="aspectFill"></image>
+                            <view class="ml20 c666 f22" wx:if="{{item.NickName!=null}}">{{item.NickName}}</view>
+                        </view>
+                        <view class="content">
+                            <text>{{item.CommentDetail}}</text>
+                        </view>
+                        <view class="c666 f20">{{item.ShowTimeStr}}</view>
+                    </view>
+                </repeat>
+            </view>
+            <!-- <comLoading  wx:if="{{commentIndex==0&&commentList.length!=0}}" :showBottom.sync="showBottom"></comLoading> -->
+            <view class="content ml30" wx:if="{{commentIndex==1}}">
+                <view class="c666 tc" wx:if="{{dzcommentList==''}}">感觉不错点个赞吧</view>
+                <repeat for="{{dzcommentList}}" item="item" wx:if="{{commentIndex==1}}">
+                    <view class="dzitem f fc">
+                        <image src="{{item.MyCardModel.ImgUrl}}" mode="aspectFill"></image>
+                        <view class="c666 f22">{{item.MyCardModel.NickName}}</view>
+                    </view>
+                </repeat>
+            </view>
+            <!-- <comLoading wx:if="{{commentIndex==1&&dzcommentList.length!=0}}" :showBottom.sync="showBottom"></comLoading> -->
+        </view>
+        <view class="h100 bg-w"></view>
+        <view class="bottom-input f fc">
+            <input class="ml30" value="{{commentValue}}" placeholder-style="color:#A1A2A3" placeholder="写评论" cursor-spacing="5" @confirm="getInputText" />
+            <button open-type="share" hover-class="none"><view class="dzicon icon-Forward_fenxiang ml30 f44 c666"></view></button>
+        </view>
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+import addr from "@/lib/addr";
+import com_loading from "@/components/com_loading";
+export default class Details extends wepy.page {
+  config = {
+    navigationBarTitleText: "信息详情"
+  };
+  components = {
+    comLoading: com_loading
+  };
+  data = {
+    infoId: "",
+    infoDetail: {},
+    commentOptions: ["评论", "点赞"],
+    commentIndex: 0,
+    commentList: [],
+    commentValue: "",
+    dzcommentList: [],
+    showBottom: true
+  };
+  methods = {
+    clickLocation() {
+      let infoDetail = this.infoDetail;
+      let location = {
+        lat: parseFloat(infoDetail.Lat),
+        lng: parseFloat(infoDetail.Lng),
+        name: infoDetail.Location
+      };
+      tools.openMap(location);
+    },
+    async clickLike() {
+      let dzData = await core.countUpData(this.infoId, 1, 0);
+      if (dzData.isok) {
+        this.infoDetail.IsDzed = dzData.dataObj.curState == 0 ? true : false;
+        //this.infoDetail.IsDzed ? this.infoDetail.DzCount++ : this.infoDetail.DzCount >= 0 ? this.infoDetail.DzCount-- : this.infoDetail.DzCount == 0;
+        await this.GetDzList();
+        this.$apply();
+      } else {
+        tools.showModalCancle(dzData.Msg);
+      }
+    },
+    async clickCollect() {
+      let collectData = await core.countUpData(this.infoId, 0, 0);
+      if (collectData.isok) {
+        this.infoDetail.IsFavorited =
+          collectData.dataObj.curState == 0 ? true : false;
+        this.$apply();
+      } else {
+        tools.showModalCancle(collectData.Msg);
+      }
+    },
+    openImg(i) {
+      let current = this.infoDetail.ImgList[i];
+      let list = this.infoDetail.ImgList;
+      tools.preViewShow(current, list);
+    },
+    selectComment(i) {
+      this.commentIndex = i;
+    },
+    getInputText(e) {
+      this.commentValue = e.detail.value;
+      this.sendComment(this.commentValue);
+      //this.GetComment();
+    },
+    contactHim(userId, avatorUrl, name) {
+      tools.goNewPage(
+        "../../connected/private-letter/index?userid=" +
+          userId +
+          "&avator=" +
+          avatorUrl +
+          "&name=" +
+          name
+      );
+    }
+  };
+  events = {};
+  async onLoad(option) {
+    this.infoId = option.msgid;
+    this.cardId = option.cardid;
+    this.GetMsgDetail();
+    await this.GetComment();
+    await this.GetDzList();
+    await core.countUpData(this.infoId, 3, 0);
+  }
+  //获取帖子详情
+  async GetMsgDetail() {
+    let app = wepy.$instance;
+    let msgid = this.infoId;
+    let mycardid = this.cardId;
+    let user = await core.getStorage("userInfo");
+    http
+      .get(addr.GetMsgDetail, {
+        appId: app.globalData.appid,
+        userid: user.Id,
+        msgId: msgid,
+        mycardid: mycardid //登录名片id
+      })
+      .then(data => {
+        if (data.isok) {
+          this.infoDetail = data.dataObj.msg;
+          this.$apply();
+        } else {
+          tools.showModalCancle(data.Msg);
+        }
+      });
+  }
+  //发送评论
+  async sendComment(value) {
+    let id = this.infoId;
+    let data = await core.AddComment(id, 0, value);
+    tools.handleResult(data, res => {
+      this.commentList = res.comments;
+      this.commentValue = "";
+      this.$apply();
+    });
+  }
+  //获取评论列表
+  async GetComment() {
+    tools.showLoading();
+    let id = this.infoId;
+    let commentData = await core.GetMsgComment(id, 0);
+    tools.handleResult(commentData, res => {
+      this.commentList = res.list;
+      this.$apply();
+      wx.hideLoading();
+    });
+  }
+  //获取点赞列表
+  async GetDzList() {
+    let id = this.infoId;
+    let dzList = await core.GetOtherFavoriteList(id, 1);
+    tools.handleResult(dzList, res => {
+      this.dzcommentList = res.list;
+      this.$apply();
+    });
+  }
+  onShareAppMessage() {
+    let title = this.infoDetail.MsgDetail;
+    let app = wepy.$instance;
+    let that = this;
+    return {
+      title: title,
+      path: "/pages/classify/details?msgid=" + this.infoId,
+      success: function(res) {
+        console.log(res);
+        //core.wxToast("分享成功");
+      }
+    };
+  }
+}
+</script>

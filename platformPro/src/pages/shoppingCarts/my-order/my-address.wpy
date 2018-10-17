@@ -1,0 +1,98 @@
+<style lang="less">
+  .my-address {
+    border-top: 1px solid #eee;
+    .list-item {
+        &:last-child {
+            border-bottom: none;
+        }
+      min-height: 144rpx;
+      border-bottom: 1px solid #eee;
+    }
+    .ca1a2a3 {
+      color: #a1a2a3;
+    }
+    .btn-addAddress {
+        width: 450rpx;
+        height: 80rpx;
+        border-radius: 40rpx;
+        line-height: 80rpx;
+      }
+  }
+</style>
+<template>
+  <view class="my-address {{currentSkin}}">
+    <view class="bg-w pl30">
+      <view class="list-item f fj pr30 fc pt20 pb20" wx:for="{{addressList}}" wx:key="{{index}}">
+        <view class="f fc">
+          <text @tap.stop="modifyAddress('修改', {{item}})" class="dzicon icon-bianji f40 ca1a2a3 mr30"></text>
+          <view class="f fv">
+            <view class="c333 f34 t-b"> 
+              <text class="mr15">{{item.contact}}</text>
+              <text class="mr15">{{item.phone}}</text>
+            </view>
+            <view class="c666 f26 mt15 lh15">
+              <text class="colorFF6F30 f26 mr10" wx:if="{{item.isdefault == 1}}">[默认]</text>{{item.province + item.city + item.district + item.street}}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+     <button class="block-center btn-addAddress bg-deepYellow tc f26 cfff mt30" @tap="modifyAddress('新增')">添加新地址</button>
+    <!-- <comLoading :showLoading.sync="loadMore"  :showBottom.sync="loadAll" /> -->
+    <comWait wx:if="{{isWait}}" />
+  </view>
+</template>
+<script>
+  import wepy from "wepy";
+  import com_wait from "@/components/com_wait";
+  //   import com_loading from "@/components/com_loading";
+  import {
+    http,
+    tools,
+    core
+  } from "@/lib/core";
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: "收货地址"
+    };
+
+    data = {
+      currentSkin: 'skin_green3',
+      addressList: [],
+      isWait: false,
+      loadMore: false,
+      loadAll: false,
+      pageIndex: 1
+    };
+
+    components = {
+      comWait: com_wait
+      //   comLoading: com_loading
+    };
+
+    methods = {
+        modifyAddress(mode, item) {
+        console.log(item, "item");
+        item = JSON.stringify(item);
+        var args = mode == "修改" ? "?mode=修改&item=" + item : "?mode=新增";
+        tools.goNewPage("../../shoppingCarts/updateAddress/index" + args);
+      },
+    }
+
+    async onShow() {
+      this.isWait = true;
+      await this.getUserAddressC();
+      this.isWait = false;
+      this.$apply();
+    }
+
+    async getUserAddressC() {
+      var result = await core.getUserAddress();
+      if (result.isok) {
+        this.addressList = result.data;
+      } else {
+        tools.showModalCle(result.msg);
+      }
+    }
+  }
+</script>

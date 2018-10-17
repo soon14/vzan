@@ -1,0 +1,185 @@
+<style lang="less">
+    .c-list {
+        padding: 20rpx;
+        background: #fff;
+        margin-bottom: 20rpx;
+        .c-img {
+            width: 200rpx;
+            height: 200rpx;
+        }
+    }
+    .content-btn-base {
+        padding: 0;
+        margin: 0;
+        height: 80rpx;
+        width: 80rpx;
+        border-radius: 100%;
+        line-height: 80rpx;
+        text-align: center;
+        position: fixed;
+        right: 10rpx;
+        background-color: #fff;
+        box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.16), 0 0 1px 0 rgba(0, 0, 0, 0.12);
+    }
+    .content-btn-scroll {
+        bottom: 20%;
+    }
+    .content-gray-line {
+        width: 100%;
+        height: 20rpx;
+        background-color: #eee;
+    }
+    .content-rich-wrap {
+        padding: 40rpx 0;
+    }
+</style>
+ 
+<!--第三步：使用组件-->
+<template>
+    <view class="{{currentSkin}}">
+        <button wx:if="{{isShowBtn}}" class="content-btn-base content-btn-scroll" @tap="goTop"><text class="dzicon f40 content-btn-share-inner icon-shangjiantou"/></button>
+        <repeat for="{{content.list}}">
+            <view class='c-list f' @tap="goCon({{item.id}})">
+                <view wx:if="{{item.img.length==''}}" class='c-img s-blankimg'></view>
+                <image wx:else mode='aspectFill' src='{{item.img}}' class='c-img' />
+                <view class='f fv fj f1 ml20'>
+                    <text class='line line2 f32'>{{item.title}}</text>
+                    <text class='line line1 f26 ccc'>{{item.description}}</text>
+                    <text class="f24">{{item.addtime}}</text>
+                </view>
+            </view>
+        </repeat>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "../../lib/lodash.get.js";
+    import addr from "../../lib/addr.js";
+    import {
+        wxParse
+    } from "../../lib/wxParse/wxParse";
+    import {
+        core,
+        tools,
+        http
+    } from "../../lib/core";
+    // import
+    //第一步： 引入组件文件
+    export default class newsLst extends wepy.page {
+        config = {
+            navigationBarTitleText: "更多资讯",
+        };
+        //第二步：声明组件
+        components = {};
+        //mixins = [Enterprise];
+        data = {
+            content: {
+                pageindex: 1,
+                pagesize: 10,
+                list: [],
+                ispost: false,
+                loadall: false,
+                showVm: false
+            },
+            id: 0,
+            isShowBtn: false,
+            currentSkin: {},
+        };
+        computed = {};
+        methods = {
+            goCon(id) {
+                tools.goNewPage("../news/news?id=" + id);
+            },
+            goTop(e) {
+                wx.pageScrollTo({
+                    scrollTop: 0
+                })
+            },
+        };
+        onReachBottom() {
+            this.isShowBtn = true
+            if (this.type == 1) {
+                this.moreLst(this.typeid)
+            } else {
+                this.conMore(this.typeid);
+            }
+        }
+        onPageScroll() {
+            var vm = this
+            var query = wx.createSelectorQuery()
+            var VP = query.selectViewport()
+            vm.isShowBtn && VP.scrollOffset(function(res) {
+                var scrollTop = res.scrollTop
+                if (scrollTop < 10) {
+                    vm.isShowBtn = false
+                }
+                vm.$apply()
+            }).exec()
+        }
+        async onLoad(options) {
+            await tools.setPageSkin(this);
+            let id = _get(options, "id", 0)
+            let type = Number(_get(options, "type", 1))
+            if (type == 1) {
+                this.moreLst(id)
+            } else {
+                this.conMore(id);
+            }
+            this.type = type
+            this.typeid = id
+            this.$apply()
+        }
+        //查看更多单个
+        async conMore(ids) {
+            let vm = this.content;
+            if (vm.ispost || vm.loadall) return;
+            if (!vm.ispost) vm.ispost = true;
+            http.get(addr.GetNewsInfoByids, {
+                ids,
+                pageindex: vm.pageindex,
+                pagesize: vm.pagesize,
+            }).then(data => {
+                if (data.isok) {
+                    vm.ispost = false;
+                    // 时间戳转换 对数据进行格式化
+                    data.msg.forEach(function(o, i) {
+                        o.addtime = tools.ChangeDateFormat(o.addtime);
+                    });
+                    data.msg.length > 0 ? vm.list = [...vm.list, ...data.msg] : "";
+                    data.msg.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true;
+                    this.content = vm;
+                    this.$apply();
+                }
+            })
+        }
+        //全部
+        async moreLst(typeid) {
+            let vm = this.content;
+            if (vm.ispost || vm.loadall)
+                return;
+            if (!vm.ispost)
+                vm.ispost = true;
+            let aid = wepy.$instance.globalData.aid
+            http.get(addr.GetNewsList, {
+                aid,
+                typeid,
+                liststyle: '',
+                pageIndex: vm.pageindex,
+                pageSize: vm.pagesize,
+            }).then(data => {
+                if (data.isok) {
+                    vm.ispost = false;
+                    // 时间戳转换 对数据进行格式化
+                    data.data.forEach(function(o, i) {
+                        o.addtime = tools.ChangeDateFormat(o.addtime);
+                    });
+                    data.data.length > 0 ? vm.list = vm.list = [...vm.list, ...data.data] : "";
+                    data.data.length >= vm.pagesize ? vm.pageindex += 1 : vm.loadall = true;
+                    this.content = vm;
+                    this.$apply();
+                }
+            })
+        }
+    }
+</script>

@@ -1,0 +1,159 @@
+<style lang="less">
+.com_tab {
+  top: 0;
+  width: 100%;
+  z-index: 2000;
+  .pw20 {
+    padding: 0 20rpx;
+  }
+  .com-tab-list {
+    width: 100%;
+    height: 100rpx;
+    line-height: 100rpx;
+    text-align: center;
+    position: relative;
+    .com-tab-item {
+      flex-grow: 1;
+    }
+    .line {
+      height: 3px;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      transition: all 0.3s ease-in-out;
+      border-radius: 6px;
+      box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.16), 0 0 1px 0 rgba(0, 0, 0, 0.12);
+    }
+  }
+  .inline-block___ {
+    display: inline-block;
+    flex-wrap: nowrap;
+    width: 160rpx;
+    flex-shrink: 0;
+  }
+}
+</style>
+<template>
+  <view class="com_tab f32" style="{{'background-color:' + bgColor + ';'}} {{isFixed ? 'position:fixed;' : 'position:absolute;'}} {{color && 'color:' + color + ';'}}">
+      <view class="pw20">
+        <view class="com-tab-list f fj" wx:if="{{!scroll}}">
+            <view class="com-tab-item {{activeIndex == index ? 'skin_txt' : ''}}" wx:for="{{list}}" wx:key="{{index}}" data-state="{{item.state}}" data-index="{{index}}"  style="{{specialWidth.index && specialWidth.index == index && 'width:' + specialWidth.width + 'rpx;'}}" @tap="move">
+                {{item.title}}
+            </view>
+            <view class="line skin_bg" style="{{'width:' + targetWidth + ';transform:translateX(' + targetLeft + ');'}}"></view>
+        </view>
+      </view>
+      <scroll-view scroll-x class="pw20" wx:if="{{scroll}}" scroll-left="{{scrollLeft}}">
+          <view class="com-tab-list f fj">
+            <view  class="com-tab-item inline-block___  {{activeIndex == index ? 'skin_txt' : ''}}" wx:for="{{list}}" wx:key="{{index}}" data-state="{{item.state}}" data-index="{{index}}"  style="{{specialWidth.index && specialWidth.index == index && 'width:' + specialWidth.width + 'rpx;'}}" @tap="move">
+                {{item.title}}
+            </view>
+            <view class="line  skin_bg" style="{{'width:' + targetWidth + ';transform:translateX(' + targetLeft + ')'}}"></view>
+           </view>
+      </scroll-view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class Tab extends wepy.component {
+  props = {
+    //the callback after click and return a currentTarget's state
+    onClickAfter: {
+      type: String,
+      default: ''
+    },
+    // scroll or not
+    scroll: {
+      type: [Boolean, String],
+      default: false
+    },
+    //to define a active item by index
+    activeIndex: {
+      type: [Number, String],
+      default: 0
+    },
+    //background-color
+    bgColor: {
+      type: String,
+      default: "#fff"
+    },
+    //the porperty of position is fiexd or not, it default is absolute
+    isFixed: {
+      type: [Boolean, String],
+      default: false
+    },
+    //source array
+    list: {
+      type: Array,
+      default: []
+    },
+    //to define a special item's width by index
+    specialWidth: {
+      type: Object,
+      default: {
+          width: '',
+          index: ''
+      }
+    },
+    //the font color
+    color: {
+      type: String,
+      default: ''
+    },
+    scrollLeft: {
+      type: Number,
+      default: 0
+    }
+  };
+
+  data = {
+    nodeRefs: [],
+    targetWidth: 0,
+    targetLeft: 0
+  };
+
+
+  methods = {
+    move(e) {
+      var index = e.currentTarget.dataset.index;
+      var parent = this.$parent || null;
+      var state = e.currentTarget.dataset.state;
+      this.activeIndex = index;
+      this.targetLeft = this.getIterateLeft(index) + "px";
+      this.targetWidth = this.nodeRefs[index].width + "px";
+      this.onClickAfter && typeof parent[this.onClickAfter] 
+      === 'function' 
+      && parent[this.onClickAfter](state)
+    }
+  };
+
+  init() {
+    setTimeout(() => {
+      var vm = this;
+      var query = wx.createSelectorQuery();
+      var refs = query.selectAll(".com-tab-item");
+      refs
+        .boundingClientRect(res => {
+          vm.nodeRefs = res;
+          vm.targetWidth = res[vm.activeIndex].width + "px";
+          vm.targetLeft = vm.getIterateLeft(vm.activeIndex) + "px";
+          vm.$apply();
+        })
+        .exec();
+    }, 300);
+  }
+
+  getIterateLeft(index) {
+    var iteration = 0;
+    for (let i = 0; i < index; i++) {
+      iteration = iteration + this.nodeRefs[i].width;
+    }
+    return iteration;
+  }
+
+  onLoad() {
+    this.init();
+  }
+}
+</script>

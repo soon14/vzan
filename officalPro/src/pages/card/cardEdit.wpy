@@ -1,0 +1,226 @@
+<style lang="less">
+    .edit {
+        width: 100%;
+        .header {
+            width: 100%;
+            height: 100rpx;
+            line-height: 100rpx;
+            text-align: center;
+            background: #FFF5ED;
+            font-size: 26rpx;
+            color: #ff6f30;
+        }
+        .wrap {
+            width: 100%;
+            padding: 30rpx 30rpx 0 30rpx;
+            .upload-img {
+                width: 148rpx;
+                height: 148rpx;
+                background: #d9d8d9;
+                border-radius: 50%;
+                margin-right: 30rpx;
+                .icon-zhaoxiangji {
+                    position: absolute;
+                    bottom: 5rpx;
+                    font-size: 26rpx;
+                    color: #6C6C6C;
+                    left: 40%;
+                }
+            }
+            >image {
+                width: 148rpx;
+                height: 148rpx;
+                border-radius: 50%;
+                margin-right: 30rpx;
+            }
+            .upload-right {
+                font-size: 30rpx;
+                >view {
+                    width: 100%;
+                }
+                >view:first-child {
+                    padding-bottom: 20rpx;
+                    border-bottom: 1px solid #eee;
+                }
+                >view:last-child {
+                    padding-top: 20rpx;
+                }
+            }
+        }
+        .marr-view {
+            width: 100%;
+            height: 24rpx;
+            background-color: #f6f6f6;
+            margin-top: 20rpx;
+        }
+        .footer {
+            width: 100%;
+            .edit-form {
+                width: 100%;
+                padding-left: 30rpx;
+                .edit-item {
+                    width: 100%;
+                    font-size: 30rpx;
+                    padding: 30rpx 0;
+                    border-bottom: 1px solid #eee;
+                    color: #999;
+                    padding-right: 30rpx;
+                    >input {
+                        color: #333;
+                    }
+                    >view {
+                        flex-shrink: 0;
+                        width: 150rpx;
+                    }
+                    .sel-btn {
+                        width: 120rpx;
+                        height: 60rpx;
+                        text-align: center;
+                        line-height: 60rpx;
+                        border: 1px solid #5f97c3;
+                        color: #5f97c3;
+                        font-size: 24rpx;
+                        border-radius: 5rpx;
+                        margin-left: 30rpx;
+                    }
+                }
+            }
+            .edit-btn {
+                width: 100%;
+                height: 90rpx;
+                background: #444;
+                color: #fff;
+                font-size: 30rpx;
+                font-weight: bold;
+                margin-top: 60rpx;
+                line-height: 90rpx;
+                text-align: center;
+            }
+        }
+    }
+</style>
+
+<!--第三步：使用组件-->
+<template>
+    <view class='edit'>
+        <view class='header'>完善个人名片的用户，更容易收获商业人脉</view>
+        <view class='wrap f fc'>
+            <view class='upload-img rel' @tap='chooseUserImg' wx:if="{{vm.Avatar==''}}">
+                <text class='dzicon icon-zhaoxiangji' />
+            </view>
+            <image src='{{vm.Avatar}}' wx:if='{{vm.Avatar}}' @tap='chooseUserImg' />
+            <view class='upload-right f1 f fv'>
+                <view>
+                    <input value="{{vm.Name}}" @input="setName" placeholder='请输入名字' placeholder-style='color:#d9d8d9' />
+                </view>
+                <view>
+                    <input value="{{vm.Phone}}" @input="setPhone" type='number' maxheight='11' placeholder='常用手机号码' placeholder-style='color:#d9d8d9' />
+                </view>
+            </view>
+        </view>
+        <view class='marr-view'></view>
+        <view class='footer'>
+            <form>
+                <view class='edit-form'>
+                    <view class='edit-item f fc'>
+                        <view class="c333">微信</view>
+                        <input class='f1' value="{{vm.WxAccount||''}}" @input="setChat" />
+                    </view>
+                    <view class='edit-item f fc'>
+                        <view>部门</view>
+                        <text class='f1'>{{vm.DepartMentName}}</text>
+                    </view>
+                    <view class='edit-item f fc'>
+                        <view>职位</view>
+                        <text class='f1'>{{vm.Job}}</text>
+                    </view>
+                    <view class='edit-item f fc'>
+                        <view>公司电话</view>
+                        <text class='f1'>{{vm.CompanyPhone}}</text>
+                    </view>
+                    <view class='edit-item f fc'>
+                        <view>所在地</view>
+                        <text class='f1'>{{vm.CompanyAddress}}</text>
+                    </view>
+                </view>
+                <view style='width:100%;padding:0 30rpx;'>
+                    <view class='edit-btn' @tap="saveUp">保存</view>
+                </view>
+            </form>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy";
+    import _get from "@/lib/lodash.get.js";
+    import {
+        tools,
+        core
+    } from "@/lib/core.js"
+    export default class cardEdit extends wepy.page {
+        config = {
+            navigationBarTitleText: "编辑名片",
+             navigationBarBackgroundColor: "#fff",
+            usingComponents: {
+                "wxc-price": "../../packages/@minui/wxc-price/dist/index",
+            },
+        };
+        //第二步：声明组件
+        components = {};
+        data = {
+            vm: {},
+            _change: {},
+        };
+        methods = {
+            // 更改图片
+            async chooseUserImg() {
+                let _i = await tools.chooseImage(1)
+                if (_i.errMsg == 'chooseImage:ok') {
+                    let _upload = await tools.upLoadimg(_i.tempFilePaths, 0)
+                    _upload.data = JSON.parse(_upload.data)
+                    this._change.img = _upload.data.msg
+                    this.vm.Avatar = _upload.data.msg
+                    this.$apply()
+                }
+            },
+            //个人姓名
+            setName(e) {
+                this.vm.Name = e.detail.value
+                this._change.name = e.detail.value
+                this.$apply()
+            },
+            // 个人电话
+            setPhone(e) {
+                this.vm.Phone = e.detail.value
+                this._change.phone = e.detail.value
+                this.$apply()
+            },
+            // 个人微信
+            setChat(e) {
+                this.vm.WxAccount = e.detail.value
+                this._change.wechat = e.detail.value
+                this.$apply()
+            },
+            saveUp() {
+                let vm = this.vm
+                let _g = this._change
+                if(Object.keys(this._change).length==0){
+                    return;
+                }
+                let _v = {
+                    id: vm.Id,
+                    avatar: _g.img || vm.Avatar,
+                    name: _g.name || vm.Name,
+                    phone: _g.phone || vm.Phone,
+                    wxAccount: _g.wechat || "",
+                }
+                core.EditEmployee(_v)
+            },
+        }
+        onLoad(options, data) {
+            this.vm = _get(data.preload, "vm", "")
+            this.$apply()
+        }
+    }
+</script>

@@ -1,0 +1,218 @@
+<style lang="less">
+.update-address {
+  border-top: 1px solid #eee;
+  .form-address-group {
+    &:last-child {
+      border-bottom: none;
+    }
+    min-height: 100rpx;
+    border-bottom: 1px solid #eee;
+    .input {
+      height: 100rpx;
+      line-height: 100rpx;
+      font-size: 26rpx;
+    }
+    .textarea {
+      font-size: 26rpx;
+      height: 160rpx;
+      padding-top: 20rpx;
+      padding-bottom: 20rpx;
+      padding-right: 20rpx;
+      width: 100%;
+    }
+  }
+  .default {
+    height: 100rpx;
+  }
+   
+}
+</style>   
+<template leng="wxml">
+  <view class="update-address">
+    <view class="form-address pl30 bg-w">
+      <view class="form-address-group">
+        <input class="input" value="{{form.contact}}" @input="inputContact" placeholder="收货人姓名"></input>
+      </view>
+      <view class="form-address-group">
+        <input class="input" value="{{form.phone}}" @input="inputPhone" placeholder="收货人电话"></input>
+      </view>
+      <view class="form-address-group">
+        <picker mode="region" @change="bindRegionChange">
+          <input class="input" value="{{showArea}}" disabled placeholder="所在地区"></input>
+        </picker>
+      </view>
+      <view class="form-address-group">
+        <textarea class="textarea" value="{{form.street}}" @input="inputStreet" placeholder="街道、小区门牌等详细地址"></textarea>
+      </view>
+    </view>
+    <view class="mt25 bg-w pw30 default f fc fj" wx:if="{{form.id != 0}}">
+      <text class="f26 c333">设为默认地址</text>
+      <switch checked="{{isDefault}}" @change="setDefault" />
+    </view>
+    <button class="btn-big confirm bg-deepYellow cfff fc block-center mt60 f26" @tap="confirm">确认</button>
+    <view wx:if="{{form.id != 0}}" class="c333 w-100 tc mt30 lh15 f26" @tap="removeAddress">删除该地址</view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { core, tools, http } from "@/lib/core";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "修改地址",
+    enablePullDownRefresh: false
+  };
+
+  data = {
+    region: [],
+    isDefault: false,
+    form: {
+      contact: "", //联系人
+      phone: "", //手机
+      street: "", //地址详细信息
+      id: 0
+    }
+  };
+
+  computed = {
+    showArea() {
+      if (this.region.length == 0) {
+        return "";
+      }
+      return this.region.join(" ");
+    }
+  };
+
+  onLoad(query) {
+    if (query.mode == "新增") {
+      tools.setPageTitle("新增地址");
+    } else {
+      this.injectFormData(query.item);
+      tools.setPageTitle("修改地址");
+    }
+  }
+
+  injectFormData(objStr) {
+    var obj = JSON.parse(objStr);
+    for (var key in obj) {
+      this.form[key] = obj[key];
+    }
+    var insertKeys = ["province", "city", "district"];
+    for (var i = 0; i < insertKeys.length; i++) {
+      var k = insertKeys[i];
+      var v = this.form[k];
+      this.region.push(v);
+    }
+    this.isDefault = this.form.isdefault == 1 ? true : false;
+  }
+
+  methods = {
+    bindRegionChange(e) {
+      this.region = e.detail.value;
+    },
+    async setDefault(e) {
+      console.log(e);
+      this.isDefault = e.detail.value;
+      var default_ = this.isDefault ? 1 : 0;
+      wx.showLoading({
+        mask: true
+      });
+      var result = await core.changeUserAddressState(this.form.id, default_);
+      tools.handleResult(
+        result,
+        res => {
+          wx.hideLoading();
+        },
+        res => {
+          wx.hideLoading();
+          wx.showToast({
+            icon: "none",
+            title: res.msg
+          });
+        }
+      );
+    },
+    inputContact(e) {
+      this.form.contact = e.detail.value;
+    },
+    inputPhone(e) {
+      this.form.phone = e.detail.value;
+    },
+    inputStreet(e) {
+      this.form.street = e.detail.value;
+    },
+    async confirm() {
+      wx.showLoading({
+        title: "提交中",
+        mask: true
+      });
+      var user = await core.getUserInfo();
+      var data = {
+        userid: user.Id,
+        id: this.form.id || 0,
+        isdefault: this.isDefault ? 1 : 0,
+        contact: this.form.contact,
+        phone: this.form.phone,
+        province: this.region[0],
+        city: this.region[1],
+        district: this.region[2],
+        street: this.form.street
+      };
+      var result = await core.editUserAddress(data);
+      var msg = this.id == 0 ? "新增" : "修改";
+      tools.handleResult(
+        result,
+        res => {
+          wx.hideLoading();
+          wx.showToast({
+            icon: "success",
+            title: msg + "地址成功",
+            success: () => {
+              tools.goBack();
+            }
+          });
+        },
+        res => {
+          wx.hideLoading();
+          wx.showToast({
+            icon: "none",
+            title: res.msg
+          });
+        }
+      );
+    },
+    removeAddress() {
+      var id = this.form.id;
+      wx.showModal({
+        title: "提示",
+        content: "删除该地址吗？",
+        success: async res => {
+          if (res.confirm) {
+            wx.showLoading();
+            var result = await core.deleteUserAddress(id);
+            tools.handleResult(
+              result,
+              res => {
+                wx.hideLoading();
+                wx.showToast({
+                  icon: "success",
+                  title: "删除成功",
+                  success: () => {
+                    tools.goBack();
+                  }
+                });
+              },
+              (res) => {
+                wx.hideLoading();
+                wx.showToast({
+                  icon: "none",
+                  title: res.msg
+                });
+              }
+            );
+          }
+        }
+      });
+    }
+  };
+}
+</script>
