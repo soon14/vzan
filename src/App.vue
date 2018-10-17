@@ -1,18 +1,11 @@
 <style>
-  html {
-    font-size: 0.8vw !important;
-  }
-  .bgapp {
-    background-image: url("./assets/bg.jpg");
-    background-size: cover;
-    background-repeat: no-repeat;
-    width: 100vw;
-    height: 100vh;
-  }
+   * {
+        font-size: 0.16rem;
+    }
 </style>
 
 <template>
-  <div id="app" :class="{'bgapp':routName=='login'}">
+  <div id="app">
     <router-view></router-view>
   </div>
 </template>
@@ -25,14 +18,15 @@
         routName: ''
       }
     },
-
     mounted() {
-      this.routName=this.$route.name
+      this.routName = this.$route.name
     },
-    updated () {
-       this.routName=this.$route.name
+    updated() {
+      this.routName = this.$route.name
     }
   }
+ 
 </script>
+
 
 
