@@ -1,0 +1,112 @@
+﻿@using Entity.MiniApp.Plat
+@{
+    ViewBag.Title = "小未子模板管理平台";
+    Layout = "~/Areas/PlatChild/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+
+@model PlatStore
+<link href="/content/newhome/css/dzbase.css?2018-3-27" rel="stylesheet" />
+<style>
+    .color-red{color:red!important;}
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content" id="app" v-cloak>
+    <div>
+        <table class="table viplevel ml_19">
+            <tr>
+                <td align="right" valign="top">一物一码：</td>
+                <td align="left">
+                    <div class="d-flex d-flex-center">
+                        <label for="ProductQrcode">
+                            <input type="checkbox"  name="ProductQrcode" v-model="store.SwitchModel.ProductQrcode"/>
+                        </label>
+                        <label class="forinputmassage color-red">* 开启则会在商品详情页出现分享按钮</label>
+                    </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right" valign="top">到店自取：</td>
+                <td align="left">
+                    <div class="d-flex d-flex-center">
+                        <label for="SwitchReceiving">
+                            <input type="checkbox" name="SwitchReceiving" v-model="store.SwitchModel.SwitchReceiving"/>
+                        </label>
+                        <label class="forinputmassage color-red">* 开启到店自提功能,为客户提供到门店取货的选择</label>
+                    </div>
+                </td>
+            </tr>
+         
+            <tr>
+                <td align="right">
+                    <label>退货地址:</label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="30" class="form-control" style="display:block;width:500px;" name="ReturnAddres" v-model="store.SwitchModel.ReturnAddres"/>
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">快速买单：</td>
+                <td align="left">
+                    <div class="d-flex d-flex-center">
+                        <label for="QuikclyPay">
+                            <input type="checkbox" name="QuikclyPay" v-model="store.SwitchModel.QuikclyPay" />
+                        </label>
+                        <label class="forinputmassage color-red">* 开启后小程序支持快速买单</label>
+                    </div>
+                    <a href="store.SwitchModel.StorePayQrcode" download="支付码">点击下载支付码</a>
+                    <span class="glyphicon glyphicon-refresh" style="cursor:pointer;" v-on:click="GetStorePayQrcode()"></span>
+                </td>
+            </tr>
+            <tr>
+                <td class="title"></td>
+                <td>
+                    <img v-bind:src="store.SwitchModel.StorePayQrcode" style="width:200px;height:200px;" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                </td>
+                <td align="left">
+                    <input type="button" value="保存" class="btn btn-primary ml10" v-on:click="save()" />
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script>
+     var app = new Vue({
+        el: "#app",
+        data: {
+            store:@Html.Raw(JsonConvert.SerializeObject(Model)),
+          
+        },
+         methods:{
+             GetStorePayQrcode:function(){
+                 $.post("/PlatChild/Store/GetStorePayQrcode", { aid: app.store.Aid}, function (data) {
+                     layer.msg(data.Msg);
+                     if (data.isok) {
+                         setTimeout(function(){ window.location.reload();},1000)
+                     }
+                 });
+             },
+             save:function(){
+                 var that=this;
+                 $.post("/PlatChild/Store/SaveStore", {store:that.store,appId:@Model.Aid},function(data){
+
+                     if(data&&data.isok){
+                         layer.msg(data.Msg,{time:1000});
+                         window.setTimeout(function(){
+                             window.location.reload();
+                         },2000);
+                     }
+                     else{
+                         layer.msg(data.Msg,{time:1000});
+                     }
+                 });
+             },
+         }
+    });
+</script>

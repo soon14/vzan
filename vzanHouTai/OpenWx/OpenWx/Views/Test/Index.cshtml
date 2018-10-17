@@ -1,0 +1,803 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>小程序配置</title>
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+</head>
+<body>
+
+    <style>
+        td {
+            padding: 10px;
+        }
+    </style>
+    <div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-inline form-group">
+                    条件:<input id="title" type="text" class="form-control" />
+                    <input id="search" class="btn btn-primary" type="button" value="关系" />
+                    <input id="search2" class="btn btn-primary" type="button" value="用户" />
+                    <input id="search3" class="btn btn-primary" type="button" value="历史收益" />
+                    <input id="search4" class="btn btn-primary" type="button" value="收益分" />
+                    <input id="search5" class="btn btn-primary" type="button" value="配置中心" />
+                </div>
+            </div>
+        </div>
+
+        </table>
+        <div>关系</div>
+        <table id="t1" border="1"></table>
+        <div>用户</div>
+        <table id="t2" border="1"></table>
+        <div>历史收益</div>
+        <table id="t3" border="1"></table>
+        <div>收益分</div>
+        <table id="t4" border="1"></table>
+        <div>配置中心</div>
+        <table id="t5" border="1"></table>
+
+        <div style="margin-top:50px;">配置关系</div>
+        <div>
+            <div>微信：<input id="wxappid" /></div>
+            <div>小程序：<input id="xcxappid" /></div>
+            <div>
+                <input value="添加" id="addrelation" type="button" />
+                <input value="修改" id="editerelation" type="button" />
+            </div>
+        </div>
+
+        <div style="margin-top:50px;">配置商户信息</div>
+        <div>
+            <div>小程序：<input id="appid" /></div>
+            <div>商户：<input id="mc_id" /></div>
+            <div>商户秘钥：<input id="mc_key" /></div>
+            <div>
+                <input value="添加" id="addsh" type="button" />
+                <input value="修改" id="editesh" type="button" />
+            </div>
+        </div>
+
+
+        <div class="panel panel-default" style="margin-top:50px;">
+            <div class="panel-body">
+                <div class="form-inline form-group">
+                    <input id="get1" data-typeid="7" class="btn btn-primary" type="button" value="get1" />
+                    <input id="get2" data-typeid="8" class="btn btn-primary" type="button" value="get2" />
+                    <input id="get4" data-typeid="9" class="btn btn-primary" type="button" value="get4" />
+                    <input id="get3" class="btn btn-primary" type="button" value="授权" />
+                    <div id="shouquan"></div>
+                </div>
+            </div>
+        </div>
+        <div><input type="button" value="get" onclick="getComponent()" /></div>
+        <table id="t6" border="1"></table>
+        <div>openauthorizerconfig</div>
+        <table id="t7" border="1"></table>
+        <div>OpenAuthorizerInfo</div>
+        <table id="t8" border="1"></table>
+        <div>UserXcxTemplate</div>
+        <table id="t9" border="1"></table>
+
+        @*<div style="margin-top:50px;">
+                <input type="file" id="videofile"  onchange="doChange(this);" style="cursor:pointer;" />
+                <input type="button" class="btn  btn-info width100" id="savevideofile" style="margin-top:5px;" value="上传" />
+            </div>*@
+    </div>
+
+    <script>
+        function getComponent() {
+            var value = '1'
+            $.ajax({
+                type: "Get",
+                url: "/Test/GetData?typeid=6&value=" + value,
+                success: function (data) {
+                    console.log(data);
+                    _trdata = []
+                    var model = data.modellist
+                    if (model != null && model != undefined) {
+                        _trdata[_trdata.length] = "<tr>";
+                        _trdata[_trdata.length] = "<td>component_Appid:" + model.component_Appid + "</td>";
+                        _trdata[_trdata.length] = "<td>component_AppSecret:" + model.component_AppSecret + "</td>";
+                        _trdata[_trdata.length] = "<td>component_Token:" + model.component_Token + "</td>";
+                        _trdata[_trdata.length] = "<td>component_EncodingAESKey:" + model.component_EncodingAESKey + "</td>";
+                        _trdata[_trdata.length] = "<td>component_verify_ticket:" + model.component_verify_ticket + "</td>";
+                        _trdata[_trdata.length] = "<td>ticket_time:" + getDateTime(ConvertJSONDateToJSDateObject(model.ticket_time)) + "</td>";
+                        _trdata[_trdata.length] = "<td>component_access_token:" + model.component_access_token + "</td>";
+                        _trdata[_trdata.length] = "<td>token_time:" + getDateTime(ConvertJSONDateToJSDateObject(model.token_time)) + "</td>";
+                        _trdata[_trdata.length] = "</tr>";
+                        $("#t6").empty().html(_trdata.join());
+                    }
+
+                    if (_trdata.length <= 0) {
+                        alert("没有数据")
+                    }
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        }
+        var _trdata = [];
+        $(function () {
+            $('#search').click(function () {
+                var title = $('#title').val();
+                console.log("关系");
+                //location.href = "/Test/Index?value=" + title
+                getdata(1, title)
+            })
+            $('#search2').click(function () {
+                var title = $('#title').val();
+                console.log("用户");
+                //location.href = "/Test/Index?value=" + title
+                getdata(2, title)
+            })
+            $('#search3').click(function () {
+                var title = $('#title').val();
+                console.log("历史收益");
+                //location.href = "/Test/Index?value=" + title
+                getdata(3, title)
+            })
+            $('#search4').click(function () {
+                console.log("收益分");
+                var title = $('#title').val();
+                //location.href = "/Test/Index?value=" + title
+                getdata(4, title)
+            })
+            $('#search5').click(function () {
+                console.log("配置中心");
+                var title = $('#title').val();
+                //location.href = "/Test/Index?value=" + title
+                getdata(5, title)
+            })
+
+
+            $('#get1').click(function () {
+                var typeid = $(this)[0].dataset.typeid;
+                getdata(typeid, "111")
+            })
+            $('#get2').click(function () {
+                var typeid = $(this)[0].dataset.typeid;
+                getdata(typeid, "111")
+            })
+            $('#get4').click(function () {
+                var typeid = $(this)[0].dataset.typeid;
+                getdata(typeid, "111")
+            })
+            $('#get3').click(function () {
+                getOpenImg()
+            })
+
+            $('#addrelation').click(function () {
+                console.log("配置关系");
+
+                var wxappid = $("#wxappid").val();
+                var xcxappid = $("#xcxappid").val();
+
+                $.post('/Test/AddRelation',
+               {
+                   wxappid: wxappid,
+                   xcxappid: xcxappid,
+               },
+               function (data) {
+                   alert(data.msg)
+               });
+            })
+            $('#editerelation').click(function () {
+                console.log("修改关系");
+
+                var wxappid = $("#wxappid").val();
+                var xcxappid = $("#xcxappid").val();
+
+                $.post('/Test/AddRelation',
+               {
+                   wxappid: wxappid,
+                   xcxappid: xcxappid,
+                   typeid: 1,
+               },
+               function (data) {
+                   alert(data.msg)
+               });
+            })
+
+            $('#addsh').click(function () {
+                console.log("配置商户信息");
+
+                var appid = $("#appid").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+
+                $.post('/Test/AddShanghu',
+               {
+                   appid: appid,
+                   mc_id: mc_id,
+                   mc_key: mc_key,
+               },
+               function (data) {
+                   alert(data.msg)
+               });
+            })
+
+            $('#editesh').click(function () {
+                console.log("修改商户信息");
+
+                var appid = $("#appid").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+
+                $.post('/Test/AddShanghu',
+               {
+                   appid: appid,
+                   mc_id: mc_id,
+                   mc_key: mc_key,
+                   typeid: 1,
+               },
+               function (data) {
+                   alert(data.msg)
+               });
+            })
+
+            //上传图片文件
+            $("#savevideofile").click(function () {
+                var selectedFiles = $("#videofile")[0].files;
+                if (selectedFiles.length <= 0) {
+                    AppTools.Alert("请选择上传的图片文件");
+                    return;
+                }
+
+                var data = new FormData();
+                if (selectedFiles[0].size > (1024 * 1024 * 100)) {
+                    AppTools.Alert("上传的图片文件不能超过100M");
+                    return;
+                }
+                for (var i = 0; i < selectedFiles.length; i++) {
+                    data.append($("#videofile")[0].value, selectedFiles[i]);
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Upload/UploadWxFileApp",
+                    contentType: false,
+                    processData: false,
+                    data: data,
+                    success: function (result) {
+                        AppTools.Alert(result.msg);
+                    },
+                    error: function (e) {
+                        AppTools.Alert("系统繁忙" + e.msg);
+                    }
+                });
+            });
+        })
+
+        function getOpenImg() {
+            $.ajax({
+                type: "Get",
+                url: "/Test/getOpenImg",
+                success: function (data) {
+                    if (data.code) {
+                        //$("#shouquan")[0].innerHTML = "<a href='" + data.src + "'>跳转</a>"
+                        $("#shouquan")[0].innerHTML = "<a href='/open/oauth'>跳转</a>"
+                    }
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        }
+
+        function getdata(typeid, value) {
+            if (value == '') {
+                alert("请输入条件")
+                return
+            }
+            $.ajax({
+                type: "Get",
+                url: "/Test/GetData?typeid=" + typeid + "&value=" + value,
+                success: function (data) {
+                    console.log(data);
+                    _trdata = []
+                    if (typeid == 1) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>WxAppid:" + model.WxAppid + "</td>";
+                            _trdata[_trdata.length] = "<td>XcxAppid:" + model.XcxAppid + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t1").empty().html(_trdata.join());
+                    }
+                    else if (typeid == 2) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>Cash:" + model.Cash + "</td>";
+                            _trdata[_trdata.length] = "<td>HistoryCash:" + model.HistoryCash + "</td>";
+                            _trdata[_trdata.length] = "<td>NickName:" + model.NickName + "</td>";
+                            _trdata[_trdata.length] = "<td>OpenId:" + model.OpenId + "</td>";
+                            _trdata[_trdata.length] = "<td>Id:" + model.Id + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t2").empty().html(_trdata.join());
+                    }
+                    else if (typeid == 3) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>nickname:" + model.nickname + "</td>";
+                            _trdata[_trdata.length] = "<td>note:" + model.note + "</td>";
+                            _trdata[_trdata.length] = "<td>addtime:" + getDateTime(ConvertJSONDateToJSDateObject(model.addtime)) + "</td>";
+                            _trdata[_trdata.length] = "<td>cash:" + model.cash + "</td>";
+                            _trdata[_trdata.length] = "<td>usercash:" + model.usercash + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t3").empty().html(_trdata.join());
+                    }
+                    else if (typeid == 4) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>AppID:" + model.AppID + "</td>";
+                            _trdata[_trdata.length] = "<td>Cash:" + model.Cash + "</td>";
+                            _trdata[_trdata.length] = "<td>HistoryCash:" + model.HistoryCash + "</td>";
+                            _trdata[_trdata.length] = "<td>OpenId:" + model.OpenId + "</td>";
+                            _trdata[_trdata.length] = "<td>ThirdOpenId:" + model.ThirdOpenId + "</td>";
+                            _trdata[_trdata.length] = "<td>UserID:" + model.UserID + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t4").empty().html(_trdata.join());
+                    }
+                    else if (typeid == 5) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>Appid:" + model.Appid + "</td>";
+                            _trdata[_trdata.length] = "<td>BindingId:" + model.BindingId + "</td>";
+                            _trdata[_trdata.length] = "<td>BindingType:" + model.BindingType + "</td>";
+                            _trdata[_trdata.length] = "<td>Mch_id:" + model.Mch_id + "</td>";
+                            _trdata[_trdata.length] = "<td>Key:" + model.Key + "</td>";
+                            _trdata[_trdata.length] = "<td>Id:" + model.Id + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t5").empty().html(_trdata.join());
+                    }
+                    else if (typeid == 7) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>id:" + model.id + "</td>";
+                            _trdata[_trdata.length] = "<td>minisnsid:" + model.minisnsid + "</td>";
+                            _trdata[_trdata.length] = "<td>user_name:" + model.user_name + "</td>";
+                            _trdata[_trdata.length] = "<td>nick_name:" + model.nick_name + "</td>";
+                            _trdata[_trdata.length] = "<td>alias:" + model.alias + "</td>";
+                            _trdata[_trdata.length] = "<td>qrcode_url:" + model.qrcode_url + "</td>";
+                            _trdata[_trdata.length] = "<td>service_type_info:" + model.service_type_info + "</td>";
+                            _trdata[_trdata.length] = "<td>verify_type_info:" + model.verify_type_info + "</td>";
+                            _trdata[_trdata.length] = "<td>appid:" + model.appid + "</td>";
+                            _trdata[_trdata.length] = "<td>func_info:" + model.func_info + "</td>";
+                            _trdata[_trdata.length] = "<td>type:" + model.type + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t" + typeid).empty().html(_trdata.join());
+                    }
+                    else if (typeid == 8) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>id:" + model.id + "</td>";
+                            _trdata[_trdata.length] = "<td>user_name:" + model.user_name + "</td>";
+                            _trdata[_trdata.length] = "<td>authorizer_appid:" + model.authorizer_appid + "</td>";
+                            _trdata[_trdata.length] = "<td>authorizer_refresh_token:" + model.authorizer_refresh_token + "</td>";
+                            _trdata[_trdata.length] = "<td>authorizer_access_token:" + model.authorizer_access_token + "</td>";
+                            _trdata[_trdata.length] = "<td>addtime:" + getDateTime(ConvertJSONDateToJSDateObject(model.addtime)) + "</td>";
+                            _trdata[_trdata.length] = "<td>refreshtime:" + getDateTime(ConvertJSONDateToJSDateObject(model.refreshtime)) + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t" + typeid).empty().html(_trdata.join());
+                    }
+                    else if (typeid == 9) {
+                        for (var i = 0; i < data.modellist.length; i++) {
+                            var model = data.modellist[i]
+                            _trdata[_trdata.length] = "<tr>";
+                            _trdata[_trdata.length] = "<td>Id:" + model.Id + "</td>";
+                            _trdata[_trdata.length] = "<td>TId:" + model.TId + "</td>";
+                            _trdata[_trdata.length] = "<td>TuserId:" + model.TuserId + "</td>";
+                            _trdata[_trdata.length] = "<td>AreaCode:" + model.AreaCode + "</td>";
+                            _trdata[_trdata.length] = "<td>AppId:" + model.AppId + "</td>";
+                            _trdata[_trdata.length] = "<td>Appsr:" + model.Appsr + "</td>";
+                            _trdata[_trdata.length] = "<td>State:" + model.State + "</td>";
+                            _trdata[_trdata.length] = "<td>Version:" + model.Version + "</td>";
+                            _trdata[_trdata.length] = "<td>Auditid:" + model.Auditid + "</td>";
+                            _trdata[_trdata.length] = "<td>UpdateTime:" + getDateTime(ConvertJSONDateToJSDateObject(model.UpdateTime)) + "</td>";
+                            _trdata[_trdata.length] = "</tr>";
+                        }
+                        $("#t" + typeid).empty().html(_trdata.join());
+                    }
+
+                    if (_trdata.length <= 0) {
+                        alert("没有数据")
+                    }
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        }
+        function ConvertJSONDateToJSDateObject(jsondate) {
+            var date = new Date(parseInt(jsondate.replace("/Date(", "").replace(")/", ""), 10));
+            return date;
+        }
+
+        /* 获取日期格式 */
+        function getDate(date) {
+            var year = date.getFullYear();
+            var month = date.getMonth() + 1;
+            var day = date.getDate();
+            return year + "-" + month + "-" + day;
+        }
+        /* 获取日期时间格式*/
+        function getDateTime(date) {
+            var year = date.getFullYear();
+            var month = date.getMonth() + 1;
+            var day = date.getDate();
+            var hh = date.getHours();
+            var mm = date.getMinutes();
+            var ss = date.getSeconds();
+            return year + "-" + month + "-" + day + " " + hh + ":" + mm + ":" + ss;
+        }
+
+        function saverelation(wxappid, xcxappid) {
+            $.post('/Test/AddRelation',
+                {
+                    wxappid: wxappid,
+                    xcxappid: xcxappid,
+                },
+                function (data) {
+                    alert(data.msg)
+                });
+        }
+    </script>
+
+    @*上传小程序代码*@
+    <div style="margin-top:50px;">上传小程序代码</div>
+    <div>
+        <div>小程序：<input id="appid2" /></div>
+        <div>商户：<input id="mc_id2" /></div>
+        <div>商户秘钥：<input id="mc_key2" /></div>
+        <div>areacode：<input id="areacode" /></div>
+        <div>
+            <input value="上传小程序" id="Commit" type="button" />
+            <div>
+                小程序：<input id="reappid" />
+                <input value="刷新用户令牌" id="refreshtoken" type="button" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $('#Commit').click(function () {
+            console.log("上传小程序代码");
+
+            var appid = $("#appid2").val();
+            var mc_id = $("#mc_id2").val();
+            var mc_key = $("#mc_key2").val();
+            var areacode = $("#areacode").val();
+
+            $.post('/Test/Commit',
+           {
+               appid: appid,
+               mc_id: mc_id,
+               mc_key: mc_key,
+               areacode: areacode,
+           },
+           function (data) {
+               alert(data.msg)
+           });
+        })
+        $('#refreshtoken').click(function () {
+            console.log("刷新用户授权令牌");
+            var appid = $("#reappid").val();
+            if (appid == "")
+            {
+                alert("请输入appid");
+                return;  
+            }
+            $.post('/Test/refreshAccessToken',
+           {
+               appid: appid,
+           },
+           function (data) {
+               alert(data.msg)
+           });
+        })
+    </script>
+
+    @*提交小程序代码*@
+    <div style="margin-top:50px;">上传小程序代码</div>
+    <div>
+        <div>
+            <select id="catgorylist"></select>
+        </div>
+        <div>
+            <input value="获取类目" id="PostXcxCode" type="button" />
+            <input value="提交小程序" id="GetCatgory" type="button" />
+            <input value="发布" id="ReleaseCode" type="button" />
+            <input type="text" id="authid" value="0" />
+            <input type="text" id="username" value="username" />
+            <input value="查看小程序审核结果" id="getAuthodMsg" type="button" />
+            <input value="查看小程序体验二维码" id="getqrcod" type="button" />
+            <div>
+                <img src="" id="testimg"/>
+            </div>
+            <input type="text" id="tester" value="微信号" />
+            <input value="设置微信号为体验者" id="settester" type="button" />
+            <input value="解除微信号为体验者" id="unsettester" type="button" />
+            <input value="设置服务器地址" id="setserverhost" type="button" />
+        </div>
+    </div>
+
+    <script>
+        $('#PostXcxCode').click(function () {
+            console.log("获取类目");
+            $.ajax({
+                type: "Get",
+                url: "/Test/GetCategoryData",
+                success: function (data) {
+                    if (data.obj.category_list.length > 0) {
+                        $("#catgorylist").empty();
+                        for (var i = 0; i < data.obj.category_list.length; i++) {
+                            var model = data.obj.category_list[i];
+                            $("#catgorylist").append("<option>" + model.first_class + "_" + model.second_class + "_" + model.third_class + "</option>");
+                        }
+                    }
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#GetCatgory').click(function () {
+            console.log("提交小程序审核");
+            $.ajax({
+                type: "Get",
+                url: "/Test/SubmitAudit",
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#getAuthodMsg').click(function () {
+            console.log("获取小程序审核结果");
+            var auditid = $("#authid").val();
+            var username = $("#username").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/GetAuthMsg?username=" + username + "&auditid=" + auditid,
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#getqrcod').click(function () {
+            console.log("查看小程序体验二维码");
+            var username = $("#username").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/GetMiniappCode?username=" + username,
+                success: function (data) {
+                    alert(data.msg)
+                    $("#testimg").attr("src", "data:image/jpeg;base64," + data.obj);
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#settester').click(function () {
+            console.log("设置小程序体验者");
+            var username = $("#username").val();
+            var tester = $("#tester").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/Settester?username=" + username + "&tester=" + tester,
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#unsettester').click(function () {
+            console.log("解除小程序体验者");
+            var username = $("#username").val();
+            var tester = $("#tester").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/UnSettester?username=" + username + "&tester=" + tester,
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#setserverhost').click(function () {
+            console.log("设置服务器地址");
+            var username = $("#username").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/UpdateServerHost?username=" + username,
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+        $('#ReleaseCode').click(function () {
+            console.log("发布小程序");
+            var username = $("#username").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/ReleaseCode?name=" + username,
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+    </script>
+
+    @*配置后台小程序模板*@
+    <div style="margin-top:50px;">上传小程序代码</div>
+    <div>
+        <form id="p-body">
+            <input type="hidden" id="Id" name="Id" />
+            <input type="hidden" id="State" name="State" />
+            <div>TId：<input id="TId" name="TId" /></div>
+            <div>TName：<input id="TName" name="TName" /></div>
+            <div>TImgurl：<input id="TImgurl" name="TImgurl" /></div>
+            <div>Version：<input id="Version" name="Version" /></div>
+            <div>Price：<input id="Price" name="Price" /></div>
+            <div>Desc：<input id="Desc" name="Desc" /></div>
+            <div>Address：<input id="Address" name="Address" /></div>
+            <div>Tag：<input id="Tag" name="Tag" /></div>
+            <div>First_class：<input id="First_class" name="First_class" /></div>
+            <div>Second_class：<input id="Second_class" name="Second_class" /></div>
+            <div>Third_class：<input id="Third_class" name="Third_class" /></div>
+            <div>Title：<input id="Title" name="Title" /></div>
+            <div>
+                <input value="添加" id="editoradd" type="button" />
+                <input value="获取" id="getxcxt" type="button" />
+            </div>
+        </form>
+    </div>
+
+    <script>
+        $('#editoradd').click(function () {
+            if ($("#TId").val().trim().length <= 0) {
+                alert("请输入TId");
+                return
+            }
+            if ($("#Version").val().trim().length <= 0) {
+                alert("请输入Version");
+                return
+            }
+            if ($("#Desc").val().trim().length <= 0) {
+                alert("请输入Desc");
+                return
+            }
+            if ($("#Address").val().trim().length <= 0) {
+                alert("请输入Address");
+                return
+            }
+            if ($("#Tag").val().trim().length <= 0) {
+                alert("请输入Tag");
+                return
+            }
+            if ($("#First_class").val().trim().length <= 0) {
+                alert("请输入First_class");
+                return
+            }
+            if ($("#Second_class").val().trim().length <= 0) {
+                alert("请输入Second_class");
+                return
+            }
+            //if ($("#Third_class").val().trim().length <= 0) {
+            //    alert("请输入Third_class");
+            //    return
+            //}
+            if ($("#Title").val().trim().length <= 0) {
+                alert("请输入Title");
+                return
+            }
+
+            //var vBody = $("#p-body").serialize();
+            jQuery.ajax({
+                type: "Post",
+                url: "/Test/editoradd",
+                data: {
+                    Id: $("#Id").val(),
+                    TId: $("#TId").val(),
+                    Version: $("#Version").val(),
+                    Desc: $("#Desc").val(),
+                    Address: $("#Address").val(),
+                    Tag: $("#Tag").val(),
+                    First_class: $("#First_class").val(),
+                    Second_class: $("#Second_class").val(),
+                    Third_class: $("#Third_class").val(),
+                    TName: $("#TName").val(),
+                    Title: $("#Title").val(),
+                    TImgurl: $("#TImgurl").val(),
+                },
+                success: function (data) {
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+                }
+            });
+        })
+        $('#getxcxt').click(function () {
+            console.log("提交小程序审核");
+            var tid = $("#TId").val();
+            $.ajax({
+                type: "Get",
+                url: "/Test/getxcxt?tid=" + tid,
+                success: function (data) {
+                    if (data.isok == 1) {
+                        $("#TId").val(data.obj.TId);
+                        $("#Version").val(data.obj.Version);
+                        $("#Desc").val(data.obj.Desc);
+                        $("#Address").val(data.obj.Address);
+                        $("#Tag").val(data.obj.Tag);
+                        $("#First_class").val(data.obj.First_class);
+                        $("#Second_class").val(data.obj.Second_class);
+                        $("#Third_class").val(data.obj.Third_class);
+                        $("#Title").val(data.obj.Title);
+                        $("#TName").val(data.obj.TName);
+                        $("#TImgurl").val(data.obj.TImgurl);
+                        $("#Id").val(data.obj.Id);
+                    }
+
+                    alert(data.msg)
+                },
+                error: function (e) {
+                    console.log(e);
+
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,125 @@
+﻿@model EditModel<DishAttr>
+@{
+    ViewBag.Title = "";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+        <input type="hidden" name="aid" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+
+        <div id="tab-system" class="HuiTab">
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        商品类型：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <select name="cat_id" class="select">
+                            <option value="0" class="toggle-data" toggle-data="请选择" >请选择</option>
+                            @if (ViewBag.dishAttrTypeList != null)
+                            {
+                                foreach (var item in ViewBag.dishAttrTypeList)
+                                {
+                                    <option value="@(item.id)" @(((Model.DataModel.id!=0&& item.id == Model.DataModel.cat_id)||(Model.DataModel.id==0&&item.id==ViewBag.fid)) ? "selected" : "")>@(item.cat_name)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        属性名称：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="attr_name" placeholder="请输入类型名称" value="@(Model.DataModel.attr_name)" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        可选值列表：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <textarea name="attr_values" class="textarea valid" placeholder="多个属性请用回车分割" aria-invalid="false">@(Model.DataModel.attr_values)</textarea>
+                        <div class="dish_m_tips">将自动排除重复的，空白的属性</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        排序：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="sort" placeholder="99" value="@(Model.DataModel.sort)" class="input-text">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <input type="hidden" name="attr_id" value="4989" />
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button" id="cancel_button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+            //表单验证
+            $("#form-article-add").validate({
+                rules: {
+                    attr_name: {
+                        required: true
+                    }
+                },
+                onkeyup: false,
+                focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {
+                    var l_index = layer.msg('数据提交中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, { icon: 0 });
+                            } else {
+                                layer.alert(data.msg, { icon: 1 }, function (index) {
+                                    parent.layer.close(index);
+                                    parent.location.reload();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            $("#cancel_button").click(function () {
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+            });
+        });
+    </script>
+
+}

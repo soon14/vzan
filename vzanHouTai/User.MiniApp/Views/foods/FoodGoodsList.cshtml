@@ -1,0 +1,349 @@
+﻿@using Entity.MiniApp
+@model  List<FoodGoods>
+@{
+    ViewBag.Title = "菜品列表";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+    //List<MiniappFoodGoodsType> typeList = (List<MiniappFoodGoodsType>)ViewBag.checkType;
+    List<int> typeStr = ViewBag.checkType;
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted {
+        margin-top: 20px;
+        color: red;
+    }
+
+    .sweet-alert.showSweetAlert h2 {
+        font-size: 20px;
+    }
+</style>
+
+
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="form-inline form-group">
+            &nbsp;菜品名称:
+            <input id="goodname" type="text" class="form-control" value="@ViewBag.goodname" />
+            &nbsp;菜品标签:
+            <select id="goodslabelid" class="form-control width150">
+                <option value="0" @(ViewBag.goodlabel == 0 ? "selected" : "")>选择菜品标签</option>
+                @foreach (var x in ViewBag.foodlabellist)
+                {
+                    <option value="@x.Id" @(ViewBag.goodlabel == x.Id ? "selected" : "")>@x.LabelName</option>
+                }
+            </select>
+
+
+
+            <br />
+            <div style="margin-top:17px;">
+                <table>
+                    <tr>
+                        <td>
+                            <div style="float:left;">
+                                &nbsp;菜品分类:
+                            </div>
+                        </td>
+                        <td style="width:800px;">
+                            <div class="typeItem" style="float:left;width:800px;">
+                                @foreach (var x in ViewBag.typeList)
+                                {
+                                    @*<input class="col-sm-2 btn btn-default @(typeStr.Contains(x.Id) ? "active" : "" ) " data-id="@x.Id" maxlength="8" type="button" style="margin:3px;width:@(x.Name.Length * 15 + 20)px;background-color:white;border-color:#5e97fa; margin-bottom:8px;@(typeStr.Contains(x.Id) ? "background-color:#108EE9;color:white;" : "background-color:White;color:#108EE9;")" value="@x.Name" onclick="check(this)" />*@
+                                    <input class="col-sm-2 btn btn-default @(typeStr.Contains(x.Id) ? "active" : "" ) " data-id="@x.Id" maxlength="8" type="button" style="margin:3px;width:150px;background-color:white;border-color:#5e97fa; margin-bottom:8px;@(typeStr.Contains(x.Id) ? "background-color:#108EE9;color:white;" : "background-color:White;color:#108EE9;")" value="@x.Name" onclick="check(this)" />
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <input id="search" onclick="select()" style="margin-left:80px;" type="button" class="btn btn-primary" value="搜索" />
+                            <input id="empty" type="button" class="btn btn-default" value="清除" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <br />
+
+            @*&nbsp;支付合计： <input class="form-control" value="@(ViewBag.SumShouyi*0.01)元" readonly="readonly" style="width: 150px;" />*@
+        </div>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th><input type="checkbox" class="checkbox-ickeck selectAll" id="ckbAll"><label for="ckbAll">全选</label></th>
+        <th>菜品名称</th>
+        <th>菜品类型</th>
+        <th>菜品标签</th>
+        <th>菜品规格</th>
+        <th>价格</th>
+        @*<th>是否多规格</th>*@
+        @*<th>价格</th>
+            <th>剩余库存</th>
+            <th>总库存</th>
+            <th>发布时间</th>
+            <th>更新时间</th>*@
+        <th>库存</th>
+        <th>开启堂食</th>
+        <th>开启外卖</th>
+        <th>状态</th>
+        <th>排序</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="3%"><input type="checkbox" data-id="@item.Id" id="ckbitem@(item.Id)" class="checkbox-ickeck checkId" value="@(item.Id)"><label for="ckbitem@(item.Id)">@(i++)</label> </td>
+                <td width="12%">@(item.GoodsName)</td>
+                <td width="5">@(item.TypeName)</td>
+                <td width="22%">@(item.labelNameStr)</td>
+                <td width="15%">@(item.AttrStr)</td>
+                @*<td width="8%">@(!string.IsNullOrEmpty(item.AttrDetail) ? "是" : "否")</td>*@
+                <td width="4%">@((float.Parse(item.Price.ToString()) / 100).ToString("0.00"))</td>
+                @*<td width="8%">@(item.Stock)</td>
+                    <td width="8%">@(item.Inventory)</td>
+                    <td width="8%">@(item.TypeId)</td>
+                    <td width="8%">@(item.CreateDate.ToString("yyyy-MM-dd HH:mm"))</td>
+                    <td width="8%">@(item.UpdateDate.ToString("yyyy-MM-dd HH:mm"))</td>*@
+                <td width="4%">@(item.Stock)</td>
+                <td width="4%">@(item.openTheShop == 1 ? "√" : "" )</td>
+                <td width="4%">@(item.openTakeOut == 1 ? "√" : "" )</td>
+                <td width="4%">@(item.State == (int)ActiveState.通过 ? (item.IsSell == 1 ? "上架" : "下架") : (Enum.GetName(typeof(ActiveState), item.State)))</td>
+                <td width="5%"><input type="text" class="form-control" value="@item.Sort" name="sort" dataid="@item.Id"/></td>
+                <td width="18%">
+                    @if (item.IsSell == 1)
+                    {
+                        <a href="javascript:editIsSell(@item.Id,@item.FoodId,0);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                            下架菜品
+                        </a>
+                        <a href="/foods/GoodEdit?appId=@(ViewBag.appId)&gid=@item.Id&copy=1" class="btn  btn-primary btn-xs" style="margin-top:5px;">复制</a>
+                    }
+                    else
+                    {
+                        <a href="/foods/GoodEdit?appId=@(ViewBag.appId)&gid=@item.Id" class="btn  btn-primary btn-xs" style="margin-top:5px;">编辑</a>
+                        <a href="/foods/GoodEdit?appId=@(ViewBag.appId)&gid=@item.Id&copy=1" class="btn  btn-primary btn-xs" style="margin-top:5px;">复制</a>
+                        <a href="javascript:editIsSell(@item.Id,@item.FoodId,1);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                            上架菜品
+                        </a>
+                        <a href="javascript:Delete(@item.Id,@(ViewBag.appId));" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            删除
+                        </a>
+                    }
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <a href="/foods/GoodEdit?appId=@ViewBag.appId" class="btn btn-success" id="btnBatch_Pass">
+            <span class="glyphicon glyphicon-ok"></span>
+            添加菜品
+        </a>
+        &nbsp;
+        <a href="javascript:;" class="btn btn-success btnBatch_Sell" data-type="1">
+            批量上架
+        </a>
+        &nbsp;
+        <a href="javascript:;" class="btn btn-danger btnBatch_Sell" data-type="0">
+            批量下架
+        </a>
+        &nbsp;
+        <a href="javascript:;" class="btn btn-info SaveSort" >
+            保存排序
+        </a>
+    </div>
+</div>
+<script>
+    $(".btnBatch_Sell").on("click",function()
+    {
+        var type = $(this).data("type");
+        var titleText = "";
+        if(type == 1)
+        {
+            titleText = "上架";
+        }
+        else
+        {
+            titleText = "下架";
+        }
+
+        if(!confirm("确定批量"+ titleText + "这些商品吗?"))
+        {
+            return;
+        }
+
+        var goodIds = "";
+        $("#bcontent .checkId").each(function(i,x)
+        {
+            if($(x).is(':checked')) 
+            {
+                goodIds += $(x).data("id") + ",";
+            }
+        });
+        if(goodIds.length <= 0)
+        {
+            alert("未选择商品.");
+            return ;
+        }
+        var goodIdsSub = goodIds.substring(0,goodIds.length - 1);
+        $.ajax({
+            type: "post",
+            url: "/foods/BatchIsSellFoodGoods",
+            data: { type: type, foodGoodsIds: goodIdsSub },
+            success: function (data) {
+                alert(data.Msg);
+                if(data.Success)
+                {
+                    window.location.reload();
+                }
+            }
+        });
+
+    });
+
+
+    $("#search").on("click",function()
+    {
+        var typeIds = "";
+        $(".typeItem input").each(function(i,x)
+        {
+            if($(x).hasClass("active"))
+            {
+                typeIds += $(x).data("id") + ",";
+            }
+        });
+
+        window.location.href = "/foods/FoodGoodsList?appid="+@ViewBag.appId+ "&goodname="+$("#goodname").val() + "&goodlabel=" + $("#goodslabelid").val()+"&type=" + typeIds;
+    });
+    $("#empty").on("click",function()
+    {
+        window.location.href = "/foods/FoodGoodsList?appid=" + @ViewBag.appId;
+    });
+    $(function () {
+        $("#ckbAll").click(function () {
+            if (this.checked) {
+                $("#bcontent :checkbox").prop("checked", true);
+            } else {
+                $("#bcontent :checkbox").prop("checked", false);
+            }
+        });
+
+        //保存排序
+        $(".SaveSort").click(function () {
+            var arr = new Array();
+            var isvalid = true;
+            $.each($('input[name="sort"]'), function (i, v) {
+                var sort = $(v).val();
+                if (!/^-?[0-9]\d*$/.test(sort)) {
+                    layer.msg("请输入0~999999999之间的数字");
+                    isvalid = false;
+                    return false;
+                }
+                if (sort < 0 || sort > 999999999) {
+                    layer.msg("请输入0~999999999之间的数字");
+                    isvalid = false;
+                    return false;
+                }
+                var obj = {
+                    id:$(v).attr("dataid"),
+                    sort: sort
+                }
+                arr.push(obj);
+            });
+            
+           
+            if (isvalid) {
+                if (arr.length <= 0) {
+                    layer.msg("没有数据");
+                    return;
+                }
+                var layerIndex = layer.load(2);
+                $.post("/foods/SaveSort", { list: arr, appId:@ViewBag.appId }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        layer.msg(data.msg, { anim: 0, time: 1000 }, function () {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            }
+        })
+    });
+    function Delete(id, appid)
+    {
+        if (confirm("你确定要删除么?")) {
+            $.ajax({
+                type: "post",
+                url: "/foods/DeleteFoodGoods",
+                data: { type: -1, id: id, appId: appid },
+                success: function (data) {
+                    //if (data.Success)
+                    //    alert('删除成功');
+                    //else
+                    //    alert("删除失败");
+                    alert(data.Msg);
+                    if(data.Success)
+                    {
+                        window.location.reload();
+                    }
+                }
+            })
+        }
+    }
+    //上下架菜品
+    function editIsSell(id, foodId, type) {
+        var Title = "";
+        if (type == 1) {
+            Title = "上架";
+        }
+        else {
+            Title = "下架";
+        }
+        $.ajax({
+            type: "post",
+            url: "/foods/IsSellFoodGoods",
+            data: { type: type, id: id, appid: @(ViewBag.appId), foodId: foodId },
+            success: function (data) {
+                if (data.Success)
+                    alert(Title + "成功");
+                else
+                    alert(Title + "失败");
+                window.location.reload();
+            }
+        })
+    }
+
+    function check(x)
+    {
+        if($(x).hasClass("active"))
+        {
+            $(x).removeClass("active");
+            $(x).css("background-color","White");
+            $(x).css("color","#108EE9");
+        }
+        else
+        {
+            $(x).addClass("active");
+            $(x).css("background-color","#108EE9");
+            $(x).css("color","White");
+        }
+    }
+
+   
+</script>

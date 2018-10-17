@@ -1,0 +1,432 @@
+﻿@using Entity.MiniApp.Qiye
+@{
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "员工管理";
+    List<QiyeDepartment> listDepart = ViewBag.listDepart;
+
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+
+    /*.edit { color: cornflowerblue; }
+    .del { color: red; }*/
+
+    .layui-laypage span { background-color: #eff0f4; }
+    .employeeInfo>div{margin-top:10px;}
+
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+
+    <div id="app_EmployeeList" v-cloak>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <div>
+
+                        <label for="plist-pname">在职状态：</label>
+                        <select class="form-control" style="width: 200px; margin-left: 5px;" v-model="postdata.workState">
+                            <option value="-2">全部</option>
+                            <option value="0">在职</option>
+                            <option value="-1">离职</option>
+                        </select>
+
+                        <label for="plist-pname">部门名称：</label>
+                        <select class="form-control" style="width: 200px; margin-left: 5px;"  v-model="postdata.departMentId">
+                            <option :value="item.Id" v-for="(item,index) in departMentList">{{item.Name}}</option>
+                          
+                        </select>
+
+                        <label for="plist-pname">微信绑定状态：</label>
+                        <select class="form-control" v-model="postdata.wxBindState">
+                            <option value="-1">全部</option>
+                            <option value="0">未绑定</option>
+                            <option value="1">已绑定</option>
+
+                        </select>
+                        <input type="text" name="storeName" class="form-control" v-model="postdata.searchKey" placeholder="姓名或者手机号码" />
+                        <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                        <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                            <a class="btn btn-primary ml10" v-on:click="addedit(-1,-1)">
+                                新增
+                            </a>
+                    </div>
+
+
+                </div>
+
+
+
+            </div>
+        </div>
+        <div style="margin-top:20px;">
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">头像</th>
+                    <th class="centertext">姓名</th>
+                    <th class="centertext">部门</th>
+                    <th class="centertext">职位</th>
+                    <th class="centertext">员工码</th>
+                    <th class="centertext">微信绑定</th>
+                    <th class="centertext">员工手机</th>
+                    <th class="centertext">员工Email</th>
+                    <th class="centertext">在职状态</th>
+                    <th class="centertext">客户数</th>
+                    <th class="centertext">访问量</th>
+                    <th class="centertext">公司客服</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in employeeList">
+                    <td class="centertext">
+                        <img v-bind:src="item.Avatar" alt="图片跑丢了" width="50" height="50" />
+
+                    </td>
+                    <td class="centertext">{{item.Name}}</td>
+                    <td class="centertext">{{item.DepartMentName}}</td>
+                    <td class="centertext">{{item.Job}}</td>
+                    <td class="centertext">{{item.WorkID}}</td>
+                    <td class="centertext">{{item.WxBindStateStr}}</td>
+                    <td class="centertext">{{item.Phone}}</td>
+                    <td class="centertext">{{item.Email}}</td>
+                    <td class="centertext">{{item.WorkStateStr}}</td>
+                    <td class="centertext">{{item.CustomerNum}}</td>
+                    <td class="centertext">{{item.PV}}</td>
+                    <td class="centertext">{{item.KefuStateStr}}</td>
+                    <td class="centertext">
+                        <a href="javascript:void(0)" class="edit btn btn-primary ml10" v-on:click="addedit(1,index)">编辑</a>
+                        <a href="/Qiye/OfficialWeb/YeJi?aid=@ViewBag.appId" class="del btn btn-default ml10">查看业绩</a>
+                        <a href="/Qiye/Customer/Index?aid=@ViewBag.appId" class="edit btn btn-primary ml10">查看客户</a>
+                        <a href="javascript:void(0)" class="del btn btn-default ml10" v-on:click="del(item.Id)">删除</a>
+                    </td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;"></div>
+           
+        </div>
+
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            员工管理
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:130px;" class="employeeInfo">
+                                    <div>
+                                        <span>所属部门：<span style="color:red;">*</span></span>
+                                        <select class="form-control" v-model="employeeInfo.DepartmentId" style="width: 200px; margin-left: 5px;">
+                                            <option :value="item.Id" v-for="(item,index) in departMentList">{{item.Name}}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span>员工姓名：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="员工姓名" v-model="employeeInfo.Name" />
+                                    </div>
+                                    <div>
+                                        <span>员工职位：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="员工职位" v-model="employeeInfo.Job" />
+                                    </div>
+                                    
+                                  
+                                    <div>
+                                        <span>员工头像(750*750)：<span style="color:red;">*</span></span><img v-if="employeeInfo.Avatar==''||employeeInfo.Avatar==null" style="margin-left:5px;width:55px;height:55px;" src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180308/97259ef92d7c45c3af657077e734f186.png" /><img v-bind:src="employeeInfo.Avatar" v-else style="width:55px;height:55px;margin-left:5px;" />
+                                        <a href="#" class="btn btn-info ml10" v-on:click="UploadImg()">上传头像</a>
+                                    </div>
+                                    <div>
+                                        <span>员工手机：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="员工电话" v-model="employeeInfo.Phone" />
+                                    </div>
+                                    <div>
+                                        <span>员工Email：</span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="员工Email" v-model="employeeInfo.Email" />
+                                    </div>
+                                    <div>
+                                        <span>在职状态：<span style="color:red;">*</span></span>
+                                        <label><input type="radio" name="WorkState" value="0" v-model="employeeInfo.WorkState"/>在职</label>
+                                        <label><input type="radio" name="WorkState" value="-1" v-model="employeeInfo.WorkState"/>已离职</label>
+                                    </div>
+                                    <div>
+                                        <span>员工码：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="员工码" v-model="employeeInfo.WorkID" />
+                                    </div>
+                                    <div v-if="employeeInfo.UserId>0">
+                                        <span>微信绑定账号：</span>
+                                        <img v-bind:src="employeeInfo.WxBindUserInfo.Avatar" style="width:40px;;height:40px;margin-left:5px;border-radius:50px;" />
+                                        <span>{{employeeInfo.WxBindUserInfo.UserName}}</span>
+                                    </div>
+                                    <div v-else>
+                                        <span>微信绑定账号：{{employeeInfo.WxBindStateStr}}</span>
+                                      
+                                    </div>
+
+                                    <div>
+                                        <span>公司客服：<span style="color:red;">*</span></span>
+                                        <label><input type="radio" name="Kefu" value="0" v-model="employeeInfo.Kefu"/>不是</label>
+                                        <label><input type="radio" name="Kefu" value="1" v-model="employeeInfo.Kefu" :disabled='curKefuCount>6'/>是</label>
+                                        <span>可设置6个客服，当前已设置{{curKefuCount}}个</span>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+        <!-- #region 上传图片弹窗 -->
+        <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="border:0px;">
+                        <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                    </div>
+                    <div class="modal-body" style="min-height:500px;padding:0px;">
+                        <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- #endregion -->
+    </div>
+
+
+</div>
+
+
+<script>
+    var ckids=[];
+    var employeeItem=@Html.Raw(JsonConvert.SerializeObject(new QiyeEmployee() { DepartmentId=-1,Aid=ViewBag.appId }));
+    var app = new Vue({
+        el: "#app_EmployeeList",
+        data: {
+            postdata: {
+                aid:@ViewBag.appId,
+                searchKey:"",
+                departMentId:-1,
+                workState:-2,
+                wxBindState:-1,
+                pageIndex: 1,
+                pageSize: 10
+            },
+            departMentList:@Html.Raw(JsonConvert.SerializeObject(listDepart)),
+            employeeList:[],
+            employeeInfo:employeeItem,
+            curMaterialPath:"",
+            curKefuCount:0
+
+        },
+        watch:{
+            curMaterialPath:function(){
+                var that=this;
+                that.employeeInfo.Avatar=that.curMaterialPath;
+            }
+        },
+        methods: {
+            del:function(Id){
+                if(parseInt(Id)<=0){
+                    layer.msg('请点击需要删除的员工');
+                    return;
+                }
+
+                layer.open({
+                    title: "删除确认",
+                    content: "确定要删除吗？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/Qiye/OfficialWeb/DelEmployee',
+                            data: {aid:@ViewBag.appId,Id:Id },
+                            dataType: 'json',
+                            success: function (data) {
+
+                                layer.msg(data.Msg);
+                                if (data.isok) {
+
+                                    window.setTimeout(function(){
+                                        window.location.reload();
+                                    },2000);
+                                }
+                            },
+                            error: function (data) {
+                                layer.msg('与服务器通讯错误');
+                            }
+                        });
+
+                    }
+                })
+
+
+            
+
+
+            },
+            saveInfo:function(){
+                var that=this;
+                if(that.employeeInfo.Name==null||that.employeeInfo.Name==''||that.employeeInfo.Name.length>10){
+                    layer.msg('员工姓名不能为空或者不能大于10个字符');
+                    return;
+                }
+                if(that.employeeInfo.DepartmentId<=0){
+                    layer.msg('请选择所属部门');
+                    return;
+                }
+               
+                if(that.employeeInfo.Avatar==null||that.employeeInfo.Avatar==""){
+                    layer.msg('请上传一张员工头像');
+                    return;
+                }
+                if(that.employeeInfo.Job==null||that.employeeInfo.Job==""){
+                    layer.msg('请上填写员工职位');
+                    return;
+                }
+            
+                if(!/\d/.test(that.employeeInfo.Phone)||that.employeeInfo.Phone.length>11){
+                    layer.msg("请填写正确的员工手机号码");
+                    return;
+                }
+                if(!/^\d{6,11}$/.test(that.employeeInfo.WorkID)){
+                    layer.msg("请填写正确的员工码(6-11位数字)");
+                    return;
+                }
+
+                if(that.employeeInfo.Kefu==1&&that.employeeInfo.UserId<=0){
+                    layer.msg("请先绑定员工再设置为客服");
+                    return;
+                }
+                if(that.employeeInfo.Email!=''&&that.employeeInfo.Email.length>0){
+                    var re = /^[A-Za-z\d]+([-_.][A-Za-z\d]+)*@@([A-Za-z\d]+[-.])+[A-Za-z\d]{2,4}$/; 
+                    if (!re.test(that.employeeInfo.Email)) {
+                        layer.msg("请填写正确的邮箱地址");
+                        return;
+                    } 
+                }
+
+               
+              
+                $.ajax({
+                    type: 'POST',
+                    url: '/Qiye/OfficialWeb/SaveEmployee',
+                    data: {aid:@ViewBag.appId,employee:that.employeeInfo },
+                    dataType: 'json',
+                    success: function (data) {
+
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                })
+            },
+            addedit:function(type,index){
+                var that=this;
+                if (typeof (index) != "undefined"&&type>0) {//编辑
+
+                    that.employeeInfo = JSON.parse(JSON.stringify(that.employeeList[index]));
+
+                } else {
+                    that.employeeInfo =employeeItem ;
+                }
+                $('#myModal').modal('show')
+            },
+            search:function(){
+                var that=this;
+                that.postdata.pageIndex=1;
+                that.getList();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                that.sortCategoryList=[];//翻页后清空 之前编辑了排序的数据
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getList();
+
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+
+            getList: function () {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Qiye/OfficialWeb/GetEmployeeList", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.count;
+                    that.employeeList = data.dataObj.list;
+                    that.curKefuCount=data.dataObj.curKefuCount;
+                    that.resetPage();
+                })
+
+            },UploadImg: function () {
+                var that=this;
+                var framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=0&maxImgSize=1&objKey=curMaterialPath&objType=1&remainCount=1";
+                $("#uploadFrame").attr("src",framSrc);
+                $("#addModal_UploadImg").modal('show');
+
+            }
+
+
+        },created:function(){
+            var that=this;
+            that.getList();
+
+        }
+    });
+</script>

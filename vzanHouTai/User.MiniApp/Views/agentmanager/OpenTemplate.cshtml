@@ -1,0 +1,1453 @@
+﻿@using Entity.MiniApp.Conf
+@model Agentinfo
+@{
+    ViewBag.Title = "已开通模板管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+    ViewBag.level = Model.userLevel;
+    int templatetype = (int)TmpType.小程序多门店模板;
+    int foodMenyStore = (int)TmpType.小程序餐饮多门店模板;
+    int zhtemptype = (int)TmpType.智慧餐厅;
+    int zhqytemptype = (int)TmpType.企业智推版;
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+
+<style>
+    .page-wrapper { min-width: 1800px; }
+
+    #page div { text-align: center; }
+
+    .page-content { min-width: 1400px; }
+
+    #customList { /*width: 1367px;*/ margin: 0 auto; }
+
+        #customList table.layui-table { text-align: center; }
+
+            #customList table.layui-table th, #customList table.layui-table td { font-family: 'Microsoft YaHei'; font-weight: 400; font-style: normal; font-size: 12px; text-align: center; }
+
+            #customList table.layui-table th { height: 50px; }
+
+            #customList table.layui-table a { color: #108EE9; margin: 0 15px; }
+
+    .caozuo li { float: left; }
+
+    .more { display: block; position: relative; }
+
+    .dropdown-menu { min-width: 0px; font-size: 12px; }
+
+        .dropdown-menu a { margin: 0px !important; font-size: 12px; }
+
+    #search_box { margin-top: 10px; /*margin-bottom: 30px;*/ height: 120px; }
+
+        #search_box ul li { float: left; width: 20%; line-height: 38px; }
+
+            #search_box ul li input { width: 140px; float: left; margin-left: 5px; }
+
+            #search_box ul li span { float: left; color: #404040; }
+
+        #search_box ul.tamplate li { min-width: 100px; text-align: center; width: auto; margin: 10px 10px; font-size: 12px; }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus { text-decoration: none; color: #fff; }
+
+            #search_box ul.tamplate li a { padding: 0 18px; color: #777; }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus { text-decoration: none; }
+
+    .search_btn { width: 100%; height: 45px; float: left; margin: 15px 0px; }
+
+        .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus { text-decoration: none; outline: -webkit-focus-ring-color; }
+
+    a.layui-btn-normal:focus { color: #fff; }
+
+    .search_btn a.layui-btn-primary:focus { color: #555; }
+
+    .search_btn a.layui-btn-primary:hover { background-color: #eee; border-color: #C9C9C9; }
+
+    .layui-tab-title .layui-this:after { height: 40px; }
+
+    .userInfo { margin: 20px 87px; }
+
+        .userInfo span { color: red; }
+
+        .userInfo td { padding: 8px 5px; width: 250px; }
+
+    .textname { text-align: right; width: 100px !important; }
+
+    /*start上传图片*/
+    .width200 {width:200px;display:inline-block; }
+    .plus-button {box-shadow: none !important;border: 2px dashed #aaa;color: #888;cursor: pointer;text-align: center;height: 120px;transition: all .2s cubic-bezier(.7,0,.3,1);width: 120px;}
+        .plus-button .plus {font-size: 100px;line-height: 1;font-weight: 700;margin-top: -10px;}
+    .plus-label {font-size: 14px;position: relative;text-align: center;top: -2px;}
+    /*end上传图片*/
+</style>
+<div id="customList" hidden>
+    <div id="search_box">
+        <ul style="width:100%">
+            <li>
+                <span>客户账号：</span>
+                <input type="text" v-model="postdata.loginname" class="form-control" />
+            </li>
+            <li>
+                <span>客户名称：</span>
+                <input type="text" v-model="postdata.username" class="form-control" />
+            </li>
+            <li>
+                <span>模板名称：</span>
+                <input type="text" v-model="postdata.templatename" class="form-control" />
+            </li>
+            <li style="width: 27%;">
+                <input type="text" v-model="postdata.outtime" maxlength="4" class="form-control" />
+                <span>天内到期</span>
+            </li>
+        </ul>
+        <div class="search_btn">
+            <a href="javascript:;" v-on:click="Search(true)" class="layui-btn layui-btn-normal" style="margin-right:15px;">搜索</a>
+            <a href="javascript:;" v-on:click="resetSearch()" class="layui-btn layui-btn-primary">清除</a>
+        </div>
+    </div>
+
+    <table class="layui-table" lay-skin="line">
+        <colgroup>
+            <col width="10%">
+            @*<col width="10%">*@
+            <col width="15%">
+            <col width="15%">
+            <col width="15%">
+            <col width="15%">
+            <col width="5%">
+            <col width="10%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>模板名称</th>
+                @*<th>模板费用（元）</th>*@
+                <th>客户账号</th>
+                <th>客户名称</th>
+                <th>开通时间</th>
+                <th>到期时间</th>
+                <th>有效天数</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tr v-if="userlist!=null && userlist.length>0" v-for="(user,index) in userlist">
+            <td>{{user.tname}}{{user.IsExperience?"(体验版)":""}}{{user.NickName}}</td>
+            @*<td>{{user.price/100}}</td>*@
+            <td>{{user.LoginId}}</td>
+            <td>{{user.username}}</td>
+            <td>{{user.addtime}}</td>
+            <td>{{user.outtime}}</td>
+            <td><span v-bind:style="{color:(user.validday>=20?'green':(user.validday>=10?'#FF6600':'red'))}">{{user.validday}}</span></td>
+            <td style="color:green" v-if="user.state==1">正常</td>
+            <td style="color:red" v-else-if="user.state==-1">已停用</td>
+            <td style="color:red" v-else-if="user.state==2">已过期</td>
+            <td style="color:gray" v-else>未知状态</td>
+            <td>
+                <ul class="caozuo" v-if="user.state==1 || user.state == 2">
+                    <li><a href="javascript:;" v-on:click="updateState(index,-1)">停用模板</a></li>
+                    <li v-if="user.type==@templatetype || user.type==@foodMenyStore">
+                        <a v-if="ispassword" v-on:click="checkagentpassword('getstorelog',index)" href="javascript:;">开通情况</a>
+                        <a v-else v-on:click="getstorelog(index)" href="javascript:;">开通情况</a>
+                    </li>
+                    <li v-if="user.type==@templatetype || user.type==@foodMenyStore">
+                        <a v-if="ispassword" v-on:click="checkagentpassword('addstore',index)" data-toggle="modal" style="cursor:pointer;">开通门店</a>
+                        <a v-else v-on:click="addstore(index)" data-toggle="modal" style="cursor:pointer;">开通门店</a>
+                    </li>
+                    <li v-if="user.type==@zhtemptype">
+                        <a v-if="ispassword" v-on:click="checkagentpassword(index)" data-toggle="modal" style="cursor:pointer;">设置门店</a>
+                        <a v-else v-on:click="addzhstore(index)" data-toggle="modal" style="cursor:pointer;">设置门店</a>
+                    </li>
+                    <li v-if="user.type==@zhqytemptype">
+                        <a v-if="ispassword" v-on:click="checkagentpassword(index)" data-toggle="modal" style="cursor:pointer;">设置员工</a>
+                        <a v-else v-on:click="addzhqystaff(index)" data-toggle="modal" style="cursor:pointer;">设置员工</a>
+                    </li>
+                    <li v-if="user.type==@templatetype || user.type==@foodMenyStore">
+                        <a v-if="ispassword" v-on:click="checkagentpassword('openstoreaddtime',index)" data-toggle="modal" style="cursor:pointer;">门店续期</a>
+                        <a v-else v-on:click="openstoreaddtime(index)" data-toggle="modal" style="cursor:pointer;">门店续期</a>
+                    </li>
+                    <li>
+                        <a v-if="ispassword" v-on:click="checkagentpassword('addusetimelength',index)" data-toggle="modal" style="cursor:pointer;">模板续期</a>
+                        <a v-else v-on:click="addusetimelength(index)" data-toggle="modal" style="cursor:pointer;">模板续期</a>
+                    </li>
+                    <li v-if="user.type==1">
+                        <a v-if="ispassword" v-on:click="checkagentpassword('upEntProVersion',index)" style="cursor:pointer;">升级版本</a>
+                        <a v-else v-on:click="upofficial(index)" style="cursor:pointer;">升级版本</a>
+                    </li>
+                    <li v-if="user.type==22&&user.VersionId>0 && @ViewBag.AgentType==0">
+                        <a v-if="ispassword"  v-on:click="checkagentpassword('upEntProVersion',index)" style="cursor:pointer;">升级版本</a>
+                        <a v-else v-on:click="upEntProVersion(index)" style="cursor:pointer;">升级版本</a>
+                    </li>
+                    <li v-if="user.OpenCustomBottom==0 && user.type!=52&& user.type!=53&& user.type!=56 && user.type!=1 && user.type!=4">
+                        <div v-if="user.type==55 || user.type==1 || user.type==4 || (user.type==22 && user.VersionId==3)">
+                        </div>
+                        <div v-else>
+                            <a v-if="ispassword" v-on:click="checkagentpassword('setbottomlogo',index)" data-toggle="modal" style="cursor:pointer;">开启水印</a>
+                            <a v-else v-on:click="opencustomlogo(index)" data-toggle="modal" style="cursor:pointer;">开启水印</a>
+                        </div>
+                    </li>
+                    <li v-else-if="user.type!=52&& user.type!=53 && user.type!=56 && user.type!=1 && user.type!=4">
+                        <a v-on:click="setbottomlogo(index)" data-toggle="modal" style="cursor:pointer;">编辑水印</a>
+                    </li>
+                </ul>
+                <ul class="caozuo" v-if="user.state==-1">
+                    <li><a href="javascript:;" v-on:click="updateState(index,1)">启用模板</a></li>
+                </ul>
+            </td>
+        </tr>
+        <tr v-if="userlist==null || userlist.length==0">
+            <td colspan="8">暂无数据</td>
+        </tr>
+
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+    <!-- 模态框（Modal） -->
+    <div class="modal fade" id="addtimelength" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">模板续期</h4>
+                </div>
+                <div class="modal-body">
+                    <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                        <tr>
+                            <td>
+                                <div>
+                                    模板名称：<i>{{currenttemplate.tname}}</i>
+                                </div>
+                                <div>
+                                    客户账号：<i>{{currenttemplate.LoginId}}</i>
+                                </div>
+                                <div>
+                                    客户名称：<i>{{currenttemplate.username}}</i>
+                                </div>
+                                @*<div>
+                                        模板单价（元）：<i>{{currenttemplate.price/100}}</i>
+                                    </div>*@
+                                <div>
+                                    到期时间：<i>{{currenttemplate.outtime}}</i>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:20px 0px;text-align:center;">
+                                    <i style="font-size:20px;font-weight:bold;">续期</i>
+                                    <input type="text" style="width: 80px;
+    color: red;
+    text-align: center;
+    border-radius: 5px;
+    height: 40px;
+    margin: 0px 10px;" v-model="currenttemplate.years" maxlength="4" />
+                                    <i style="font-weight:bold;">年</i>
+                                </div>
+
+                            </td>
+                        </tr>
+                        @*<tr>
+                                <td>
+                                    <div style="margin:10px 0px;">
+                                        续期费用（元）：<i style="color:red;">{{currenttemplate.yearprice*currenttemplate.years/100}}</i>
+                                    </div>
+
+                                </td>
+                            </tr>*@
+                        <tr>
+                            <td>
+                                <div style="margin:10px 0px;">
+                                    续期成功后到期时间将延长至：<i style="color:red;">{{currenttemplate.addtime}}</i>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" v-on:click="savedata()">保存</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+    @*开通门店*@
+    <div class="modal fade" id="addstore" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">开通新门店</h4>
+                </div>
+                <div class="modal-body">
+                    <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                        <tr>
+                            <td>
+                                <div>
+                                    客户账号：<span>{{currenttemplate.LoginId}}</span>
+                                </div>
+                                <div>
+                                    客户名称：<span>{{currenttemplate.username}}</span>
+                                </div>
+                                <div>
+                                    已开通门店数量：<span>{{currenttemplate.scount}}</span>
+                                </div>
+                                <div>
+                                    新增门店费用：<span>￥{{currenttemplate.sprice/100}}/店/年</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:20px 0px;text-align:center;">
+                                    新开通门店数量：
+                                    <input type="text" style="width: 80px;color: red;text-align: center;border-radius: 5px;height: 40px;margin: 0px 10px;" v-model="currenttemplate.storecount" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" maxlength="4" />
+                                    @*<input class="layui-input" v-model="storecount" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" maxlength="4" placeholder="0~9999" />*@
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:10px 0px;">
+                                    开通成功后到期时间：<i style="color:red;">{{currenttemplate.outtime}}</i><br />
+                                    <div v-if="currenttemplate.yearprice>0">
+                                        有效时间不足一年开通价格：<i style="color:red;">￥{{currenttemplate.yearprice}}</i>
+                                        <div style="color:red;">
+                                            提示：模板有效期不足一年时，新开通门店有效期为模板有效期，门店单价为该段有效期所占1年份额的价格，计算公式：价格 = 有效天数 / 365天 * 新增门店费用
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveaddstoredata()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*门店开通情况*@
+    <div class="modal fade" id="storeinfo" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">门店开通情况</h4>
+                </div>
+                <div class="modal-body" style="max-height:500px;overflow:auto;">
+                    <table class="layui-table" lay-skin="line">
+                        <colgroup>
+                            <col width="5%">
+                            <col width="15%">
+                            <col width="15%">
+                            <col width="5%">
+                            <col width="10%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>门店数量</th>
+                                <th>开通时间</th>
+                                <th>过期时间</th>
+                                <th>费用（元）</th>
+                                <th>操作类型</th>
+                            </tr>
+                        </thead>
+                        <tr v-if="storeloglist.data!=null && storeloglist.data.length>0" v-for="(storedata,index) in storeloglist.data">
+                            <td>{{storedata.templateCount}}</td>
+                            <td>{{storedata.showaddtime}}</td>
+                            <td>{{storedata.costdetail}}</td>
+                            <td>{{storedata.cost/100}}</td>
+                            <td>{{storedata.type==7?"门店续期":storedata.type==6?"开通新门店":"无效操作类型"}}</td>
+                        </tr>
+                        <tr v-if="storeloglist.data==null || storeloglist.data.length==0">
+                            <td colspan="7">暂无数据</td>
+                        </tr>
+
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" v-on:click="addstore(storeloglist.index)">开通新门店</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*门店续期*@
+    <div class="modal fade" id="storeaddtime_ff" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">门店续期</h4>
+                </div>
+                <div class="modal-body" style="max-height:500px;overflow:auto;">
+                    <table class="layui-table" lay-skin="line">
+                        <colgroup>
+                            <col width="5%">
+                            <col width="15%">
+                            <col width="10%">
+                            <col width="10%">
+                            <col width="10%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>门店ID</th>
+                                <th>门店名称</th>
+                                <th>开通时间</th>
+                                <th>过期时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tr v-if="storemendianlist!=null && storemendianlist.length>0" v-for="(storedata,index) in storemendianlist">
+                            <td>{{storedata.Id}}</td>
+                            <td>{{storedata.StoreName}}</td>
+                            <td>{{storedata.CreateDateStr}}</td>
+                            <td>{{storedata.OverTimeStr}}</td>
+                            <td>
+                                <a v-on:click="openaddstoretimelength(index)" data-toggle="modal" style="cursor:pointer;">续期</a>
+                            </td>
+                        </tr>
+                        <tr v-if="storemendianlist==null || storemendianlist.length==0">
+                            <td colspan="7">暂无数据</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="addstoretimelength_ff" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">门店续期</h4>
+                </div>
+                <div class="modal-body">
+                    <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                        <tr>
+                            <td>
+                                <div>
+                                    门店名称：<i>{{currenttemplate.tname}}</i>
+                                </div>
+                                <div>
+                                    续期费用（元）/年：<i>{{currenttemplate.sprice/100}}</i>
+                                </div>
+                                <div>
+                                    门店到期时间：<i>{{currenttemplate.outtime}}</i>
+                                </div>
+                                <div>
+                                    模板到期时间：<i>{{currenttemplate.storeovertime}}</i>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:20px 0px;text-align:center;">
+                                    <i style="font-size:20px;font-weight:bold;">续期</i>
+                                    <input type="text" style="width: 80px;
+    color: red;
+    text-align: center;
+    border-radius: 5px;
+    height: 40px;
+    margin: 0px 10px;" v-model="currenttemplate.years" maxlength="4" />
+                                    <i style="font-weight:bold;">年</i>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:10px 0px;">
+                                    续期成功后到期时间将延长至：<i style="color:red;">{{currenttemplate.addtime}}</i>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:10px 0px;">
+                                    <div v-if="currenttemplate.yearprice>0">
+                                        到期时间为模板到期时间开通价格：<i style="color:red;">￥{{currenttemplate.yearprice}}</i>
+                                        <div style="color:red;">
+                                            提示：开通成功后门店到期时间超过模板到期时间时，门店到期时间为模板到期时间，费用为整数年价格加上不足整数年价格，不足整数年价格为有效天数所占1年份额的价格，计算公式：价格 = 整数年*续期费用+不足一年有效天数 / 365天 * 续期费用
+                                        </div>
+                                    </div>
+                                    <div v-else>
+                                        <div style="color:red;">
+                                            提示：门店到期时间不能超过模板到期时间
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" v-on:click="savestoretimedata()">保存</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+
+    @*专业版版本升级*@
+    <div class="modal fade" id="upEntProVersionModel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">升级版本</h4>
+                </div>
+                <div class="modal-body" style="max-height:500px;overflow:auto;">
+                    <div>
+                        <label>升级为:</label>
+                        <select v-model="curEntPro.newVersionId">
+                            <option value="-1">请选择</option>
+                            <option v-for="(item,index) in UpEntProVersionXcxTemplate" :value="item.VersionId">{{item.VersionName}},{{item.VersionPrice}}元/年</option>
+                        </select>
+                    </div>
+                    <div style="color: rgb(255, 102, 0); font-size: 12px;"><div>温馨提示：</div> <div>1.升级费用=模板单价*有效期（年）</div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="SaveUpEntProVersion()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*智慧餐厅设置门店*@
+    <div class="modal fade" id="addzhstore" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">修改门店数量</h4>
+                </div>
+                <div class="modal-body">
+                    <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                        <tr>
+                            <td>
+                                <div>
+                                    客户账号：<span>{{currenttemplate.LoginId}}</span>
+                                </div>
+                                <div>
+                                    客户名称：<span>{{currenttemplate.username}}</span>
+                                </div>
+                                <div>
+                                    已开通门店数量：<span>{{currenttemplate.scount}}</span>
+                                </div>
+                                <div>
+                                    新增门店费用：<span>￥{{currenttemplate.sprice/100}}/店</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:20px 0px;text-align:center;">
+                                    设置门店数量：
+                                    <input type="text" style="width: 80px;color: red;text-align: center;border-radius: 5px;height: 40px;margin: 0px 10px;" v-model="currenttemplate.storecount" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" maxlength="4" />
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveaddzhstoredata()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*企业智推版设置员工*@
+    <div class="modal fade" id="addzhqystaff" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">修改员工数量</h4>
+                </div>
+                <div class="modal-body">
+                    <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                        <tr>
+                            <td>
+                                <div>
+                                    客户账号：<span>{{currenttemplate.LoginId}}</span>
+                                </div>
+                                <div>
+                                    客户名称：<span>{{currenttemplate.username}}</span>
+                                </div>
+                                <div>
+                                    已开通员工数量：<span>{{currenttemplate.scount}}</span>
+                                </div>
+                                <div style="color:red;">
+                                    新增员工费用：<span>￥{{currenttemplate.sprice/100}}/人</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="margin:20px 0px;text-align:center;">
+                                    设置员工数量：
+                                    <input type="text" style="width: 80px;color: red;text-align: center;border-radius: 5px;height: 40px;margin: 0px 10px;" v-model="currenttemplate.storecount" onkeyup="this.value=this.value.replace(/[^\d]/g,'');" maxlength="4" />
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveaddzhqystaffdata()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @*start设置水印*@
+    <input id="editeaid" type="hidden" value="0" />
+    <input type="hidden" id="modelimgurlvalue" value="" />
+    <input type="hidden" id="backgroudlogovalue" value="" />
+    <div id="editcommand" hidden>
+        <div style='margin-top: 20px;margin-left: 20px;' hidden>
+            <span style="float:left;">标题：</span><input type="text" maxlength="20" class="form-control width200" id="templogotitle" value=""/>
+        </div>
+        <div style='margin-top: 20px;margin-left: 20px;' hidden>
+            <span style="float:left;">域名：</span><input type="text" maxlength="50" class="form-control width200" id="templogohost" value=""/>
+        </div>
+        <div style='margin-top: 20px;margin-left: 20px;overflow:auto;'>
+            <span style="float:left;">底部logo：</span>
+            <div style="float:left;">
+                <div class="pimg">
+                    <img style="height:150px;width:150px;" src="" id="tempmodelimgurl" onclick="UploadImg(0,0,-1)" hidden />
+                    <div class="plus-button" onclick="UploadImg(0,0,-1)" id="tempmodelimgurlupload">
+                        <div class="s-image-uploader-wrapper">
+                            <div>
+                                <div class="plus">+</div>
+                                <div class="plus-label">上传图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style='margin-top: 20px;margin-left: 20px;overflow:auto;display:none;'>
+            <span style="float:left;">后台logo：</span>
+            <div style="float:left;">
+                <div class="pimg">
+                    <img style="height:150px;width:150px;" src="" id="tempbackgroudlogo" onclick="UploadImg(1,0,-1)" hidden />
+                    <div class="plus-button" onclick="UploadImg(1,0,-1)" id="tempbackgroudlogoupload">
+                        <div class="s-image-uploader-wrapper">
+                            <div>
+                                <div class="plus">+</div>
+                                <div class="plus-label">上传图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true" hidden style="z-index:9999999;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    @*end设置水印*@
+</div>
+<script>
+    
+</script>
+<script>
+    var element;
+    var _layer = parent.layer;
+    var vm = new Vue({
+        el: "#customList",
+        data: {
+            ispassword:@(ViewBag.Password?"true":"false"),
+            recordCount: 0,
+            isloading: false,
+            userlist: [],
+            QiyeTemplate:{},
+            storemendianlist: [],//门店集合
+            storeloglist: { data: [], index: 0 },//开通门店记录
+            currenttemplate: {
+                tname: '',
+                LoginId: '',
+                username: '',
+                price: 0,
+                outtime: '',
+                id: 0,
+                tid:0,
+                yearprice: 0,
+                addtime: '',
+                years: 1,
+                storecount: 1,
+                scount: 0,
+                sprice: 0,
+                storeovertime: '',
+                type: 0,
+                rid: 0,
+            },
+            postdata: {
+                pageIndex: 1,
+                pagesize: 10,
+                loginname: '@ViewBag.LoginId',
+                username: '',
+                templatename: '',
+                outtime: '',
+            },
+            curEntPro: {
+                XcxRelationId: 0,
+                oldVersionId: -1,
+                newVersionId: 0,
+                username: "",
+                tname:""
+            },
+            UpEntProVersionXcxTemplate:[],
+            currenteditid:0,
+            bottomtitle:'agentcustomtitle',
+            bottomlogo:'agentcustomlogo',
+            bottomhost:'agentcustomhost',
+            agentsystemlogo:'agentsystemlogo',
+        },
+        watch: {
+            "postdata.outtime": {
+                handler: function (obj) {
+                    if (obj == "") {
+
+                    }
+                    else {
+                        var r = /^\+?[1-9][0-9]*$/;　　//正整数
+                        if (!r.test(obj)) {
+                            vm.postdata.outtime = 1
+                        }
+                    }
+                },
+                deep: true
+            },
+            currenttemplate: {
+                handler: function (obj) {
+                    if (obj.years == "") {
+
+                    }
+                    else {
+                        var r = /^\+?[1-9][0-9]*$/;　　//正整数
+                        if (!r.test(obj.years)) {
+                            obj.years = 1
+                        }
+
+                        var outtime = new Date(obj.outtime);
+                        //判断是门店续期还是模板续期
+                        if (obj.type == 1) {
+                            //判断开通门店过期时间是否大于模板过期时间
+                            var years = vm.computernum(vm.currenttemplate.sprice, vm.currenttemplate.storeovertime, vm.currenttemplate.outtime, obj.years);
+                            if (years > 0) {
+                                obj.years = years;
+                            }
+                        }
+                        else {
+                            var addtime = (outtime.getFullYear() + parseInt(obj.years)) + "-" + (outtime.getMonth() + 1) + "-" + outtime.getDate() + " " + outtime.getHours() + ":" + outtime.getMinutes() + ":" + outtime.getSeconds();
+                            vm.currenttemplate.addtime = addtime;
+                        }
+                    }
+
+                },
+                deep: true
+            }
+        },
+        methods: {
+            getuserlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                $.post("/agentmanager/GetOpenTemplateList", this.postdata, function (data) {
+                    vm.isloading = false;
+                    if (!data.isok) {
+                        console.log(data.Msg);
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        vm.recordCount = data.dataObj.recordCount;
+                        vm.userlist = data.dataObj.customerList;
+                        vm.resetPage();
+                        if (data.dataObj.aid > 0)
+                        {
+                            vm.upEntProVersion(0);
+                        }
+                    }
+                })
+            },
+            resetPage: function (/*issearch*/) {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    //console.log(laypage)
+                    laypage.render({
+                        elem: 'pages'
+                        , count: vm.recordCount //数据总数，从服务端得到
+                        , curr: vm.postdata.pageIndex //当前页
+                        , limit: vm.postdata.pagesize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            vm.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                vm.getuserlist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function () {
+                this.postdata.pageIndex = 1;
+                this.getuserlist();
+            },
+            resetSearch: function () {
+                this.postdata.loginname = '';
+                this.postdata.username = '';
+                this.postdata.templatename = '';
+                this.postdata.outtime = '';
+            },
+            //续期
+            addusetimelength: function (index) {
+                $("#addtimelength").modal("show");
+                vm.currenttemplate.tname = vm.userlist[index].tname;
+                vm.currenttemplate.LoginId = vm.userlist[index].LoginId;
+                vm.currenttemplate.username = vm.userlist[index].username;
+                vm.currenttemplate.price = vm.userlist[index].singleprice;
+                vm.currenttemplate.outtime = vm.userlist[index].outtime;
+                vm.currenttemplate.id = vm.userlist[index].id;
+                vm.currenttemplate.tid = vm.userlist[index].tid;
+                vm.currenttemplate.yearprice = vm.userlist[index].singleprice;
+                vm.currenttemplate.type = 0;
+                //var outtime = new Date(vm.userlist[index].outtime);
+                //var addtime = (outtime.getFullYear() + vm.currenttemplate.years) + "-" + (outtime.getMonth() + 1) + "-" + outtime.getDate() + " " + outtime.getHours() + ":" + outtime.getMinutes() + ":" + outtime.getSeconds();
+                //vm.currenttemplate.addtime = addtime;
+            },
+            savedata: function () {
+                var nametest = /^[^\s]+$/;
+                if (vm.currenttemplate.years <= 0) {
+                    layer.msg("请输入续期年限");
+                    return;
+                }
+
+                var postdata = {
+                    id: vm.currenttemplate.id,
+                    years: vm.currenttemplate.years,
+                    username: vm.currenttemplate.username,
+                    tname: vm.currenttemplate.tname,
+                }
+                var postMsg = {
+                    type:0,
+                    list:[{Id : vm.currenttemplate.tid, buycount:1,year:vm.currenttemplate.years}]
+                }
+
+                $.post("/agentmanager/GetCostMsg", postMsg, function (data) {
+                    if (data.isok) {
+                        layer.confirm('该操作将扣除费用'+data.dataObj+'元，您确定执行？', {
+                            title: "续期",
+                            btn: ['是', '否'] //按钮
+                        }, function () {
+                            //$.post("/agentmanager/AddStoreTimeLength", postdata, function (data) {
+                            //    if (data.isok) {
+                            //        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            //            layer.load(1);
+                            //            window.parent.location.reload();//do something
+                            //        });
+                            //    } else {
+                            //        layer.msg(data.Msg);
+                            //    }
+                            //})
+                            $.post("/agentmanager/addtimelength", postdata, function (data) {
+
+                                if (data.isok) {
+                                    layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                        layer.load(1);
+                                        window.parent.location.reload();//do something
+                                    });
+                                } else {
+                                    layer.msg(data.Msg);
+                                }
+                            })
+                        }, function () {
+                        });
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+                
+            },
+            upEntProVersion: function (index) {
+                //升级
+                var that = this;
+                that.curEntPro.newVersionId = -1;
+
+                that.curEntPro.XcxRelationId = that.userlist[index].id;
+                that.curEntPro.oldVersionId = that.userlist[index].VersionId,
+                that.curEntPro.username = that.userlist[index].username,
+                that.curEntPro.tname = that.userlist[index].tname;
+
+                $.post("/agentmanager/GetUpEntProVersionXcxTemplate", { oldVersionId:that.curEntPro.oldVersionId }, function (data) {
+                    if (data.isok) {
+                        that.UpEntProVersionXcxTemplate = data.dataObj;
+                        $("#upEntProVersionModel").modal("show");
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+
+            },
+            SaveUpEntProVersion: function () {
+                //保存升级
+                var that = this;
+
+                if (that.curEntPro.oldVersionId == 0) {
+                    layer.msg("当前版本已经是最高");
+                    return;
+                }
+                if (that.curEntPro.oldVersionId<that.curEntPro.newVersionId) {
+                    layer.msg("只能升级到更高版本");
+                    return;
+                }
+                layer.load(1);
+                $.post("/agentmanager/UpEntProVersion", that.curEntPro, function (data) {
+                    layer.closeAll();
+                    if (data.isok) {
+                        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            layer.load(1);
+                            window.parent.location.reload();//do something
+                        });
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            //开新分店
+            addstore: function (index) {
+                $("#storeinfo").modal("hide");
+                var date = new Date();
+                vm.storecount = 0;
+                vm.currenttemplate.tname = vm.userlist[index].tname;
+                vm.currenttemplate.LoginId = vm.userlist[index].LoginId;
+                vm.currenttemplate.username = vm.userlist[index].username;
+                vm.currenttemplate.price = vm.userlist[index].singleprice;
+                vm.currenttemplate.id = vm.userlist[index].id;
+                vm.currenttemplate.storecount = 1;
+                vm.currenttemplate.sprice = vm.userlist[index].sprice;
+                vm.currenttemplate.scount = vm.userlist[index].scount;
+                //判断开通门店过期时间是否大于模板过期时间
+                vm.currenttemplate.outtime = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
+                var nowdate = new Date((date.getFullYear() + 1) + "-" + (date.getMonth() + 1) + "-" + date.getDate());
+                var outtime = new Date(vm.userlist[index].outtime);
+                var date2 = new Date(date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate());
+                var diff = outtime.getTime() - date2.getTime();//时间差的毫秒数
+                //计算出相差天数
+                var days = Math.ceil(diff / (24 * 3600 * 1000));
+                if (nowdate > outtime) {
+                    vm.currenttemplate.yearprice = (vm.currenttemplate.sprice * (days / 365) / 100).toFixed(2);
+                    vm.currenttemplate.outtime = outtime.getFullYear() + "-" + (outtime.getMonth() + 1) + "-" + outtime.getDate();
+                }
+                else {
+                    vm.currenttemplate.outtime = nowdate.getFullYear() + "-" + (nowdate.getMonth() + 1) + "-" + nowdate.getDate();
+                }
+
+                $("#addstoreindex").val(index);
+                $("#addstore").modal("show");
+            },
+            saveaddstoredata: function () {
+                if (vm.currenttemplate.id <= 0) {
+                    return;
+                }
+                if (vm.currenttemplate.storecount <= 0) {
+                    layer.msg("请输入开通分店的数量");
+                    return;
+                }
+                var postdata = {
+                    id: vm.currenttemplate.id,
+                    scount: vm.currenttemplate.storecount,
+                    username: vm.currenttemplate.username,
+                }
+                vm.currenttemplate.id = 0;
+                $.post("/agentmanager/AddStoreV2", postdata, function (data) {
+                    if (data.isok) {
+                        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            layer.load(1);
+                            window.parent.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            //门店续期
+            openstoreaddtime: function (index) {
+                var postdata = {
+                    id: vm.userlist[index].id,
+                }
+                vm.currenttemplate.sprice = vm.userlist[index].sprice;
+                vm.currenttemplate.yearprice = vm.userlist[index].sprice;
+                vm.currenttemplate.storeovertime = vm.userlist[index].outtime;
+                vm.currenttemplate.username = vm.userlist[index].username;
+                vm.currenttemplate.rid = vm.userlist[index].id;
+
+                $.post("/agentmanager/GetStoreMenDianList", postdata, function (data) {
+                    if (data.isok) {
+                        vm.storemendianlist = data.dataObj
+                        $("#storeaddtime_ff").modal("show");
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            //弹出门店续期窗口
+            openaddstoretimelength: function (index) {
+                $("#addstoretimelength_ff").modal("show");
+                vm.currenttemplate.tname = vm.storemendianlist[index].StoreName;
+                //vm.currenttemplate.username = vm.storemendianlist[index].CreateDateStr;
+                vm.currenttemplate.outtime = vm.storemendianlist[index].OverTimeStr;
+                vm.currenttemplate.id = vm.storemendianlist[index].Id;
+                vm.currenttemplate.addtime = "";
+                vm.currenttemplate.type = 1;
+                vm.currenttemplate.yearprice = 0;
+            },
+            computernum: function (sprice, tovertime, sovertime, year) {
+                var years = 0;
+                //判断开通门店过期时间是否大于模板过期时间
+                var date = new Date(sovertime);
+                var nowdate = new Date();
+                if (nowdate > date) {
+                    date = nowdate;
+                }
+                var adddate = new Date((date.getFullYear() + parseInt(year)) + "-" + (date.getMonth() + 1) + "-" + date.getDate());
+                var outtime = new Date(tovertime);
+                if (adddate > outtime) {
+                    var date2 = date;
+                    vm.currenttemplate.addtime = outtime.getFullYear() + "-" + (outtime.getMonth() + 1) + "-" + outtime.getDate();
+                    var date3 = new Date(vm.currenttemplate.addtime);
+
+                    var diff = date3.getTime() - date2.getTime();//时间差的毫秒数
+                    //计算出相差天数
+                    var days = Math.ceil(diff / (24 * 3600 * 1000));
+                    //计算出相差年数
+                    years = Math.ceil(diff / (12 * 30 * 24 * 3600 * 1000));
+
+                    vm.currenttemplate.yearprice = ((parseInt(sprice) * (days / 365)) / 100).toFixed(2);
+                }
+                else {
+                    vm.currenttemplate.yearprice = 0;
+                    vm.currenttemplate.addtime = adddate.getFullYear() + "-" + (adddate.getMonth() + 1) + "-" + adddate.getDate();
+                }
+
+                return years;
+            },
+            savestoretimedata: function () {
+                var nametest = /^[^\s]+$/;
+                if (vm.currenttemplate.years <= 0) {
+                    layer.msg("请输入续期年限");
+                    return;
+                }
+
+                var postdata = {
+                    id: vm.currenttemplate.id,
+                    years: vm.currenttemplate.years,
+                    username: vm.currenttemplate.username,
+                    tname: vm.currenttemplate.tname,
+                    rid: vm.currenttemplate.rid,
+                }
+                layer.confirm('您确定为该门店续期？', {
+                    title: "续期",
+                    btn: ['是', '否'] //按钮
+                }, function () {
+                    $.post("/agentmanager/AddStoreTimeLength", postdata, function (data) {
+                        if (data.isok) {
+                            layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                layer.load(1);
+                                window.parent.location.reload();//do something
+                            });
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                }, function () {
+                });
+
+            },
+            //获取开通新门店情况
+            getstorelog: function (index) {
+                vm.storeloglist.index = index;
+                var postdata = {
+                    id: vm.userlist[vm.storeloglist.index].id,
+                }
+                $.post("/agentmanager/GetStoreLog", postdata, function (data) {
+                    if (data.isok) {
+                        vm.storeloglist.data = data.dataObj
+                        $("#storeinfo").modal("show");
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            updateState: function (index, state) {
+                var tips;
+                //var state = this.userlist[index].state;
+                var id = this.userlist[index].id;
+                if (state == -1) {
+                    tips = "是否确定要停用此模板?";
+                } else {
+                    tips = "是否确定要开启此模板?";
+                }
+                layer.confirm(tips, {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.post("/agentmanager/updatetemplatestate", { state: state, id: id }, function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+                            var outtime = new Date(Date.parse(vm.userlist[index].outtime));
+                            var now = new Date();
+                            if (state == -1) {
+                                vm.userlist[index].state = state;
+                            }
+                            else if (now > outtime) {
+                                vm.userlist[index].state = 2;
+                            }
+                            else {
+                                vm.userlist[index].state = state;
+                            }
+                        }
+                    })
+                });
+            },
+            changePwd: function (index) {
+                var id = this.userlist[index].id;
+                layer.open({
+                    type: 2,
+                    title: "修改密码",
+                    //shade: 0,
+                    shade: [0.8, '#000'],
+                    // skin: 'layui-layer-rim', //加上边框
+                    area: ['650px', '350px'], //宽高
+                    content: '/agentmanager/updatePwd?id=' + id
+                });
+
+            },
+            Isselected: function (index) {
+                return $.inArray(index, this.selectTid) > -1;
+            },
+            checkagentpassword: function (act,index) {
+                var layerindex=layer.open({
+                    type: 1,
+                    zIndex: 999999,
+                    title: "该操作需要输入代理密码",
+                    shade: 0.3,
+                    area: ['350px', '150px'], //宽高
+                    content: "<div style='text-align:center;margin-top:20px;'>密码：<input type='text' value='' id='opentemplate_agentpassword'/></div>",//this.adddiv(),
+                    btn: ["确定", "取消"],
+                    end: function () {
+                        currenteditid = 0;
+                    },
+                    yes: function () {
+                        var password = window.parent.document.getElementById("opentemplate_agentpassword").value;//$("#nameVal").val();
+                        if (password == undefined || password.length <= 0) {
+                            return layer.msg("请输入代理密码");
+                        }
+                        $.ajax({
+                            type: "Post",
+                            url: "/agentmanager/CheckAgentPassowrd",
+                            data:
+                                {
+                                    password: password,
+                                },
+                            success: function (data) {
+                                if (data.isok) {
+                                    window.location.reload();
+                                }
+                                else {
+                                    layer.msg(data.Msg);
+                                }
+                            }
+                        });
+                    },
+                });
+            },
+            //智慧餐厅设置门店
+            addzhstore: function (index) {
+                vm.storecount = 0;
+                vm.currenttemplate.tname = vm.userlist[index].tname;
+                vm.currenttemplate.LoginId = vm.userlist[index].LoginId;
+                vm.currenttemplate.username = vm.userlist[index].username;
+                vm.currenttemplate.price = vm.userlist[index].singleprice;
+                vm.currenttemplate.id = vm.userlist[index].id;
+                vm.currenttemplate.storecount = 1;
+                vm.currenttemplate.sprice = vm.userlist[index].sprice;
+                vm.currenttemplate.scount = vm.userlist[index].scount;
+                vm.currenttemplate.storecount = vm.userlist[index].scount;
+
+                $("#addzhstore").modal("show");
+            },
+            saveaddzhstoredata: function () {
+                if (vm.currenttemplate.id <= 0) {
+                    return;
+                }
+                if (vm.currenttemplate.storecount < 0) {
+                    layer.msg("请输入门店的数量");
+                    return;
+                }
+                var postdata = {
+                    id: vm.currenttemplate.id,
+                    scount: vm.currenttemplate.storecount,
+                    username: vm.currenttemplate.username,
+                }
+                vm.currenttemplate.id = 0;
+                $.post("/agentmanager/UpdateStoreCount", postdata, function (data) {
+                    if (data.isok) {
+                        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            layer.load(1);
+                            window.parent.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            //企业智推版设置门店
+            addzhqystaff: function (index) {
+                vm.storecount = 0;
+                vm.currenttemplate.tname = vm.userlist[index].tname;
+                vm.currenttemplate.LoginId = vm.userlist[index].LoginId;
+                vm.currenttemplate.username = vm.userlist[index].username;
+                vm.currenttemplate.price = vm.userlist[index].singleprice;
+                vm.currenttemplate.id = vm.userlist[index].id;
+                vm.currenttemplate.storecount = 1;
+                vm.currenttemplate.sprice = vm.userlist[index].sprice;
+                vm.currenttemplate.scount = vm.userlist[index].scount;
+                vm.currenttemplate.storecount = vm.userlist[index].scount;
+
+                $("#addzhqystaff").modal("show");
+            },
+            saveaddzhqystaffdata: function () {
+                if (vm.currenttemplate.id <= 0) {
+                    return;
+                }
+                if (vm.currenttemplate.storecount < 0) {
+                    layer.msg("请输入员工的数量");
+                    return;
+                }
+                var postdata = {
+                    id: vm.currenttemplate.id,
+                    scount: vm.currenttemplate.storecount,
+                    username: vm.currenttemplate.username,
+                }
+                vm.currenttemplate.id = 0;
+                $.post("/agentmanager/UpdateStoreCount", postdata, function (data) {
+                    if (data.isok) {
+                        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            layer.load(1);
+                            window.parent.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            //升级企业版
+            upofficial:function(index){
+                vm.curEntPro.XcxRelationId = vm.userlist[index].id;
+                vm.curEntPro.username = vm.userlist[index].username,
+                $.post("/agentmanager/GetOpenQiyeTemplateInfo", function (data) {
+                    if (data.isok) {
+                        layer.confirm("升级费用"+data.dataObj.PriceStr+"，该操作不可逆，确定升级？", {
+                            btn: ['确定', '取消'] //按钮
+                        }, function () {
+                            $.post("/agentmanager/UpQiyeVersion", vm.curEntPro, function (data) {
+                                layer.closeAll();
+                                if (data.isok) {
+                                    layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                        layer.load(1);
+                                        window.parent.location.reload();//do something
+                                    });
+                                } else {
+                                    layer.msg(data.Msg);
+                                }
+                            })
+                        });
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+            },
+            //设置水印
+            setbottomlogo:function(index)
+            {
+                var aid = vm.userlist[index].XcxRelationId;
+
+                $("#templogohost").val("11`2313123");
+
+                _layer.open({
+                    type: 1,
+                    zIndex: 999999,
+                    title: "编辑水印",
+                    shade: 0.3,
+                    area: ['350px', '300px'], //宽高
+                    content: $("#editcommand").html().replace(/temp/g, ''),//this.adddiv(),
+                    btn: ["确定", "取消"],
+                    end: function () {
+                        vm.currenteditid = 0;
+                    },
+                    yes: function () {
+                        if (vm.currenteditid > 0) {
+                            return;
+                        }
+                        var logotitle = $("#logotitle").val();
+                        //if (logotitle == undefined || logotitle.length <= 0) {
+                        //    return _layer.msg("请输入标题");
+                        //}
+                        var logohost = $("#logohost").val();
+                        //if (logohost == undefined || logohost.length <= 0) {
+                        //    return _layer.msg("请输入域名");
+                        //}
+                        var imgurl = $("#modelimgurlvalue").val();
+                        if(imgurl==undefined || imgurl.length<=0)
+                        {
+                            return _layer.msg("请上传底部logo");
+                        }
+                        var backgroudlogo = $("#backgroudlogovalue").val();
+                        //if(backgroudlogo==undefined || backgroudlogo.length<=0)
+                        //{
+                        //    return _layer.msg("请上传后台logo");
+                        //}
+                        vm.currenteditid = _layer.load(1);
+
+                        var data = new Array();
+                        data[data.length]= { "Value": imgurl, "Param": vm.bottomlogo };
+                        data[data.length]= { "Value": logotitle, "Param": vm.bottomtitle };
+                        data[data.length]= { "Value": logohost, "Param": vm.bottomhost };
+                        data[data.length]= { "Value": backgroudlogo, "Param": vm.agentsystemlogo };
+
+                        var datajson = JSON.stringify(data);
+
+                        $.post("/agentmanager/SaveCustomBottom",{aid:aid,datajson:datajson},function(returnData){
+                            if(returnData.isok)
+                            {
+                                layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            }
+                            else{
+                                layer.msg(returnData.Msg);
+                            }
+                        });
+                    },
+                    success:function()
+                    {
+                        var templist = vm.userlist[index].ConfParamList;
+                
+                        if(templist!=null && templist!=undefined && templist.length>0)
+                        {
+                            for(var i=0;i<templist.length;i++)
+                            {
+                                var tempmodel = templist[i];
+                                if(tempmodel.Param==vm.bottomlogo)
+                                {
+                                    if (tempmodel.Value != null && tempmodel.Value != undefined && tempmodel.Value.length > 0)
+                                    {
+                                        $("#modelimgurlvalue").val(tempmodel.Value);
+                                        $("#modelimgurl").attr("src", tempmodel.Value);
+                                        $("#modelimgurl").show();
+                                        $("#modelimgurlupload").hide();
+                                    }
+                                }
+                                else if(tempmodel.Param==vm.agentsystemlogo)
+                                {
+                                    if (tempmodel.Value != null && tempmodel.Value != undefined && tempmodel.Value.length > 0)
+                                    {
+                                        $("#backgroudlogovalue").val(tempmodel.Value);
+                                        $("#backgroudlogo").attr("src", tempmodel.Value);
+                                        $("#backgroudlogo").show();
+                                        $("#backgroudlogoupload").hide();
+                                    }
+                                }
+                                else if(tempmodel.Param==vm.bottomhost)
+                                {
+                                    $("#logohost").val(tempmodel.Value);
+                                }
+                                else if(tempmodel.Param==vm.bottomtitle)
+                                {
+                                    $("#logotitle").val(tempmodel.Value);
+                                }
+                            }
+                        }
+                    },
+                });
+            },
+            //开启自定义水印
+            opencustomlogo:function(index){
+                var aid = vm.userlist[index].XcxRelationId;
+                var username = vm.userlist[index].username;
+                _layer.confirm('开启该功能需扣除费用300，此操作不可逆,！确定进行该操作？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.post("/agentmanager/OpenCustomBottom", { aid: aid,username:username, }, function (returnData) {
+                        if (returnData.isok) {
+                            layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                                window.location.reload();
+                            });
+                        }
+                        else {
+                            layer.msg(returnData.Msg);
+                        }
+                    });
+                }, function () {
+                });
+            },
+        },
+        created: function (index) {
+            $("#customList").show();
+            this.getuserlist();
+        }
+    })
+    function UploadImg(type, isSpec, index) {
+        var aid = $("#editeaid").val();
+        var that = this;
+        var framSrc;
+        var maxCount = 1;
+        var remainCount = 1;
+        framSrc = "/tools/UpLoadImgFrm?Id=" + aid + "&appId=" + aid + "&multi_selection=0&maxImgSize=1&objKey=modelimgurl&objType=1&frontMethod=1&remainCount=" + remainCount;
+        if(type==1)
+        {
+            framSrc = "/tools/UpLoadImgFrm?Id=" + aid + "&appId=" + aid + "&multi_selection=0&maxImgSize=1&objKey=backgroudlogo&objType=1&frontMethod=1&remainCount=" + remainCount;
+        }
+        $("#uploadFrame").attr("src", framSrc);
+        $("#addModal_UploadImg").modal('show');
+    }
+    function clearImg(type, index) {
+        var that = this;
+        if (type > 0) {
+            //表示轮播图
+            if (that.bannerImg.length > 0) {
+                that.bannerImg.splice(index, 1);
+            }
+
+            that.p.slideimgs = that.bannerImg.join(",");
+        } else {
+            that.p.img = "";
+        }
+
+    }
+</script>

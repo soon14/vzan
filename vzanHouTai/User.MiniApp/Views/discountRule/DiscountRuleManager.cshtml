@@ -1,0 +1,438 @@
+﻿
+@using User.MiniApp.comment;
+@using Entity.MiniApp.Tools;
+@model CommonSetting
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "减免营销";
+    int aid = ViewBag.aId;
+    int storeId = ViewBag.storeId;
+    int maxRulesCount = ViewBag.maxRulesCount;
+}
+@*<link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=1" />*@
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+
+    table { margin: 20px 0px 0px 20px; color: #616060; }
+
+    table tr { height: 35px; }
+
+    table th { text-align: center; }
+
+    .ml10 { margin-left: 20px; }
+
+    .modal-title { font-size: 16px; font-weight: bold; }
+
+    .modal-body ul li { width: 50%; height: 28px; float: left; }
+
+    .detail_title { color: #4a86e8; font-size: 16px; margin-bottom: 10px; }
+    [v-cloak] { display: none; }
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form { width: 665px; margin-top: 30px; }
+    .layui-form tr { height: 50px; }
+    .layui-form .title { text-align: right; }
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #0094ff !important; }
+        .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #0094ff !important; }
+
+    .redFont { color: red; }
+    .table-striped > tbody > tr:nth-of-type(odd) { background-color: #F0F8FF; }
+
+    .ruleinput { width: 75px; float: left; }
+    .rulespan { float: left; padding: 10px 6px 0 6px; }
+
+    .hintFont {color:#FF9966;}
+</style>
+@*<link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=1" />*@
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div class="layui-tab layui-tab-brief" lay-filter="settingTab">
+    <ul class="layui-tab-title">
+        <li lay-id="discountRulesSetting">满减优惠</li>
+        <li lay-id="firstOrderDiscountsSetting">首单立减</li>
+    </ul>
+    <div class="layui-tab-content">
+
+        <!--#region 满减规则-->
+        <div id="discountRulesSetting" class="container-fluid layui-tab-item" v-cloak>
+            <div class="layui-form">
+                &nbsp; <label style="font-size: 16px; font-weight:bold; color:#5691fc">&nbsp;满减开关</label>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="pageSettingData.discountRuleSwitch">
+            </div>
+            <br />
+            <div>
+                <!--#region 满减规则数据表格-->
+                <div class="mt10">
+                    <table class="table table-striped table-hover" style="width:520px; text-align:center;">
+                        <thead >
+                            <tr class="text-center active">
+                                <th>满减规则</th>
+                                <th>修改时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bcontent">
+                            <tr v-for="(item,index) in discountRules">
+                                <td width="220px">满 {{item.meetMoney}} 减 {{item.discountMoney}} 元</td>
+                                <td width="180px">{{item.updateDateStr}}</td>
+                                <td width="120">
+                                    <a class="editiInfo" v-on:click="showEditForm(index)">编辑</a>
+                                    <a class="editiInfo redFont" v-on:click="deleteDiscountRule(index)">删除</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="8" v-if="recordCount<=0">暂无数据</td>
+                            </tr>
+
+                    </table>
+                    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+                </div>
+                <!--#endregion-->
+            </div>
+            <div class="panel">
+                <div class="panel-body">
+                    <a href="javascript:;" style="background-color:#5691fc;border-color:#5691fc;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass" v-on:click="showEditForm(-1)">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        满减规则
+                    </a>
+                </div>
+                <div>
+                    &nbsp;&nbsp;规则设定不可超过{{maxRulesCount}}条,还能添加{{maxRulesCount - recordCount}}条
+                </div>
+            </div>
+            <div>
+                <br />
+                <span class="hintFont">温馨提示：</span>
+                <br />
+                <br />
+                <span class="hintFont">1. 用户每单只会对应使用一个满减规则。</span>
+                <br />
+                <span class="hintFont">2. 开启满减状态后，满减规则将永久有效，若想停止可关闭满减或者删除规则。</span>
+            </div>
+            <!--#region 规则编辑框-->
+            <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                            <h4 class="modal-title" id="myModalLabel">
+                                编辑满减规则
+                            </h4>
+                        </div>
+                        <div class="modal-body" style="margin-bottom:30px;">
+                            <span class="rulespan">满</span>
+                            <input maxlength="8" type="text" class="form-control ruleinput" v-model="curModelData.meetMoney" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                            <span class="rulespan">元,减</span>
+                            <input maxlength="8" type="text" class="form-control ruleinput" v-model="curModelData.discountMoney" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                            <span class="rulespan" style="width:180px">元.</span>
+
+
+                            <button type="button" class="btn btn-primary ruleinput" style="margin-right:10px;" v-on:click="saveDiscountRule()">确定</button>
+                            <button type="button" class="btn btn-danger ruleinput" v-on:click="hideEditForm()">取消</button>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--#endregion-->
+        </div>
+        <!--#endregion-->
+
+        <!--#region 首单立减优惠设定-->
+        <div id="firstOrderDiscountsSetting" class="layui-tab-item" v-cloak>
+            <table>
+                <tr>
+                    <td class="tr">新用户首单立减：</td>
+                    <td>
+                        <span class="rulespan">立减</span>
+                        <input type="text" class="form-control ruleinput" v-model="curFormData.newUserFirstOrderDiscountMoney" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                        <span class="rulespan">元</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tr">用户首单立减：</td>
+                    <td>
+                        <span class="rulespan">立减</span>
+                        <input type="text" class="form-control ruleinput" v-model="curFormData.userFirstOrderDiscountMoney" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                        <span class="rulespan">元</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tr"></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="tr"></td>
+                    <td>
+                        <button type="button" class="btn btn-primary ruleinput" style="margin-right:10px;" v-on:click="saveSetting()">保存</button>
+                    </td>
+                </tr>
+            </table>
+
+            <div>
+                <br />
+                <br />
+                <br />
+                <span class="hintFont">温馨提示：</span>
+                <br />
+                <br />
+                <span class="hintFont">1. 新用户首单立减，即只有用户首次下单可享受立减优惠。</span>
+                <br />
+                <span class="hintFont">2. 用户首单立减，即每位用户每天首次下单即可享受立减优惠。</span>
+                <br />
+                <span class="hintFont">3. 二者同时开启，用户优先立减金额较高的优惠。</span>
+                <br />
+                <span class="hintFont">4. 首单立减会与满减同时生效。</span>
+            </div>
+        </div>
+        <!--#endregion-->
+
+    </div>
+</div>
+<script>
+    var element,form,layid;
+
+    //验证金额格式
+    function keyPress(ob) {
+        if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+            if (ob.t_value == undefined || ob.t_value.length == 1) {
+                ob.value = "";
+            }
+            else {
+                ob.value = ob.t_value;
+            }
+        }
+        else
+            ob.t_value = ob.value;
+    }
+
+
+
+    //满减规则设定页
+    var discountRulesSetting = new Vue({
+        el: "#discountRulesSetting",
+        data: {
+            element:null,
+
+            isloading: false,
+            maxRulesCount: @(maxRulesCount),
+            discountRules: [],
+            recordCount: 0,
+
+            searchData :
+            {
+                appId: @aid,
+                storeId: @storeId,
+            },
+            pageSettingData :
+            {
+                appId: @aid,
+                storeId: @storeId,
+                discountRuleSwitch : @(Model.discountRuleSwitch ? "true" : "false"),
+            },
+            curModelData: {
+                id:0,
+                aId: @aid,
+                storeId: @storeId,
+                meetMoney: 0,
+                discountMoney: 0,
+
+                appId:@aid, //不在model内的字段
+            },
+        },
+        methods: {
+            //初始化layui控件
+            InitLayer: function () {
+                layui.use(['element','form'], function () {
+                    element = layui.element;
+
+                    //获取hash来切换选项卡，假设当前地址的hash为lay-id对应的值
+                    layid = location.hash.replace(/^#settingTab=/, '');
+                    //找不到路径则默认打开的标签页
+                    if(layid == undefined || layid == '') 
+                    {
+                        layid = 'discountRulesSetting';
+                        location.hash = 'settingTab='+ layid;
+                    }
+                    element.tabChange('settingTab', layid);
+
+                    //监听Tab切换，以改变地址hash值
+                    element.on('tab(settingTab)', function(){
+                        layid = this.getAttribute('lay-id');
+                        location.hash = 'settingTab='+ layid;
+                    });
+
+
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        discountRulesSetting.pageSettingData.discountRuleSwitch = data.elem.checked;
+                        discountRulesSetting.switchSetting();
+                    });
+                });
+            },
+
+            //获取满减数据
+            getDiscountRoles: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                var loadindex = layer.load(1);
+                $.post("/discountRule/GetDiscountRules", this.searchData, function (data) {
+                    layer.close(loadindex);
+                    discountRulesSetting.isloading = false;
+                    if (!data.isok) {
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        discountRulesSetting.recordCount = data.dataObj.recordCount;
+                        discountRulesSetting.discountRules = data.dataObj.discountRules;
+                    }
+                });
+            },
+
+            //满减开关
+            switchSetting: function()
+            {
+                var layindex = layer.load(1);
+                $.post("/discountRule/ModifyMeetMoneySwitchState", discountRulesSetting.pageSettingData, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.Msg);
+                });
+            },
+
+            //弹出编辑框
+            showEditForm: function (index) {
+                if(index >= 0)
+                {
+                    discountRulesSetting.curModelData.id = discountRulesSetting.discountRules[index].id;
+                    discountRulesSetting.curModelData.meetMoney = discountRulesSetting.discountRules[index].meetMoney;
+                    discountRulesSetting.curModelData.discountMoney = discountRulesSetting.discountRules[index].discountMoney;
+                }
+                else
+                {
+                    if(discountRulesSetting.maxRulesCount - discountRulesSetting.recordCount <= 0)
+                    {
+                        layer.msg("规则数量已达上限" + discountRulesSetting.maxRulesCount + "条！");
+                        return;
+                    }
+
+                    discountRulesSetting.curModelData.id = 0;
+                    discountRulesSetting.curModelData.meetMoney = 0;
+                    discountRulesSetting.curModelData.discountMoney = 0;
+                }
+
+                $('#addModal').modal('show');
+            },
+
+            //关闭编辑框
+            hideEditForm: function ()
+            {
+                $('#addModal').modal('hide');
+            },
+
+            //删除满减规则
+            deleteDiscountRule:function(index)
+            {
+                layer.confirm('确定要删除该满减规则吗？', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    discountRulesSetting.curModelData.id = discountRulesSetting.discountRules[index].id;
+                    $.post("/discountRule/DeleteDiscountRules",discountRulesSetting.curModelData, function (data) {
+                        layer.msg(data.Msg);
+                        discountRulesSetting.getDiscountRoles();
+                    });
+                }, function(){
+
+                });
+            },
+
+            //保存满减规则
+            saveDiscountRule: function()
+            {
+
+                if (discountRulesSetting.curModelData.meetMoney <= 0 || discountRulesSetting.curModelData.meetMoney > 99999.99)
+                {
+                    layer.msg("满足金额请设定 0.01 ~ 99999.99 区间的值");
+                    return;
+                }
+                if (discountRulesSetting.curModelData.discountMoney <= 0 || discountRulesSetting.curModelData.discountMoney > 99999.99)
+                {
+                    layer.msg("优惠额请设定 0.01 ~ 99999.99 区间的值");
+                    return;
+                }
+                if(discountRulesSetting.curModelData.meetMoney < discountRulesSetting.curModelData.discountMoney)
+                {
+                    layer.msg("满足金额不可小于优惠金额！");
+                    return;
+                }
+                
+                var loadindex = layer.load(1);
+                $.post("/discountRule/EditDiscountRules", discountRulesSetting.curModelData, function (data) {
+                    layer.close(loadindex);
+                    if (!data.isok) {
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        layer.msg(data.Msg);
+                        discountRulesSetting.getDiscountRoles();
+
+                        discountRulesSetting.hideEditForm();
+                    }
+                });
+            },
+        },
+        created: function () {
+            this.InitLayer();
+            this.getDiscountRoles();
+        }
+
+    });
+
+
+    //用户首单立减设定页
+    var firstOrderDiscountSetting = new Vue({
+        el: "#firstOrderDiscountsSetting",
+        data: {
+            curFormData: {
+                aId: @aid,
+                storeId: @storeId,
+                newUserFirstOrderDiscountMoney:(@Model.newUserFirstOrderDiscountMoney),
+                userFirstOrderDiscountMoney:(@Model.userFirstOrderDiscountMoney),
+
+                appId:@aid, //不在model内的字段
+            },
+        },
+        methods: {
+            //保存首单立减的设定
+            saveSetting:function()
+            {
+                if (firstOrderDiscountSetting.curFormData.newUserFirstOrderDiscountMoney < 0 || firstOrderDiscountSetting.curFormData.newUserFirstOrderDiscountMoney > 99999.99)
+                {
+                    layer.msg("新用户首单立减金额请设定 0.00 ~ 99999.99 区间的值");
+                    return;
+                }
+                if (firstOrderDiscountSetting.curFormData.userFirstOrderDiscountMoney < 0 || firstOrderDiscountSetting.curFormData.userFirstOrderDiscountMoney > 99999.99)
+                {
+                    layer.msg("用户首单立减金额请设定 0.00 ~ 99999.99 区间的值");
+                    return;
+                }
+                var loadindex = layer.load(1);
+                $.post("/discountRule/ModifyFirstOrderDiscountMoneySetting", firstOrderDiscountSetting.curFormData, function (data) {
+                    layer.close(loadindex);
+                    if (!data.isok) {
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                });
+            }
+        }
+    });
+</script>

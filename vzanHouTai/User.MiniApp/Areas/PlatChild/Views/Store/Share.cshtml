@@ -1,0 +1,284 @@
+﻿@using Entity.MiniApp.PlatChild
+@model PlatChildShare
+@{
+    ViewBag.Title = "小未子模板管理平台";
+    Layout = "~/Areas/PlatChild/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .cur { background-color: rgba(91, 148, 253, 1); color: white; }
+    .styleDiv { width: 10%; border: 1px solid rgba(91, 148, 253, 1); text-align: center; border-radius: 4px; line-height: 30px; margin-left: 10px; cursor: pointer; }
+    img { width: 100%; vertical-align: middle; }
+</style>
+<div style="display:flex;" id="app" v-cloak>
+    <table class="table table-condensed table-hover cancel-table-td-border " style="width:55%;">
+        <tr>
+            <td style="text-align: right;">分享图样式：</td>
+            <td>
+                <div style="display:flex;">
+                  
+                    <div class="styleDiv" v-bind:class="{cur:item.cur}" v-for="(item,index) in styleList" v-on:click="changeStyle(index)">{{item.txt}}</div>
+
+                </div>
+
+            </td>
+        </tr>
+        <tr>
+            <td align="right">店铺名称：<label style="color: red">*</label></td>
+            <td align="left">
+                <input type="text" class="form-control" maxlength="10" style="display:block;width:500px;" v-model="platChildShare.StoreName" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">店铺Logo：<label style="color: red">*</label></td>
+            <td align="left">
+                <div class="pslideimgs" style="display:block;">
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-if="platChildShare.StoreLogo!=''">
+                                <img :src="platChildShare.StoreLogo" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(0)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(0)">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+
+        </tr>
+
+        <tr>
+            <td align="right">广告语：</td>
+            <td align="left">
+                <input type="text" class="form-control" maxlength="10" style="display:block;width:500px;" v-model="platChildShare.ADTitle" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">广告图：<label style="color: red">*</label></td>
+            <td align="left">
+                <div class="pslideimgs" style="display:block;">
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-if="platChildShare.ADImg!=''">
+                                <img :src="platChildShare.ADImg" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(1)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+
+        </tr>
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" value="保存" v-on:click="save()" />
+                <input type="button" class="btn width100" value="获取小程序码" v-on:click="getQrcode()" />
+                <label class="forinputmassage">默认已经加载二维码,如果预览二维码未显示,点击重新获取</label>
+            </td>
+        </tr>
+    </table>
+    <div style="display: inline-block;width:45%">
+        <div style="display:inline-block;width: 45%;position: relative;">
+            <img src="@(WebSiteConfig.cdnurl)content/enterprise/img/share/bg5.png?@WebSiteConfig.cdnVersion">
+            <div style="display:inline-block;width: 60%;position: absolute;top: 13%;left: 19%;">
+                <img id="curStyle" :src="styleImg">
+            </div>
+        </div>
+
+        <div style="display:inline-block;width: 45%;">
+            <img src="@(WebSiteConfig.cdnurl)content/enterprise/img/share/bg4.png?@WebSiteConfig.cdnVersion">
+        </div>
+    </div>
+
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+
+</div>
+<script>
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            platChildShare:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            StoreLogo:"",
+            ADImg:"",
+            uploadImgType:0,
+            styleImg:"",
+            styleList:[
+           {id:0,txt:"样式1", cur:false,img:"@(WebSiteConfig.cdnurl)content/enterprise/img/share/0.png?@WebSiteConfig.cdnVersion" },
+           {id:1,txt:"样式2", cur:false,img:"@(WebSiteConfig.cdnurl)content/enterprise/img/share/1.png?@WebSiteConfig.cdnVersion" },
+           {id:2,txt:"样式3", cur:false,img:"@(WebSiteConfig.cdnurl)content/enterprise/img/share/2.png?@WebSiteConfig.cdnVersion" },
+           {id:3,txt:"样式4", cur:false,img:"@(WebSiteConfig.cdnurl)content/enterprise/img/share/3.png?@WebSiteConfig.cdnVersion" },
+           {id:4,txt:"样式5", cur:false,img:"@(WebSiteConfig.cdnurl)content/enterprise/img/share/4.png?@WebSiteConfig.cdnVersion" },
+           {id:5,txt:"样式6", cur:false,img:"@(WebSiteConfig.cdnurl)content/enterprise/img/share/5.png?@WebSiteConfig.cdnVersion" },
+            ]
+
+        },
+        watch:{
+            StoreLogo:function(){
+                var that=this;
+                that.platChildShare.StoreLogo=that.StoreLogo;
+            },
+            ADImg:function(){
+                var that=this;
+                that.platChildShare.ADImg=that.ADImg;
+            }
+        },
+        created:function(){
+            var that=this;
+            that.styleList.forEach(function (o, i) {
+                if(o.id==that.platChildShare.StyleType){
+                    o.cur = true;
+                    that.styleImg=o.img;
+                    return;
+                }
+
+            });
+
+        },
+        methods:{
+            getQrcode:function(){
+                var that=this;
+                $.ajax({
+                    type: 'POST',
+                    url: '/PlatChild/Store/GetQrcode',
+                    data: {aid:that.platChildShare.Aid},
+                    dataType: 'json',
+                    success: function (data) {
+                        if(data&&data.isok){
+                            layer.msg(data.Msg,{time:1000});
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                        else{
+                            layer.msg(data.Msg,{time:1000});
+                        }
+
+                    },
+                    error: function (rdata) {
+                        layer.msg("与服务器通讯错误",{time:1000});
+                    }
+                });
+            },
+            changeStyle:function(index){
+                var that=this;
+                that.styleList.forEach(function (o, i) {
+                    o.cur = false;
+                });
+                that.styleList[index].cur = true;
+                that.styleImg=that.styleList[index].img;
+                that.platChildShare.StyleType= index;
+
+            },
+            save:function(){
+                var that=this;
+
+
+                if(that.platChildShare.StoreLogo==null||that.platChildShare.StoreLogo.length<=0||that.platChildShare.StoreLogo==""){
+                    layer.msg("请上传店铺Logo",{time:1000});
+                }
+
+
+                if(that.platChildShare.ADImg==null||that.platChildShare.ADImg.length<=0||that.platChildShare.ADImg==""){
+                    layer.msg("请上广告图",{time:1000});
+                }
+
+
+
+                if(that.platChildShare.StoreName==null||that.platChildShare.StoreName==""||that.platChildShare.StoreName.length<=0||that.platChildShare.StoreName.length>10){
+                    layer.msg("店铺名称1-10个字符",{time:1000});
+                }
+                if(that.platChildShare.ADTitle==null||that.platChildShare.ADTitle==""||that.platChildShare.ADTitle.length<=0||that.platChildShare.ADTitle.length>20){
+                    layer.msg("广告语1-20个字符",{time:1000});
+                }
+
+
+                $.post("/PlatChild/Store/SetShare", {platChildShare:that.platChildShare,appId:@Model.Aid},function(data){
+
+                    if(data&&data.isok){
+                        layer.msg(data.Msg,{time:1000});
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                    else{
+                        layer.msg(data.Msg,{time:1000});
+                    }
+
+                });
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=1;
+                var remainCount=1;
+                if(that.uploadImgType==0){
+                    //表示店铺Logo
+                    framSrc="/tools/UpLoadImgFrm?Id=@Model.Aid&appId=@Model.Aid&multi_selection=1&maxImgSize=1&objKey=StoreLogo&objType=1&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }else{
+
+                    framSrc="/tools/UpLoadImgFrm?Id=@Model.Aid&appId=@Model.Aid&multi_selection=0&maxImgSize=1&objKey=ADImg&objType=1&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+
+            },
+            clearImg:function(type){
+                var that = this;
+                if(type==0){
+                    //表示店铺Logo
+                    that.platChildShare.StoreLogo="";
+                }else{
+                    //表示店铺广告图
+                    that.platChildShare.ADImg="";
+                }
+            }
+
+        }
+    });
+</script>
+
+

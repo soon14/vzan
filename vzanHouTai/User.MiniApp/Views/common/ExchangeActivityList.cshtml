@@ -1,0 +1,269 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    //  ViewBag.PageType = Utility.IO.Context.GetRequestInt("PageType",22);
+    ViewBag.Title = "积分商品";
+    int integralSwtich =ViewBag.integralSwtich;
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align :inherit!important;text-align:center;}
+</style>
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">积分商品：</label>
+                    <input type="text" name="search" class="form-control" id="activityname" value="" />
+                </div>
+           
+               <div class="form-group ml10">
+                        <label>状态：</label>
+                        <select class="form-control" id="state">
+                            <option value="-1">全部</option>
+                            <option value="0">上架</option>
+                            <option value="1">已下架</option>
+                        </select>
+                    </div>
+                <button type="submit" class="btn btn-primary ml10" v-on:click="Search()">搜索</button>
+                <a href="#" class="btn btn-default ml10" v-on:click="searchReset()" id="">重置</a>
+                @{
+                    if (ViewBag.PageType == 22 && integralSwtich == 1)
+                    {
+                        <div style="display:inline-block;" class="d-flex d-flex-center" title="请升级到更高版本" v-on:click="notUse()">
+                            <a href="#" class="btn btn-success" disbled="disbled">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                新增商品
+                            </a>
+                            <button class="btn btn-primary ml10" title="请升级到更高版本">
+                                批量改排序
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display:inline-block;" class="d-flex d-flex-center">
+                            <a href="/common/ExchangeActivitySet?appId=@ViewBag.appId" class="btn btn-success">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                新增商品
+                            </a>
+                            <button class="btn btn-primary ml10" v-on:click="saveBatchSort()">
+                                批量改排序
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered ml_19">
+                <tr class="active">
+                    <th class="centertext">积分商品</th>
+                    <th class="centertext">积分商品图片</th>
+                    <th class="centertext">原价(元)</th>
+                    <th class="centertext">所需积分</th>
+                    <th class="centertext">库存</th>
+                    <th class="centertext">每人可兑换数量</th>
+                    <th class="centertext">兑换方式</th>
+                    <th class="centertext">金额(元)</th>
+                    <th class="centertext">开始时间</th>
+                    <th class="centertext">结束时间</th>
+                    <th class="centertext">状态</th>
+                    <th class="centertext">排序</th>
+                    <th class="centertext">更新时间</th>
+                    <th class="centertext">操作</th>
+                </tr>
+
+                <tr v-for="(item,index) in ExchangeActivityList">
+                    <td class="centertext">{{item.activityname}}</td>
+                    <td class="centertext">
+                        <img v-bind:src="item.activityimg"  v-bind:alt="item.activityname"/>
+                    </td>
+                    <td class="centertext">{{item.originalPriceStr}}</td>
+                    <td class="centertext">{{item.integral}}</td>
+                    <td class="centertext">{{item.stock}}</td>
+                    <td class="centertext">{{item.perexgcount}}</td>
+                    <td class="centertext">
+                        <span class="label label-danger" v-if="item.exchangeway==0">积分兑换</span>
+                        <span class="label label-success" v-else>积分+金额</span>
+                    </td>
+                    <td class="centertext">{{item.priceStr}}</td>
+                    <td class="centertext">{{item.startdateStr}}</td>
+                    <td class="centertext">{{item.enddateStr}}</td>
+                    <td class="centertext">
+                        <span class="label label-success" v-if="item.state==0">未下架</span>
+                        <span class="label label-danger" v-else>已下架</span>
+                    </td>
+                    <td class="centertext" v-on:click.stop="showEditSort(index)">
+                        <span v-show="!item.IsShowEditSort">{{item.SortNumber}}</span>
+                        <input type="text" v-show="item.IsShowEditSort" class="form-control" style="width:50px;display:inline-block;" v-model="item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " />
+
+                    </td>
+                    <td class="centertext">{{item.UpdateDateStr}}</td>
+                    <td class="centertext">
+                        <div>
+                            <a :href="'/common/ExchangeActivitySet?appId=@ViewBag.appId&&Id='+item.id" class="btn btn-primary btn-xs">
+                                <span class="glyphicon glyphicon-edit"></span>
+                                编辑
+                            </a>
+
+                            <a href="javascript:;" class="btn btn-success btn-xs"  v-on:click="downordel(item.id,0)" v-if="item.state==1">
+                                <span class="glyphicon glyphicon-remove-sign"></span>上架
+                              </a>
+                            <a href="javascript:;" class="btn btn-danger btn-xs" v-on:click="downordel(item.id,0)" v-else>
+                                <span class="glyphicon glyphicon-remove-sign"></span>下架
+                            </a>
+                            <a href="javascript:;" class="btn btn-danger btn-xs btnDel"  v-on:click="downordel(item.id,1)">
+                            <span class="glyphicon glyphicon-trash"></span>
+                            删除
+                        </a>
+
+                        </div>
+                    </td>
+                </tr>
+                <tr v-if="ExchangeActivityList==null || ExchangeActivityList.length==0">
+                    <td colspan="12">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+        </div>
+   
+      
+    </div>
+</div>
+<script>
+    
+    var app = new Vue({
+        el: "#app",
+        data: {
+            ExchangeActivityList:[],
+            RecordCount: 0,
+            postdata:{
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                state:-1,
+                activityname:""
+            },
+            isloading:false,
+            curSortList:[]
+        },
+        methods: {
+            saveBatchSort:function(){
+                var that=this;
+                //批量保存排序
+                if(that.curSortList.length<=0){
+                    layer.msg('请先编辑需要排序的积分商品');
+                    return;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/common/UpdateSortExchangeActivity',
+                    data: {list:that.curSortList,aid:@ViewBag.appId },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            showEditSort:function(index){
+                var that=this;
+                var curSort=that.ExchangeActivityList[index];
+                curSort.IsShowEditSort=true;
+                curSort.description="";
+                if(that.curSortList.length>0){
+                    var curIndex=that.curSortList.findIndex(x=>x.id==curSort.id);
+                    if(curIndex>-1){
+                        //表示存在了则直接替换
+                        that.curSortList[curIndex]=curSort;
+                        return;
+                    }
+                }
+
+                that.curSortList.push(curSort);
+            },
+            notUse:function(){
+                layer.msg("请升级到更高版本")
+                return;
+            },
+            getList:function(){
+                if (this.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                this.isloading = true;
+                var index = layer.load(1);
+                $.post("/common/GetExchangeActivityList", this.postdata, function (data) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (data.isok) {
+                        app.RecordCount = data.model.RecordCount;
+                        app.ExchangeActivityList = data.model.ExchangeActivityList;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.RecordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search:function(){
+                this.postdata.activityname=$("#activityname").val();
+                this.postdata.state=$("#state").val();
+                this.getList();
+            },
+            searchReset:function(){
+                window.location.reload();
+            },
+            downordel:function(id,actionType){
+                layer.msg("正在处理....");
+                var index = layer.load(1);
+                $.post("/common/DelOrDownExchangeActivity", {appId:@ViewBag.appId,Id:id,actionType:actionType}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg)
+                    if(data.isok)
+                        window.location.reload();
+                })
+            }
+            
+
+        }, created: function () {
+            this.getList();
+        }
+
+    });
+</script>

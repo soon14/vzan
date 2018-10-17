@@ -1,0 +1,150 @@
+﻿
+@{
+    ViewBag.Title = "Memberlist";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@model ViewModel<DishVipCard>
+
+@section styles{
+    <style>
+        .shop-preview { position: fixed; padding: 0 15px; bottom: 0; left: 0; z-index: 100; width: 100%; padding: 10px; background-color: #fcf8e3; border-color: #faebcc; }
+        .icheckbox-blue { position: relative; }
+        .btn-group { font-size: 12px; }
+        .page span { background: #5eb95e; }
+    </style>
+
+}
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 会员管理 <span class="c-gray en">&gt;</span> 会员列表 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="text-c">
+        <form method="get" class="search-form">
+            <input type="hidden" name="aid" value="@(Model.aId)" />
+            <input type="hidden" name="storeId" value="@(Model.storeId)" />
+            <input type="hidden" name="pageSize" value="@(Model.PageSize)" />
+            <input type="hidden" name="pageIndex" value="@(Model.PageIndex)" />
+            会员昵称：<input type="text" name="nickname" placeholder="" value="@(Utility.IO.Context.GetRequest("nickname",""))" style="width:200px" class="input-text">
+            会员姓名：<input type="text" name="u_name" placeholder="" value="@(Utility.IO.Context.GetRequest("u_name",""))" style="width:200px" class="input-text">
+            手机号码：<input type="text" name="u_phone" placeholder="" value="@(Utility.IO.Context.GetRequest("u_phone",""))" style="width:200px" class="input-text">
+            会员卡号：<input type="text" name="number" placeholder="" value="@(Utility.IO.Context.GetRequest("number",""))" style="width:200px" class="input-text">
+            <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+            <button name="" onclick="import_data()" class="btn btn-success" type="button"><i class="Hui-iconfont">&#xe640;</i> 导出</button>
+        </form>
+    </div>
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="r">共有数据：<strong>@(Model.TotalCount)</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="60">昵称</th>
+                    <th width="60">姓名</th>
+                    <th width="60">手机号码</th>
+                    <th width="60">会员卡号</th>
+                    <th width="60">余额</th>
+                    <th width="60">开卡日期</th>
+                    <th width="60">操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td>@item.nickname</td>
+                            <td>@item.u_name</td>
+                            <td>@item.u_phone</td>
+                            <td>@item.number</td>
+                            <td>@item.account_balance</td>
+                            <td>@item.add_time.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="card_edit('编辑资料','/DishAdmin/Card/CardEdit?id=@item.Id&storeId=@item.shop_id&aId=@item.aid')" href="javascript:;" title="编辑资料">编辑资料</a>
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="recharge_add('会员卡充值','/DishAdmin/Card/Recharge?id=@item.Id&storeId=@item.shop_id&aId=@item.aid')" href="javascript:;" title="充值">会员充值</a>
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="account_log('资金记录','/DishAdmin/Card/CardLog?id=@item.Id&storeId=@item.shop_id&aId=@item.aid')" href="javascript:;" title="资金记录">资金记录</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            }
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+<div style="width: 100%;display: block;height: 30px;">&nbsp;</div>
+
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.text-c input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            })
+        });
+
+        $(function () {
+            //搜索功能
+            (function () {
+                var btnSearch = $("#search"), form = btnSearch.closest('form');
+                btnSearch.click(function () {
+                    layer.msg('搜索中', { icon: 16, shade: 0.5 });
+                    var url = "/dishadmin/card/CardList";
+                    var param = form.serialize();
+                    url = url.indexOf("?") != -1 ? url + "&" + param : url + "?" + param;
+                    window.location.href = url;
+                    return false;
+                });
+                form.submit(function () {
+                    $("#search").click();
+                    return false;
+                });
+
+            })();
+        });
+        function recharge_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['400px', '250px']
+            });
+        }
+        function card_edit(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['400px', '270px']
+            });
+        }
+        function account_log(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['80%', '80%']
+            });
+        }
+        function import_data() {
+            var l_layer = layer.msg('导出中，请稍候', {
+                icon: 16,
+                shade: 0.5
+            });
+            var btnSearch = $("#search"), form = btnSearch.closest('form');
+            var url = "/dishadmin/card/Export";
+            var param = form.serialize();
+            url = url.indexOf("?") != -1 ? url + "&" + param : url + "?" + param;
+            window.location.href = url;
+            l_layer.close();
+        }
+    </script>
+
+}

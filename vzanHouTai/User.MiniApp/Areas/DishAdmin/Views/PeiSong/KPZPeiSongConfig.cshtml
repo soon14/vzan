@@ -1,0 +1,108 @@
+﻿@model EditModel<KPZStoreRelation>
+@{
+    ViewBag.Title = "KPZPeiSongConfig";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    配送设置
+    <span class="c-gray en">&gt;</span>
+    快跑者配置
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="Id" value="@(Model.DataModel.Id)" />
+        <input type="hidden" name="aId" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>绑定团队</span>
+            </div>
+            <div class="Huialert Huialert-info">
+                <p>一：下载商户端 <a href="http://www.keloop.cn/commercial.html" target="_blank">去下载</a></p>
+                <p>二：查看附近团队 <a href="http://www.keloop.cn/home/nearby/nearbyteam" target="_blank">查看</a></p>
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        商户手机号：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="TelePhone" placeholder="" maxlength="20" onkeyup="value=value.replace(/[^\d]/g,'')" value="@(Model.DataModel.TelePhone)" class="input-text" style="width:200px;">
+                        <div class="dish_m_tips">请输入您在快跑者注册的商户手机号码</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        团队密钥：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="TeamToken" placeholder="" maxlength="50" value="@(Model.DataModel.TeamToken)" class="input-text" style="width:350px;">
+                        <div class="dish_m_tips">请输入与您合作快跑者团队token</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 确定保存</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+	$(function(){
+		$('.skin-minimal input').iCheck({
+			checkboxClass: 'icheckbox-blue',
+			radioClass: 'iradio-blue',
+			increaseArea: '20%'
+		});
+        $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+		//表单验证
+		$("#form-article-add").validate({
+			rules:{
+				dish_name:{
+					required:true,
+					minlength:2
+				}
+			},
+			onkeyup:false,
+			focusCleanup:true,
+			success:"valid",
+			submitHandler: function(form){   //表单提交句柄,为一回调函数，带一个参数：form
+				var l_index = layer.msg('数据更新中', {
+					icon: 16,
+					shade: 0.5
+				});
+				$("#submit_button").attr("disabled",true);
+				$(form).ajaxSubmit({
+					dataType:"json",
+					success:function( data ){
+						$("#submit_button").attr("disabled",false);
+						layer.close(l_index);
+						if( data.code == 0 ){
+							layer.alert(data.msg, {icon: 0});
+						}else{
+							layer.alert(data.msg, {icon: 1},function(index){
+								window.location.reload();
+							});
+						}
+					}
+				});
+			}
+		});
+
+	});
+    </script>
+
+}
+

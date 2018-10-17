@@ -1,0 +1,324 @@
+﻿@{
+    ViewBag.Title = "企业智推版";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section styles{
+    <style>
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .width200 {width: 200px !important;display: inline-block !important;}
+        .width100 {width: 100px !important;display: inline-block !important;}
+        .datetimebox {float: none !important;}
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+
+        <div id="app" v-cloak>
+            <div style="margin-left:17px;">
+                <div class="d-flex d-flex-center formsearch">
+                    <span>店铺名称：</span><input type="text" v-model="postdata.name" class="input-sm layui-input width200" />
+                    <a href="#" v-on:click="Search()" class="btn btn-primary ml10" style="margin-right:20px;">搜索</a>&nbsp;
+                </div>
+            </div>
+            <br />
+
+            <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+                <tr class="active">
+                    <th class="centertext"></th>
+                    <th class="centertext">客户ID</th>
+                    <th class="centertext">头像</th>
+                    <th class="centertext">昵称</th>
+                    <th class="centertext">手机号码</th>
+                    <th class="centertext" style="width:10%">备注</th>
+                    <th class="centertext" style="width:10%">备注手机号</th>
+                    <th class="centertext">负责员工</th>
+                    <th class="centertext">访问次数</th>
+                    <th class="centertext">咨询次数</th>
+                    <th class="centertext">订单量</th>
+                    <th class="centertext">交易金额</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in datalist">
+                    <td class="centertext">
+                        <input type="checkbox" v-model="item.IsCheck"/>
+                    </td>
+                    <td class="centertext">{{item.Id}}</td>
+                    <td class="centertext">
+                        <img v-bind:src="item.HeadImgUrl" alt="图片跑丢了" width="50" height="50" />
+                    </td>
+                    <td class="centertext">{{item.Name}}</td>
+                    <td class="centertext">{{item.Phone}}</td>
+                    <td class="centertext"><div style="height:50px;overflow:auto;">{{item.Desc}}</div></td>
+                    <td class="centertext">{{item.PhoneDesc}}</td>
+                    <td class="centertext">{{item.EmployeeName}}</td>
+                    <td class="centertext">{{item.PV}}</td>
+                    <td class="centertext">{{item.AskCount}}</td>
+                    <td class="centertext">{{item.OrderCount}}</td>
+                    <td class="centertext">{{item.OrderTotalPriceStr}}元</td>
+                    <td class="centertext">
+                        <a href="javascript:;" class="btn btn-primary ml10" v-on:click="editedata(index)">编辑</a>
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="openimessage(item.Id)">私信记录</a>
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="deldata(item.Id)">删除</a>
+                    </td>
+                </tr>
+                <tr v-if="datalist==null || datalist.length==0">
+                    <td colspan="10" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+
+            <div class="d-flex d-flex-center">
+                <a class="btn btn-primary ml10" href="javascript:;" v-on:click="changedata()">批量转移</a>
+            </div>
+            <div id="changehtml" hidden>
+                <div style='margin-top: 20px;margin-left: 20px;'>
+                    <span style="float:left;">员工：</span>
+                    <select id="tempemployeeselect" class="form-control" style="width:200px;display:inline-block;">
+                        <option value="-999">请选择</option>
+                        <option v-for="(item,index) in employeedatalist" v-bind:value="item.Id">{{item.Name}}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="edithtml" hidden>
+                <div style='margin-top: 20px;margin-left: 20px;'>
+                    <span style="float:left;">员   工：</span>
+                    <select id="tempemployeeselect2" class="form-control" style="width:250px;display:inline-block;">
+                        <option value="-999">请选择</option>
+                        <option v-for="(item,index) in employeedatalist" v-bind:value="item.Id">{{item.Name}}</option>
+                    </select>
+                </div>
+                <div style='margin-top: 20px;margin-left: 20px;'>
+                    <span style="float:left;">备   注：</span>
+                    <textarea id="tempdesc" class='form-control' maxlength="100" style='display: inline-block;width: 250px;height:100px;'></textarea>
+                </div>
+                <div style='margin-top: 20px;margin-left: 20px;'>
+                    <span style="float:left;">手机号：</span>
+                    <input id="tempphonedesc" type="text" class="form-control" maxlength="50" style='display: inline-block;width: 250px;' />
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                employeedatalist: [],
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    name: "",
+                },
+                currentdata:{},
+                isloading: false,
+                customerids:"",
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    _layer.load(1);
+                    $.post("/Qiye/Customer/GetDataList", this.postdata, function (data) {
+                        _layer.closeAll();
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.data;
+                        app.resetPage();
+                    })
+                },
+                //获取员工集合
+                getemployeedatalist: function () {
+                    $.post("/Qiye/Customer/GetEmployeeDataList", this.postdata, function (data) {
+                        app.employeedatalist = data.dataObj;
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Search:function()
+                {
+                    this.getdatalist();
+                },
+                deldata:function(id){
+                    _layer.confirm("确定删除该数据？", {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        $.post("/Qiye/Customer/DelData", {aid:@ViewBag.appId,id:id}, function (data) {
+                            if (data.isok) {
+                                _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                            _layer.closeAll();
+                        })
+                    }, function () {
+                    });
+                },
+                //编辑备注
+                editedata:function(index)
+                {
+                    app.currentdata = app.datalist[index];
+                    _layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: "编辑",
+                        shade: 0.3,
+                        area: ['350px', '330px'], //宽高
+                        content: $("#edithtml").html().replace(/temp/g, ''),//this.adddiv(),
+                        btn: ["确定", "取消"],
+                        end: function () {
+                            isloading = 0;
+                        },
+                        yes: function () {
+                            var desc = window.parent.document.getElementById("desc").value;
+                            var phonedesc = window.parent.document.getElementById("phonedesc").value;
+                            var employeeId = window.parent.document.getElementById("employeeselect2").value;
+                            //if(employeeId==-999)
+                            //{
+                            //    _layer.msg("请选择员工");
+                            //    return;
+                            //}
+                            _layer.confirm("确定保存？", {
+                                btn: ['保存', '取消'] //按钮
+                            }, function () {
+                                app.currenteditid = _layer.load(1);
+                                $.post("/Qiye/Customer/SaveDesc", {aid:@ViewBag.appId,id:app.currentdata.Id,desc:desc,phoneDesc:phonedesc,employeeId:employeeId}, function (data) {
+                                    if (data.isok) {
+                                        _layer.close(app.playerindex);
+                                        _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                            window.location.reload();
+                                        });
+                                    }
+                                    else {
+                                        _layer.msg(data.Msg);
+                                    }
+                                    _layer.close(app.currenteditid);
+                                    app.currenteditid = 0;
+                                })
+                            }, function () {
+                            });
+                        },
+                        success: function(layero, index){
+                            window.parent.document.getElementById("desc").value =app.currentdata.Desc;
+                            window.parent.document.getElementById("phonedesc").value =app.currentdata.PhoneDesc;
+                            var staffid = app.currentdata.StaffId;
+                            if(staffid==0)
+                            {
+                                staffid =-999;
+                            }
+                            window.parent.document.getElementById("employeeselect2").value=staffid;
+                        }
+                    });
+                },
+                openimessage: function (customerId) {
+                    _layer.open({
+                        type: 2,
+                        title: '私信记录',
+                        shade: 0.8,
+                        area: ['650px', '658px'],
+                        content: '/Qiye/Customer/Imessage?aid=@ViewBag.appId&customerId='+customerId //iframe的url
+                    });
+                },
+                //批量转移
+                changedata:function(index)
+                {
+                    app.customerids = "";
+                    app.datalist.forEach(function (o, i) {
+                        if(o.IsCheck)
+                        {
+                            app.customerids+=o.Id+",";
+                        }
+                    })
+                    if(app.customerids.length<=0)
+                    {
+                        _layer.msg("请选择要转移的客户");
+                        return;
+                    }
+                    _layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: "转移",
+                        shade: 0.3,
+                        area: ['350px', '150px'], //宽高
+                        content: $("#changehtml").html().replace(/temp/g, ''),//this.adddiv(),
+                        btn: ["确定", "取消"],
+                        end: function () {
+                            isloading = 0;
+                        },
+                        yes: function () {
+                            var id = window.parent.document.getElementById("employeeselect").value;
+                            if(id==-999)
+                            {
+                                _layer.msg("请选择员工");
+                                return;
+                            }
+                            _layer.confirm("确定保存？", {
+                                btn: ['保存', '取消'] //按钮
+                            }, function () {
+                                app.currenteditid = _layer.load(1);
+                                $.post("/Qiye/Customer/SaveBindEmployee", {aid:@ViewBag.appId,id:id,customerId:app.customerids}, function (data) {
+                                    if (data.isok) {
+                                        _layer.close(app.playerindex);
+                                        _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                            window.location.reload();
+                                        });
+                                    }
+                                    else {
+                                        _layer.msg(data.Msg);
+                                    }
+                                    _layer.close(app.currenteditid);
+                                    app.currenteditid = 0;
+                                })
+                            }, function () {
+                            });
+                        }
+                    });
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                this.getemployeedatalist();
+                
+                $("#app").show();
+            }
+        })
+    </script>
+}

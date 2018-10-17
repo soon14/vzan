@@ -1,0 +1,170 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    //  ViewBag.PageType = Utility.IO.Context.GetRequestInt("PageType",22);
+    ViewBag.Title = "积分兑换";
+
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+</style>
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">活动名称：</label>
+                    <input type="text" name="search" class="form-control" id="activityname" value="" />
+                </div>
+                <div class="form-group">
+                    <label for="plist-pname">用户名字：</label>
+                    <input type="text" name="search" class="form-control" id="username" value="" />
+                </div>
+                
+                <button type="submit" class="btn btn-primary ml10" v-on:click="Search()">搜索</button>
+                <a href="#" class="btn btn-default ml10" v-on:click="searchReset()" id="">重置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered ml_19">
+                <tr class="active">
+                    <th class="centertext">用户昵称</th>
+                    <th class="centertext">用户头像</th>
+                    <th class="centertext">商品名称</th>
+                    <th class="centertext">兑换数量</th>
+                    <th class="centertext">兑换方式</th>
+                    <th class="centertext">兑换时间</th>
+                   
+                    <th class="centertext">支付时间</th>
+                    <th class="centertext">兑换所需金额</th>
+                    <th class="centertext">兑换所需积分</th>
+                    <th class="centertext">收货地址</th>
+                    <th class="centertext">兑换状态</th>
+                    @*<th class="centertext">操作</th>*@
+                </tr>
+
+                <tr v-for="(item,index) in JoinExchangeActivitys">
+                    <td class="centertext">{{item.nickName}}</td>
+                    <td class="centertext">
+                        <img v-bind:src="item.userLogo" v-bind:alt="item.nickName" width="50" height="50" />
+                    </td>
+                    <td class="centertext">{{item.activityName}}</td>
+                    <td class="centertext">{{item.BuyCount}}</td>
+                   
+                    <td class="centertext">
+                        <span class="label label-danger" v-if="item.PayWay==0">积分兑换</span>
+                        <span class="label label-success" v-else>积分+金额</span>
+                    </td>
+                    <td class="centertext">{{item.AddTimeStr}}</td>
+                  
+                    <td class="centertext">{{item.PayTimeStr}}</td>
+                    <td class="centertext">{{item.BuyPriceStr}}</td>
+                    <td class="centertext">{{item.integral}}</td>
+                    <td class="centertext">{{item.userAddress}}</td>
+                    <td class="centertext">
+                        <span class="label label-danger" v-if="item.state==0">未支付</span>
+                        <span class="label label-warning" v-else-if="item.state==1">待支付</span>
+                        <span class="label label-info" v-else-if="item.state==2&&item.Way==0" v-on:click="giveGoods(item.Id)" style="cursor:pointer;">点击发货</span>
+                        <span class="label label-info" v-else-if="item.state==3&&item.Way==0">待收货</span>
+                        <span class="label label-info" v-else-if="item.state==2&&item.Way==1" v-on:click="giveGoods(item.Id)" style="cursor:pointer;">确认消费</span>
+                        <span class="label label-info" v-else-if="item.state==2&&item.Way==2" v-on:click="giveGoods(item.Id)" style="cursor:pointer;">确认自取</span>
+                        <span class="label label-success" v-else>交易成功</span>
+                    </td>
+             
+                </tr>
+                <tr v-if="JoinExchangeActivitys==null || JoinExchangeActivitys.length==0">
+                    <td colspan="12">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+        </div>
+       
+    </div>
+</div>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            JoinExchangeActivitys:[],
+            RecordCount: 0,
+            postdata:{
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                state:-1,
+                activityname:"",
+                nickname:""
+            },
+            isloading:false
+        },
+        methods: {
+            getList:function(){
+                if (this.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                this.isloading = true;
+                var index = layer.load(1);
+                $.post("/common/GetExchangeActivityOrders", this.postdata, function (data) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (data.isok) {
+                        app.RecordCount = data.model.RecordCount;
+                        app.JoinExchangeActivitys = data.model.JoinExchangeActivitys;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.RecordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search:function(){
+                this.postdata.activityname=$("#activityname").val();
+                this.postdata.nickname=$("#username").val();
+                this.getList();
+            },
+            searchReset:function(){
+                window.location.reload();
+            },
+            giveGoods:function(id){
+                layer.msg("正在处理....");
+                var index = layer.load(1);
+                $.post("/common/giveGoods", {appId:@ViewBag.appId,orderId:id}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg)
+                    if(data.isok)
+                        window.location.reload();
+                })
+            }
+
+
+        }, created: function () {
+            this.getList();
+        }
+
+    });
+</script>

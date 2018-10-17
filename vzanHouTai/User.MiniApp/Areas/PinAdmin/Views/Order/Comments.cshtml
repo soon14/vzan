@@ -1,0 +1,146 @@
+﻿
+@model ViewModel<PinComment>
+@{
+    ViewBag.Title = "评论管理";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+    int aId = Model.aId;
+    int storeId = Model.storeId;
+    string kw = Utility.IO.Context.GetRequest("kw", "");
+}
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 订单管理 <span class="c-gray en">&gt;</span> 评论管理<a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="text-c">
+        <form method="get" class="search-form" action="/PinAdmin/Order/Comments">
+            <input type="hidden" name="aid" value="@(Model.aId)" />
+            <input type="hidden" name="storeId" value="@(Model.storeId)" />
+            <input type="hidden" name="pageSize" value="@(Model.PageSize)" />
+            <input type="hidden" name="pageIndex" value="@(Model.PageIndex)" />
+            <input type="text" name="kw" id="kw" placeholder="商品名称" value="@(kw)" style="width:250px" class="input-text">
+            <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+            <a name="" class="btn btn-success" href="/PinAdmin/Order/Comments?aid=@(Model.aId)&storeId=@(Model.storeId)">重置</a>
+        </form>
+    </div>
+
+
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l">未授权登陆或匿名评论用户不显示头像和昵称</span>
+        <span class="r">共有数据：<strong>@(Model.TotalCount)</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="50">ID</th>
+                    <th width="80">用户名</th>
+                    <th>头像</th>
+                    <th width="50">评价</th>
+                    <th width="50">描述评分</th>
+                    <th width="50">物流评分</th>
+                    <th width="50">态度评分</th>
+                    <th>评论内容</th>
+                    <th width="200">产品名称</th>
+                    <th width="60">产品图片</th>
+                    @*<th width="60">是否显示</th>*@
+                    <th width="100">评论时间</th>
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td width="50">@(item.Id)</td>
+                            <td>
+                                @if (!item.IsAnonymous)
+                                {
+                                    @(item.NickName)
+                                }
+                                else
+                                {
+                                    @:匿名
+                                }
+                            </td>
+                            <td>
+                                @if (!item.IsAnonymous && !string.IsNullOrEmpty(item.UserPhoto))
+                                {
+                                    <img src="@(item.UserPhoto)" width="50" height="50" />
+                                }
+                                else
+                                {
+                                    @:匿名
+                                }
+                            </td>
+                            <td>@(item.RateLevelStr)</td>
+                            <td>@(item.DescriptionScore)</td>
+                            <td>@(item.LogisticsScore)</td>
+                            <td>@(item.ServicesScore)</td>
+                            <td style="text-align: left;font-size:14px;line-height:2;">
+                                @(item.Content)<br />
+                                @foreach (var imgItem in item.ImgsList)
+                                {
+                                    <a href="@(imgItem)" target="_blank"><img src="@(imgItem)" width="40" height="40" /></a>@:&nbsp;
+                                }
+                            </td>
+                            <td style="text-align: left;font-size:14px;line-height:2;">@(item.GoodName)</td>
+                            <td><img src="@(item.GoodImgUrl)" width="40" height="40" /></td>
+                            @*<td>
+                                @if (item.State == 1)
+                                {
+                                    <span class="label label-success radius">显示</span>
+                                }
+                                else
+                                {
+                                    <span class="label label-default radius">隐藏</span>
+                                }
+                            </td>*@
+                            <td>@(item.AddTimeStr)</td>
+                            <td class="f-14 td-manage">
+                                <a style="text-decoration:none" class="btn btn-danger radius size-MINI del" data-id="@(item.Id)" title="删除"><i class="Hui-iconfont">&#xe6e2;</i> 删除</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            }
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+@section scripts{
+    <script>
+
+        $(function () {
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除该评论吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/PinAdmin/Order/Comments?aid=@(aId)&storeId=@(storeId)",
+                        data: { act: 'del', id: id, t: Math.random() },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 2000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 2000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+        });
+    </script>
+}

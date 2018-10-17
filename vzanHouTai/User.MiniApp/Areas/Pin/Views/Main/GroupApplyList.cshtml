@@ -1,0 +1,132 @@
+﻿@model ViewModel<DrawCashApply>
+@{
+    ViewBag.Title = "拼单返现";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+}
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5>@ViewBag.Title<span style="color:red;margin-left:15px;">点击审核通过，后台会自动进入提现到账服务，请确定无误再通过审核</span></h5>
+                </div>
+                <div class="ibox-content ">
+                    <div class="">
+                        <div class="wrapper wrapper-content animated fadeInUp">
+                            <div class="search-area">
+                                <form method="get" action="?">
+                                    <input type="hidden" value="@ViewBag.aid" name="aid"/>
+                                    申请状态
+                                    <select class="form-control" name="state" id="state" style="display:inline-block;width:150px;">
+                                        <option value="-999" @(ViewBag.state == -999 ? "selected='selected'" : "")>全部类型</option>
+                                        <option value="-1" @(ViewBag.state == -1 ? "selected='selected'" : "")>提现失败</option>
+                                        <option value="0" @(ViewBag.state == 0 ? "selected='selected'" : "")>未开始提现</option>
+                                        <option value="1" @(ViewBag.state == 1 ? "selected='selected'" : "")>提现中</option>
+                                        <option value="2" @(ViewBag.state == 2 ? "selected='selected'" : "")>提现成功</option>
+                                    </select>
+
+                                    订单号：<input type="text" name="orderNum" value="@(ViewBag.orderNum)" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" />
+                                    <div class="col-sm-5 col-lg-4 col-xs-6">
+                                        申请时间：
+                                        <input type="text" id="startDate" name="startDate" class="startDate form-control" placeholder="开始日期" value="@ViewBag.startDate" data-date readonly style="width:120px; display:inline-block;margin:0 8px;" />
+                                        至
+                                        <input type="text" id="endDate" name="endDate" class="endDate form-control" placeholder="结束日期" value="@ViewBag.endDate" data-date readonly style="width:120px; display:inline-block;margin:0 8px;" />
+                                    </div>
+
+                                    <input type="submit" value="搜索" class="btn btn-sm  btn-primary radius" />
+                                    <input type="button" value="导出报表" class="btn btn-sm  btn-primary radius" onclick="ExportGroupAppLyDraw()"/>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="categorys" class="table table-hover table-condensed table-bordered">
+                        <thead>
+                            <tr>
+                                <th>订单号</th>
+                                <th>下单时间</th>
+                                <th>申请时间</th>
+                                <th>返现金额</th>
+                                <th>审核状态</th>
+                                <th>返现状态</th>
+                                <th>流水号</th>
+                                <th>返现时间</th>
+                                <th width="250">操作</th>
+                        </thead>
+                        <tbody>
+                            @foreach (DrawCashApply item in Model.DataList)
+                            {
+                                <tr>
+                                    <td>@item.nickName</td>
+                                    <td>@(item.accountName)</td>
+                                    <td>@item.AddTimeStr</td>
+                                    <td>@item.applyMoneyStr 元</td>
+                                    <td>@item.stateStr</td>
+                                    <td>@item.drawStateStr</td>
+                                    <td>@item.partner_trade_no</td>
+                                    <td>@item.DrawTimeStr</td>
+                                    <td>
+                                        @if (item.state == (int)ApplyState.审核不通过 && item.drawState == (int)DrawCashState.未开始提现)
+                                        {
+                                            <a href="javascript:;" class="btn btn-sm btn-primary radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核通过))">通过审核</a>
+                                            <a href="javascript:;" class="btn btn-sm btn-default radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.删除))">删除</a>
+                                        }
+                                        else if (item.state == (int)ApplyState.审核通过 && item.drawState == (int)DrawCashState.未开始提现)
+                                        {
+                                            <a href="javascript:;" class="btn btn-sm btn-danger radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核不通过))">不通过审核</a>
+                                        }
+                                        else if (item.state == (int)ApplyState.待审核 && item.drawState == (int)DrawCashState.未开始提现)
+                                        {
+                                            <a href="javascript:;" class="btn btn-sm btn-primary radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核通过))">通过审核</a>
+                                            <a href="javascript:;" class="btn btn-sm btn-danger radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核不通过))">不通过审核</a>
+                                        }
+
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <ul class="pagination pagination-lg">
+                            <li>
+                            </li>
+                        </ul>
+                    </nav>
+                    @if (Model.TotalCount > Model.PageSize)
+                    {
+                        <div class="page">
+                            @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script>
+        function UpdateState(id, state) {
+            layer.confirm("确定要执行此操作吗？", function () {
+                var layerIndex = layer.load(2);
+                $.post("/pin/main/updatestate", { aid:@ViewBag.aid,id: id, state: state }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.code == 1) {
+                        layer.msg(data.msg, { time: 700, anim: 1 }, function () {
+                            window.location.reload();
+                        })
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                });
+            })
+        }
+
+        function ExportGroupAppLyDraw(){
+            var startDate =$("#startDate").val();
+            var endDate =$("#endDate").val();
+            var state = $("#state").val();
+            window.location.href='/Pin/Main/ExportGroupDrawCaseExcel?aid=@ViewBag.aid&startDate='+startDate+'&endDate='+endDate+'&state='+state;
+        }
+    </script>
+}

@@ -1,0 +1,575 @@
+﻿@model XcxAppAccountRelation
+@{
+    ViewBag.Title = "运费模板（新版）";
+
+    //独立部件，不加载导航栏
+    string souceFrom = Utility.IO.Context.GetRequest("SouceFrom", "");
+    if (souceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+        <style> #app { margin: 0 !important; margin-left: 10px; } </style>
+    }
+
+    //模板外部运费开关
+    int? freightSwitch = ViewBag.freightSwtich;
+    //小程序模板
+    int? pageType = ViewBag.PageType;
+    //低版本小程序
+    bool isOldTemplate = false;
+    //开放运费模板的小程序
+    bool isDisable = true;
+    if (pageType.HasValue && freightSwitch.HasValue)
+    {
+        //专业版子版本过低
+        isOldTemplate = pageType.Value == (int)TmpType.小程序专业模板 && freightSwitch.Value == 1;
+        //开放运费模板
+        isDisable = (pageType.Value == (int)TmpType.小程序专业模板 || pageType.Value == (int)TmpType.拼享惠) && freightSwitch.Value == 1;
+    }
+    //开启重量运费模板
+    bool isUseWeight = true;
+    //开启批量设置商品运费
+    bool isUseBatchSet = true;
+    //开启满级运费
+    bool isDiscount = false;
+    if (pageType.HasValue)
+    {
+        //这2个模板没有对接产品重量
+        isUseWeight = pageType.Value != (int)TmpType.小未平台子模版 && pageType.Value != (int)TmpType.企业智推版;
+        //仅专业版对接，批量设置商品运费
+        isUseBatchSet = pageType.Value == (int)TmpType.小程序专业模板;
+        isDiscount = pageType.Value == (int)TmpType.小程序专业模板;
+    }
+    //拼接接口查询参数
+    string appendQueryPara = ViewBag.AppendQueryPara;
+    //商家设置开关
+    int? enable = ViewBag.Enable;
+    //商家设置规则
+    int? rule = ViewBag.Rule;
+    //运费全局设置
+    Entity.MiniApp.Tools.DeliveryConfig config = ViewBag.config;
+}
+
+<!-- 引入element-ui-组件库 2.3.6" -->
+<!-- 引入element-ui-组件库 -->
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+@*<link rel="stylesheet" href="@(WebSiteConfig.cdnurl)content/elementui/element-ui.css">*@
+@*<script src="@(WebSiteConfig.cdnurl)content/elementui/element-ui-2.3.6.js?@WebSiteConfig.cdnVersion"></script>*@
+@if (WebSiteConfig.Environment == "dev")
+{
+    <script src="~/Content/plugin/deliverytemplate.js?v=2"></script>
+}
+else
+{
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/deliverytemplate.js?v=1"></script>
+}
+
+<div id="appHolder">
+    <delivery-app v-bind:set_enable="@((enable.HasValue && enable.Value > 0).ToString().ToLower())"
+                  v-bind:set_sum_rule="@rule"
+                  set_pagetype="@pageType"
+                  set_appid="@Model.Id"
+                  set_append_para="@appendQueryPara"
+                  set_discount="@(config.Attr.Discount * 0.01)"
+                  set_discount_enable="@(config.Attr.DiscountEnable ? "true" : null)">
+    </delivery-app>
+</div>
+
+<script type="text/javascript">
+    $(function () {
+        Vue.config.silent = true;
+        new Vue().$mount('#appHolder')
+    });
+</script>
+
+<script id="appTemplate" type="text/template">
+    <div id="app" style="margin:2rem">
+        @if (isDisable)
+        {
+            //低版本显示提示文案
+            <div class="panel panel-default">
+                <div class="panel-body" style="color:#FF6600">
+                    您正在使用低版本小程序，请升级到更高版本，以使用该功能。
+                </div>
+            </div>
+        }
+
+        <!--运费模板配置-->
+        <div class="panel panel-default">
+            <div class="panel-body" style="color:#FF6600">
+                <ul>
+                    <li>
+                        <span style="color:black">开启新版运费模板功能：</span>
+                        @{
+                            if (isDisable)
+                            {
+                                //低版本屏蔽开启按钮
+                                <el-switch title="请升级到更高版本" disabled="disabled"
+                                           active-text="开启"
+                                           inactive-text="关闭"
+                                           active-color="#409EFF">
+                                </el-switch>
+                            }
+                            else
+                            {
+                                <el-switch v-model="enable"
+                                           active-text="开启"
+                                           inactive-text="关闭"
+                                           active-color="#409EFF">
+                                </el-switch>
+                            }
+                        }
+                        <br />
+                        <br />
+                    </li>
+                    <li>
+                        <span style="color:black">运费结算规则：</span>
+                        <br /><br />
+                        <el-radio-group v-model="selectRule" fill="#337ab7">
+                            <el-radio v-bind:label="0">有赞商城</el-radio>
+                            <el-radio v-bind:label="1">淘宝商城</el-radio>
+                        </el-radio-group>
+                        <br /><br />
+                    </li>
+                    @if (isDiscount)
+                    {
+                        <li>
+                            <span style="color:black">运费满减：</span>
+                            <el-switch v-model="discountEnable"
+                                       active-text="开启"
+                                       inactive-text="关闭"
+                                       active-color="#409EFF">
+                            </el-switch>
+                            <br /><br />
+                        </li>
+                        <li v-show="discountEnable">
+                            购买金额满 <input v-model.number="discount" maxlength="7" type="tel" class="form-control" style="width:10%;display:inline;" /> 元，该产品免运费
+                            <br /><br />
+                        </li>
+                    }
+                    <li>
+                        <a @@click="updateConfig" href="javascript:;" class="btn btn-success temp-btn-setting" style="margin-top:1rem;background-color:#337ab7;border-color:#337ab7">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            保存设置
+                        </a>
+                        <a onclick="$('#ruleSpc').modal('show');" class="btn btn-warning temp-btn-setting" style="margin-top:1rem;border-color:#ed6b75;background-color:#ed6b75">
+                            <i class="layui-icon">&#xe705;</i>
+                            规则说明
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!--运费模板列表-->
+        <div v-show="enable">
+
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    @{
+                        if (isOldTemplate)
+                        {
+                            //专业版小程序的版本过低，屏蔽开启按钮
+                            <a title="请升级到更高版本" disabled="disabled" href="javascript:;" class="btn btn-success temp-btn-setting" style="background-color:#337ab7;border-color:#337ab7">
+                                <i class="layui-icon">&#xe61f;</i>添加运费模板
+                            </a>
+                        }
+                        else
+                        {
+                            <a @@click="addTempate();templateTab = 'basic'" href="javascript:;" class="btn btn-success temp-btn-setting" style="background-color:#337ab7;border-color:#337ab7">
+                                <i class="layui-icon">&#xe61f;</i>添加运费模板
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="ml_19">
+                <el-tabs v-model="tab" @@tab-click="switchTab">
+                    <el-tab-pane label="按件数" name="@((int)DeliveryUnit.件数)"></el-tab-pane>
+                    @if (isUseWeight)
+                    {
+                        <el-tab-pane label="按重量" name="@((int)DeliveryUnit.重量)"></el-tab-pane>
+                    }
+                </el-tabs>
+            </div>
+
+            <el-table v-bind:data="templates" v-loading="isloading" stripe border style="width:100%">
+                <el-table-column label="模板名称" prop="Name" width="300"></el-table-column>
+                <el-table-column label="配送区域" >
+                    <template scope="scope">
+                        <a v-if="scope.row.IsFree" @@click="editTemplate(scope.row);templateTab = 'basic';">包邮：全国配送 </a>
+                        <a v-else @@click="editTemplate(scope.row);templateTab = 'region';">查看配送区域</a>
+                    </template>
+                </el-table-column>
+                <el-table-column label="使用中的商品">
+                    <template scope="scope">
+                        <a @@click="editProduct(scope.row)">{{scope.row.ApplyCount? '查看商品(' + scope.row.ApplyCount + ')' : '无'}}</a>
+                    </template>
+                </el-table-column>
+                <el-table-column label="更新时间">
+                    <template scope="scope">
+                        <i class="el-icon-time"></i>
+                        <span style="margin-left: 10px">{{ scope.row.UpdateTime }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作">
+                    <template scope="scope">
+                        <input value="编辑" @@click="editTemplate(scope.row);templateTab = 'basic'" type="button" class="btn btn-primary">
+                        @if (isUseBatchSet)
+                        {
+                            <input value="批量设置模板" @@click="editProduct(scope.row);" type="button" class="btn btn-primary">
+                        }
+                        @*<input value="复制" type="button" class="btn btn-primary">*@
+                        <input value="删除" @@click="deleteTemplate(scope.row)" type="button" class="btn btn-danger">
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+
+        <!--编辑运费模板-->
+        <el-dialog v-bind:title="windowTitle" v-bind:visible.sync="isEditTemplate" width="65%">
+            <div class="editTemplate-body" v-loading="isUpdating">
+                <el-tabs v-model="templateTab" style="margin-left:1rem;margin-right:1rem;">
+                    <!--基础设置-->
+                    <el-tab-pane label="基础设置" name="basic">
+                        <el-row gutter="5" type="flex" align="middle">
+                          <el-col span="2">模板名称：</el-col>
+                          <el-col span="22"><input v-model="templateInput.Name" ref="templateName" type="text" class="form-control" style="width:20%;display:inline;" placeholder="请输入名称" /></el-col>
+                        </el-row>
+                        <el-row gutter="5"  type="flex" align="middle" style="margin-top:1.2rem">
+                            <el-col span="2">计费方式：</el-col>
+                            <el-col span="22" style="padding-top:8px">
+                                <el-radio-group v-model="templateInput.UnitType" fill="#337ab7">
+                                    <el-radio v-bind:label="@((int)DeliveryUnit.件数)">按件数</el-radio>
+                                    @if (isUseWeight)
+                                    {
+                                        <el-radio v-bind:label="@((int)DeliveryUnit.重量)">按重量</el-radio>
+                                    }
+                                </el-radio-group>
+                            </el-col>
+                        </el-row>
+                        @if (isDiscount)
+                        {
+                            @*<el-row gutter="5" type="flex" align="middle" style="margin-top:1.2rem">
+                                <el-col span="2">满减包邮：</el-col>
+                                <el-col span="22">
+                                    <el-switch v-model="templateInput.EnableDiscount"
+                                               active-text="是"
+                                               inactive-text="否">
+                                    </el-switch>
+                                </el-col>
+                            </el-row>*@
+                            <!--运费规则-->
+                            @*<el-row v-if="templateInput.EnableDiscount" gutter="5" type="flex" align="middle" style="margin-top:1.2rem">
+                                <el-col span="2">满减规则：</el-col>
+                                <el-col span="22">
+                                   购买金额满 <input v-model.number="templateInput.Discount" maxlength="7" type="tel" class="form-control" style="width:10%;display:inline;" /> 元，该产品免运费
+                                    <el-button type="primary" icon="el-icon-question">说明</el-button>
+                                </el-col>
+                            </el-row>*@
+                        }
+                        <el-row gutter="5" type="flex" align="middle" style="margin-top:1.2rem">
+                            <el-col span="2">全国包邮：</el-col>
+                            <el-col span="22">
+                                <el-switch v-model="templateInput.IsFree" active-text="是" inactive-text="否"></el-switch>
+                            </el-col>
+                        </el-row>
+                        <el-row v-if="!isFree" gutter="5" type="flex" align="middle" style="margin-top:1.2rem">
+                            <el-col span="2">配送区域：</el-col>
+                            <el-col span="22">
+                                <a @@click="templateTab = 'region'" style="text-decoration:none;color:#3a8ee6">为指定地区设置运费</a>（不设置运费的区域，默认无法配送）
+                            </el-col>
+                        </el-row>
+                    </el-tab-pane>
+                    <!--配送区域-->
+                    <el-tab-pane label="配送区域" name="region" v-loading="isloadingRegion">
+                        <a @@click="addRegion();regionTab = 'province'" ref="regionBtn" href="javascript:;"
+                           class="btn btn-success temp-btn-setting" style="background-color:#337ab7;border-color:#337ab7;margin-bottom:1rem;">
+                            <i class="layui-icon">&#xe61f;</i>
+                            新增配送区域
+                        </a>
+                        <div class="region-list" style="max-height:450px;overflow-y:scroll;overflow-x:hidden;">
+                            <el-row v-for="(group,groupIndex) in regionTemplateGroup" v-bind:key="group.Id" v-bind:gutter="8" type="flex" style="border-top:5px dotted #ececec;padding-bottom:1.2rem;">
+                                <el-col v-for="(region,index) in group"  v-bind:key="region.Id" v-bind:span="8" style="margin-top:5px;">
+                                    <el-card v-bind:body-style="{ padding: '5px' }">
+                                        <div slot="header" class="card-clearfix">
+                                            <span>操作</span>
+                                            <el-button @@click="removeRegion(region)" style="float: right; padding: 3px 3px;color:#ed6b75" type="text">删除</el-button>
+                                            <el-button @@click="editRegion(region)" style="float: right; padding: 3px 3px" type="text">编辑</el-button>
+                                        </div>
+                                        <div style="padding: 14px;min-height:125px">
+                                            <div class="card-clearfix">
+                                                区域：
+                                            </div>
+                                            <span v-html="formatRegion(region)"></span>
+                                        </div>
+                                        <div style="padding: 14px;">
+                                            <span v-if="region.IsFree">
+                                                运费设置：包邮
+                                            </span>
+                                            <span v-else>
+                                                运费设置：{{safeDiv(region.Base,unitFormat)}}{{unitTitle}} 内 {{safeCal(region.BaseCost,0.01)}}元，每增加 {{safeDiv(region.Extra , unitFormat)}}{{unitTitle}}，运费增加{{safeCal(region.ExtraCost ,0.01)}}元
+                                            </span>
+                                            <div class="card-bottom card-clearfix">
+                                                <time class="card-time">更新时间：{{region.UpdateTime}}</time>
+                                            </div>
+                                        </div>
+                                    </el-card>
+                                </el-col>
+                            </el-row>
+                        </div>
+
+                    </el-tab-pane>
+                </el-tabs>
+            </div>
+            <span slot="footer" class="dialog-footer" v-if="isAdd">
+                <button type="button" @@click="isEditTemplate = false" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button v-show="templateTab === 'region'" @@click="templateTab = 'basic'" type="button" class="btn btn-primary">上一步</button>
+                <button v-show="templateTab === 'region'" @@click="saveTemplate(false)" type="button" class="btn btn-primary">保存</button>
+                <button v-show="templateTab === 'basic'" @@click="templateTab = 'region'" type="button" class="btn btn-primary">下一步</button>
+            </span>
+            <span slot="footer" class="dialog-footer" v-if="isEdit">
+                <button type="button" @@click="isEditTemplate = false" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button @@click="saveTemplate(false)" type="button" class="btn btn-primary">保存</button>
+            </span>
+        </el-dialog>
+
+        <!--编辑区域运费-->
+        <el-dialog title="编辑区域运费" v-bind:visible.sync="isEditRegion" width="50%">
+            <div class="areaConten" v-loading="isUpdating">
+                <span ref="DeliveryRegion"> 配送区域：</span>
+                <div class="area" v-loading="isloadingRegion">
+                    <el-tabs v-model="regionTab" style="padding:1rem" tab-position="left">
+                        <el-tab-pane label="设置省份/直辖市" name="province">
+                            <el-transfer filterable
+                                         style="text-align: left; display: inline-block;"
+                                         v-bind:filter-method="filterRegion"
+                                         filter-placeholder="请输入首字母拼音"
+                                         v-bind:props="{key: 'Code',label: 'Name'}"
+                                         v-bind:titles="['剩余省份/直辖市', '已选省份/直辖市']"
+                                         v-bind:button-texts="['取消', '全选']"
+                                         v-model="selectedRegion"
+                                         v-bind:data="regionRemain">
+                            </el-transfer>
+                        </el-tab-pane>
+                        <el-tab-pane label="设置市区" name="city">
+                            <el-transfer filterable
+                                         style="text-align: left; display: inline-block"
+                                         v-bind:filter-method="filterRegion"
+                                         filter-placeholder="请输入首字母拼音"
+                                         v-bind:props="{key: 'Code',label: 'Name'}"
+                                         v-bind:titles="['剩余市区', '已选市区']"
+                                         v-bind:button-texts="['取消', '选中']"
+                                         v-model="selectedSubRegion"
+                                         v-bind:data="regionSubRemain">
+                            </el-transfer>
+                        </el-tab-pane>&nbsp;
+                    </el-tabs>
+                    <br />
+                </div>
+                <!--区域包邮-->
+                <div style="margin-top:1rem">
+                    区域包邮：
+                    <el-switch v-model="editRegionTemplate.IsFree"
+                               active-text="是"
+                               inactive-text="否">
+                    </el-switch>
+                    <br /><br />
+                </div>
+                <!--运费规则-->
+                <div v-if="!isRegionFree">
+                    <span>
+                        运费规则： 购买
+                        <input v-model.number="editRegionTemplate.Base" ref="Base" type="tel" class="form-control" style="width:13%;display:inline;" />
+                        ({{unitTitle}}) 内
+                        <input v-model.number="editRegionTemplate.BaseCost" ref="BaseCost" type="text" class="form-control" style="width:13%;display:inline;" />元， <br /><br />
+                    </span>
+                    <span style="padding-left:6.2rem">
+                        每增加
+                        <input v-model.number="editRegionTemplate.Extra" ref="Extra" type="text" class="form-control" style="width:13%;display:inline;" />
+                        ({{unitTitle}})，运费增加
+                        <input v-model.number="editRegionTemplate.ExtraCost" ref="ExtraCost" type="text" class="form-control" style="width:13%;display:inline;" /> 元 <br /><br />
+                    </span>
+                </div>
+            </div>
+            <span slot="footer" class="dialog-footer"> 
+                <button type="button" @@click="isEditRegion = false" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button @@click="confirmRegion" type="button" class="btn btn-primary">确认</button>
+            </span>
+        </el-dialog>
+
+        <!--编辑商品运费模板-->
+        <el-dialog title="批量设置模板" v-bind:visible.sync="isEditProduct" width="40%">
+            <div class="product-list" style="text-align: center;min-height:360px" v-loading="isUpdating || isLoadingProduct || isloading">
+                <el-transfer style="text-align: left; display: inline-block;"
+                             v-model="selProduct"
+                             filterable
+                             v-bind:props="{key: 'Id',label: 'Name'}"
+                             v-bind:titles="['可选商品', '已选商品']"
+                             v-bind:button-texts="['取消', '选中']"
+                             v-bind:format="{可选: '${total}',选中: '${checked}/${total}'}"
+                             v-bind:data="allProduct"
+                             @@change="saveProduct">
+                    <div v-if="productTotal" class="transfer-footer" slot="left-footer" style="padding:.8rem">
+                        <el-pagination v-bind:current-page.sync="productPageIndex"
+                                       v-bind:total="productTotal"
+                                       v-bind:page-size="10"
+                                       v-bind:pager-count="5"
+                                       small layout="prev,pager,next">
+                        </el-pagination>
+                    </div>
+                    <div v-if="selProductTotal" class="transfer-footer" slot="right-footer" style="padding:.8rem">
+                        <el-pagination v-bind:current-page.sync="selProductIndex"
+                                       v-bind:total="selProductTotal"
+                                       v-bind:page-size="10"
+                                       v-bind:pager-count="5"
+                                       small layout="prev,pager,next">
+                        </el-pagination>
+                    </div>
+                </el-transfer>
+            </div>
+        </el-dialog>
+
+        <!--结算规则说明-->
+        <div class="modal fade" id="ruleSpc" tabindex="0" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="AddGoodModal_label">规则说明</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p><b>为了更方便用户理解，这里以举例子进行说明。</b><br /><br /></p>
+                        <template>
+                            <el-table v-bind:data="[
+                                    {name: '商品A',unit:'按件数',base: '1',basecost: '8',extra: '1',extracost: '3'},{name: '商品B',unit:'按件数',base: '1',basecost: '8',extra: '1',extracost: '3'},
+                                    {name: '商品C',unit:'按件数',base: '1',basecost: '20',extra: '1',extracost: '10'},{name: '商品D',unit:'按重量',base: '1',basecost: '12',extra: '1',extracost: '5'}
+                                  ]"
+                                      style="width: 100%"
+                                      size="mini"
+                                      stripe>
+                                <el-table-column prop="name"
+                                                 label="商品"
+                                                 width="80">
+                                </el-table-column>
+                                <el-table-column prop="unit"
+                                                 label="计算方式"
+                                                 width="80">
+                                </el-table-column>
+                                <el-table-column prop="base"
+                                                 label="首件(个)/首重(kg)"
+                                                 width="120">
+                                </el-table-column>
+                                <el-table-column prop="basecost"
+                                                 label="运费(元)"
+                                                 width="80">
+                                </el-table-column>
+                                <el-table-column prop="extra"
+                                                 label="续件(个)/续重(kg)"
+                                                 width="120">
+                                </el-table-column>
+                                <el-table-column prop="extracost"
+                                                 label="运费(元)"
+                                                 width="80">
+                                </el-table-column>
+                            </el-table>
+                        </template>
+                        <el-collapse>
+                            <el-collapse-item>
+                                <template slot="title">
+                                    有赞商城
+                                    <i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>
+                                    <ul>
+                                        <li>
+                                            <p><b>情况一</b></p>
+                                            <p>
+                                                <div>当我同时购买2件商品A和2件商品B，因为这两款商品都使用同一个运费模板，</div>
+                                                <div>则只使用其中一款商品的首件运费，其余商品直接按照续件的运费进行计算，</div>
+                                                <div>即购买2件商品A和2件商品B时，</div>
+                                                <div>系统计算的运费应该为：<b>8元+3元+3元+3元=17元</b></div>
+                                            </p>
+                                            <br />
+                                        </li>
+                                        <li>
+                                            <p><b>情况二</b></p>
+                                            <p>
+                                                <div>当我同时购买2件商品A和2件商品C，</div>
+                                                <div>这两款商品都是按照件数计算运费，但使用的是不同的运费模板，则有赞微商城会分别计算两款商品的运费，</div>
+                                                <div>然后累加起来算得总运费。即购买2件商品A和2件商品C时，</div>
+                                                <div>系统计算的运费应该为：<b>8元+3元+20元+10元=41元</b></div>
+                                            </p>
+                                            <br />
+                                        </li>
+                                        <li>
+                                            <p><b>情况三</b></p>
+                                            <p>
+                                                <div>当我同时购买2件商品A和2kg商品D，商品A按照件数计算运费，商品D按照重量计算运费，</div>
+                                                <div>则有赞微商城会分别计算两款商品的运费，然后累加起来算得总运费。</div>
+                                                <div>即购买2件商品A和2kg商品D时，</div>
+                                                <div>系统计算的运费应该为：<b>8元+3元+12元+5元=28元 </b></div>
+                                            </p>
+                                            <br />
+                                        </li>
+                                    </ul>
+                                </div>
+                            </el-collapse-item>
+                            <el-collapse-item>
+                                <template slot="title">
+                                    淘宝商城
+                                    <i class="header-icon el-icon-info"></i>
+                                </template>
+                                <div>
+                                    <ul>
+                                        <li>
+                                            <p><b>情况一</b></p>
+                                            <p>
+                                                <div>当我同时购买2件商品A和2件商品B，因为这两款商品都使用同一个运费模板，则只使用其中一款商品的首件运费，</div>
+                                                <div>其余商品直接按照续件的运费进行计算，即购买2件商品A和2件商品B时，</div>
+                                                <div>系统计算的运费应该为：<b>8元+3元+3元+3元=17元</b></div>
+                                                <br />
+                                                <div>（与有赞微商城相同） </div>
+                                                <br />
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p><b>情况二</b></p>
+                                            <p>
+                                                <div>当我同时购买2件商品A和2件商品C，这两款商品都是按照件数计算运费，</div>
+                                                <div>但使用的是不同的运费模板，则淘宝会比较这两款商品中首件的运费，选择首件运费最大的费用作为首件费用（商品C首件运费20元），</div>
+                                                <div>然后忽略商品A的首件运费，商品A全部按照该商品的续件费用进行计算运费。</div>
+                                                <div>系统计算的运费应该为：<b>20元+10元+3元+3元=36元</b></div>
+                                                <br />
+                                                <div>（与有赞微商城不同，计算结果比有赞微商城减少5元） </div>
+                                                <br />
+                                            </p>
+                                        </li>
+                                        <li>
+                                            <p><b>情况三</b></p>
+                                            <p>
+                                                <div>当我同时购买2件商品A和2kg商品D，商品A按照件数计算运费，商品D按照重量计算运费，</div>
+                                                <div>则淘宝会比较这两款商品中首件（首公斤）的运费，选择首件（首公斤）运费最大的费用作为首件（首公斤）费用（商品D首公斤运费12元），</div>
+                                                <div>然后忽略商品A的首件运费，商品A全部按照该商品的续件费用进行计算运费。</div>
+                                                <div>系统计算的运费应该为：<b>12元+5元+3元+3元=23元</b></div>
+                                                <br />
+                                                <div>（与有赞微商城不同，计算结果比有赞微商城减少5元）</div>
+                                                <br />
+                                            </p>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<style> .el-tabs__item.is-active, .el-tabs__item:hover { color: #409EFF; }  .el-tabs__active-bar { background-color: #409EFF; }  .layui-row .contentcontainer .rightheight { overflow-x: visible; }  .el-transfer-panel { width: 220px; }  .el-card__header { padding: 10px 20px; }  .card-time { font-size: 13px; color: #999; }  .card-bottom { margin-top: 13px; line-height: 12px; }  .card-button { padding: 0; float: right; }  .card-image { width: 100%; display: block; }  .card-clearfix:before, .card-clearfix:after { display: table; content: ""; }  .card-clearfix:after { clear: both; }  .product-list .el-transfer-panel__body, .product-list .el-checkbox-group { height: 100%; min-height: 300px; max-height: 400px; } .rightheight{max-height:100%}</style>

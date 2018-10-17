@@ -1,0 +1,348 @@
+﻿@using Entity.MiniApp.Conf
+@model Agentinfo
+@{
+    ViewBag.Title = "预存款变更明细";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+    ViewBag.level = Model.userLevel;
+
+    List<object> logtypelist = new List<object>();
+    logtypelist.Add(new { index = 0, value = "全部" });
+    foreach (AgentDepositLogType getWay in Enum.GetValues(typeof(AgentDepositLogType)))
+    {
+        if ((int)getWay == 14 || (int)getWay == 15 || (int)getWay == 16)
+        {
+            continue;
+        }
+        logtypelist.Add(new { index=(int)getWay, value= getWay.ToString() });
+    }
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+
+<style>
+    .page-wrapper {
+        min-width: 1800px;
+    }
+
+    #page div {
+        text-align: center;
+    }
+
+    .page-content {
+        min-width: 1400px;
+    }
+
+    #customList {
+        /*width: 1367px;*/
+        margin: 0 auto;
+    }
+
+        #customList table.layui-table {
+            text-align: center;
+        }
+
+            #customList table.layui-table th, #customList table.layui-table td {
+                font-family: 'Microsoft YaHei';
+                font-weight: 400;
+                font-style: normal;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            #customList table.layui-table th {
+                height: 50px;
+            }
+
+            #customList table.layui-table a {
+                color: #108EE9;
+                margin: 0 15px;
+            }
+
+    .caozuo li {
+        float: left;
+    }
+
+    .more {
+        display: block;
+        position: relative;
+    }
+
+    .dropdown-menu {
+        min-width: 0px;
+        font-size: 12px;
+    }
+
+        .dropdown-menu a {
+            margin: 0px !important;
+            font-size: 12px;
+        }
+
+    #search_box {
+        margin-top: 10px;
+        /*margin-bottom: 30px;*/
+        height: 120px;
+    }
+
+        #search_box ul li {
+            float: left;
+            width: 16%;
+            line-height: 38px;
+        }
+
+            #search_box ul li input {
+                width: 140px;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #search_box ul li span {
+                float: left;
+                color: #404040;
+            }
+
+        #search_box ul.tamplate li {
+            min-width: 100px;
+            text-align: center;
+            width: auto;
+            margin: 10px 10px;
+            font-size: 12px;
+        }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus {
+                text-decoration: none;
+                color: #fff;
+            }
+
+            #search_box ul.tamplate li a {
+                padding: 0 18px;
+                color: #777;
+            }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus {
+                    text-decoration: none;
+                }
+
+    /*.search_btn {
+        width: 100%;
+        height: 45px;
+        float: left;
+        margin: 15px 0px;
+    }*/
+
+    .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus {
+        text-decoration: none;
+        outline: -webkit-focus-ring-color;
+    }
+
+    a.layui-btn-normal:focus {
+        color: #fff;
+    }
+
+    .search_btn a.layui-btn-primary:focus {
+        color: #555;
+    }
+
+    .search_btn a.layui-btn-primary:hover {
+        background-color: #eee;
+        border-color: #C9C9C9;
+    }
+
+    .layui-tab-title .layui-this:after {
+        height: 40px;
+    }
+
+    .userInfo {
+        margin: 20px 87px;
+    }
+
+        .userInfo span {
+            color: red;
+        }
+
+    .layui-table td, .layui-table th {
+        text-align: center;
+    }
+
+    .textname {
+        text-align: right;
+        width: 100px !important;
+    }
+</style>
+
+<div id="depositLogList" hidden>
+    <div id="search_box">
+        <ul style="width:100%">
+            <li>
+                <span>变更原因：</span>
+                <input type="text" v-model="postdata.reason" class="form-control" placeholder="关键字搜索" />
+            </li>
+            <li style="width: 27%;">
+                <span>变更时间：</span>
+                <input type="text" class="inputs form-control" onfocus="WdatePicker({maxDate:'#F{$dp.$D(\'endtime\')}',doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="begintime" id="begintime" placeholder="开始时间" v-model="postdata.starttime" />
+                <input type="text" class="inputs form-control" onfocus="WdatePicker({minDate:'#F{$dp.$D(\'begintime\')}',doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="endtime" id="endtime" placeholder="结束时间" v-model="postdata.endtime" />
+            </li>
+            <li style="width: 20%;">
+                <span>变更类型：</span>
+                <select v-model="postdata.type" class="form-control" style="width: 220px; margin-left:5px; text-align:center;   float: left;">
+                    <option value="0">全部</option>
+                    <option v-for="(typeinfo,index) in typelist" v-bind:value="typeinfo.index">{{typeinfo.value}}</option>
+                    @*<option value="0">全部</option>
+                    <option value="1">充值</option>
+                    <option value="2">客户开通模板</option>
+                    <option value="4">续期</option>
+                    @if (Model.userLevel == 0)
+                    {
+                        <option value="3">分销商开通模板</option>
+                        <option value="5">分销商续期</option>
+                    }
+                    <option value="6">开通新门店</option>*@
+                    @*@foreach (AgentDepositLogType getWay in Enum.GetValues(typeof(AgentDepositLogType)))
+                    {
+                        if ((int)getWay == 14 || (int)getWay == 15 || (int)getWay == 16)
+                        {
+                            continue;
+                        }
+                        <option value="@((int)getWay)">@(getWay.ToString())</option>
+                    }*@
+                </select>
+            </li>
+            <li>
+                <div class="search_btn">
+                    <a href="javascript:;" v-on:click="Search(true)" class="layui-btn layui-btn-normal" style="margin-right:15px;">搜索</a>
+                    <a href="javascript:;" v-on:click="resetSearch()" class="layui-btn layui-btn-primary">清除</a>
+                </div>
+            </li>
+        </ul>
+
+    </div>
+
+    <table class="layui-table" lay-skin="line">
+        <colgroup>
+            <col width="10%">
+            <col width="7%">
+            <col width="15%">
+            <col width="10%">
+            <col width="10%">
+            <col width="25%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>变更类型</th>
+                <th>变更前金额（元）</th>
+                <th>变更金额（元）</th>
+                <th>变更后金额（元）</th>
+                <th>变更时间</th>
+                <th>变更原因</th>
+            </tr>
+        </thead>
+        <tr v-if="Loglist!=null && Loglist.length>0" v-for="(log,index) in Loglist">
+            <td>{{log.typename}}</td>
+            <td>{{log.showbeforeDeposit}}</td>
+            <td>{{log.showcost}}</td>
+            <td>{{log.showafterDeposit}}</td>
+            <td>{{log.showaddtime}}</td>
+            <td>{{log.costdetail}}</td>
+        </tr>
+        <tr v-if="Loglist==null || Loglist.length==0">
+            <td colspan="7">暂无数据</td>
+        </tr>
+
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+    @*<div id="Qrcode" hidden>
+            <input type="hidden" id="sessid" value="@Session["qrcodekey"]" />
+            <img src="/QrCode/GetQrCode?code=@Session["qrcodekey"]" alt="" style="border: 8px solid #fff;" />
+            <p>微信扫描二维码登录</p>
+        </div>*@
+    <!--编辑页面-->
+
+</div>
+<script>
+    var element;
+    var vm = new Vue({
+        el: "#depositLogList",
+        data: {
+            recordCount: 0,
+            Loglist: [],
+            postdata: {
+                pageIndex: 1,
+                pagesize: 12,
+                reason: '',
+                type: 0,
+                starttime: '',
+                endtime: '',
+            },
+            //typelist: [{ index: 0, value: "全部" }, { index: 1, value: "充值" }, { index: 2, value: "客户开通模板" }, { index: 3, value: "分销商开通模板" }, { index: 4, value: "续期" }, { index: 5, value: "分销商续期" }, { index: 6, value: "开通新门店" }, { index: 7, value: "门店续期" }, { index: 8, value: "代理商升级专业版" }, { index: 9, value: "分销商升级专业版" }, { index: 10, value: "变更智慧餐厅门店" }, { index: 11, value: "分销商变更智慧餐厅门店" }, { index: 12, value: "开启水印" }, { index: 13, value: "分销代理充值" }, { index: 16, value: "变更智慧企业员工" }, { index: 17, value: "分销商变更智慧企业员工" }],
+            typelist:@Html.Raw(JsonConvert.SerializeObject(logtypelist)),
+            isloading: false
+        },
+        methods: {
+            getloglist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                $.post("/agentmanager/GetLogList", this.postdata, function (data) {
+                    vm.isloading = false;
+                    if (!data.isok) {
+                        //console.log(data.Msg);
+                        layer.msg("数据异常");
+                        return;
+                    } else {
+                        vm.recordCount = data.dataObj.count;
+                        vm.Loglist = data.dataObj.list;
+                        console.log(data.dataObj.list);
+                        vm.resetPage();
+                        //vm.resetPage();
+                    }
+                })
+            },
+            resetPage: function (/*issearch*/) {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: vm.recordCount //数据总数，从服务端得到
+                        , curr: vm.postdata.pageIndex //当前页
+                        , limit: vm.postdata.pagesize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            vm.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                vm.getloglist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function () {
+                this.pageIndex = 1;
+                this.postdata.starttime = $("#begintime").val();
+                this.postdata.endtime = $("#endtime").val();
+                this.getloglist();
+            },
+            resetSearch: function () {
+                this.postdata.reason = '';
+                this.postdata.type = 0;
+                this.postdata.starttime = '';
+                this.postdata.endtime = '';
+            },
+
+        },
+        created: function (index) {
+            $("#depositLogList").show();
+            this.getloglist();
+        }
+
+    })
+</script>

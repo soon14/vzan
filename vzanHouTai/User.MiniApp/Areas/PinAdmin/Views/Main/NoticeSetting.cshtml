@@ -1,0 +1,69 @@
+﻿@using Senparc.Weixin.MP.AdvancedAPIs.User;
+@{
+
+    ViewBag.Title = "通知配置";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+}
+@model UserInfoJson
+<div class="input-area" @(Model == null ? "" : "hidden")>
+<p style="margin:22px;">扫码关注公众号，绑定微信可接收模板消息通知</p>
+<input type="hidden" id="sessid" value="@Session["wxbindqrcodekey"]" />
+    <img src="/weixin/CreateQrCode?code=notice_@Session["wxbindqrcodekey"]" alt="" style="margin-left: 78px; width: 125px;" />
+</div>
+<div id="userInfo-box" @(Model == null ? "hidden" : "")>
+    @if (Model != null)
+    {
+        <img src="@Model.headimgurl" width="70" />
+        <p>已绑定微信:@Model.nickname</p>
+    }
+    <button class="btn btn-primary radius cancel_button">取消绑定</button>
+</div>
+@section styles{
+    <style>
+        #userInfo-box { width: 120px; text-align: center; margin-top: 20px; margin-left: 40px; }
+    </style>
+
+}
+@section scripts{
+    <script>
+        //扫描登录
+        function wxLogin() {
+            if (!$(".input-area").is(":hidden")) {
+                var key = $('#sessid').val();
+                $.ajax({
+                    type: "POST",
+                    url: "/PinAdmin/Main/CheckScan",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    data: { wxkey: key, storeId:@ViewBag.StoreId },
+                    success: function (data) {
+                        if (data.code == 1) {
+                            $("#userInfo-box").html("<img src='" + data.obj.userInfo.headimgurl + "' width='70' /><p>已绑定微信:" + data.obj.userInfo.nickname + "</p><button class='btn btn-primary radius cancel_button'>取消绑定</button>");
+                            $("#userInfo-box").show();
+                            $(".input-area").hide();
+                        }
+                    }
+                });
+            }
+        }
+        setInterval(wxLogin, 1000);
+        $("#userInfo-box").delegate(".cancel_button", "click", function () {
+            layer.confirm("是否确定取消接收模板消息", ["确定", "取消"], function () {
+                var layerIndex = layer.load(2);
+                $.post("/pinAdmin/main/CancelBind", { storeId:@ViewBag.StoreId}, function (data) {
+                    layer.close(layerIndex);
+                    if (data.code == 1) {
+                        layer.msg(data.msg, { anim: 0, time: 700 }, function () {
+                            window.location.reload();
+                        })
+                    } else {
+                       layer.msg(data.msg);
+                    }
+
+                })
+            });
+        })
+
+    </script>
+}

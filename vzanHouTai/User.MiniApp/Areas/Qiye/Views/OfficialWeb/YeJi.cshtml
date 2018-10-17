@@ -1,0 +1,113 @@
+﻿@model ViewModel<Entity.MiniApp.Qiye.QiyeYeJi>
+@{
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "员工业绩统计";
+    int did = Utility.IO.Context.GetRequestInt("did", 0);
+    string kw = Utility.IO.Context.GetRequest("kw", "");
+    int typeid = Utility.IO.Context.GetRequestInt("typeid", 0);
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+    .form-control { width: 35%; display: inline-block; }
+    .layui-laypage span { background-color: #eff0f4; }
+    .text-green { color: green; }
+    .text-orange { color: orange; }
+    .text-blue { color: dodgerblue; }
+    .ml10 { margin-left: 10px; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+
+    <div>
+        <div class="search">
+            <form method="get">
+                <input type="hidden" name="aid" value="@(Model.aId)" />
+                <div class="form-inline">
+                    <div class="form-group" style="margin-left:0px;">
+                        <select class="form-control" style="width: 200px;" name="did">
+                            <option value="0">全部部门</option>
+                            @if (ViewBag.DepartmentList != null)
+                            {
+                                foreach (QiyeDepartment item in ViewBag.DepartmentList)
+                                {
+                                    <option value="@(item.Id)" @(did == item.Id ? "selected" : "")>@(item.Name)</option>
+                                }
+                            }
+                        </select>
+
+
+                        <select class="form-control" name="typeid">
+                            <option value="0" @(typeid == 0 ? "selected" : "")>累计数据</option>
+                            <option value="1" @(typeid == 1 ? "selected" : "")>本月数据</option>
+                        </select>
+                        <input type="text" name="kw" class="form-control" placeholder="请输入姓名或者手机号搜索" value="@(kw)" />
+
+                        <input type="submit" value="查询" class="btn btn-primary ml10" />
+                        <a href="YeJiExport?act=export&aid=@(Model.aId)&did=@(did)&typeid=@(typeid)&kw=@(kw)" class="btn btn-primary ml10" target="_blank">导出报表</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div role="alert" class="alert alert-warning alert-dismissible" style="margin-top:10px;">
+            <button type="button" data-dismiss="alert" aria-label="Close" class="close">
+                <span aria-hidden="true">×</span>
+            </button>
+            <p>提示：</p>
+            <p>【订单量】统计的是员工的客户的已完成的订单数量</p>
+            <p>【销售金额】统计的是员工的客户的已完成的所有订单的支付金额</p>
+        </div>
+
+        <div style="margin-top:20px;">
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+
+                    <th class="centertext">姓名</th>
+                    <th class="centertext">电话</th>
+                    <th class="centertext">部门</th>
+                    <th class="centertext text-green">名片访问</th>
+                    <th class="centertext text-green">名片转发</th>
+                    <th class="centertext text-orange">客户总数</th>
+                    <th class="centertext text-orange">客户点赞</th>
+                    <th class="centertext text-orange">私信数量</th>
+                    <th class="centertext text-blue">订单量</th>
+                    <th class="centertext text-blue">销售金额</th>
+                    <th class="centertext text-blue">销售排名</th>
+                </tr>
+                @if (Model.DataList != null && Model.DataList.Count > 0)
+                {
+                    int beginIndex = Model.PageIndex - 1 < 0 ? 0 : Model.PageIndex - 1;
+                    int rank = beginIndex * Model.PageSize + 1;
+                    foreach (QiyeYeJi item in Model.DataList)
+                    {
+
+                        <tr>
+                            <td class="centertext">@(item.UserName)</td>
+                            <td class="centertext">@(item.Phone)</td>
+                            <td class="centertext">@(item.DepartmentName)</td>
+                            <td class="centertext text-green">@(item.CardViewedCount)</td>
+                            <td class="centertext text-green">@(item.CardRepostCount)</td>
+                            <td class="centertext text-orange">@(item.CustomerCount)</td>
+                            <td class="centertext text-orange">@(item.CustomerLikeCount)</td>
+                            <td class="centertext text-orange">@(item.CustomerConsultCount)</td>
+                            <td class="centertext text-blue">@(item.OrderCount)</td>
+                            <td class="centertext text-blue">@(item.Sales)</td>
+                            <td class="centertext text-blue">@(rank)</td>
+                        </tr>
+                        rank += 1;
+                    }
+
+                }
+            </table>
+            @if (Model.TotalCount > Model.PageSize)
+            {
+                <div class="page">
+                    @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,213 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+</style>
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">分销员手机号：</label>
+                    <input type="text" name="TelePhone" class="form-control" id="TelePhone" value="" />
+                </div>
+
+                <div class="form-group ml10">
+                    <label>起止时间：</label>
+                    <input type="text" name="startTime" class="form-control" id="startTime" value="" />至
+                    <input type="text" name="endTime" class="form-control" id="endTime" value="" />
+                </div>
+ 
+                <button type="submit" class="btn btn-primary ml10" v-on:click="Search()">搜索</button>
+                <a href="#" class="btn btn-default ml10" v-on:click="searchReset()">重置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered ml_19">
+                <tr class="active">
+                    <th class="centertext">序号</th>
+                    <th class="centertext">手机号码</th>
+                    <th class="centertext">昵称</th>
+                    <th class="centertext">自动结算订单数量</th>
+                    <th class="centertext">自动结算订单金额(元)</th>
+                    <th class="centertext">自动结算订单佣金(元)</th>
+                    <th class="centertext">人工结算订单数量</th>
+                    <th class="centertext">人工结算订单金额(元)</th>
+                    <th class="centertext">人工结算订单佣金(元)</th>
+                    <th class="centertext">分销员加入时间</th>
+                </tr>
+                <tr v-for="(item,index) in SalesManRecordOrderList">
+                    <td class="centertext">
+                        <label>
+                            <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                        </label>
+                    </td>
+
+                    <td class="centertext">
+                        {{item.TelePhone}}
+                    </td>
+                    <td class="centertext">
+                        {{item.nickName}}
+                    </td>
+                    <td class="centertext">
+                        {{item.autoPayOrderCount}}
+                    </td>
+                    <td class="centertext">
+                        {{item.autoPayOrderTotalPrice}}
+                    </td>
+                    <td class="centertext">
+                        {{item.autoPayOrderTotalCpsMoney}}
+                    </td>
+                    <td class="centertext">
+                        {{item.peoplePayOrderCount}}
+                    </td>
+                    <td class="centertext">
+                        {{item.peoplePayOrderTotalPrice}}
+                    </td>
+                    <td class="centertext">
+                        {{item.peoplePayOrderTotalCpsMoney}}
+                    </td>
+                    <td class="centertext">
+                        {{item.AddTimeStr}}
+                    </td>
+                </tr>
+
+                <tr v-if="SalesManRecordOrderList==null || SalesManRecordOrderList.length==0">
+                    <td colspan="12">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+        </div>
+
+    </div>
+
+
+
+</div>
+<script>
+    var ids;
+    var chk_value =[];
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            SalesManRecordOrderList:[],
+            RecordCount: 0,
+            postdata:{
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                TelePhone:"",
+                startTime:"",
+                endTime:""
+            },
+            isloading:false
+        },
+        methods: {
+            getList:function(){
+                var that=this;
+                if (that.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                that.isloading = true;
+                var index = layer.load(1);
+                $.post("/common/GetPerformanceList", this.postdata, function (data) {
+                    layer.close(index);
+                    that.isloading = false;
+                    if (data.isok) {
+                        that.RecordCount = data.model.RecordCount;
+                        that.SalesManRecordOrderList = data.model.List;
+                        that.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.RecordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search:function(){
+                var that=this;
+                that.postdata.TelePhone=$("#TelePhone").val();
+                that.postdata.startTime=$("#startTime").val();
+                that.postdata.endTime=$("#endTime").val();
+  
+                that.getList();
+            },
+            searchReset:function(){
+                window.location.reload();
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            }
+
+        }, created: function () {
+            var that=this;
+            that.getList();
+        }
+
+    });
+
+    $('#startTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        weekStart: 1,
+        todayBtn: 0,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+    $('#endTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        weekStart: 1,
+        todayBtn: 0,
+        autoclose: 1,
+        todayHighlight: 1,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+
+
+
+</script>

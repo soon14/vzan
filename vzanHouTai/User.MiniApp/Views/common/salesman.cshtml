@@ -1,0 +1,401 @@
+﻿@model SalesManConfig
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "分销设置";
+    int distributionSwtich = ViewBag.distributionSwtich;
+}
+<style>
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #0094ff !important; }
+        .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #0094ff !important; }
+
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+        .set-form-content .control-label { font-size: 12px; }
+    .form-horizontal .control-label { width: 120px; font-size: 10px; line-height: 18px; float: left; padding-top: 5px; text-align: right; }
+    .checkbox.inline, .radio.inline { display: inline-block; padding-top: 5px; margin-bottom: 0; vertical-align: middle; margin-left: 20px; }
+    .form-horizontal .controls { position: relative; }
+    .seller-tip { margin-left: 120px; color: #999; }
+    .control-group { margin-top: 10px; }
+    .footBar { position: fixed; bottom: 0; height: 50px; width: 100%; left: 0; background-color: #ffc; z-index: 9999; }
+    .info-pane { display: none; width: 400px; padding: 15px; margin-bottom: 15px; }
+    .ui-message-warning { color: #333; background: #ffc; border-color: #fc6; }
+    #exp_time_typeKonw:hover #exp_time_typeKonw_info-pane { display: inline-block; }
+    #secondSale:hover #secondSale_info-pane { display: inline-block; }
+</style>
+<div id="app" v-cloak>
+    <div style="height:100%;" class="form-horizontal set-form-content">
+        <div>
+            <div class="form-title">分销设置</div>
+            <div class="control-group">
+                <label class="control-label">开关状态：</label>
+                <div class="controls">
+                    <label class="radio inline">
+                        <input name="state" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.state">开启
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="state" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.state">关闭
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="SalesManManager">
+            <div class="form-title">分销员招募与管理</div>
+            <div class="control-group">
+                <label class="control-label">分销员招募：</label>
+                <div class="controls">
+                    <label class="radio inline">
+                        <input name="allow_recruit" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.salesManManager.allow_recruit">开启
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="allow_recruit" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.salesManManager.allow_recruit">关闭
+                    </label>
+                </div>
+            </div>
+            <div class="control-group control-group-verify">
+                <label class="control-label">分销员审核规则：</label>
+                <div class="controls" style="display:inline-block;">
+                    <div>
+                        <label class="radio inline">
+                            <input class="js-verify" name="is_verify_on" type="radio" value="1" v-model="SalesManConfig.configModel.salesManManager.is_verify_on">
+                            开启人工审核
+                        </label>
+                    </div>
+                    <div>
+                        <label class="radio inline" style="margin-left:20px">
+                            <input class="js-verify" name="is_verify_on" type="radio" value="0" v-model="SalesManConfig.configModel.salesManManager.is_verify_on">
+                            关闭人工审核
+                        </label>
+                    </div>
+                    <div>
+                        <div>
+                            <label class="radio inline" style="margin-left:20px">
+                                <input name="is_verify_on" class="for-post list-style-radio" type="radio" value="4" v-model="SalesManConfig.configModel.salesManManager.is_verify_on">达到设定标准后自动通过
+                            </label>
+                        </div>
+
+                        <div v-if="SalesManConfig.configModel.salesManManager.is_verify_on==4">
+                            <label class="radio inline" style="margin-left:20px">
+                                <input name="Cost_verify_on" class="for-post list-style-radio" type="checkbox" v-model="SalesManConfig.configModel.salesManManager.Cost_verify_on">累计消费满
+                                <input name="protected_time" type="text" style="width: 50px;" v-model="SalesManConfig.configModel.salesManManager.CostMoney">
+                                <span>元通过</span>
+                            </label>
+                            <label class="radio inline" style="margin-left:20px">
+                                <input name="SaveMoney_verify_on" class="for-post list-style-radio" type="checkbox" v-model="SalesManConfig.configModel.salesManManager.SaveMoney_verify_on">累计充值满
+                                <input name="protected_time" type="text" style="width: 50px;" v-model="SalesManConfig.configModel.salesManManager.SaveMoney">
+                                <span>元通过</span>
+                            </label>
+                        </div>
+
+                    </div>
+                    <div>
+                        <p>
+                            开启分销员审核功能后，消费者申请成为本店分销员需要经过商家审核。
+                        </p>
+                    </div>
+                    
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">有效期设置：</label>
+                <div class="controls">
+                    <label class="radio inline">
+                        <input name="exp_time_type" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.salesManManager.exp_time_type">短期15天
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="exp_time_type" class="for-post list-style-radio" type="radio" value="-1" v-model="SalesManConfig.configModel.salesManManager.exp_time_type">永久
+                    </label>
+
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="exp_time_type" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.salesManManager.exp_time_type">自定义
+                        <input v-if="SalesManConfig.configModel.salesManManager.exp_time_type==1" name="protected_time" type="text" style="width: 50px;" v-model="SalesManConfig.configModel.salesManManager.exp_time_day">
+                        <span v-if="SalesManConfig.configModel.salesManManager.exp_time_type==1">天内</span>
+
+                    </label>
+                    <div style="display:inline-block;" id="exp_time_typeKonw">
+                        <a href="javascript:;" class="radio inline exp_short" style="color:red;">了解三者区别</a>
+                        <div class="info-pane ui-message-warning" style="position:absolute;margin-left:106px;margin-top:-30px;" id="exp_time_typeKonw_info-pane">
+                            <p style="margin-bottom: 20px;">当分销员招募开启的情况下,时间到达了上次更新设置的时间往后推延设置的天数后会自动在前端关闭分销员申请入口</p>
+                            <p>短期为15天,永久为一直开放,自定义为自己设置天数</p>
+                        </div>
+                    </div>
+                    <p class="seller-tip">
+                        上次更新时间:{{SalesManConfig.UpdateTimeStr}}
+                    </p>
+
+                </div>
+            </div>
+            <div class="control-group js-protected-time">
+                <label class="control-label">分销员保护期：</label>
+                <div class="controls">
+                    <label class="checkbox inline" style="margin-bottom:10px;">
+                        <input name="is_protect_seller" class="for-post list-style-checkbox" type="checkbox" v-model="SalesManConfig.configModel.salesManManager.is_protect_seller"> 开启分销员保护期
+                    </label>
+                    <div class="control-protect-area">
+
+                        <input name="protected_time" type="text" value="" style="width: 50px;margin-left: 120px;" v-model="SalesManConfig.configModel.salesManManager.protected_time" v-if="SalesManConfig.configModel.salesManManager.is_protect_seller">
+                        <input name="protected_time" type="text" value="" disabled="" style="width: 50px;margin-left: 120px;" v-model="SalesManConfig.configModel.salesManManager.protected_time" v-else>
+                        天内
+                    </div>
+                    <p class="seller-tip">
+                        商家开启分销员保护期设置后，在保护期内，客户分销员之间关系不会发生变化,分销员发展的客户购买任一分销商品均算该分销员佣金.
+                    </p>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">分销员建立客户关系：</label>
+                <div class="controls">
+                    <label class="radio inline">
+                        <input name="allow_sellers_related" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.salesManManager.allow_sellers_related">允许
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="allow_sellers_related" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.salesManManager.allow_sellers_related">不允许
+                    </label>
+                    <div class="seller-tip">
+                        设置允许后，商家允许分销员之间建立客户关系。
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="PayMentManager">
+            <div class="form-title">佣金结算与发放</div>
+            <div class="control-group">
+                <label class="control-label">分销员购买权限：</label>
+                <div class="controls">
+                    <label class="radio inline exp_short">
+                        <input name="allow_seller_buy" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.payMentManager.allow_seller_buy">开启
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="allow_seller_buy" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.payMentManager.allow_seller_buy">关闭
+                    </label>
+                </div>
+                <div class="controls seller-tip">
+                    商家开启分销员购买权限，成为分销员后将立即与自己绑定客户关系，不受保护期限制。
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">结算方式：</label>
+                <div class="controls">
+                    <label class="radio inline">
+                        <input name="auto_settle" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.payMentManager.auto_settle" v-on:click="cps_rateStyleChange()">自动结算
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="auto_settle" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.payMentManager.auto_settle" v-on:click="cps_rateStyleChange()">人工结算
+                    </label>
+                    @*<a href="javascript:;" class="radio inline exp_short">佣金计算规则</a>*@
+                    <label class="radio" v-bind:style="cps_rateStyle">
+                        佣金比例
+                        <input name="cps_rate" type="text" value="" style="width:50px;" v-model="SalesManConfig.configModel.payMentManager.cps_rate">
+                        %
+                    </label>
+
+                </div>
+            </div>
+        </div>
+        <div class="PageShowWay">
+            <div class="form-title">页面信息展示</div>
+            <div class="control-group">
+                <label class="control-label">佣金显示方式：</label>
+                <div class="controls">
+                    <label class="radio inline exp_short">
+                        <input name="is_show_cps_type" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.pageShowWay.is_show_cps_type">显示佣金比例
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="is_show_cps_type" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.pageShowWay.is_show_cps_type">显示佣金
+                    </label>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="SecondSalesManConfig">
+            <div class="form-title">二级分销</div>
+            <div class="control-group">
+                <label class="control-label">开关设置：</label>
+                <div class="controls">
+                    <label class="radio inline exp_short">
+                        <input name="secondSalesManState" class="for-post list-style-radio" type="radio" value="1" v-model="SalesManConfig.configModel.secondSalesManConfig.State">开启
+                    </label>
+                    <label class="radio inline" style="margin-left:20px">
+                        <input name="secondSalesManState" class="for-post list-style-radio" type="radio" value="0" v-model="SalesManConfig.configModel.secondSalesManConfig.State">关闭
+                    </label>
+                    <div class="controls seller-tip" id="secondSale">
+                        开启后分销员可发展下级分销商，下级分销商销售佣金将划分为“直销佣金”和“渠道佣金”两部份。关闭后分销员不能再发展下级，但已发展的还能继续分佣
+                        <a href="javascript:;" class="radio inline exp_short" style="color:red;">了解二级分销计算佣金规则</a>
+                        <div class="info-pane ui-message-warning" style="position:absolute;margin-left:-100px;margin-top:-200px;" id="secondSale_info-pane">
+                            <p style="margin-bottom: 20px;"> <p><span>示例1：</span></p><p><span>小A通过商品推广分销售出一件1000元商品，小A可获得全部佣金50元（1000*5%）</span></p><p><span><br></span></p><p><span>示例2：</span></p><p><span>小A通过分销商招募发展了小B成为分销商，小B也分销售出一件1000元商品。此时商品总佣金为50元（1000*5%），小B获得直销佣金40元（50*80%），小A获得分销佣金10元（50*20%）</span></p><p><span><br></span></p><p><span>示例3：</span></p><p><span>小B也发展了小C成为下级，小C分销售出一件1000元商品。此时商品总佣金为50元（1000*5%），小C获得直销佣金40元（50*80%），小B获得分销佣金10元（50*20%）</span></p><p><span>小A不能获得佣金。</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">直销佣金：</label>
+                <div class="controls">
+                    <label class="radio inline exp_short">
+                        <input name="FirstCps_rate" type="text" value="" style="width:50px;" v-model="FirstCps_rate">%
+                    </label>
+                </div>
+                <label class="control-label">渠道佣金：</label>
+                <div class="controls">
+                    <label class="radio inline exp_short">
+                        <input name="SecondCps_rate" disabled="disabled" type="text" value="" style="width:50px;" v-model="SalesManConfig.configModel.secondSalesManConfig.SecondCps_rate">%
+                    </label>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="RecruitPlan">
+            <div class="form-title">招募计划</div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">标题:</label>
+                <div class="layui-input-inline" style="width:500px;">
+                    <input type="text" name="title" lay-verify="title" placeholder="请输入标题" class="layui-input" v-model="SalesManConfig.configModel.recruitPlan.title">
+                </div>
+
+            </div>
+            <div id="editor" style="height:460px;width:500px;margin-left:80px;">
+
+            </div>
+
+        </div>
+    </div>
+    <div class="footBar d-flex d-flex-center">
+        @{
+            if (ViewBag.PageType == 22 && distributionSwtich == 1)
+            {
+                <input style="margin:auto;" type="button" value="保存" class="btn btn-primary btn-lg" title="请升级到更高版本" disabled="disabled">
+
+            }
+            else
+            {
+                <input style="margin:auto;" type="button" value="保存" class="btn btn-primary btn-lg" v-on:click="SaveInfo()">
+
+            }
+        }
+    </div>
+</div>
+<script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<script>
+    var comeditor=null;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            SalesManConfig:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            cps_rateStyle:{
+                marginLeft:'220px',
+            },
+            FirstCps_rate:0
+        },
+        watch:{
+            FirstCps_rate:function(){
+                this.SalesManConfig.configModel.secondSalesManConfig.SecondCps_rate=100-this.FirstCps_rate;
+            }
+
+        },
+        methods: {
+            BuildEditor: function () {
+                var that = this;
+                if (comeditor != null) {
+                    comeditor.reset();
+                }
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset','pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image",
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+
+                    comeditor.setContent(that.SalesManConfig.configModel.recruitPlan.description);
+                });
+
+            },
+            cps_rateStyleChange:function(){
+                var that=this;
+                if(that.SalesManConfig.configModel.payMentManager.auto_settle==1){
+                    that.cps_rateStyle.marginLeft='136px';
+                }else{
+                    that.cps_rateStyle.marginLeft='220px';
+                }
+
+            },
+            SaveInfo:function(){
+                var that=this;
+                if(!/^\d*.?\d{0,2}$/.test(that.FirstCps_rate)||parseFloat(that.FirstCps_rate)<0){
+                    layer.msg("直销佣金比例请输入大于0的数字，最多两位小数！");
+                    return;
+                }
+                if(!/^\d*.?\d{0,2}$/.test(that.SalesManConfig.configModel.secondSalesManConfig.SecondCps_rate)||parseFloat(that.SalesManConfig.configModel.secondSalesManConfig.SecondCps_rate)<0){
+                    layer.msg("渠道佣金比例请输入大于0的数字，最多两位小数！");
+                    return;
+                }
+                if((that.SalesManConfig.configModel.secondSalesManConfig.SecondCps_rate+parseFloat(that.FirstCps_rate))>100){
+
+                    layer.msg("渠道佣金比例与直销佣金比例不能大于100%");
+                    return;
+                }
+                var index = layer.load(1);
+                that.SalesManConfig.configModel.recruitPlan.description=comeditor.getContent();
+                if(!that.SalesManConfig.configModel.salesManManager.is_protect_seller){
+                    that.SalesManConfig.configModel.salesManManager.protected_time=0;
+                }
+
+                if(parseInt(that.SalesManConfig.configModel.salesManManager.protected_time)>99999||parseInt(that.SalesManConfig.configModel.salesManManager.protected_time)<0){
+                    layer.msg("请填写正确的保护期天数(0-99999天)");
+                    return;
+                }
+
+                that.SalesManConfig.configModel.secondSalesManConfig.FirstCps_rate=parseFloat(that.FirstCps_rate);
+                $.ajax({
+                    type: "POST",
+                    url: "/common/salesmanSet",
+                    data: {salesManConfig:that.SalesManConfig,appId:@ViewBag.appId},
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.isok) {
+                            layer.close(index);
+                            layer.msg(data.msg);
+                            window.setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            layer.msg("操作失败");
+                        }
+                    },
+                    error: function () {
+                        layer.msg("通讯异常");
+
+                    }
+                });
+
+            }
+
+        },mounted:function(){
+            var that=this;
+            that.FirstCps_rate=that.SalesManConfig.configModel.secondSalesManConfig.FirstCps_rate;
+            if ($(".edui-container").length == 0) {
+                that.BuildEditor();
+            };
+
+        }
+    });
+
+
+
+
+</script>

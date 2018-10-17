@@ -1,0 +1,142 @@
+﻿@model ViewModel<DishAttrType>
+@{
+    ViewBag.Title = "属性类型管理";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 数据管理 <span class="c-gray en">&gt;</span> 类型管理 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray">
+        <span class="l">
+            <a class="btn btn-primary radius" onclick="attr_add('添加商品类型','/DishAdmin/DishAttr/Edit?aid=@(Model.aId)&storeid=@(Model.storeId)')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 添加类型</a>
+        </span>
+        <span class="r"></span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="100">类型名称</th>
+                    <th width="200">属性数</th>
+                    <th width="100">状态</th>
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count() > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td class="text-l">@item.cat_name</td>
+                            <td>@item.attrCount</td>
+                            <td class="td-status">
+                                @if (item.enabled == 1)
+                                {
+                                    <span class="label label-success radius">已启用</span>
+                                }
+                                else
+                                {
+                                    <span class="label radius">已禁用</span>
+                                }
+                            </td>
+                            <td class="f-14 td-manage">
+                                <a style="text-decoration:none" class="btn btn-success radius size-MINI" data-title="属性列表" data-href="/DishAdmin/DishAttr/AttrValue?fid=@item.id&aid=@(item.aid)&storeId=@(item.storeId)" onclick="Hui_admin_tab(this)" href="javascript:;"><i class="Hui-iconfont">&#xe667;</i> 属性列表</a>
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="attr_edit('编辑商品类型','/DishAdmin/DishAttr/Edit?id=@item.id&aid=@(item.aid)&storeId=@(item.storeId)')" href="javascript:;" title="编辑"><i class="Hui-iconfont">&#xe6df;</i> 编辑</a>
+                                <a style="text-decoration:none" class="btn btn-danger radius size-MINI del" data-id="@(item.id)" title="删除"><i class="Hui-iconfont">&#xe6e2;</i> 删除</a>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+            }
+
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        function attr_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '300px']
+            });
+        }
+        function attr_edit(title, url) {
+            var edit_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '300px']
+            });
+        }
+        function category_sort() {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            var sort_data = '';
+            $(".is_order_val").each(function () {
+                sort_data = sort_data + $(this).val() + ',';
+            })
+            $.ajax({
+                type: "POST",
+                url: "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_category/setsort.html",
+                data: { sort_data: sort_data, t: Math.random() },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+        $(function () {
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除该分类吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/DishAdmin/DishAttr/Index?aid=@(Model.aId)&storeId=@(Model.storeId)",
+                        data: { act: 'del', id: id, t: Math.random() },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 2000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 2000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+        })
+    </script>
+
+
+}

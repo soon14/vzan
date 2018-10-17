@@ -1,0 +1,615 @@
+﻿@model StoreConfigModel
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 22;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "运费模板（弃用）";
+    int freightSwtich = ViewBag.freightSwtich;
+}
+
+<!-- 引入element-ui-组件库 -->
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+
+
+
+<div id="app" v-cloak>
+
+    <div class="panel panel-default">
+        @{
+            if (freightSwtich == 1 && ViewBag.PageType == 22)
+            {
+                <div class="panel-body" title="请升级到更高版本">
+                    <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        添加运费模板
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="panel-body">
+                    <a @@click="addTempate" href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        添加运费模板
+                    </a>
+                </div>
+            }
+        }
+
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-body" style="margin-bottom:-20px">
+            当前运费设置
+        </div>
+        <div v-if="isloadingCurrTemplate" class="panel-body" style="color:#FF6600">
+            加载中...
+        </div>
+        <div v-else-if="isSetFee" class="panel-body" style="color:#FF6600">
+            统一运费：{{freight}}元
+        </div>
+        <div v-else-if="currTemplate" class="panel-body" style="color:#FF6600">
+            模板名称：{{currTemplate.Name}}
+            <ul>
+                <li>模板类型：{{currTemplate.FullDiscount ? '按价格' : '按件数'}}</li>
+                <li>模板规则：{{fotmatFreightInfo(currTemplate)}}</li>
+                <li v-if="currTemplate.AreaName">配送区域：<div style="display:inline" v-html="currTemplate.AreaName"></div></li>
+                <li v-else>配送区域：全国配送</li>
+            </ul>
+        </div>
+    </div>
+
+
+    <div class="ml_19">
+        <div class="tabs-container" style="height:0px">
+            <ul class="nav nav-tabs">
+                <li @@click="viewTemplateType = CountTemplateEnum" class="active">
+                    <a data-toggle="tab" href="#tab-1" aria-expanded="true"> 按件数</a>
+                </li>
+                <li @@click="viewTemplateType = PriceTemplateEnum">
+                    <a data-toggle="tab" href="#tab-2" aria-expanded="false">按价格</a>
+                </li>
+                <li @@click="viewTemplateType = UniformFreightEnum">
+                    <a data-toggle="tab" href="#tab-2" aria-expanded="false">统一运费</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="form-group" v-show="viewTemplateType === UniformFreightEnum" style="margin-top:4rem">
+        <div class="well">
+            <span class="small demo colorpicker-element">
+                统一运费：
+                <input v-model.number="freight" type="text" class="form-control" style="width:10%;display:inline;" />&nbsp;元
+                <br />
+                <br />
+                统一运费开关：
+                <el-switch v-model="isSetFee"
+                           active-text="开启"
+                           inactive-text="关闭"
+                           active-color="#13ce66"
+                           inactive-color="#ff4949">
+                </el-switch>
+                <br />
+                <br />
+                <input value="保存" @@click="updateConfig()" type="button" class="btn btn-primary">
+            </span>
+        </div>
+    </div>
+
+    <table class="table table-bordered ml_19" v-show="viewTemplateType !== UniformFreightEnum">
+        <tr class="active">
+            <th class="centertext">序号</th>
+            <th class="centertext">模板名称</th>
+            <th class="centertext">可配送区域</th>
+            <th class="centertext">模板详情</th>
+            <th class="centertext">模板状态</th>
+            <th class="centertext">操作</th>
+        </tr>
+        <tr v-for="(temp,index) in templates">
+            <td width="5%" class="centertext">{{temp.Id}}</td>
+            <td width="10%" class="centertext">{{temp.Name}}</td>
+            <td width="35%" v-if="temp.AreaName" v-html="temp.AreaName" class="centertext"></td>
+            <td width="35%" v-else class="centertext">全国配送</td>
+            <td width="25%" class="centertext">{{fotmatFreightInfo(temp)}}</td>
+            <td width="10%" class="centertext">{{temp.Id === enableTemplate ? '启用' : '停用'}}</td>
+            <td width="15%" class="centertext">
+                <input value="启用" v-if="temp.Id !== enableTemplate" @@click="selectTemplate('确认停用当前模板，并切换该模板吗?',temp.Id)" type="button" class="btn btn-primary">
+                <input value="停用" v-if="temp.Id === enableTemplate" @@click="selectTemplate('确认停用该模板吗?',temp.Id)" type="button" class="btn btn-danger">
+                <input value="编辑" @@click="editTemplate(temp)" type="button" class="btn btn-primary">
+                @*<input value="复制" type="button" class="btn btn-primary">*@
+                <input value="删除" v-if="temp.Id !== enableTemplate" @@click="deleteTemplate('确认删除该模板吗?',temp.Id)" type="button" class="btn btn-danger">
+            </td>
+        </tr>
+        <tr v-show="!templates.length">
+            <td colspan="5">暂无数据</td>
+        </tr>
+    </table>
+
+    <!--编辑模板-->
+    <div class="modal fade" ref="EditLayer" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">{{editingTemplate.Id ? '编辑运费模板' : '添加运费模板' }} </h4>
+                </div>
+                <div class="modal-body">
+                    <!--模板名称-->
+                    <span v-show="!editingTemplate.Id">模板名称：<input v-model.number="editingTemplate.Name" ref="templateName" type="text" class="form-control" style="width:20%;display:inline;" /><br /><br /></span>
+                    <!--计费类型-->
+                    <span v-show="!editingTemplate.Id">
+                        计费类型：
+                        <input v-model="templateType" type="radio" name="tempType" v-bind:value="CountTemplateEnum" />按件数&nbsp;
+                        <input v-model="templateType" type="radio" name="tempType" v-bind:value="PriceTemplateEnum" />&nbsp;按价格&nbsp;<br /><br />
+                    </span>
+                    <!--运费规则-->
+                    <div v-if="(!editingTemplate.Id && templateType === CountTemplateEnum) || (editingTemplate.Id && viewTemplateType === CountTemplateEnum)">
+                        <!--按件数-->
+                        <span>运费规则： 购买 <input v-model.number="editingTemplate.BaseCount" ref="BaseCount" type="number" class="form-control" style="width:10%;display:inline;" /></span>
+                        <span> 件内 <input v-model.number="editingTemplate.BaseCost" ref="BaseCost" type="text" class="form-control" style="width:10%;display:inline;" />元， <br /><br /></span>
+                        <span style="padding-left:6.2rem">每增加1件，运费增加 <input v-model.number="editingTemplate.ExtraCost" ref="ExtraCost" type="text" class="form-control" style="width:10%;display:inline;" /> 元 <br /><br /></span>
+                    </div>
+                    <div v-else-if="(!editingTemplate.Id && templateType === PriceTemplateEnum) || (editingTemplate.Id && viewTemplateType === PriceTemplateEnum)">
+                        <!--按价格-->
+                        <span>
+                            运费规则：基础运费 <input v-model.number="editingTemplate.BaseCost" ref="BaseCost" type="text" class="form-control" style="width:10%;display:inline;" />元， 订单满
+                            <input v-model.number="editingTemplate.FullDiscount" ref="FullDiscount" type="text" class="form-control" style="width:10%;display:inline;" />元，包邮
+                        </span>
+                        <br /><br />
+                    </div>
+                    <!--配送区域-->
+                    <span>配送区域：<a @@click="showAreaSelecter" ref="SelectArea">选择配送区域</a><br /><br /><span style="padding-left:6.2rem" v-html="selectAreaName"></span></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button @@click="editPost" type="button" class="btn btn-primary">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" ref="AreaLayer" tabindex="0" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择配送区域</h4>
+                </div>
+                <div class="modal-body">
+                    <el-tree v-bind:props="treeConf"
+                             v-bind:load="loadArea"
+                             node-key="Code"
+                             lazy
+                             show-checkbox
+                             accordion
+                             @@check="selectArea"
+                             ref="AreaTree"
+                             style="overflow-y:scroll;height:500px">
+                    </el-tree>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button @@click="getSelectArea" type="button" class="btn btn-primary">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-show="viewTemplateType === CountTemplateEnum" class="panel panel-default" style="color:#FF6600">
+        <div class="panel-body">
+            提示：
+            <ul>
+                <li>1.运费模板只能选择一个。</li>
+            </ul>
+        </div>
+    </div>
+    <div v-show="viewTemplateType === PriceTemplateEnum" class="panel panel-default" style="color:#FF6600">
+        <div class="panel-body">
+            提示：
+            <ul>
+                <li>1.运费模板只能选择一个。</li>
+                <li>2.满减运费，订单金额达到规则就可以免去运费，否则收取相应费用。</li>
+            </ul>
+        </div>
+    </div>
+    <div v-show="viewTemplateType === UniformFreightEnum" class="panel panel-default" style="color:#FF6600">
+        <div class="panel-body">
+            提示：
+            <ul>
+                <li>1.运费模板只能选择一个。</li>
+                <li>2.启用统一运费后，不论每单多少商品、多少金额，都将为此运费。</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            appId: '@ViewBag.appId',
+            pageIndex: 1,
+            pageSize: 99,
+            isloading: false,
+            isloadingCurrTemplate:false,
+            currTemplate: {},
+            templates: [],
+            templateType: 0,
+            viewTemplateType: 0,
+            freight: Number('@(Model.FreightPrice * 0.01)'),
+            isSetFee: Number(@(Model.FreightPriceSwitch ? 1 : 0)) ? true : false,
+            enableTemplate: Number('@Model.FreightTemplateId'),
+            editingTemplate: {
+                Name: null,
+                BaseCount: null,
+                BaseCost: null,
+                ExtraCost: null,
+            },
+            treeConf: {
+                label: 'Name',
+                children: 'SubArea',
+                isLeaf: 'isHasSubArea'
+            },
+            areaData: [],
+            selectArea: []
+        },
+        computed: {
+            CountTemplateEnum: function () {
+                return 0;
+            },
+            PriceTemplateEnum: function () {
+                return 1;
+            },
+            UniformFreightEnum: function () {
+                return 2;
+            },
+            selectAreaName: function () {
+                return (this.formatArea(this.selectArea) || this.editingTemplate.AreaName) || '<span style="color:#286090">全国配送</span>';
+            },
+        },
+        methods: {
+            //获取模板列表
+            getTemplateList: function () {
+                var thisApp = this;
+                if (thisApp.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                thisApp.isloading = true;
+                var index = layer.load(1);
+                $.get("/EnterprisePro/GetFreightTemplate", {
+                    appId: thisApp.appId,
+                    pageIndex: thisApp.pageIndex,
+                    pageSize: thisApp.pageSize,
+                    type: thisApp.viewTemplateType,
+                }).then(function (data) {
+                    layer.close(index);
+                    thisApp.isloading = false;
+                    if (!data.isok) {
+                        layer.msg(data.msg);
+                        return;
+                    }
+                    thisApp.templates = data.data;
+                });
+            },
+            getCurrentTemplate: function (templateId) {
+                var thisApp = this;
+                thisApp.isloadingCurrTemplate = true;
+                $.get("/EnterprisePro/GetFreightTemplate", {
+                    appId: thisApp.appId,
+                    pageIndex: 1,
+                    pageSize: 1,
+                    templateId: templateId,
+                }).then(function (data) {
+                    thisApp.isloadingCurrTemplate = false;
+                    if (!data.isok) {
+                        layer.msg(data.msg);
+                        return;
+                    }
+                    thisApp.currTemplate = data.data[0];
+                });
+            },
+            //选择启用模板
+            selectTemplate: function (alertMsg, templateId, onlyFreight) {
+                var post = function () {
+                    var index = layer.load(1);
+                    $.post('/EnterprisePro/SelectFreightTemplate', {
+                        appId: app.appId,
+                        templateId: templateId,
+                        onlyFreight: onlyFreight
+                    }).then(function (result) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (!result.isok) { layer.msg(result.msg); return; }
+                        if (templateId === app.enableTemplate) {
+                            //停用模板
+                            app.enableTemplate = 0;
+                        }
+                        else {
+                            //启用模板
+                            app.enableTemplate = templateId;
+                            app.isSetFee = false;
+                        }
+                        app.getTemplateList();
+                    });
+                }
+                layer.confirm(alertMsg, function (index) {
+                    layer.close(index);
+                    post();
+                });
+            },
+            //新增模板
+            addTempate: function () {
+                var newTemplate = { Name: '', BaseCost: 0, BaseCost: 0, ExtraCost: 0, };
+                app.editingTemplate = newTemplate;
+                app.templateType = app.CountTemplateEnum;
+                $(this.$refs.EditLayer).modal('show');
+            },
+            //编辑模板
+            editTemplate: function (template) {
+                var selectTempate = JSON.parse(JSON.stringify(template));
+                selectTempate.BaseCost = selectTempate.BaseCost / 10 / 10;
+                selectTempate.ExtraCost = selectTempate.ExtraCost / 10 / 10;
+                selectTempate.FullDiscount = selectTempate.FullDiscount / 10 / 10;
+                app.editingTemplate = selectTempate;
+                app.templateType = app.viewTemplateType * 1;
+                $(this.$refs.EditLayer).modal('show');
+                //清空上次选中区域
+                this.selectArea = [];
+                //默认选中保存区域
+                if (template.AreaCode) {
+                    var areaCodes = template.AreaCode.split(',').map(areaCode => Number(areaCode));
+                    this.$refs.AreaTree.setCheckedKeys(areaCodes);
+                }
+                else {
+                    this.$refs.AreaTree.setCheckedKeys([]);
+                }
+            },
+            //编辑模板接口
+            editPost: function () {
+                if (!app.checkInput()) {
+                    return;
+                }
+                var index = layer.load(1);
+                if (app.templateType === app.CountTemplateEnum) {
+                    app.editingTemplate.FullDiscount = 0;
+                }
+                else if (app.templateType === app.PriceTemplateEnum) {
+                    app.editingTemplate.BaseCount = 0;
+                    app.editingTemplate.ExtraCost = 0;
+                }
+                else {
+                    layer.msg('输入无效模板');
+                    return;
+                }
+                $.post('/EnterprisePro/AddFoodFreight', {
+                    appId: app.appId,
+                    Name: app.editingTemplate.Name,
+                    Id: app.editingTemplate.Id,
+                    BaseCount: app.editingTemplate.BaseCount,
+                    BaseCost: app.editingTemplate.BaseCost * 10 * 10,
+                    ExtraCost: app.editingTemplate.ExtraCost * 10 * 10,
+                    FullDiscount: app.templateType === app.CountTemplateEnum ? 0 : app.editingTemplate.FullDiscount * 10 * 10,
+                    AreaCode: app.getSaveAreaCode()
+                }).then(function (result) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (!result.isok) {
+                        layer.msg(result.msg); return;
+                    }
+                    //隐藏编辑窗口
+                    $(app.$refs.EditLayer).modal('hide');
+                    layer.msg('保存成功');
+                    //刷新列表
+                    app.getTemplateList();
+                    //刷新启用模板
+                    if (app.editingTemplate.Id === app.enableTemplate) {
+                        app.getCurrentTemplate(app.enableTemplate);
+                    }
+                })
+            },
+            //删除模板
+            deleteTemplate: function (alertMsg, templateId) {
+                var post = function () {
+                    var index = layer.load(1);
+                    $.post('/EnterprisePro/delFoodFreightTemplate', {
+                        aid: app.appId,
+                        Id: templateId,
+                    }).then(function (result) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (!result.isok) {
+                            layer.msg(result.msg); return;
+                        }
+                        layer.msg('删除成功');
+                        app.getTemplateList();
+                    })
+                }
+                layer.confirm(alertMsg, function (index) {
+                    layer.close(index);
+                    post();
+                });
+            },
+            updateConfig: function () {
+                var post = function () {
+                    var index = layer.load(1);
+                    if (!app.freight) {
+                        app.freight = 0;
+                    }
+
+                    $.post('/EnterprisePro/UpdateFreightConfig', {
+                        appId: app.appId,
+                        freight: app.freight * 10 * 10,
+                        isEnable: app.isSetFee
+                    }).then(function (result) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (app.isSetFee) {
+                            app.enableTemplate = 0;
+                        }
+                        layer.msg(result.isok ? '保存成功' : result.msg);
+                    });
+                }
+
+                if (app.enableTemplate && app.isSetFee) {
+                    layer.confirm('确认开启该设置，并停用当前模板吗?', function (index) {
+                        layer.close(index);
+                        post();
+                    });
+                    return;
+                }
+                post();
+            },
+            //显示区域选择窗口
+            showAreaSelecter: function (reserveId) {
+                $(this.$refs.AreaLayer).modal('show');
+            },
+            //获取区域列表数据
+            loadArea: function (area, bindData) {
+                var thisApp = this;
+                var getData = function (areaId) {
+                    $.get('/Tools/GetAreaList', {
+                        appId: thisApp.appId,
+                        areaId: areaId
+                    }).then(function (result) {
+                        //排序
+                        result.dataObj.sort((x, y) => {
+                            return x.Code - y.Code;
+                        })
+                        //限制二级LazyLoad
+                        if (area.level > 0) {
+                            result.dataObj.forEach((thisArea) => {
+                                thisArea.isHasSubArea = true;
+                            })
+                            area.data.SubArea = result.dataObj;
+                        }
+                        //去除国外区域（什么鬼数据 ~ (╯‵□′)╯︵┻━┻ ）
+                        if (area.level === 0) {
+                            var excludeArea = [710000, 810000, 820000, 900000, 910000, 920000, 930000];
+                            excludeArea.forEach((code) => {
+                                var removeIndex = result.dataObj.findIndex((thisArea, index) => {
+                                    return thisArea.Code === code;
+                                })
+                                if (removeIndex > -1) {
+                                    result.dataObj.splice(removeIndex, 1);
+                                }
+                            })
+                            app.areaData = result.dataObj;
+                        }
+                        //绑定
+                        bindData(result.dataObj);
+                    })
+                }
+                //获取第一级（省）
+                if (area.level === 0) {
+                    getData(0);
+                    return;
+                }
+                //获取第二级（市）
+                getData(area.data.Code);
+            },
+            //保存选中区域
+            getSelectArea: function () {
+                this.selectArea = app.$refs.AreaTree.getCheckedNodes();
+                $(this.$refs.AreaLayer).modal('hide');
+            },
+            getSaveAreaCode: function () {
+                return this.selectArea.map(area => area.Code).join(',');
+            },
+            //检验用户输入
+            checkInput: function () {
+                var inputTemplate = app.editingTemplate;
+                if (!inputTemplate.Id && !inputTemplate.Name) {
+                    layer.tips('请输入模板名称', app.$refs.templateName, { tips: [1, '#ed6b75'] });
+                    return false;
+                }
+                if (!inputTemplate.BaseCost || inputTemplate.BaseCost <= 0 || isNaN(inputTemplate.BaseCost)) {
+                    layer.tips('请输入价格', app.$refs.BaseCost, { tips: [1, '#ed6b75'] });
+                    return false;
+                }
+
+                if (app.templateType === app.PriceTemplateEnum) {
+                    if (!inputTemplate.FullDiscount || inputTemplate.BaseCost <= 0 || isNaN(inputTemplate.FullDiscount)) {
+                        layer.tips('请输入价格', app.$refs.FullDiscount, { tips: [1, '#ed6b75'] });
+                        return false;
+                    }
+                    return true;
+                }
+
+                if (!inputTemplate.BaseCount || inputTemplate.BaseCost <= 0 || isNaN(inputTemplate.BaseCount)) {
+                    layer.tips('请输入件数', app.$refs.BaseCount, { tips: [1, '#ed6b75'] });
+                    return false;
+                }
+                if (!inputTemplate.ExtraCost || inputTemplate.BaseCost <= 0 || isNaN(inputTemplate.ExtraCost)) {
+                    layer.tips('请输入价格', app.$refs.ExtraCost, { tips: [1, '#ed6b75'] });
+                    return false;
+                }
+                return true;
+            },
+            groupByCode: function (areas) {
+                var provinceCodes = areas.filter(area => area.ParentCode).
+                                          map(area => area.ParentCode).
+                                          concat(areas.filter(area => !area.ParentCode).map(area => area.Code)).
+                                          filter((value, index, self) => self.indexOf(value) === index);
+                return provinceCodes;
+            },
+            formatArea: function (areas) {
+                var selectAreaNames = '';
+                var provinceCodes = this.groupByCode(areas);
+                provinceCodes.forEach((province) => {
+                    //省名
+                    var province = app.areaData.find(area => area.Code === province);
+                    var provinceName = '<span style="color:#286090">' + province.Name + '</span>';
+                    //市名
+                    var citys = areas.filter(area => area.ParentCode === province.Code).map(area => area.Name);
+                    //是否选中"全/省市"
+                    var isSelectAll = !citys.length || !province.SubArea || citys.length === province.SubArea.length;
+                    var cityName = isSelectAll ? '全省/市' : citys.join(',');
+                    //拼接：省名（市名）;
+                    selectAreaNames += provinceName + '(' + cityName + ');';
+                });
+                return selectAreaNames;
+            },
+            fotmatFreightInfo: function (template) {
+                var info = template.FullDiscount ?
+                   '默认运费：' + template.BaseCost / 10 / 10 + '元，订单满' + template.FullDiscount / 10 / 10 + '元包邮' :
+                   '默认运费：' + template.BaseCount + ' 件内 ' + template.BaseCost / 10 / 10 + '元，每增加1件，运费增加' + template.ExtraCost / 10 / 10 + '元'
+                return info;
+            },
+            loadCurrFreightInfo: function () {
+                if (this.isSetFee) {
+                    return;
+                }
+                if (this.enableTemplate) {
+                    this.getCurrentTemplate(this.enableTemplate);
+                }
+                else {
+                    this.getCurrentTemplate(-999);
+                }
+            }
+        },
+        created: function () {
+            this.getTemplateList();
+            this.loadCurrFreightInfo();
+        },
+        watch: {
+            viewTemplateType: function (value) {
+                if (value === this.UniformFreightEnum) {
+                    return;
+                }
+                this.getTemplateList();
+            },
+            enableTemplate: function (value) {
+                if (value) {
+                    this.getCurrentTemplate(value);
+                }
+                else {
+                    this.getCurrentTemplate(-999);
+                }
+            }
+        }
+    })
+</script>

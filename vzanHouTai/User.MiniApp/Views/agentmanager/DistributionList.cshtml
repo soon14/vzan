@@ -1,0 +1,414 @@
+﻿@using Entity.MiniApp.Conf
+@model Agentinfo
+@{
+    ViewBag.Title = "分销代理管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+    ViewBag.level = Model.userLevel;
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+
+<style>
+    .page-wrapper {
+        min-width: 1800px;
+    }
+    #page div {
+        text-align: center;
+    }
+    .page-content {
+        min-width: 1400px;
+    } 
+    #customList {
+        /*width: 1367px;*/
+        margin: 0 auto;
+    }
+
+        #customList table.layui-table {
+            text-align: center;
+        }
+
+            #customList table.layui-table th, #customList table.layui-table td {
+                font-family: 'Microsoft YaHei';
+                font-weight: 400;
+                font-style: normal;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            #customList table.layui-table th {
+                height: 50px;
+            }
+
+            #customList table.layui-table a {
+                color: #108EE9;
+                margin: 0 15px;
+            }
+
+    .caozuo li {
+        float: left;
+    }
+
+    .more {
+        display: block;
+        position: relative;
+    }
+
+    .dropdown-menu {
+        min-width: 0px;
+        font-size: 12px;
+    }
+
+        .dropdown-menu a {
+            margin: 0px !important;
+            font-size: 12px;
+        }
+
+    #search_box {
+        margin-top: 10px;
+        /*margin-bottom: 30px;*/
+        height: 120px;
+    }
+
+        #search_box ul li {
+            float: left;
+            width: 20%;
+            line-height: 38px;
+        }
+
+            #search_box ul li input {
+                width: 140px;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #search_box ul li span {
+                float: left;
+                color: #404040;
+            }
+
+        #search_box ul.tamplate li {
+            min-width: 100px;
+            text-align: center;
+            width: auto;
+            margin: 10px 10px;
+            font-size: 12px;
+        }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus {
+                text-decoration: none;
+                color: #fff;
+            }
+
+            #search_box ul.tamplate li a {
+                padding: 0 18px;
+                color: #777;
+            }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus {
+                    text-decoration: none;
+                }
+
+    .search_btn {
+        width: 100%;
+        height: 45px;
+        float: left;
+        margin: 15px 0px;
+    }
+
+        .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus {
+            text-decoration: none;
+            outline: -webkit-focus-ring-color;
+        }
+
+    a.layui-btn-normal:focus {
+        color: #fff;
+    }
+
+    .search_btn a.layui-btn-primary:focus {
+        color: #555;
+    }
+
+    .search_btn a.layui-btn-primary:hover {
+        background-color: #eee;
+        border-color: #C9C9C9;
+    }
+
+    .layui-tab-title .layui-this:after {
+        height: 40px;
+    }
+
+    .userInfo {
+        margin: 20px 87px;
+    }
+
+        .userInfo span {
+            color: red;
+        }
+
+        .userInfo td {
+            padding: 8px 5px;
+            width: 250px;
+        }
+
+    .textname {
+        text-align: right;
+        width: 100px !important;
+    }
+</style>
+
+<div id="customList" hidden>
+    <div id="search_box">
+        <ul style="width:100%">
+            <li>
+                <span>分销商账号：</span>
+                <input type="text" v-model="postdata.loginname" class="form-control" />
+            </li>
+            <li>
+                <span>分销商名称：</span>
+                <input type="text" v-model="postdata.username" class="form-control" />
+            </li>
+            <li>
+                <span>状态：</span>
+                <select v-model="postdata.state" class="form-control" style="width: 92px; margin-left:5px;    float: left;">
+                    <option value="-2">全部</option>
+                    <option value="1">正常</option>
+                    <option value="-1">已停用</option>
+                </select>
+            </li>
+        </ul>
+        <div class="search_btn">
+            <a href="javascript:;" v-on:click="Search(true)" class="layui-btn layui-btn-normal" style="margin-right:15px;">搜索</a>
+            <a href="javascript:;" v-on:click="resetSearch()" class="layui-btn layui-btn-primary">清除</a>
+        </div>
+    </div>
+
+    <table class="layui-table" lay-skin="line">
+        <colgroup>
+            <col width="7%">
+            <col width="7%">
+            <col width="15%">
+            <col width="10%">
+            <col width="10%">
+            <col width="7%">
+            <col width="12%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>分销商账号</th>
+                <th>客户名称</th>
+                @*<th>绑定手机号</th>*@
+                <th>预存款余额（元）</th>
+                <th>已创建客户</th>
+                <th>已购买模板</th>
+                <th>账号状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tr v-if="userlist!=null && userlist.length>0" v-for="(user,index) in userlist">
+            <td>{{user.LoginId}}</td>
+            <td>{{user.name}}</td>
+            <td>{{(user.deposit*100)/10000}}</td>
+            <td>{{user.createCustomerCount}}</td>
+            <td>{{user.buyTemplateCount}}</td>
+            <td style="color:green" v-if="user.state==1">正常</td>
+            <td style="color:red" v-else-if="user.state==-1">已停用</td>
+            <td style="color:gray" v-else>未知状态</td>
+            <td>
+                <ul class="caozuo">
+                    <li><a href="javascript:;" v-on:click="openEditpage(index,1)">充值</a></li>
+
+                    <li><a href="javascript:;" v-on:click="openEditpage(index,1)">配置模板价格</a></li>
+                    <li class="more">
+                        <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown">
+                            更多
+                            <i class="glyphicon glyphicon-menu-down"></i>
+                        </a>
+                        <i class="icon-angle-down"></i>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:;" v-on:click="changePwd(index)">修改密码</a></li>
+                            <li><a href="javascript:;" v-on:click="openEditpage(index,0)">修改资料</a></li>
+                            <li>
+                                <a href="javascript:;" style="color:red" v-if="user.state==1" v-on:click="updateState(index)">停用账号</a>
+                                <a href="javascript:;" style="color:green" v-else v-on:click="updateState(index)">启动账号</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr v-if="userlist==null || userlist.length==0">
+            <td colspan="7">暂无数据</td>
+        </tr>
+
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+    @if (ViewBag.OpenFenXiao)
+    {
+        <a href="javascript:;" v-on:click="openAddpage()" class="layui-btn layui-btn-normal add_btn" style="margin-right:15px;">+添加分销商</a>
+    }
+
+    @*<div id="Qrcode" hidden>
+            <input type="hidden" id="sessid" value="@Session["qrcodekey"]" />
+            <img src="/QrCode/GetQrCode?code=@Session["qrcodekey"]" alt="" style="border: 8px solid #fff;" />
+            <p>微信扫描二维码登录</p>
+        </div>*@
+    <!--编辑页面-->
+
+</div>
+<script>
+    var element;
+    
+    var vm = new Vue({
+        el: "#customList",
+        data: {
+            recordCount: 0,
+            userlist: [],
+            Xcxlist: [],
+            selectTid: [],
+            postdata: {
+                pageIndex: 1,
+                pagesize: 12,
+                loginname: '',
+                username: '',
+                state: -2,
+            },
+            customer: null,
+            isloading: false
+        },
+        methods: {
+            getuserlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                $.get("/agentmanager/GetDistributionList", this.postdata, function (data) {
+                    vm.isloading = false;
+                    if (!data.isok) {
+                        console.log(data.Msg);
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        vm.recordCount = data.dataObj.recordCount;
+                        vm.userlist = data.dataObj.distributionList;
+                        vm.resetPage();
+                        //vm.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: vm.recordCount //数据总数，从服务端得到
+                        ,curr: vm.postdata.pageIndex //当前页
+                        , limit: vm.postdata.pagesize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            vm.postdata.pageIndex = obj.curr;
+                           
+                            //首次执行
+                            if (!first) {
+                                vm.getuserlist();
+                                //console.log("first");//do something
+                                
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function () {
+                this.pageIndex = 1;
+                this.getuserlist();
+            },
+            getXcxlist: function () {
+                $.post("/agentmanager/GetXcxTemplate", function (data) {
+                    vm.Xcxlist = data.dataObj;
+                });
+            },
+            choose: function (index) {
+                if ($.inArray(this.Xcxlist[index].Id, this.selectTid) > -1) {
+                    this.selectTid.splice($.inArray(this.Xcxlist[index].Id, this.selectTid), 1);
+                } else {
+                    this.selectTid.push(this.Xcxlist[index].Id);
+                }
+                this.postdata.tids = this.selectTid.join(',');
+            },
+            resetSearch: function () {
+                this.postdata.loginname = '';
+                this.postdata.username = '';
+                this.postdata.state = -2;
+                this.postdata.starttime = '';
+                this.postdata.endtime = '';
+                this.postdata.tids = '';
+                this.selectTid = [];
+            },
+            openAddpage: function () {
+                layer.open({
+                    type: 2,
+                    title: '添加分销商',
+                    shade: 0.8,
+                    area: ['650px', '608px'],
+                    content: '/agentmanager/DistributionCreate' //iframe的url
+                });
+            },
+            openEditpage: function (index, type) {
+                layer.open({
+                    type: 2,
+                    title: "修改分销商信息",
+                    shade: [0.8, '#000'],
+                    // skin: 'layui-layer-rim', //加上边框
+                    area: ['650px', '568px'], //宽高
+                    content: '/agentmanager/DistributionEdit?id=' + this.userlist[index].AgentId + '&type=' + type
+                })
+            },
+            updateState: function (index) {
+                var tips;
+                var state = this.userlist[index].state;
+                var id = this.userlist[index].AgentId;
+                if (state == 1) {
+                    tips = "是否确定要停用此分销商?";
+                    state = -1;
+                } else {
+                    tips = "是否确定要开启此分销商?";
+                    state = 1;
+                }
+                layer.confirm(tips, {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.post("/agentmanager/updateDistributionstate", { state: state, id: id }, function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+                            vm.userlist[index].state = state;
+                        }
+                    })
+                });
+            },
+            changePwd: function (index) {
+                var id = this.userlist[index].AgentId;
+                layer.open({
+                    type: 2,
+                    title: "修改密码",
+                    //shade: 0,
+                    shade: [0.8, '#000'],
+                    // skin: 'layui-layer-rim', //加上边框
+                    area: ['650px', '350px'], //宽高
+                    content: '/agentmanager/updateDistributionPwd?id=' + id
+                });
+
+            }
+        },
+        created: function (index) {
+            $("#customList").show();
+            this.getXcxlist();
+            this.getuserlist();
+        }
+
+    })
+</script>

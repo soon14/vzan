@@ -1,0 +1,608 @@
+﻿@using Entity.MiniApp.Tools
+@using User.MiniApp.comment
+@model Coupons
+@{
+    if (ViewBag.SouceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+    ViewBag.Title = Model.Id > 0 ? "优惠券编辑" : "优惠券添加";
+    string goodname = ViewBag.PageType == (int)TmpType.小程序餐饮模板 ? "菜品" : "产品";
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<style>
+    .w300 { width: 300px; }
+</style>
+<div id="v_coupon" style="margin-top:20px;">
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td style="text-align: right;" width="10%"><label style="color: red">*</label>优惠券名称：</td>
+            <td>
+                <input type="text" name="CouponName" v-model="editmodel.CouponName" class="form-control w300" placeholder="1-20字（例如：满100元优惠10元）" maxlength="20" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>生成数量：</td>
+            <td>
+                <input type="text" maxlength="3" placeholder="生成数量" id="CreateNum" onkeyup="value = value.replace(/[^\d]/g, '')" onafterpaste="this.value=this.value.replace(/D/g, '')" v-model="editmodel.CreateNum" class="form-control w300">
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>优惠形式：</td>
+            <td>
+                <div>
+                    <input type="radio" name="couponway" value="0" v-bind:checked="editmodel.CouponWay==0" v-on:click="couponwayclick(0)" v-bind:disabled="editmodel.Id>0" />指定金额
+                    <span id="couponway0" v-show="editmodel.CouponWay==0">
+                        面值：
+                        <input type="text" class="form-control inputdecimal" style="width:100px;display:inline-block;" v-model="editmodel.MoneyStr" maxlength="5" v-bind:disabled="editmodel.Id>0" />
+                    </span>
+                </div>
+                <div>
+                    <input type="radio" name="couponway" value="1" v-bind:checked="editmodel.CouponWay==1" v-on:click="couponwayclick(1)" v-bind:disabled="editmodel.Id>0" />折扣
+                    <span id="couponway1" v-show="editmodel.CouponWay==1">
+                        <input type="number" class="form-control" style="width:100px;display:inline-block;" v-model="editmodel.MoneyStr" step="0.1" max="9.9" min="0.1" v-bind:disabled="editmodel.Id>0" />折
+                    </span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>使用门槛：</td>
+            <td>
+                <div>
+                    <input type="radio" name="limitmoney" value="0" v-bind:checked="editmodel.LimitMoneyType==0" v-on:click="limitmoneyclick(0)" v-bind:disabled="editmodel.Id>0" />不限制
+                    <div style="color:red;" v-show="editmodel.LimitMoneyType==0">
+                        请谨慎设置无门槛优惠券，避免资金损失
+                    </div>
+                </div>
+                <div>
+                    <input type="radio" name="limitmoney" value="1" v-bind:checked="editmodel.LimitMoneyType==1" v-on:click="limitmoneyclick(1)" v-bind:disabled="editmodel.Id>0" />满
+                    <input type="text" class="form-control inputdecimal" style="width:100px;display:inline-block;" v-model="editmodel.LimitMoneyStr" v-bind:disabled="editmodel.Id>0" />元可使用
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>会员等级：</td>
+            <td>
+                <select class="form-control" v-model="editmodel.VipLevel" style="display:inline-block;width:300px;" v-bind:disabled="editmodel.Id>0">
+                    <option value="-1" v-bind:selected="editmodel.VipLevel==-1">所有会员等级</option>
+                    @{
+                        if (ViewBag.levelList != null)
+                        {
+                            foreach (VipLevel item in ViewBag.levelList)
+                            {
+                                <option value="@item.level" v-bind:selected="editmodel.VipLevel==@item.level">@item.name</option>
+                            }
+                        }
+                    }
+
+                    @*@for (var i = 1; i <= 10; i++)
+                    {
+                        <option value="@i" v-bind:selected="editmodel.VipLevel==@i">@i</option>
+                    }*@
+                </select>
+                级及以上可领取
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>每人限领：</td>
+            <td>
+                <select class="form-control width400" id="LimitReceive" v-model="editmodel.LimitReceive" v-bind:disabled="editmodel.Id>0">
+                    <option value="0">不限张</option>
+                    @for (var i = 1; i <= 20; i++)
+                    {
+                        <option value="@i" v-bind:selected="editmodel.LimitReceive==@i">@i</option>
+                    }
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>有效期：</td>
+            <td>
+                <div>
+                    <input type="radio" name="val" value="0" v-bind:checked="editmodel.ValType==0" v-on:click="valclick(0)" v-bind:disabled="editmodel.Id>0" />固定日期
+                    <span id="val0" v-show="editmodel.ValType==0">
+                        生效时间：
+                        <input type="text" name="StartUseTimeStr" id="StartUseTimeStr" value="@(Model.StartUseTimeStr=="0001.01.01"?"":Model.StartUseTimeStr)" class="form-control w300" placeholder="请选择生效日期" maxlength="20" readOnly style="background-color:white;width:200px;display:inline-block;" v-bind:disabled="editmodel.Id>0" />
+
+                        过期时间：
+                        <input type="text" name="EndUseTimeStr" id="EndUseTimeStr" class="form-control w300" value="@(Model.EndUseTimeStr=="0001.01.01"?"":Model.EndUseTimeStr)" placeholder="请选择过期日期" maxlength="20" readOnly style="background-color:white;width:200px;display:inline-block;" v-bind:disabled="editmodel.Id>0" />
+                    </span>
+                </div>
+                <div>
+                    <input type="radio" name="val" value="1" v-bind:checked="editmodel.ValType == 1" v-on:click="valclick(1)" v-bind:disabled="editmodel.Id>0" />
+
+                    领到券次日开始
+                    <span id="val1" style='display:inline-block;' v-show="editmodel.ValType!=1">N</span>
+                    <input id="valtype1" type="number" class="form-control" style="width:100px;display:inline-block;" min="1" v-show="editmodel.ValType==1" v-model="editmodel.ValDay" v-bind:disabled="editmodel.Id>0" />
+                    天内有效
+                </div>
+                <div>
+                    <input type="radio" name="val" value="2" v-bind:checked="editmodel.ValType==2" v-on:click="valclick(2)" v-bind:disabled="editmodel.Id>0" />
+                    领到券当日开始
+                    <span id="val2" style='display:inline-block;' v-show="editmodel.ValType!=2">N</span>
+                    <input id="valtype2" type="number" class="form-control" style="width:100px;display:inline-block" min="1" v-show="editmodel.ValType==2" v-model="editmodel.ValDay" v-bind:disabled="editmodel.Id>0" />
+                    天内有效
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"><label style="color: red">*</label>可使用@(goodname)：</td>
+            <td>
+                <div>
+                    <input type="radio" name="goods" value="0" v-bind:checked="editmodel.GoodsType==0" v-on:click="valgoodsclick(0)" v-bind:disabled="editmodel.Id>0" />全部产品
+                    <input type="radio" name="goods" value="1" v-bind:checked="editmodel.GoodsType==1" v-on:click="valgoodsclick(1)" v-bind:disabled="editmodel.Id>0" />指定产品
+                </div>
+                <div id="selectgoods" v-show="editmodel.GoodsType==1" style="margin-top:10px;">
+                    <table class="table-bordered table-condensed table-striped">
+                        <thead>
+                            <tr>
+                                <th width="40">ID</th>
+                                <th width="70">@(goodname)图片</th>
+                                <th width="200">名称</th>
+                                <th width="150">创建时间</th>
+                                <th width="100">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(good_item,good_index) in editmodel.SelectGoods">
+                                <td align="center">{{good_item.Id}}</td>
+                                <td align="center"><img v-bind:src="utils.resizeimg(good_item.ImgUrl,100,100)" width="50" /></td>
+                                <td>
+                                    <div style="word-break:break-all;">
+                                        {{good_item.GoodsName}}
+                                    </div>
+                                </td>
+                                <td>{{good_item.showtime}}</td>
+                                <td align="center" valign="middle">
+                                    <input type="button" class="btn btn-danger" value="移除" v-on:click="delgood(good_index)" v-bind:disabled="editmodel.Id>0" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <a href="javascript:;" class="actionbtn " v-on:click="getgoodslist()" v-if="editmodel.Id==0">＋添加@(goodname)</a>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">使用说明：</td>
+            <td>
+                <textarea class="form-control width400" style="height:150px;" v-model="editmodel.Desc" placeholder="填写活动详细说明" maxlength="500"></textarea>
+            </td>
+        </tr>
+        @{
+            if (ViewBag.PageType == 22)
+            {
+                <tr>
+                    <td style="text-align: right;"><label style="color: red">*</label>首页弹窗显示：</td>
+                    <td>
+                        <div>
+                            <label><input type="radio" name="ShowTip" value="1" v-model="editmodel.IsShowTip" v-bind:disabled="editmodel.showTipCount>=3" />是</label>
+                            <label><input type="radio" name="ShowTip" value="0" v-model="editmodel.IsShowTip" />否</label>
+                            <span style="color:red;">最多可设置3张,当前还可设置{{3-editmodel.showTipCount}}张</span>
+                        </div>
+
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;"><label style="color: red">*</label>与会员折扣互斥：</td>
+                    <td>
+                        <div>
+                            <label><input type="radio" name="discounttype" value="1" v-model="editmodel.discountType"/>是</label>
+                            <label><input type="radio" name="discounttype" value="0" v-model="editmodel.discountType"/>否</label>
+                            <span style="color:red;">设置与会员折扣互斥后,该优惠券折扣与会员折扣只能同时享受一种</span>
+                        </div>
+
+                    </td>
+                </tr>
+            }
+        }
+        <tr>
+            <td style="text-align: right;">同步到微信卡包：</td>
+            <td>
+                <div>
+                    <label><input type="radio" name="WxCouponsCardOpen" value="1" v-model="editmodel.WxCouponsCardOpen" />开启</label>
+                    <label><input type="radio" name="WxCouponsCardOpen" value="0" v-model="editmodel.WxCouponsCardOpen" />关闭</label>
+                    <span style="color:red;">开启同步后,小程序端领取优惠券会同步到微信卡包里的优惠券,用户可以通过优惠券进入小程序使用</span>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <input type="button" class="btn btn-primary width100" v-on:click="saveInfo()" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+    </table>
+
+    <!--添加可使用优惠券产品-->
+    <div class="modal fade" id="AddGoodModal" tabindex="-1" role="dialog" aria-labelledby="AddGoodModal_label" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择@(goodname)</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <thead>
+                            <tr>
+                                <th width="40">ID</th>
+                                <th width="70">@(goodname)图片</th>
+                                <th width="200">名称</th>
+                                <th width="150">创建时间</th>
+                                <th width="100">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(good_item,good_index) in goodslistdata.list">
+                                <td align="center">{{good_item.Id}}</td>
+                                <td align="center"><img v-bind:src="utils.resizeimg(good_item.ImgUrl,100,100)" width="50" /></td>
+                                <td>
+                                    <div style="word-break:break-all;">
+                                        {{good_item.GoodsName}}
+                                    </div>
+                                </td>
+                                <td>{{good_item.showtime}}</td>
+                                <td align="center" valign="middle">
+                                    <input type="button" class="btn btn-default" v-bind:class="{'btn-primary':good_item.sel}"
+                                           v-bind:value="good_item.sel?'取消':'选取'"
+                                           v-on:click="good_item.sel=!good_item.sel" />
+
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="goodslistdata.recordCount>0"></div>
+                    <br />
+                    <div class="nodata" v-if="goodslistdata.recordCount<=0">
+                        暂无数据，请先添加 <a href="/enterprisepro/p?appId=@(ViewBag.appId)">点击添加@(goodname)</a>
+                    </div>
+                    @*<vue-pager ref="goodpager" name="goods"></vue-pager>*@
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="PickGoodOK()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<script>
+    var app = new Vue({
+        el: "#v_coupon",
+        data: {
+            editmodel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            appId:@ViewBag.appId,
+            goodslistdata: {
+                recordCount: 0,
+                list: [],
+                postdata: {
+                    appId:@Html.Raw(ViewBag.appId),
+                    PageType:@Html.Raw(ViewBag.PageType),
+                    pageIndex: 1,
+                    pageSize: 8
+                }
+            },
+            isloading: false
+        },
+        methods: {
+            //保存
+            saveInfo: function () {
+                if (app.editmodel.CouponName.length <= 0)
+                    return layer.msg("请填写优惠券名称");
+
+                if (app.editmodel.CreateNum <= 0)
+                    return layer.msg("请填写生成数量");
+
+                //优惠方式
+                if(app.editmodel.MoneyStr<=0)
+                {
+                    return layer.msg(app.editmodel.CouponWay==0?"请填写指定金额面值":"请输入折扣");
+                }
+
+                //使用门槛
+                if(app.editmodel.LimitMoneyStr<=0 && app.editmodel.LimitMoneyType==1)
+                {
+                    return layer.msg("请填写使用门槛限制金额");
+                }
+                if(app.editmodel.LimitMoneyType==0)
+                {
+                    app.editmodel.LimitMoneyStr=0;
+                }
+
+                //有效期
+                var startusetime = $('#StartUseTimeStr').val();
+                var endusetime = $('#EndUseTimeStr').val();
+                if(app.editmodel.ValType==0)
+                {
+                    if(startusetime=="")
+                    {
+                        layer.msg('请选择生效日期！');
+                        return false;
+                    }
+                    if(endusetime=="")
+                    {
+                        layer.msg('请选择过期日期！');
+                        return false;
+                    }
+                    if (new Date(endusetime) <= new Date(startusetime)) {
+                        layer.msg('过期时间必须大于生效时间时间！');
+                        return false;
+                    }
+
+                    app.editmodel.StartUseTimeStr = startusetime
+                    app.editmodel.EndUseTimeStr = endusetime
+                }
+                else if(app.editmodel.ValDay<=0){
+                    layer.msg('生效时间不能为空！');
+                    return false;
+                }
+
+                //指定产品
+                if(app.editmodel.GoodsType==1)
+                {
+                    if(app.editmodel.SelectGoods.length<=0)
+                    {
+                        layer.msg('请添加指定@(goodname)！');
+                        return false;
+                    }
+
+                    var idsarray = [];
+                    app.editmodel.SelectGoods.forEach(function (o, i) {
+                        idsarray.push(o.Id);
+                    });
+
+                    app.editmodel.GoodsIdStr = idsarray.join(",");
+                }
+
+                var Description =app.editmodel.Desc;
+                //Base64加密
+                var b = new Base64();
+                Description = b.encode(Description);
+
+               
+                if(app.isloading)
+                {
+                    return;
+                }
+
+
+                var index = layer.load(1)
+                app.isloading = true;
+               
+
+                $.post('/coupons/addorupdatecoupon',
+                    {
+                        Id:app.editmodel.Id,
+                        CouponName:app.editmodel.CouponName,
+                        CreateNum:app.editmodel.CreateNum,
+                        Money:parseInt(parseFloat(app.editmodel.MoneyStr)*10000*0.01),
+                        CouponWay:app.editmodel.CouponWay,
+                        LimitMoney:parseInt(parseFloat(app.editmodel.LimitMoneyStr)*10000*0.01),
+                        StartUseTime:app.editmodel.StartUseTimeStr,
+                        EndUseTime:app.editmodel.EndUseTimeStr,
+                        GoodsIdStr:app.editmodel.GoodsIdStr,
+                        Desc:Description,
+                        VipLevel:app.editmodel.VipLevel,
+                        LimitReceive:app.editmodel.LimitReceive,
+                        ValType:app.editmodel.ValType,
+                        ValDay:app.editmodel.ValDay,
+                        StoreId:app.editmodel.StoreId,
+                        appId:app.editmodel.appId,
+                        IsShowTip:app.editmodel.IsShowTip,
+                        discountType:app.editmodel.discountType,
+                        WxCouponsCardOpen:app.editmodel.WxCouponsCardOpen
+                        
+                    },
+                    function (result) {
+                        app.isloading = false;
+                        layer.close(index);
+                        if (result.isok) {
+                            layer.msg('保存成功');
+                            window.location.href = "/coupons/CouponsList?appId=@ViewBag.appId&SouceFrom=@ViewBag.SouceFrom&PageType=@ViewBag.PageType";
+                        } else {
+                            layer.msg(result.msg);
+                        }
+                    });
+            },
+            //获取产品列表
+            getgoodslist: function () {
+                var index = layer.load(1)
+                $.post("/common/GoodsList", this.goodslistdata.postdata, function (data) {
+                    layer.close(index);
+                    app.goodslistdata.recordCount = data.recordCount;
+                    app.goodslistdata.list = data.list;
+                    app.resetgoodsPage();
+                })
+                $('#AddGoodModal').modal('show');
+            },
+            //产品列表分页跳转
+            resetgoodsPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.goodslistdata.recordCount //数据总数，从服务端得到
+                        , curr: app.goodslistdata.postdata.pageIndex //当前页
+                        , limit: app.goodslistdata.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            //console.log(app.recordCount);
+                            app.goodslistdata.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getgoodslist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //选取优惠产品完成
+            PickGoodOK: function () {
+                if (app.editmodel.SelectGoods == null || app.editmodel.SelectGoods.length<=0) {
+                    app.editmodel.SelectGoods = [];
+                }
+
+                var list = this.goodslistdata.list.filter(function (_item) {
+                    return _item.sel;
+                });
+
+                if (list.length <= 0) {
+                    layer.msg("请选择可使用优惠券的@(goodname)");
+                    return;
+                }
+
+                var sellist = list.filter(function (_item) {
+                    app.editmodel.SelectGoods.forEach(function(value,index){
+                        if(_item.Id==value.Id)
+                        {
+                            _item.sel = false;
+                            return _item.sel;
+                        }
+                    });
+                    return _item.sel;
+                });
+
+                this.editmodel.SelectGoods = this.editmodel.SelectGoods.concat(sellist);
+                $('#AddGoodModal').modal('hide');
+            },
+            //删除产品
+            delgood: function (index) {
+                layer.confirm('您确定要移除此@(goodname)吗？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    app.editmodel.SelectGoods.splice(index, 1);
+                    layer.msg("操作成功");
+                });
+            },
+            //优惠形式
+            couponwayclick:function(value){
+                app.editmodel.MoneyStr = 0;
+                app.editmodel.CouponWay=value;
+            },
+            //有效期
+            valclick:function(value)
+            {
+                app.editmodel.ValType=value;
+            },
+            //可使用产品
+            valgoodsclick:function(value)
+            {
+                app.editmodel.GoodsType=value;
+            },
+            //使用门槛
+            limitmoneyclick:function(value)
+            {
+                app.editmodel.LimitMoneyType=value;
+            },
+            //initdatecontro:function(){
+            //    var currYear = (new Date()).getFullYear();
+            //    var opt = {};
+            //    opt.date = { preset: 'date' };
+            //    opt.datetime = { preset: 'datetime' };
+            //    opt.time = { preset: 'time' };
+            //    opt.default = {
+            //        theme: 'android-ics light',
+            //        display: 'modal',
+            //        mode: 'scroller',
+            //        dateFormat: 'yyyy-mm-dd',
+            //        minDate: new Date(),
+            //        //maxDate: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+            //        lang: 'zh',
+            //        showNow: true,
+            //        nowText: "今天",
+            //        startYear: currYear - 10,
+            //        endYear: currYear + 10
+            //    };
+            //    opt.default_time = {
+            //        theme: 'android-ics light',
+            //        display: 'modal',
+            //        mode: 'scroller',
+            //        timeFormat: "HH:ii",
+            //        lang: 'zh',
+            //    };
+            //    var optDateTime = $.extend(opt['datetime'], opt['default']);
+            //    var optTime = $.extend(opt['time'], opt['default_time']);
+            //    var optDate = $.extend(opt['date'], opt['default']);
+            //    $("#StartUseTimeStr").mobiscrolls(optDateTime).datetime(optDateTime);
+            //    $("#EndUseTimeStr").mobiscrolls(optDateTime).datetime(optDateTime);
+            //}
+        },
+        created: function () {
+            $("#v_coupon").show();
+            this.utils = utils;
+        }
+    })
+
+    // #region 日期选择控件
+    function initdatecontro()
+    {
+        var currYear = (new Date()).getFullYear();
+        var opt = {};
+        opt.date = { preset: 'date' };
+        opt.datetime = { preset: 'datetime' };
+        opt.time = { preset: 'time' };
+        opt.default = {
+            theme: 'android-ics light',
+            display: 'modal',
+            mode: 'scroller',
+            dateFormat: 'yyyy-mm-dd',
+            minDate: new Date(),
+            //maxDate: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+            lang: 'zh',
+            showNow: true,
+            nowText: "今天",
+            startYear: currYear - 10,
+            endYear: currYear + 10
+        };
+        opt.default_time = {
+            theme: 'android-ics light',
+            display: 'modal',
+            mode: 'scroller',
+            timeFormat: "HH:ii",
+            lang: 'zh',
+        };
+        var optDateTime = $.extend(opt['datetime'], opt['default']);
+        var optTime = $.extend(opt['time'], opt['default_time']);
+        var optDate = $.extend(opt['date'], opt['default']);
+        $("#StartUseTimeStr").mobiscrolls(optDateTime).datetime(optDateTime);
+        $("#EndUseTimeStr").mobiscrolls(optDateTime).datetime(optDateTime);
+    }
+    // #endregion
+
+    $(function () {
+        initdatecontro();
+    });
+
+    $(".inputdecimal").keyup(function(){
+
+        var reg = /^\d+\.?(\d{1,2})?$/;
+        while (!reg.test($(this).val()) && $(this).val() != "") {
+            $(this).val(checkStr($(this).val()));
+        }
+    });
+
+    //检查是否符合金额格式:只能输入数字且最多保留小数点后两位
+    function checkStr(str) {
+        str = str.substring(0,str.length-1);
+        return str;
+    }
+</script>

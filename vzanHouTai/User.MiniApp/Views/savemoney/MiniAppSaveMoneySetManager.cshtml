@@ -1,0 +1,666 @@
+﻿@using User.MiniApp.comment;
+@using Entity.MiniApp.Conf;
+@model List<SaveMoneySet>
+@{
+    if (ViewBag.SouceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Areas/PlatChild/Views/Shared/_LayoutAdmin.cshtml";
+    }
+
+    ViewBag.PageType = ViewBag.typeId;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "储值";
+    int aid = ViewBag.appId;
+    int saveMoneySwtich = ViewBag.saveMoneySwtich;
+    bool canSaveMoneyFunction = (bool)ViewBag.canSaveMoneyFuntion;
+}
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+
+    /*.setStateSelect .active {
+        background-color:#108EE9;
+        color:White;
+    }*/
+
+    table { margin: 20px 0px 0px 20px; color: #616060; }
+
+    table tr { height: 35px; }
+
+    table th { text-align: center; }
+
+    .ml10 { margin-left: 20px; }
+
+    .modal-title { font-size: 16px; font-weight: bold; }
+
+    .modal-body ul li { width: 50%; height: 28px; float: left; }
+
+    .detail_title { color: #4a86e8; font-size: 16px; margin-bottom: 10px; }
+    .searchul { width: 100%; margin: 20px 0px 14px 0px; }
+    .searchul li { /*width:25%;*/ float: left; margin-right: 25px; }
+    .searchul li span { float: left; padding-top: 5px; padding-right: 8px; }
+    .searchul li input, .searchul li select { width: 140px; }
+    [v-cloak] { display: none; }
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form { width: 665px; margin-top: 30px; }
+    .layui-form tr { height: 50px; }
+    .layui-form .title { text-align: right; }
+</style>
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<script src="//j.vzan.cc/scripts/common/verify_input.js"></script>
+<script src="@WebSiteConfig.SourceContent/scripts/min/juicer-min.js"></script>
+
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div id="app" class="container-fluid" v-cloak>
+    <div class="layui-form">
+        &nbsp; <label style="font-size: 16px; font-weight:bold; color:#5691fc">&nbsp;会员储值功能</label> 
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        @{
+            if (ViewBag.typeId == 22&&saveMoneySwtich==1)
+            {
+                <div title="请升级更高版本" style="display:inline-block;">
+                    <input type="checkbox" lay-skin="switch" lay-text="开|关" disabled="disabled">
+                </div>
+            }
+            else
+            {
+                <input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="changCanSaveMoneyFunctionData.canSaveMoneyFunction" value="CashPay">
+
+            }
+        }
+    </div>
+    <br />
+    <br />
+    <div>
+        @*<ol class="breadcrumb">
+                <li><a class="list-city">餐饮版小程序</a></li>
+                <li><a class="list-city">店铺配置</a></li>
+                <li class="active">储值项目</li>
+            </ol>*@
+        <div>
+            <p style="font-size: 16px; font-weight:bold; color:#5691fc">&nbsp;|  储值规则设定</p>
+        </div>
+        <br />
+        <br />
+        @{
+            if (ViewBag.typeId == 22 && saveMoneySwtich == 1)
+            {
+                <div setStateSelect title="请升级更高版本">
+                    <div class="col-sm-2" style="width:80px">状态：</div>
+                    <input disabled="disabled" class="col-sm-2 btn btn-default setSelect active" value="全部" style="margin:3px;width:80px;background-color:#108EE9;border-color:#5e97fa; margin-bottom:8px;color:white;" readonly />
+                    <input disabled="disabled" class="col-sm-2 btn btn-default setSelect " value="已下架" style="margin:3px;width:80px;background-color:white;border-color:#5e97fa; margin-bottom:8px;color:#5e97fa;" readonly />
+                    <input disabled="disabled" class="col-sm-2 btn btn-default setSelect " value="已上架" style="margin:3px;width:80px;background-color:white;border-color:#5e97fa; margin-bottom:8px;color:#5e97fa;" readonly />
+                </div>
+            }
+            else
+            {
+                <div setStateSelect>
+                    <div class="col-sm-2" style="width:80px">状态：</div>
+                    <input class="col-sm-2 btn btn-default setSelect active" v-on:click="Search($event,-999)" value="全部" style="margin:3px;width:80px;background-color:#108EE9;border-color:#5e97fa; margin-bottom:8px;color:white;" readonly />
+                    <input class="col-sm-2 btn btn-default setSelect " v-on:click="Search($event,0)" value="已下架" style="margin:3px;width:80px;background-color:white;border-color:#5e97fa; margin-bottom:8px;color:#5e97fa;" readonly />
+                    <input class="col-sm-2 btn btn-default setSelect " v-on:click="Search($event,1)" value="已上架" style="margin:3px;width:80px;background-color:white;border-color:#5e97fa; margin-bottom:8px;color:#5e97fa;" readonly />
+                </div>
+            }
+        }
+        
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr class="text-center">
+                        <th>项目名称</th>
+                        <th>储值金额（元）</th>
+                        <th>赠送金额（元）</th>
+                        <th>到账金额（元）</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="bcontent">
+                    <tr v-for="(item,index) in list">
+                        <td class="text-center" width="20%">{{item.SetName}}</td>
+                        <td class="text-center" width="15%">{{item.JoinMoneyStr}}</td>
+                        <td class="text-center" width="15%">{{item.GiveMoneyStr}}</td>
+                        <td class="text-center" width="15%">{{item.AmountMoneyStr}}</td>
+                        <td align="center" v-if="item.State==1"><span class="label label-success">上架中</span></td>
+                        <td align="center" v-else-if="item.State==0"><span class="label label-danger">下架中</span></td>
+                        <td class="text-center" width="15%" v-else></td>
+                        <td class="text-center" width="20%">
+
+                            <span style="cursor:pointer;" class="label label-primary" v-if="item.State == 0" v-on:click="updateSetState(index,1)">上架</span>
+                            <span style="cursor:pointer;" class="label label-danger" v-if="item.State == 0" v-on:click="updateSetState(index,-1)">删除</span>
+                            <span style="cursor:pointer;" class="label label-danger" v-if="item.State == 1" v-on:click="updateSetState(index,0)">下架</span>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="8" v-if="recordCount<=0">暂无数据</td>
+                    </tr>
+
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        @{
+            if (ViewBag.typeId == 22&&saveMoneySwtich==1)
+            {
+                <div class="panel-body" title="请升级到更高版本">
+                    <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        添加储值设定
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="panel-body">
+                    <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass" v-on:click="showAddForm()">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        添加储值设定
+                    </a>
+                </div>
+            }
+        }
+        
+        <div>
+            &nbsp;&nbsp;储值设定不可超过20个
+        </div>
+    </div>
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        添加储值设定
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td width="120px">充值金额 : </td>
+                            <td>
+                                <input maxlength="8" style="width:320px" placeholder="充值金额请输入0.01~99999.99" type="text" class="form-control" v-model="JoinMoneyStr" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="120px"><span>赠送金额：</span></td>
+                            <td>
+                                <input maxlength="8" style="width:320px" placeholder="赠送金额请输入0.01~99999.99" type="text" class="form-control" v-model="GiveMoneyStr" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" v-on:click="saveInfo()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+<br />
+<div id="app1" class="container-fluid" v-cloak>
+    <div>
+        @*<ol class="breadcrumb">
+                <li><a class="list-city">餐饮版小程序</a></li>
+                <li><a class="list-city">店铺配置</a></li>
+                <li class="active">储值项目</li>
+            </ol>*@
+        <div>
+            <p style="font-size: 16px; font-weight:bold; color:#5691fc">&nbsp;|  会员储值变更记录</p>
+        </div>
+        <br />
+        <br />
+        <div>
+            <ul class="searchul">
+                <li><span>微信昵称:</span><input type="text" v-model="postdata.nickName" class="input-sm form-control" /></li>
+                <li>
+                    <span>变更类型:</span>
+                    <select v-model="postdata.changeType" class="form-control">
+                        <option value="-999">全部</option>
+                        <option value="0">充值</option>
+                        <option value="-1">消费</option>
+                        <option value="1">退款</option>
+                    </select>
+                </li>
+                <li><span>变更原因:</span><input type="text" v-model="postdata.changeNote" class="input-sm form-control" /></li>
+                @*<div style="clear:both;"></div>*@
+            </ul>
+            <div class="d-flex d-flex-center formsearch">
+                从：
+                <div class="input-daterange input-group" id="datepicker" style="width:400px;">
+                    <input type="text" class="input-sm form-control" name="start" id="startdate" readonly />
+                    <span class="input-group-addon">到</span>
+                    <input type="text" class="input-sm form-control" name="end" id="enddate" readonly />
+                </div>
+
+                <a href="javascript:;" v-on:click="Search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+                <a href="javascript:;" v-on:click="clear()" class="btn btn-default">清除</a>
+
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr class="text-center">
+                        <th>会员</th>
+                        <th>变更前金额（元）</th>
+                        <th>变更额度（元）</th>
+                        <th>变更后金额（元）</th>
+                        <th>变更类型</th>
+                        <th>变更原因</th>
+                        <th>变更时间</th>
+                    </tr>
+                </thead>
+                <tbody id="bcontent">
+                    <tr v-for="(item,index) in list">
+                        <td width="20%"><img style="width:50px;height:50px;" v-bind:src="item.HeadImgUrl" />{{item.NickName}}</td>
+                        <td width="10%">{{item.BeforeMoneyStr}}</td>
+                        <td width="10%">{{item.ChangeMoneyStr}}</td>
+                        <td width="10%">{{item.AfterMoneyStr}}</td>
+                        <td width="10%">{{item.TypeStr}}</td>
+                        <td width="20%">{{item.ChangeNote}}</td>
+                        <td width="10%">
+                            {{item.CreateDateStr}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="8" v-if="recordCount<=0">暂无数据</td>
+                    </tr>
+
+            </table>
+            <div id="pages1" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+        </div>
+    </div>
+</div>
+
+<br />
+
+
+<script>
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            changCanSaveMoneyFunctionData :
+            {
+                appId: @aid,
+                canSaveMoneyFunction : @(canSaveMoneyFunction ? "true" : "false"),
+            },
+
+            recordCount: 0,
+            list: [],
+            index: 0,
+            detailindex: 0,
+            //pages:,
+            postdata: {
+                appId: '@aid',
+                pageIndex: 1,
+                pageSize: 6,
+                State: -999,
+            },
+            detail: [],
+            formpostdata: {
+                appid: '@aid',
+                JoinMoney: 0,
+                GiveMoney: 0,
+                saveMoneySetId: 0,
+                State:0
+            },
+            JoinMoneyStr:"",
+            GiveMoneyStr:"",
+            customer: null,
+            isloading: false
+        },
+        methods: {
+            InitLayer: function () {
+                layui.use(['form'], function () {
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        app.changCanSaveMoneyFunctionData.canSaveMoneyFunction = data.elem.checked;
+
+                        app.switchSetting();
+                    });
+                });
+            },
+            getlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                var loadindex = layer.load(1);
+                $.post("/savemoney/getMiniAppSaveMoneySet", this.postdata, function (data) {
+                    layer.close(loadindex);
+                    app.isloading = false;
+                    if (!data.isok) {
+                        console.log(data.msg);
+                        layer.msg(data.msg);
+                        return;
+                    } else {
+                        app.recordCount = data.dataObj.recordCount;
+                        app.list = data.dataObj.list;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            console.log(app.recordCount);
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getlist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function (x,State) {
+                $(".setSelect").removeClass("active");
+                $(x.target).addClass("active");
+
+                $(".setSelect").removeClass("active");
+                $(".setSelect").css("background-color", "White");
+                $(".setSelect").css("color", "#108EE9");
+
+                $(x.target).addClass("active");
+                $(x.target).css("background-color", "#108EE9");
+                $(x.target).css("color", "White");
+
+                this.postdata.pageIndex = 1;
+                this.postdata.pageSize = 6;
+                this.postdata.State = State;
+                this.getlist();
+            },
+            showAddForm: function () {
+                //验证可否添加
+                $.ajax({
+
+                    type: "post",
+                    url: "/savemoney/GetMiniAppSaveMoneySetCanAdd",
+                    cache: false,
+                    async: false,
+                    data:this.formpostdata,
+                    dataType: "Json",
+                    success: function (data) {
+                        if (data.isok) {
+                            app.JoinMoneyStr = "";
+                            app.GiveMoneyStr = "";
+                            //页面层
+                            $('#addModal').modal('show')
+                        }
+                        else
+                        {
+                            layer.msg(data.msg, {
+                                time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                            }, function () {
+
+                            });
+                        }
+                    }
+
+                });
+            },
+            updateSetState: function (index,state) {
+                this.formpostdata.saveMoneySetId = this.list[index].Id;
+                this.formpostdata.State = state;
+                var layindex = layer.load(1);
+                if (state != -1 || confirm("你确定要删除么?")) {
+                    $.post("/savemoney/updateMiniAppSaveMoneySetState", this.formpostdata, function (data) {
+                        layer.close(layindex);
+                        layer.msg(data.msg, {
+                            time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                        });
+                        if (data.isok) {
+
+                            app.getlist();
+                            $('#addModal').modal('hide')
+                            //$('#myModal').modal('hide')
+                        }
+                    });
+                }
+                else
+                {
+
+                    layer.close(layindex);
+                }
+
+            },
+            switchSetting: function()
+            {
+                var layindex = layer.load(1);
+                $.post("/savemoney/changeCanSaveMoenySetting", this.changCanSaveMoneyFunctionData, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                    //if (!data.isok) {
+                        //layer.msg(data.msg, {
+                        //    time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                        //});
+                    //}
+                });
+
+            },
+            saveInfo: function () {
+                var layindex = layer.load(1)
+
+                if (this.JoinMoneyStr == "") {
+                    layer.msg("请输入有效的充值金额");
+                    layer.close(layindex);
+                    return;
+                }
+                var isNum = /^(([1-9][0-9]*)|(([0]\.\d{1,2}|[1-9][0-9]*\.\d{1,2})))$/;
+                if (!isNum.test(this.JoinMoneyStr))
+                {
+                    layer.msg("充值金额请输入数字且最多保留2位小数");
+                    layer.close(layindex);
+                    return;
+                }
+                if (!isNum.test(this.GiveMoneyStr)) {
+                    layer.msg("赠送金额请输入数字且最多保留2位小数");
+                    layer.close(layindex);
+                    return;
+                }
+                this.formpostdata.JoinMoney = this.JoinMoneyStr * 1000000 / 10000;
+                if (this.formpostdata.JoinMoney <= 0 || this.formpostdata.JoinMoney > 9999999) {
+                    layer.msg("请输入有效的充值金额");
+                    layer.close(layindex);
+                    return;
+                }
+
+
+                if (this.GiveMoneyStr == "") {
+                    layer.msg("请输入有效的赠送金额");
+                    layer.close(layindex);
+                    return;
+                }
+                this.formpostdata.GiveMoney = this.GiveMoneyStr * 1000000 / 10000;
+                if (this.formpostdata.GiveMoney < 0 || this.formpostdata.GiveMoney > 9999999) {
+                    layer.msg("请输入有效的赠送金额");
+                    layer.close(layindex);
+                    return;
+                }
+
+                $.post("/savemoney/AddMiniAppSaveMoneySet", this.formpostdata, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.msg, {
+                        time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                    }, function () {
+                        if (data.isok) {
+
+                            app.getlist();
+                            $('#addModal').modal('hide')
+                            //$('#myModal').modal('hide')
+                        }
+                    });
+                })
+            }
+        },
+        created: function (index) {
+            //$("#app").show();
+            this.InitLayer();
+            this.getlist();
+        }
+
+    });
+
+
+    //验证金额格式
+    function keyPress(ob) {
+        //if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+        //    if (ob.t_value == undefined || ob.t_value.length == 1) {
+        //        ob.value = "";
+        //    }
+        //    else {
+        //        ob.value = ob.t_value;
+        //    }
+        //}
+        //else
+        //    ob.t_value = ob.value;
+    }
+
+</script>
+<script>
+    var app1 = new Vue({
+        el: "#app1",
+        data: {
+            recordCount: 0,
+            list: [],
+            index: 0,
+            detailindex: 0,
+            //pages:,
+            postdata: {
+                appId: '@aid',
+                pageIndex: 1,
+                pageSize: 6,
+                nickName: "",
+                changeType: -999,
+                changeNote: "",
+                changeStartDate: "",
+                changeEndDate: ""
+            },
+            detail: [],
+            formpostdata: {
+                appid: '@aid',
+                JoinMoney: 0,
+                GiveMoney: 0,
+                saveMoneySetId: 0,
+                State: 0
+            },
+            JoinMoneyStr: 0.00,
+            GiveMoneyStr: 0.00,
+            customer: null,
+            isloading: false
+        },
+        methods: {
+            getlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                var loadindex = layer.load(1);
+                $.post("/savemoney/getMiniAppSaveMoneySetUserLog", this.postdata, function (data) {
+                    layer.close(loadindex);
+                    app1.isloading = false;
+                    if (!data.isok) {
+                        console.log(data.msg);
+                        layer.msg(data.msg);
+                        return;
+                    } else {
+                        app1.recordCount = data.dataObj.recordCount;
+                        app1.list = data.dataObj.list;
+                        app1.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages1'
+                        , count: app1.recordCount //数据总数，从服务端得到
+                        , curr: app1.postdata.pageIndex //当前页
+                        , limit: app1.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            console.log(app1.recordCount);
+                            app1.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app1.getlist();
+                                //console.log("first");//do something
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function (x, State) {
+                this.postdata.changeStartDate = $("#startdate").val();
+                this.postdata.changeEndDate = $("#enddate").val();
+                this.postdata.pageIndex = 1;
+                this.postdata.pageSize = 6;
+                this.postdata.State = State;
+                this.getlist();
+            },
+            clear: function ()
+            {
+                this.postdata.nickName = "";
+                this.postdata.changeType = -999;
+                this.postdata.changeNote = "";
+                this.postdata.changeStartDate = "";
+                $("#startdate").val("");
+                this.postdata.changeEndDate = "";
+                $("#enddate").val("");
+
+                //this.getlist();
+            }
+        },
+        created: function () {
+            //$("#app1").show();
+            this.getlist();
+        },
+
+    });
+
+    $('.input-daterange').datepicker({
+        format: "yyyy-mm-dd",
+        language: "zh-CN",
+        //autoclose: true,
+        todayHighlight: true
+    });
+</script>

@@ -1,0 +1,98 @@
+﻿@model ViewModel<C_UserInfo>
+@{
+    ViewBag.Title = "MemberList";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@section styles{
+    <style>
+        .shop-preview { position: fixed; padding: 0 15px; bottom: 0; left: 0; z-index: 100; width: 100%; padding: 10px; background-color: #fcf8e3; border-color: #faebcc; }
+        .icheckbox-blue { position: relative; }
+        .btn-group { font-size: 12px; }
+    </style>
+
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 会员管理 <span class="c-gray en">&gt;</span> 会员列表 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="text-c">
+        <form method="get" class="search-form" action="/DishAdmin/Card/MemberList">
+            <input type="hidden" name="aid" value="@(Model.aId)" />
+            <input type="hidden" name="storeId" value="@(Model.storeId)" />
+            <input type="hidden" name="pageSize" value="@(Model.PageSize)" />
+            <input type="hidden" name="pageIndex" value="@(Model.PageIndex)" />
+            <input type="text" name="keyword" id="g_keywords" placeholder="用户昵称" value="@(Utility.IO.Context.GetRequest("keyword",""))" style="width:250px" class="input-text">
+            <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+        </form>
+    </div>
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l text-warning">未点击登陆的用户获取不到他们的头像和昵称，在列表中用“匿名用户”表示</span>
+        <span class="r">共有数据：<strong>@(Model.TotalCount)</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th>昵称</th>
+                    <th>头像</th>
+                    <th>电话</th>
+                    <th>性别</th>
+                    <th>注册时间</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                    <tr class="text-c">
+                        <td>@(string.IsNullOrEmpty(item.NickName)?"匿名用户": item.NickName)</td>
+                        <td>
+                            @if (string.IsNullOrEmpty(item.HeadImgUrl))
+                            {
+                                @:匿名用户
+                            }
+                            else
+                            {
+                                <img src="@(item.HeadImgUrl)" style="width: 40px;height: 40px;border-radius: 50%;" />
+                            }
+                        </td>
+                        <td>@(item.TelePhone)</td>
+                        <td>@(Utils.FormatSex(item.Sex.ToString()))</td>
+                        <td>@(item.AddTime)</td>
+                    </tr>
+                    }
+                </tbody>
+            }
+
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+
+    </div>
+</div>
+<div style="width: 100%;display: block;height: 30px;">&nbsp;</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.text-c input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            })
+        });
+        $(function () {
+            //回车自动提交
+            $('.search-form').find('input').keyup(function (event) {
+                if (event.keyCode === 13) {
+                    $("#search").click();
+                }
+            });
+
+        })
+    </script>
+}

@@ -1,0 +1,112 @@
+﻿@using Entity.MiniApp
+@using User.MiniApp.comment
+@{
+    Layout = null;
+}
+
+<video id="videoplay" style="max-width:100%;height:200px;background:#333333;display:@( ViewBag.Vid<=0?"none":"block")" controls="controls" src="@ViewBag.convertFilePath" preload="none" poster="@ViewBag.videoPosterPath" webkit-playsinline playsinline></video>
+<div>
+    <input type="file" id="videofile" accept=".mpeg4,.mp4,.mov,.avi,.wmv,.asf,.odd,.3gp" value="" onchange="doChange(this);" style="cursor:pointer;" />
+    <label style="color:red;">文件不能超过100M，视频格式暂支持.mpeg4,.mp4,.mov,.avi,.wmv,.asf,.odd,.3gp</label>
+</div>
+
+<input type="hidden" id="oldvedio" value="@ViewBag.Vid" />
+<input type="hidden" id="videopath" value="" />
+<input type="hidden" id="vedio" value="@ViewBag.Vid" />
+<input type="button" class="btn  btn-info width100" id="savevideofile" style="margin-top:5px;" value="上传" />
+<input type="button" class="btn  btn-info width100" id="delvideofile" onclick="DelVideo()" style="margin-top:5px;display:@(ViewBag.Vid>0?"":"none");" value="删除" />
+<script>
+    var checkupload = 0;
+    $(function () {
+        $("#videofile").change(function () {
+            var filePath = $(this).val();
+        });
+    });
+
+    $(function () {
+        //上传视频文件
+        $("#savevideofile").click(function () {
+            if (checkupload == 2) {
+                AppTools.Alert("该视频已经上传");
+                return;
+            }
+
+            var selectedFiles = $("#videofile")[0].files;
+            if (selectedFiles.length <= 0) {
+                AppTools.Alert("请选择上传的视频文件");
+                return;
+            }
+
+            var data = new FormData();
+            if (selectedFiles[0].size > (1024 * 1024 * 100)) {
+                AppTools.Alert("上传的视频文件不能超过100M");
+                return;
+            }
+            for (var i = 0; i < selectedFiles.length; i++) {
+                data.append($("#videofile")[0].value, selectedFiles[i]);
+            }
+            var storeid = $('#Id').val();
+            $("#savevideofile").val("上传中...");
+            $("#savevideofile").attr("disabled","true");
+            //$('#loadvoiceModal').modal('show');
+            checkupload = 1;
+
+            $.ajax({
+                type: "POST",
+                url: "/Upload/UploadVedio?id=" + storeid,
+                contentType: false,
+                processData: false,
+                data: data,
+                success: function (result) {
+                    //$('#loadvoiceModal').modal('hide');
+                    AppTools.Alert(result.msg);
+                    if (result.isok) {
+                        checkupload = 2;
+                        $("#videoplay").attr("src", result.soucepath);
+                        $("#videoplay").css("display", "block");
+                        $("#vedio").val(result.Vid);
+                        $("#delvideofile").css("display", "");
+                        $("#videopath").val(result.videoconvert);
+                    }
+                    else {
+                        checkupload = 0;
+                    }
+                    $("#savevideofile").val("上传");
+                    $("#savevideofile").removeAttr("disabled");
+                },
+                error: function (e) {
+                    //$('#loadvoiceModal').modal('hide');
+                    AppTools.Alert("系统繁忙");
+                    $("#savevideofile").val("上传");
+                    $("#savevideofile").removeAttr("disabled");
+                    checkupload = 0;
+                }
+            });
+        });
+    })
+    function DelVideo() {
+        if (!confirm("删除不可恢复，确定删除该视频？")) {
+            return;
+        }
+        var attVid = $("#vedio").val();
+        if (attVid > 0) {
+            $.post('/tools/delAttVideo', { vid: attVid }, function (result) {
+                if (result.code === 1) {
+                    $("#vedio").val("");
+                } else {
+                    alert(result.msg);
+                }
+            });
+        }
+        else {
+            $("#vedio").val("");
+        }
+        $("#videoplay").attr("src", "");
+        $("#videoplay").css("display", "none");
+        $("#delvideofile").css("display", "none");
+        checkupload = 0;
+    }
+    function doChange(doc) {
+        checkupload = 1;
+    }
+</script>

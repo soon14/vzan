@@ -1,0 +1,287 @@
+﻿@model ViewModel<PinGoods>
+@{
+    string name = "产品";
+    string editPath = "/PinAdmin/Product/GoodEdit";
+    string listPath = "/PinAdmin/Product/Good";
+    ViewBag.Title = name + "列表";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+    List<PinCategory> categoryList = (List<PinCategory>)ViewBag.categoryList;
+    int cateIdOne = Utility.IO.Context.GetRequestInt("cateIdOne", 0);
+    int cateId = Utility.IO.Context.GetRequestInt("cateId", 0);
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> @(name)管理 <span class="c-gray en">&gt;</span> @(ViewBag.Title) <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="text-c">
+        <form method="get" class="search-form" action="Good">
+            <input type="hidden" name="aid" value="@(Model.aId)" />
+            <input type="hidden" name="storeId" value="@(Model.storeId)" />
+            <input type="hidden" name="pageSize" value="@(Model.PageSize)" />
+            <input type="hidden" name="pageIndex" value="0" />
+            <span class="select-box inline">
+                <select name="cateIdOne" id="cateIdOne" class="select" style="width:120px;" onchange="changeFirstCategory(this.value)">
+                    <option value="0">全部</option>
+                    @if (ViewBag.categoryList != null)
+                    {
+                        foreach (PinCategory item in categoryList)
+                        {
+                            if (item.fId == 0 && item.storeId == 0)
+                            {
+                                <option value="@(item.id)" @( cateIdOne== item.id ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    }
+                </select>
+
+            </span>
+            <span class="select-box inline">
+                <select name="cateId" id="cateId" class="select" style="width:120px;">
+                    <option value="0">全部</option>
+                    @if (ViewBag.categoryList != null)
+                    {
+                        foreach (PinCategory item in categoryList)
+                        {
+                            if (item.fId== cateIdOne)
+                            {
+                                <option value="@(item.id)" @(cateId == item.id ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    }
+                </select>
+            </span>
+            <input type="text" name="kw" id="kw" placeholder="商品名称" value="@(Utility.IO.Context.GetRequest("kw",""))" style="width:250px" class="input-text">
+            <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+        </form>
+    </div>
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l">
+            <a onclick="batch_sort()" href="javascript:void(0);" class="btn btn-secondary radius"><i class="Hui-iconfont">&#xe675;</i> 一键排序</a>
+            <a class="btn btn-primary radius" onclick="add('添加商品','@(editPath)?aid=@(Model.aId)&storeid=@(Model.storeId)')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 添加商品</a>
+        </span>
+        <span class="r">共有数据：<strong>@Model.TotalCount</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="25">排序</th>
+                    <th width="80">ID</th>
+                    <th>商品名称</th>
+                    <th width="120">分类</th>
+                    <th width="80">原价</th>
+                    <th width="80">现价</th>
+                    <th width="80">返现</th>
+                    <th width="120">库存</th>
+                    @*<th width="60">总销量</th>*@
+                    <th width="60">是否上架</th>
+                    <th width="120">操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count() > 0)
+            {
+                <tbody>
+                    @foreach (PinGoods item in Model.DataList)
+                    {
+                    <tr class="text-c">
+                        <td class="td-status"><input type="text" name="is_order[]" value="@(item.sort)" data-id="@(item.id)" data-pre="@(item.sort)" class="input-text is_order_val" style="width: 100px;" /></td>
+                        <td>@(item.id)</td>
+                        <td class="text-l">
+                            @if (!string.IsNullOrEmpty(item.img))
+                            {
+                                <img src="@(item.img)" width="40" height="40" style="border:1px solid #eeeeee;" />
+                            }
+                            @*@if (item.imgAlbumList.Count > 0)
+            {
+                foreach (var imgItem in item.imgAlbumList)
+                {
+                    <img src="@(imgItem)" width="40" height="40" style="border:1px solid #eeeeee;" />
+                }
+            }*@
+                            @(item.name)
+                        </td>
+                        <td>@(item.cateNameOne)-@(item.cateName)</td>
+                        <td>@(item.originalPrice / 100d)</td>
+                        <td>@(item.price / 100d)</td>
+                        <td>@(item.groupPrice / 100d)</td>
+                        <td>
+                            @if (item.stockLimit)
+                            {
+                                @(item.stock)
+                            }
+                            else
+                            {
+                                <span class="label radius">不限库存</span>
+                            }
+                        </td>
+                        @*<td>@(item.sale_all_num)</td>*@
+                        <td>
+                            @if (item.state == 1&&item.auditState==1)
+                            {
+                                <span class="label label-success radius">已上架</span>
+                            }
+                            else
+                            {
+                                <span class="label radius">@(item.auditStateStr)</span>
+                            }
+
+                        </td>
+                        <td class="f-14 td-manage">
+                            <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="edit('编辑商品','@(editPath)?aid=@(item.aId)&storeid=@(item.storeId)&id=@(item.id)')" href="javascript:;" title="编辑"><i class="Hui-iconfont">&#xe6df;</i> 编辑</a>
+                            <a style="text-decoration:none" class="btn btn-danger radius size-MINI del" data-id="@(item.id)" title="删除"><i class="Hui-iconfont">&#xe6e2;</i> 删除</a>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            }
+
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        var categoryList=@Html.Raw(JsonConvert.SerializeObject(categoryList));
+        function changeFirstCategory(id) {
+            id = Number(id) || 0;
+            var secondCategoryList = [];
+            if (id > 0) {
+                secondCategoryList = categoryList.filter(function (item) {
+                    return item.fId == id && item.storeId==0;
+                });
+            }
+            if (secondCategoryList.length > 0) {
+                var children = "";
+                children+=("<option>全部</option>");
+                secondCategoryList.forEach(function (item) {
+                    children += "<option value='" + item.id + "'>" + item.name + "</option>";
+                });
+                $("#cateId").html(children);
+            }
+        }
+        /*添加*/
+        function add(title, url) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+        /*编辑*/
+        function edit(title, url, id) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+        /*删除*/
+        function article_del(obj, id) {
+            layer.confirm('确认要删除吗？', function (index) {
+                $.ajax({
+                    type: 'POST',
+                    url: '?act=del&aId=@(Model.aId)&storeId=@(Model.storeId)',
+                    dataType: 'json',
+                    success: function (data) {
+                        $(obj).parents("tr").remove();
+                        layer.msg('已删除!', { icon: 1, time: 1000 });
+                    },
+                    error: function (data) {
+                        console.log(data.msg);
+                    },
+                });
+            });
+        }
+
+        /*下架*/
+        function article_stop(obj, id) {
+            layer.confirm('确认要下架吗？', function (index) {
+                $(obj).parents("tr").find(".td-manage").prepend('<a style="text-decoration:none" onClick="article_start(this,id)" href="javascript:;" title="发布"><i class="Hui-iconfont">&#xe603;</i></a>');
+                $(obj).parents("tr").find(".td-status").html('<span class="label label-defaunt radius">已下架</span>');
+                $(obj).remove();
+                layer.msg('已下架!', { icon: 5, time: 1000 });
+            });
+        }
+        function batch_sort() {
+
+            var sort_data = [];
+            $(".is_order_val").each(function () {
+                var sort_item = $(this);
+                if (sort_item.data("pre") != sort_item.val()) {
+                    sort_data.push(sort_item.data("id") + "_" + sort_item.val());
+                }
+            })
+            if (sort_data.length <= 0) {
+                layer.msg('没有检测到要修改的行')
+                return;
+            }
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "@(listPath)?act=sort",
+                data: { sortData: sort_data.join(","), t: Math.random(),storeId:@(Model.storeId) },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.msg, { time: 1500 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+        $(function () {
+
+            //回车自动提交
+            $('.search-form').find('input').keyup(function (event) {
+                if (event.keyCode === 13) {
+                    $("#search").click();
+                }
+            });
+
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "?act=del&aid=@(Model.aId)&storeId=@(Model.storeId)",
+                        data: { act: 'del', id: id, t: Math.random() },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 2000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 2000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+        })
+    </script>
+
+}

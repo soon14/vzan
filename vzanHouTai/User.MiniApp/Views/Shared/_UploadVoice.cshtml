@@ -1,0 +1,58 @@
+﻿@using Entity.MiniApp
+@using User.MiniApp.comment
+@{
+    Layout = null;
+}
+<audio id="myvoice" src="@ViewBag.Attachmentvoicepath" controls="controls" style='display:@(string.IsNullOrEmpty(ViewBag.Attachmentvoicepath)?"none":"block")'></audio>
+<input type="file" id="file" accept=".mp3" value="asdfasdf" style="cursor:pointer;" />
+<input type="hidden" id="voiceid" data-state="0" data-path="" value="@(ViewBag.VoiceId)" />
+<input type="button" class="btn  btn-info width100" id="savefile" style="margin-top:5px;" value="上传" />
+@*<input type="button" class="btn  btn-info width100 temp-del-voice"  style="margin-top:5px;" value="删除" />*@
+<script>
+
+    var audio = document.getElementById('myvoice');
+
+    $(function () {
+        $("#file").change(function () {
+            var filePath = $(this).val();
+        });
+
+        //上传音频文件
+        $("#savefile").click(function () {
+            var selectedFiles = $("#file")[0].files;
+            if (selectedFiles.length <= 0) {
+                AppTools.Alert("请选择上传的音频文件");
+                return;
+            }
+
+            var data = new FormData();
+            for (var i = 0; i < selectedFiles.length; i++) {
+                data.append($("#file")[0].value, selectedFiles[i]);
+            }
+
+            $('#loadvoiceModal').modal('show');
+            $.ajax({
+                type: "POST",
+                url: "/Upload/UploadVoice?storeid=@ViewBag.appId&voicetype=@ViewBag.VoiceType",
+                contentType: false,
+                processData: false,
+                data: data,
+                success: function (result) {
+                    $('#loadvoiceModal').modal('hide');
+                    AppTools.Alert(result.msg);
+                    if (result.isok) {
+                        $("#myvoice").css("display", "block");
+                        $("#myvoice").attr("src", result.Path)
+                        //audio.src = result.Path;
+                        $("#voiceid").val(result.voiceId);
+                        $("#voiceid").attr("data-path", result.Path);
+                    }
+                },
+                error: function (e) {
+                    $('#loadvoiceModal').modal('hide');
+                    AppTools.Alert("系统繁忙");
+                }
+            });
+        });
+    });
+</script>

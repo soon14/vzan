@@ -1,0 +1,213 @@
+﻿
+@model ViewModel<PinCategory>
+@{
+    string name = "分类";
+    string editPath = "/Pin/Product/CategoryEdit";
+    string listPath = "/Pin/Product/Category";
+    int fid = Utility.IO.Context.GetRequestInt("fid",0);
+
+    ViewBag.Title = name + "管理";
+
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+}
+<style>
+    #categorys tr th { text-align: center; }
+    #categorys tr td { text-align: center; }
+</style>
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5>@ViewBag.Title</h5>
+                </div>
+                <div class="ibox-content ">
+                    <div class="">
+                        <div class="row m-b-sm m-t-sm">
+                            <div class="col-md-1 text-right" style="width: auto;">
+                                @if (fid > 0)
+                                {
+                                    <a class="btn btn-warning" href="@(listPath)?aId=@Model.aId&fid=0"><i class="fa fa-home"></i> 查看一级分类</a>
+                                }
+                                <a class="btn btn-primary" onclick="batch_sort()"><i class="fa fa-sort"></i> 一键排序</a>
+                                <a href="@(editPath)?aId=@Model.aId&fid=@(fid)" class="btn btn-primary">
+                                    <i class="fa fa-plus"></i> 新增
+                                    @if (fid > 0)
+                                    {
+                                        @:二级分类
+                                    }
+                                    else if (fid == 0)
+                                    {
+                                        @:一级分类
+                                    }
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="categorys" class="table table-hover table-condensed table-bordered">
+                        <thead>
+                            <tr>
+                                <th>排序</th>
+                                <th>ID</th>
+                                <th>标题名称</th>
+                                <th>图片</th>
+                                <th>是否启用</th>
+
+                                <th>操作</th>
+                        </thead>
+                        <tbody>
+                            @foreach (PinCategory item in Model.DataList)
+                            {
+                                <tr>
+                                    <td width="100"><input type="text" name="sort[]" value="@(item.sort)" data-id="@(item.id)" data-pre="@(item.sort)" class="form-control sort" style="width: 100px;" /></td>
+                                    <td>@item.id</td>
+                                    <td>@item.name</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.img))
+                                        {
+                                            <img src="@item.img" width="50" />
+                                        }
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" @(item.state == 1 ? "checked" : "") onclick="ModifyCategoryShow(@item.id,this)" />
+                                    </td>
+
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="@(listPath)?aId=@item.aId&fid=@(item.id)" class="btn btn-outline btn-default">
+                                                <i class="fa fa-code-fork"></i> 查看二级分类
+                                            </a>
+                                            <a href="@(editPath)?id=@item.id&aId=@item.aId&fid=@(item.fId)" class="btn btn-outline btn-default">
+                                                <i class="fa fa-edit"></i> 编辑
+                                            </a>
+                                            <a href="#" class="btn btn-outline btn-default confirm" onclick="del(@item.id)">
+                                                <i class="fa fa-trash"></i> 删除
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <ul class="pagination pagination-lg">
+                            <li>
+                            </li>
+                        </ul>
+                    </nav>
+                    @if (Model.TotalCount > Model.PageSize)
+                    {
+                        <div class="page">
+                            @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+    <script>
+        //删除分类
+        function del(id){
+            layer.confirm('确定删除该分类吗？', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var layindex = layer.load(2);
+
+                $.post("?",
+                {
+                    id: id,
+                    aid:@Model.aId,
+                    act: "del"
+                }, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                    if(data.code = 1)
+                    {
+                        window.location.reload();
+                    }
+                });
+            }, function(){
+
+            });
+        }
+        function batch_sort() {
+
+            var sort_data = [];
+            $(".sort").each(function () {
+                var sort_item = $(this);
+                if (sort_item.data("pre") != sort_item.val()) {
+                    sort_data.push(sort_item.data("id") + "_" + sort_item.val());
+                }
+            })
+            if (sort_data.length <= 0) {
+                layer.msg('没有检测到要修改的行')
+                return;
+            }
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "?act=sort",
+                data: { sortData: sort_data.join(","), t: Math.random(), aId:@(Model.aId) },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.msg, { time: 1500 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+
+        //切换分类是否显示
+        function ModifyCategoryShow(id,that){
+            var state;
+            if($(that).is(':checked'))
+            {
+                state = 1;
+            }
+            else
+            {
+                state = 0;
+            }
+            var layindex = layer.load(2);
+            $.ajax({
+                type: 'POST',
+                dataType: "json",
+                url: "?",
+                data: {
+                    aid:@Model.aId,
+                    id: id,
+                    state: state,
+                    act: "updateState"
+                },
+                success: function(data)
+                {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                },
+                error: function()
+                {
+                    layer.msg("网络异常");
+                }
+            });
+        }
+
+    </script>
+}
+

@@ -1,0 +1,166 @@
+﻿
+@using Entity.MiniApp.Conf;
+@model List<AgentDistributionRelation>
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "数据同步";
+}
+
+@section styles{
+    <style>
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .width200 {width: 200px !important;display: inline-block !important;}
+        .datetimebox {float: none !important;}
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+
+        <div id="app" v-cloak>
+            <div style="margin-left:17px;">
+                <div class="d-flex d-flex-center formsearch">
+                    <span>分销商名称：</span><input type="text" v-model="postdata.dname" class="input-sm form-control width200" />
+                    <span>所属上级：</span><input type="text" v-model="postdata.aname" class="input-sm form-control width200" />
+                    <span>同步状态：</span>
+                    <select v-model="postdata.opensyncdata" class="form-control width200">
+                        <option value="-1">全部</option>
+                        <option value="1">已开启</option>
+                        <option value="0">已关闭</option>
+                    </select>
+
+                    <a href="#" v-on:click="Search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+                    <a href="#" v-on:click="ReSet()" class="btn btn-default ml10">重置</a>&nbsp;
+                </div>
+            </div>
+            <br />
+            <br />
+
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">分销商名称</th>
+                    <th class="centertext">所属上级</th>
+                    <th class="centertext">店铺总数</th>
+                    <th class="centertext">屏蔽店铺</th>
+                    <th class="centertext">小程序总数</th>
+                    <th class="centertext">平台访问量</th>
+                    <th class="centertext">同步状态</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in datalist">
+                    <td class="centertext">{{item.UserName}}</td>
+                    <td class="centertext">{{item.ParentName}}</td>
+                    <td class="centertext">{{item.StoreCount}}</td>
+                    <td class="centertext">{{item.CloseSyncStoreCount}}</td>
+                    <td class="centertext">{{item.AppCount}}</td>
+                    <td class="centertext">{{item.PlatViewCount}}</td>
+                    <td class="centertext">{{item.OpenSyncDataStr}}</td>
+                    <td class="centertext">
+                        <a href="/Plat/Store/Index?aid=@ViewBag.appId" class="btn btn-primary ml10">查看店铺</a>
+                        <a href="javascript:;" v-on:click="opensyncdata(index,item.OpenSyncData)" class="btn btn-default ml10">{{item.OpenSyncData==1?"关闭同步":"开启同步"}}</a>
+                    </td>
+                </tr>
+                <tr v-if="datalist==null || datalist.length==0">
+                    <td colspan="8" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    dname: "",
+                    aname: "",
+                    opensyncdata:-1,
+                },
+                isloading: false,
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Plat/SyncData/GetDataList", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.data;
+                        app.resetPage();
+                    })
+
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Search:function()
+                {
+                    this.getdatalist();
+                },
+                ReSet:function(){
+                    app.postdata= {
+                        aid:@ViewBag.appId,
+                        pageIndex: 1,
+                        pageSize: 10,
+                        dname: "",
+                        aname: "",
+                        opensyncdata:-1,
+                        }
+                },
+                opensyncdata:function(index,opensyncstate)
+                {
+                    opensyncstate = opensyncstate==1?0:1;
+                    var id = app.datalist[index].Id;
+                    $.post("/Plat/SyncData/OpenSyncData", {aid:@ViewBag.appId,id:id,opensyncstate:opensyncstate}, function (data) {
+                        layer.msg(data.Msg);
+                        if(data.isok)
+                        {
+                            app.datalist[index].OpenSyncData = opensyncstate;
+                            app.datalist[index].OpenSyncDataStr = opensyncstate==0?"已关闭":"已开启"
+                        }
+                    })
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+    </script>
+}
+

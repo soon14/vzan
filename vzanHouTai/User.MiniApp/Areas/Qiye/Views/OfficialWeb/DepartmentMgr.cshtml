@@ -1,0 +1,226 @@
+﻿@{
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "部门管理";
+}
+
+@section styles{
+    <style>
+        .centertext { vertical-align: inherit !important; text-align: center; }
+
+        .width200 { width: 200px !important; display: inline-block !important; }
+
+        .width100 { width: 100px !important; display: inline-block !important; }
+
+        .datetimebox { float: none !important; }
+    </style>
+}
+<div style="height:100%;padding:20px;" class="form-horizontal set-form-content">
+
+    <div id="app" v-cloak>
+        <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+            <tr class="active">
+                <th class="centertext">编号</th>
+                <th class="centertext">部门名称</th>
+                <th class="centertext">更新日期</th>
+                <th class="centertext">操作</th>
+            </tr>
+            <tr v-for="(item,index) in datalist">
+                <td class="centertext">{{item.Id}}</td>
+                <td class="centertext">{{item.Name}}</td>
+                <td class="centertext">{{item.UpdateTimeStr}}</td>
+                <td class="centertext">
+                    <a href="javascript:;" class="btn btn-primary ml10" v-on:click="editdata(index)">编辑</a>
+                    <a href="javascript:;" class="btn btn-default ml10" v-on:click="deldata(index)">删除</a>
+                </td>
+            </tr>
+            <tr v-if="datalist==null || datalist.length==0">
+                <td colspan="4" style="text-align:center;">暂无数据</td>
+            </tr>
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+        <div>
+            <a href="javascript:;" class="btn btn-primary ml11" v-on:click="editdata(-1)">添加</a>
+        </div>
+
+
+
+        <div class="modal fade" id="editedata" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            部门管理
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+                                    <div>
+                                        <span>部门名称：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;display:inline-block;" placeholder="部门名称" v-model="currentdata.Name" />
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default ml10" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary ml10" v-on:click="saveInfo()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+    </div>
+
+
+
+
+</div>
+
+@section scripts{
+
+
+    <script>
+        var _layer = parent.layer;
+        var departmentItem={
+            Id:0,
+            Aid:@ViewBag.appId,
+            Name:""
+        }
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                },
+                isloading: false,
+                currentdata:"",
+            },
+            methods: {
+                getdatalist: function () {
+                    var that=this;
+                    if (that.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    that.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Qiye/OfficialWeb/GetDepartmentList", that.postdata, function (data) {
+                        layer.close(index);
+                        that.isloading = false;
+                        that.recordCount = data.dataObj.count;
+                        that.datalist = data.dataObj.data;
+                        that.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                editdata:function(index){
+                    var that=this;
+                    if(index==-1){
+                        //表示新增
+                        that.currentdata=JSON.parse(JSON.stringify(departmentItem));
+                    }else{
+                        //表示编辑
+                        that.currentdata=JSON.parse(JSON.stringify(that.datalist[index]));
+                    }
+                    $("#editedata").modal('show');
+                },
+                deldata:function(index){
+                    var that=this;
+                    if(index<0||index==undefined){
+                        _layer.msg("请点击需要删除的部门");
+                        return;
+                    }else{
+                        //表示编辑
+                        that.currentdata=JSON.parse(JSON.stringify(that.datalist[index]));
+                    }
+                    _layer.confirm("确定删除该数据？", {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        that.postData("del");
+                    }, function () {
+                    });
+                },
+                saveInfo:function(){
+                    var that=this;
+                    //新增或者编辑
+                    if(that.currentdata.Name==''||that.currentdata.Name.length<=0){
+                        _layer.msg("部门名称不能为空");
+                        return;
+                    }
+                    that.postData();
+                },
+
+                postData:function(act){
+                    var that=this;
+                    var index = _layer.load(1);
+                    $.ajax({
+                        type: 'POST',
+                        url: '/Qiye/OfficialWeb/SaveDepartment',
+                        data: {model:that.currentdata,aid:@ViewBag.appId,act:act},
+                        dataType: 'json',
+                        success: function (data) {
+                            _layer.closeAll();
+                            _layer.msg(data.Msg);
+                            if (data.isok) {
+
+                                window.setTimeout(function(){
+                                    window.location.reload();
+                                },2000);
+                            }
+                        },
+                        error: function (data) {
+                            _layer.msg('与服务器通讯错误');
+                        }
+                    });
+                }
+
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+
+    </script>
+}

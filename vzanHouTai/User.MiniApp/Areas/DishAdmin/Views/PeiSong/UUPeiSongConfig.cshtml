@@ -1,0 +1,155 @@
+﻿@model EditModel<UUCustomerRelation>
+@{
+    ViewBag.Title = "UUPeiSongConfig";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    配送设置
+    <span class="c-gray en">&gt;</span>
+    UU(商户注册)
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="Id" value="@(Model.DataModel.Id)" />
+        <input type="hidden" name="aId" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>UU(注册商户)</span>
+            </div>
+            <div class="Huialert Huialert-info">
+                <p>提示：如果您所在的城市未开通UU跑腿配送，请在基本设置配置其它方式配送</p>
+                <p>一：注册UU跑腿商户帐号</p>
+                <p>二：登陆UU跑腿商户版(初始密码：123456)，绑定商家门店信息 <a href="https://shangjia.uupt.com/index.html#/home/login" target="_blank">点击登录</a> </p>
+                <p>三：进入帐户中心，充值后即可使用UU跑腿配送 <a href="https://shangjia.uupt.com/index.html#/content/recharge" target="_blank">点击充值</a></p>
+            </div>
+
+            <div class="tabCon">
+                <div class="Huialert Huialert-success" style="margin-top: 10px;">
+                    <p>当前绑定手机号：<span style="font-size: 16px;font-weight: bold;">@(Model.DataModel.Phone)</span></p>
+                    <p>如要修改当前手机号，请重新注册即可</p>
+                </div>
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        手机号码：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="Phone" id="Phone" placeholder="" value="@(Model.DataModel.Phone)" class="input-text" style="width:350px;">
+                        <div class="dish_m_tips">请输入注册手机号码</div>
+                    </div>
+                </div>
+                @if (string.IsNullOrEmpty(Model.DataModel.Phone))
+                {
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            <span class="c-red">*</span>
+                            短信验证码：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="PhoneCode" placeholder="" value="" class="input-text" style="width:200px;">
+                            <button type="button" class="btn btn-primary radius" id="get_code_b">获取验证码</button>
+                            <div class="dish_m_tips">请输入短信验证码</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="row cl">
+            @if (string.IsNullOrEmpty(Model.DataModel.Phone))
+            {
+                <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                    <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 确定注册</button>
+                </div>
+            }
+            else
+            {
+                <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                    <a href="javascript:;" class="btn btn-danger radius" onclick="cancelbind()"><i class="Hui-iconfont">&#xe632;</i> 取消绑定</a>
+                </div>
+            }
+        </div>
+    </form>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function(){
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+            //表单验证
+            $("#form-article-add").validate({
+                rules:{
+                    dish_name:{
+                        required:true,
+                        minlength:2
+                    }
+                },
+                onkeyup:false,
+                focusCleanup:true,
+                success:"valid",
+                submitHandler: function(form){   //表单提交句柄,为一回调函数，带一个参数：form
+                    var l_index = layer.msg('数据更新中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled",true);
+                    $(form).ajaxSubmit({
+                        dataType:"json",
+                        success:function( data ){
+                            $("#submit_button").attr("disabled",false);
+                            layer.close(l_index);
+                            if( data.code == 0 ){
+                                layer.alert(data.msg, {icon: 0});
+                            }else{
+                                layer.alert(data.msg, {icon: 1},function(index){
+                                    window.location.reload();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            $("#get_code_b").click(function () {
+                var t_mobile = $("#Phone").val();
+                $.post("/DishAdmin/PeiSong/UUSendPhoneCode", {aId:@(Model.aId),storeId:@(Model.storeId),phone:t_mobile}, function (data) {
+                    if(data.code == 1){
+                        layer.alert(data.msg, {icon: 1});
+                    }else{
+                        layer.alert(data.msg, {icon: 0});
+                    }
+                })
+            });
+        });
+        
+        function cancelbind()
+        {
+            layer.confirm("取消绑定后，您之前的订单就无法继续同步到UU跑腿平台，确定取消绑定？", {
+                btn: ['确定', '取消'] //按钮
+            }, function () {
+                $.post("/DishAdmin/PeiSong/UUCancelBind", {aId:@(Model.aId),storeId:@(Model.storeId),id:@(Model.DataModel.Id)}, function (data) {
+                    if(data.code == 1){
+                        layer.alert(data.msg, {icon: 1});
+                    }else{
+                        layer.alert(data.msg, {icon: 0});
+                    }
+                })
+            }, function () {
+            });
+        }
+    </script>
+
+}
+

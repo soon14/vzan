@@ -1,0 +1,630 @@
+﻿
+@{
+    ViewBag.Title = "技师列表";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+@model List<EntGoods>
+<style>
+    #app { padding-left: 20px; margin-bottom: 20px; }
+    /*.btn-primary {margin-top:28px; }*/
+    .btn-primary, .btn-primary:active, .btn-primary:focus { background-color: #2196f3; border-color: #2196f3; }
+    .btn-primary:hover, .btn-primary:active:hover { background-color: #337ab7; border-color: #337ab7; }
+    .Official table td { color: #818181 }
+    .Official { width: 355px; }
+    .miniapp { border: solid 1px #ccc; border-radius: 1px; position: absolute; margin-left: 40px; display: none; z-index: 1000; }
+    .miniapp img { width: 150px; height: 150px; margin-top: 6px; }
+    .Official:hover .miniapp { display: block; }
+    .glyphicon-qrcode { font-size: 38px; color: #818181; margin-right: 15px; }
+    .searchDiv { margin-top: 30px; min-width: 776px; }
+    .searchDiv tr { height: 53px; }
+    .form-control { width: 120px; }
+    select.form-control { text-align: center; }
+    .tr { padding-left: 20px; }
+    .layui-btn-primary:hover { border-color: #2196f3; color: #2196f3; }
+    .btn-reset:hover { border-color: #009688; color: #009688; }
+    .selected { border-color: #2196f3; color: #fff; background: #2196f3; }
+    .selected:hover { color: #fff; }
+    .list-box .layui-table { min-width: 950px; max-width: 1200px; }
+    .layui-table td, .layui-table th { text-align: center; }
+    /*技师信息编辑*/
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .show-switch { margin-top: 20px; font-size: 16px; font-weight: bold; }
+    .layui-form label, .baseInfo table span, .photobox label { color: #ff6a00; font-weight: normal; font-size: 14px; }
+    .baseInfo, .serviceItembox, .photobox, .photoUrl, .wechat { margin-top: 20px; }
+    .navtitle { font-size: 16px; color: #218bdf; border-left: solid 2px #218bdf; padding-left: 10px; }
+    .baseInfo .form-control { width: 324px; }
+    .baseInfo table td { padding: 8px 0px; }
+    .baseInfo .short-text { width: 111px; }
+    .wechat p { padding: 5px 0px; color: #818181; }
+    .modal-body .layui-table td, .modal-body .layui-table th { text-align: center; }
+    /*.serviceItembox{height:120px;}*/
+    .serviceitem { height: 30px; padding: 0 10px; line-height: 30px; font-size: 13px; border-color: #acc1d6; color: #218bdf; background: #dceeff; }
+    .del-btn { position: absolute; top: -9px; right: -8px; color: #fff; background: rgba(0, 0, 0, 0.56); width: 18px; border-radius: 13px; text-align: center; line-height: 18px; }
+    .del-btn:hover, .del-btn:focus { color: #fff; text-decoration: none; }
+
+    /*更改状态*/
+    #editModal .modal-body table { margin: 0 auto; }
+    #editModal .modal-body table tr { height: 50px; }
+    #editModal .modal-content { width: 350px; }
+    .btnbox { text-align: center; margin-top: 16px; margin-bottom: 5px; }
+</style>
+<div id="app" v-cloak>
+    <div class="list-box" v-show="!isDetail">
+        <div class="Official">
+            <table>
+                <tr>
+                    <td>
+                        <span class="glyphicon glyphicon-qrcode" aria-hidden="true"></span>
+                    </td>
+                    <td>
+                        <span style="font-size:18px; font-weight:bold;">商家端小程序</span>
+                        <br />
+                        技师使用已绑定的微信号扫码进入可处理工单
+                    </td>
+                </tr>
+
+            </table>
+            <div class="miniapp">
+                <img src="@(WebSiteConfig.cdnurl)content/images/xwMiniapp.jpg" />
+            </div>
+        </div>
+        <table class="searchDiv">
+            <tr>
+                <td class="tr">工号：</td>
+                <td>
+                    <input type="text" class="form-control" placeholder="" v-model="postdata.jobNumber" />
+                </td>
+                <td class="tr">姓名：</td>
+                <td>
+                    <input type="text" class="form-control" placeholder="" v-model="postdata.name" />
+                </td>
+                <td class="tr">性别：</td>
+                <td>
+                    <select class="form-control" v-model="postdata.sex">
+                        <option value="-1">全部</option>
+                        <option value="1">男</option>
+                        <option value="2">女</option>
+                        @*<option value="0">未知</option>*@
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="tr" hidden>手机：</td>
+                <td hidden>
+                    <input type="text" class="form-control phone" placeholder="" v-model="postdata.phone" />
+                </td>
+                <td class="tr">可做项目：</td>
+                <td>
+                    <select class="form-control" v-model="postdata.itemId">
+                        <option value="0">全部</option>
+                        @foreach (var item in Model)
+                        {
+                            <option value="@item.id">@item.name</option>
+                        }
+                    </select>
+                </td>
+                <td class="tr" hidden>是否显示在客户端：</td>
+                <td hidden>
+                    <select class="form-control" v-model="postdata.isShow">
+                        <option value="-1">全部</option>
+                        <option value="1">显示</option>
+                        <option value="0">不显示</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>工作状态：</td>
+                <td colspan="3">
+                    <button type="button" v-on:click="postdata.state = -1" :class="['layui-btn  layui-btn-radius layui-btn-primary',{'selected':postdata.state==-1}]">全部</button>
+                    <button type="button" v-on:click="postdata.state =0" :class="['layui-btn  layui-btn-radius layui-btn-primary',{'selected':postdata.state==0}]">空闲</button>
+                    <button type="button" v-on:click="postdata.state =1" :class="['layui-btn  layui-btn-radius layui-btn-primary',{'selected':postdata.state==1}]">上钟</button>
+                    @*<button type="button" v-on:click="postdata.state =2" :class="['layui-btn  layui-btn-radius layui-btn-primary',{'selected':postdata.state==2}]">将下钟</button>*@
+                    <button type="button" v-on:click="postdata.state =3" :class="['layui-btn  layui-btn-radius layui-btn-primary',{'selected':postdata.state==3}]">休息中</button>
+                </td>
+                <td></td>
+                <td>
+                    <button type="button" class="layui-btn" v-on:click="searchList()">搜索</button>
+                    <button type="button" class="layui-btn layui-btn-primary btn-reset" v-on:click="Reset()">重置</button>
+                </td>
+            </tr>
+        </table>
+        <button type="button" class="btn btn-primary" v-on:click="AddInfo()" style="margin-top:28px;"><span class="glyphicon glyphicon-plus" aria-hidden="true" style="font-size:12px;"></span>新增技师</button>
+        <table class="layui-table" lay-skin="line">
+            <thead>
+                <tr>
+                    <th>工号</th>
+                    <th>头像</th>
+                    <th style="min-width:64px;">姓名</th>
+                    <th style="min-width:64px;">性别</th>
+                    <th>可做项目</th>
+                    <th width="100px">付费相册</th>
+                    @*<th width=76>显示在客户端</th>*@
+                    <th width="100px">绑定微信</th>
+                    <th width="80px">接单数</th>
+                    <th width="100px">工作状态</th>
+                    <th width="120px">操作</th>
+                </tr>
+            </thead>
+            <tr v-for="(technician,index) in technicianList">
+                <td>{{technician.jobNumber}}</td>
+                <td>
+                    <img :src="technician.headImg" style="width:120px;height:60px;" />
+                </td>
+                <td>{{technician.name}}</td>
+                <td>{{technician.sex==1?'男':technician.sex==2?'女':'未知'}}</td>
+                <td>
+                    <span v-for="serviceItem in technician.serviceList">
+                        <button type="button" class="layui-btn layui-btn-primary serviceitem" style="margin:3px;">{{serviceItem.name}}</button>
+                    </span>
+                </td>
+                <td >{{technician.photo.length<=0?0:technician.photo.split(',').length}}张</td>
+                @*<td>{{technician.switchModel.showIndex?'是':'否'}}</td>*@
+                <td >{{technician.wxname==''?'未绑定微信':technician.wxname}}</td>
+                <td >{{technician.serviceCount}}</td>
+                <td >{{technician.stateName}}</td>
+                <td>
+                    <a href="javascript:;" class="editbtn" v-on:click="EditTechnicianInfo(index)">编辑</a>
+                    <a href="javascript:;" class="editbtn" v-on:click="ChangeState(index)">更改状态</a>
+                    <a href="javascript:;" class="color-red" v-on:click="ChangeTechnicianInfo(index,'delete',-1)">删除</a>
+
+                </td>
+            </tr>
+            <tr v-if="recordCount<=0">
+                <td colspan="12">还没有技师</td>
+            </tr>
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>postdata.pageSize"></div>
+        <!--#region 更技师改状态 弹框-->
+        <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="AddGoodModal_label">更改状态</h4>
+                    </div>
+                    <div class="modal-body">
+                        <table>
+                            <tr>
+                                <td align="right">技师：</td>
+                                <td align="left">{{technicianInfo.jobNumber}}</td>
+                            </tr>
+                            <tr>
+                                <td align="right">状态：</td>
+                                <td align="left">
+                                    <select v-model="technicianInfo.state" class="form-control">
+                                        <option value="0">空闲</option>
+                                        <option value="1">上钟</option>
+                                        @*<option value="2">将下钟</option>*@
+                                        <option value="3">休息中</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="btnbox">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" v-on:click="ChangeTechnicianInfo(ChangeIndex,'update',technicianInfo.state)">保存</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--#endregion-->
+    </div>
+    <div v-show="isDetail">
+        <!--#region 添加编辑技师-->
+        @Html.Partial("/views/footbath/_TechnicianInfoPartial.cshtml")
+        <!--#endregion-->
+    </div>
+</div>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/plugin/uploadImg.js"></script>
+
+<script type="text/javascript">
+    var form, laydate, element;
+    var defData = {//搜索条件初始化
+        pageIndex: 1,
+        pageSize: 10,
+        jobNumber: '',
+        name: '',
+        sex: -1,
+        phone: '',
+        itemId: 0,
+        isShow: -1,
+        state: -1,
+    }
+    var defTechnicianInfo = {//初始化技师信息
+        appId:@ViewBag.appId,
+        id: 0,
+        jobNumber: '',
+        name: '',
+        sex: 1,
+        headImg: '',
+        showBirthday: '2000-12-31',
+        desc: '',
+        baseCount: 0,
+        serviceCount:0,
+        itemId: '',
+        switchModel: {
+            showIndex:true,
+        },
+        photo: '',
+        unionId: '',
+        wxname: '',
+        serviceList:[],
+        TelPhone:'',
+    }
+    var app = new Vue({
+        el: "#app",
+        data: {
+            //传入组件数据
+            componentData: {
+                uploadData: {
+                    //传入图片对象
+                    logo: {
+                        imgList: [],//图片路径
+                        progress: 'demo',//进度条过滤器
+                        maxfile: 1,
+                    },
+                    photoUrl: {
+                        imgList: [],//图片路径
+                        progress: 'photo-progress',//进度条过滤器
+                        maxfile: 20,
+                    }
+                }
+            },
+
+            isDetail: false,//列表页|详情页切换
+            recordCount: 0,//总数
+            technicianList: [],//技术列表
+            //搜索条件
+            postdata: {
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                jobNumber: '',
+                names: '',
+                sex: -1,
+                phone: '',
+                itemId: 0,
+                isShow: -1,
+                state: -1,
+            },
+            technicianInfo: {
+                appId:@ViewBag.appId,
+                id: 0,
+                jobNumber: '',
+                name: '',
+                sex: 1,
+                headImg: '',
+                showBirthday: '2000-12-31',
+                desc: '',
+                baseCount: 0,
+                itemId: '',
+                switchModel: {
+                    showIndex: true,
+                },
+                photo: '',
+                unionId: '',
+                wxname: '',
+                serviceList: [],
+                TelPhone:'',
+            },
+            serviceData: {
+                recordCount: 0,
+                serviceList: [],
+                postdata: {
+                    appId:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 6,
+                }
+            },
+            isScan: false,
+            ChangeIndex:0,
+        },
+        //上传组件
+        components: {
+            // <upload-component> 将只在父组件模板中可用
+            'upload-component': uploadChild
+        },
+        methods: {
+            //重置搜索条件
+            Reset: function () {
+                $.extend(true, app.postdata, defData);
+            },
+            //获取列表信息
+            GetList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetTechnicianList", this.postdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.technicianList = data.list;
+                        app.recordCount = data.recordCount;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use(['laypage', 'element'], function () {
+                    element = layui.element;
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            app.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.postdata.pageIndex = obj.curr;
+                                app.GetList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                    laypage.render({
+                        elem: 'service-pages'
+                        , count: app.serviceData.recordCount //数据总数，从服务端得到
+                        , curr: app.serviceData.postdata.pageIndex //当前页
+                        , limit: app.serviceData.postdata.pageSize
+                        , jump: function (obj, first) {
+                            app.serviceData.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.GetServiceList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //搜索
+            searchList: function () {
+                app.postdata.pageIndex = 1;
+                app.GetList();
+            },
+            //添加技师
+            AddInfo: function () {
+                app.isDetail = true;
+                app.isScan = false;
+                $.extend(true, app.technicianInfo, defTechnicianInfo);
+                app.ClearComponentData();
+                app.technicianInfo.serviceList = [];
+                laydate.render({
+                    elem: '#birthday',
+                    value: app.technicianInfo.showBirthday
+                });
+            },
+            //初始化开关，日期控件
+            InitLayer: function () {
+                layui.use(['form', 'laydate'], function () {
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        app.technicianInfo.switchModel.showIndex = data.elem.checked;
+                    });
+                    //时间选择器
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#birthday', //指定元素
+                        theme: 'grid',
+                        value: app.technicianInfo.showBirthday,
+                        max: '@DateTime.Now.AddYears(-16).ToString("yyyy-MM-dd")',
+                        done: function (value, date, endDate) {
+                            app.technicianInfo.showBirthday = value;
+                        }
+                    });
+
+                });
+            },
+            //添加可服务项目
+            AddService: function () {
+                this.serviceData.postdata.pageIndex = 1;
+                this.GetServiceList();
+                $('#AddServiceModal').modal('show');
+            },
+            //选取服务项目
+            PickService: function () {
+                var sellist = this.serviceData.serviceList.filter(function (_item) {
+                    return _item.sel;
+                });
+                if (sellist.length <= 0) {
+                    layer.msg("请选择可服务项目");
+                    return;
+                }
+                if (this.technicianInfo.serviceList == null) {
+                    this.technicianInfo.serviceList = [];
+                }
+                this.technicianInfo.serviceList = this.technicianInfo.serviceList.concat(sellist);
+                $('#AddServiceModal').modal('hide');
+            },
+            //获取服务列表
+            GetServiceList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetServiceList", this.serviceData.postdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.serviceData.serviceList = data.serviceList;
+                        app.serviceData.recordCount = data.recordCount;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //清空编辑页图片
+            ClearComponentData: function () {
+                app.componentData.uploadData.logo.imgList = [];
+                app.componentData.uploadData.photoUrl.imgList = [];
+            },
+            //保存技师信息
+            SaveTechnicianInfo: function () {
+                app.technicianInfo.jobNumber = $.trim(app.technicianInfo.jobNumber);
+                if (app.technicianInfo.jobNumber.length > 5) {
+                    layer.msg("工号不能超过5字");
+                    return;
+                }
+                if (app.technicianInfo.jobNumber.length == 0) {
+                    layer.msg("请输入工号");
+                    return;
+                }
+                app.technicianInfo.name = $.trim(app.technicianInfo.name);
+                if (app.technicianInfo.name.length > 8) {
+                    layer.msg("姓名不能超过8字");
+                    return;
+                }
+                if (app.technicianInfo.name.length == 0) {
+                    layer.msg("请输入姓名");
+                    return;
+                }
+                if (app.componentData.uploadData.logo.imgList.length == 0) {
+                    layer.msg("请上传头像");
+                    return;
+                }
+                app.technicianInfo.headImg = app.componentData.uploadData.logo.imgList[0].filepath;
+                app.technicianInfo.desc = $.trim(app.technicianInfo.desc);
+                if (app.technicianInfo.desc.length > 20) {
+                    layer.msg("简介不能超过20字");
+                    return;
+                }
+                if (app.technicianInfo.baseCount < 0 || app.technicianInfo.baseCount > 999) {
+                    layer.msg("订单数范围：0~999之间的整数");
+                    return;
+                }
+                if (app.technicianInfo.serviceList.length == 0) {
+                    layer.msg("请选择可服务项目");
+                    return;
+                }
+                var serviceArry = [];
+                $.each(app.technicianInfo.serviceList, function (i, v) {
+                    serviceArry.push(v.id);
+                })
+                app.technicianInfo.itemId = serviceArry.join();
+                var imgArry = [];
+                if (app.componentData.uploadData.photoUrl.imgList.length > 0) {
+
+                    $.each(app.componentData.uploadData.photoUrl.imgList, function (i, v) {
+                        imgArry.push(v.filepath);
+                    })
+
+                }
+                app.technicianInfo.photo = imgArry.join();
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveTechnicianInfo", app.technicianInfo, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        app.isDetail = false;
+                        app.postdata.pageIndex = 1;
+                        app.GetList();
+                    } else if(data.wxError){
+                        app.isScan = false;
+                        app.technicianInfo.unionId = '';
+                    }
+                })
+
+            },
+            //编辑技师信息
+            EditTechnicianInfo: function (index) {
+                app.ClearComponentData();
+                $.extend(true,app.technicianInfo,app.technicianList[index]);
+                var imgArry = app.technicianInfo.headImg.split(',');
+                if (imgArry.length > 0) {
+                    var obj = {
+                        filepath: app.technicianInfo.headImg
+                    }
+                    app.componentData.uploadData.logo.imgList.push(obj);
+                } else {
+                    app.componentData.uploadData.logo.imgList = [];
+                }
+                if (app.technicianInfo.photo.length > 0) {
+                    var photoArry = app.technicianInfo.photo.split(',');
+                    if (photoArry.length > 0) {
+                        $.each(photoArry, function (i, v) {
+                            var obj = {
+                                filepath: v
+                            }
+                            app.componentData.uploadData.photoUrl.imgList.push(obj);
+                        })
+                    }
+                }
+                laydate.render({
+                    elem: '#birthday',
+                    value: app.technicianInfo.showBirthday
+                });
+                app.isDetail = true;
+                app.isScan = false;
+                //同步渲染开关失败，需设0.1秒定时器，延迟渲染
+                setTimeout(function () {
+                    form.render();
+                }, 100);
+
+            },
+            //删除|修改技师状态
+            ChangeTechnicianInfo: function (index,action,state) {
+                layer.confirm('您确定要执行此操作吗？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/footbath/DelOrChangeState", { state: state, appId: app.technicianList[index].appId, id: app.technicianList[index].id }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            if (action == 'delete') {
+                                app.technicianList.splice(index, 1);
+                            } else {
+                                app.technicianList[index].state = state;
+                                app.technicianList[index].stateName = data.stateName;
+                                $('#editModal').modal('hide');
+                            }
+                        }
+                    })
+                    return;
+                });
+            },
+            ChangeState: function (index) {
+                app.technicianInfo = app.technicianList[index];
+                app.ChangeIndex = index;
+                $('#editModal').modal('show');
+            },
+            //跳转到送花管理
+            TurnToGift: function () {
+                layer.confirm('您未保存的信息将会丢失，是否确定要前往送花管理？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    window.location.href = ' /footbath/GiftRecord?appId=@ViewBag.appId';
+                });
+
+            }
+        },
+        created: function () {
+            var that = this;
+            that.GetList();
+            that.InitLayer();
+            that.utils = utils;
+            $.extend(true, that.technicianInfo, defTechnicianInfo);
+        }
+    })
+    //扫码绑定
+    function wxBind() {
+        if (app.isDetail && !app.isScan) {
+            var key = $('#sessid').val();
+            $.post("/footbath/WXBind", { wxkey: key }, function (data) {
+                if (data.isok) {
+                    app.technicianInfo.unionId = data.unionId;
+                    app.isScan = true;
+                    $('#sessid').val(data.key);
+                    $("#qrcodeImg").attr('src', '/QrCode/GetQrCode?code=' + data.key);
+                }
+            })
+        }
+    }
+    setInterval(wxBind, 1500);
+</script>

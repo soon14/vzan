@@ -1,0 +1,1002 @@
+﻿@using Entity.MiniApp.Fds;
+@using Entity.MiniApp;
+@model  List<FoodAdminGoodsOrder>
+@{
+    ViewBag.Title = "餐饮订单管理";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+    int sjsendway = (int)miniAppOrderGetWay.商家配送;
+    int dadasendway = (int)miniAppOrderGetWay.达达配送;
+    int uusendway = (int)miniAppOrderGetWay.UU配送;
+    List<int> typeStr = ViewBag.checkType;
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+
+    .fontSize12 { font-size: 12px !important; }
+
+    .nav2 { height: 40px !important; }
+    #startTime, #endTime { width: 180px; }
+</style>
+
+<ul id="myTab" class="nav nav2 nav-tabs">
+    <li class="@( ViewBag.type == (int)miniAppFoodOrderType.堂食 ? "active":"" ) changeOrderType" @*onclick="changeOrderType(this);"*@ data-type="@((int)miniAppFoodOrderType.堂食)"><a href="#" data-toggle="tab">堂食订单</a></li>
+    <li class="@( ViewBag.type == (int)miniAppFoodOrderType.外卖 ? "active":"" ) changeOrderType" @*onclick="changeOrderType(this);"*@ data-type="@((int)miniAppFoodOrderType.外卖)"><a href="#" data-toggle="tab">外卖订单</a></li>
+    <li class="@( ViewBag.type == (int)miniAppFoodOrderType.拼团 ? "active":"" ) changeOrderType" @*onclick="changeOrderType(this);"*@ data-type="@((int)miniAppFoodOrderType.拼团)"><a href="#" data-toggle="tab">拼团订单</a></li>
+</ul>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="form-inline form-group">
+            &nbsp;订单号:
+            <input id="orderNum" type="text" class="form-control" value="@ViewBag.orderNum" />
+            <span style="display:@(ViewBag.type == (int)miniAppFoodOrderType.拼团?"":"none");">
+                &nbsp; 提货码:
+                <input id="verificationNum" type="text" class="form-control" value="@ViewBag.verificationNum" />
+            </span>
+            &nbsp;菜品分类:
+            <select id="foodGoodsType" class="form-control width150">
+                <option value="-999" @(ViewBag.foodGoodsType == -999 ? "selected" : "")>全部</option>
+                @foreach (var item in ViewBag.GoodsTypeList)
+                {
+                    <option value="@(item.Id)" @(ViewBag.foodGoodsType == item.Id ? "selected" : "")>@item.Name</option>
+                }
+            </select>
+            <span style="@(ViewBag.type == (int)miniAppFoodOrderType.外卖?"":"display:none;")">
+                &nbsp;配送方式:
+                <select id="SendWay" class="form-control width150">
+                    <option value="-999" @(ViewBag.SendWay == -999 ? "selected" : "")>全部</option>
+                    <option value="@sjsendway" @(ViewBag.SendWay == sjsendway ? "selected" : "")>商家配送</option>
+                    <option value="@dadasendway" @(ViewBag.SendWay == dadasendway ? "selected" : "")>达达配送</option>
+                    <option value="@uusendway" @(ViewBag.SendWay == uusendway ? "selected" : "")>UU配送</option>
+                </select>
+            </span>
+
+            &nbsp;会员微信名称:
+            <input id="nickName" type="text" class="form-control" value="@ViewBag.nickName" />
+            <div style="margin-top:7px;">
+                <table>
+                    <tr>
+                        <td>
+                            <div style="float:left;">
+                                &nbsp;订单状态:
+                            </div>
+                        </td>
+                        <td style="width:800px;">
+                            <div class="typeItem" style="float:left;width:800px;">
+                                <input class="col-sm-2 btn btn-default @(ViewBag.orderState == -999 ? "active" : "" ) " data-id="-999" maxlength="8" type="button" style="margin:3px;width:100px;background-color:white;border-color:#5e97fa; margin-bottom:8px;@(ViewBag.orderState == -999 ? "background-color:#108EE9;color:white;" : "background-color:White;color:#108EE9;")" value="全部" onclick="check(this)" />
+                                @foreach (miniAppFoodOrderState item in Enum.GetValues(typeof(miniAppFoodOrderState)))
+                                {
+                                    //付款中不显示,以免操作冲突
+                                    if (item == miniAppFoodOrderState.付款中)
+                                    {
+                                        continue;
+                                    }
+                                    <input class="col-sm-2 btn btn-default @(ViewBag.orderState == (int)item ? "active" : "" ) " data-id="@((int)item)" maxlength="8" type="button" style="margin:3px;width:100px;background-color:white;border-color:#5e97fa; margin-bottom:8px;@(ViewBag.orderState == (int)item ? "background-color:#108EE9;color:white;" : "background-color:White;color:#108EE9;")" value="@(item.ToString())" onclick="check(this)" />
+                                }
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="float:left;">
+                                &nbsp;下单时间:
+                            </div>
+                        </td>
+                        <td style="width:800px;">
+                            <div class="typeItem" style="float:left;width:800px;">
+                                <div class="input-daterange input-group" id="datepicker" style="width:4px;margin-right:1rem;">
+                                    <input type="text" readonly="readonly" class="form-control" id="startTime" value="" />
+                                    <span class="input-group-addon">到</span>
+                                    <input type="text" readonly="readonly" class="form-control" id="endTime" value="" />
+                                </div>
+                                @if (ViewBag.type == (int)miniAppFoodOrderType.堂食)
+                                {
+                                    <div style="display:inline">
+                                        &nbsp; 桌台号:
+                                    </div>
+                                    <div style="display:inline">
+
+                                        <input id="tableNo" type="text" class="form-control" value="@ViewBag.TableNo" />
+                                    </div>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <input id="searchToday" type="button" class="btn btn-primary" value="搜索今日订单" />
+                            <input id="search" type="button" class="btn btn-primary" value="搜索" />
+                            <input id="empty" type="button" class="btn btn-default" value="清除" />
+                            <input id="export" type="button" class="btn btn-info" value="导出" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            @*<input id="search" onclick="select()" style="margin-left:80px;" type="button" class="btn btn-primary" value="搜索" />
+                <input id="empty" type="button" class="btn btn-default" value="清除" />*@
+
+        </div>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<p id="tipsMsg" style="text-align:right;"></p>
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th>选择</th>
+        <th>会员头像</th>
+        <th>会员名称</th>
+        <th>订单号</th>
+        <th>订单类型</th>
+        <th>菜品数量</th>
+        <th>订单金额(元)</th>
+        <th hidden>优惠金额(元)</th>
+        <th>实收金额(元)</th>
+        <th>支付方式</th>
+        @if (ViewBag.type == (int)miniAppFoodOrderType.堂食)
+        {
+            <th>桌台号</th>
+        }
+        else if (ViewBag.type == (int)miniAppFoodOrderType.拼团)
+        {
+            @*<th>桌台号</th>*@
+            <th>提货码</th>
+            <th>团号</th>
+        }
+        else
+        {
+            <th>配送地址</th>
+            <th>配送方式</th>
+            <th>收货人</th>
+            <th>收货电话</th>
+        }
+        <th>订单备注</th>
+        <th>下单时间</th>
+        <th>订单状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="1%" ><input type="checkbox" name="orderSel" onclick="collectPrice()" value="@(item.BuyPrice)" style="padding:5px;"/></td>
+                <td width="3%"><img style="width:80px;height:80px;" src="@item.HeadImgUrl" /></td>
+                <td width="8%">@item.NickName</td>
+                <td width="9%"><a href="#" class="orderDtl" data-friPrice="@((item.FreightPrice * 0.01).ToString("0.00"))" data-packinPrice="@item.PcakinPriceStr" data-ordernum="@item.OrderNum" data-id="@item.Id">@(item.OrderNum)</a> </td>
+                <td width="4%">@(Enum.GetName(typeof(miniAppFoodOrderType), item.OrderType))</td>
+                <td width="4%"><a href="#" class="orderDtl" data-friPrice="@((item.FreightPrice * 0.01).ToString("0.00"))" data-packinPrice="@item.PcakinPriceStr" data-ordernum="@item.OrderNum" data-id="@item.Id">@(item.QtyCount)</a></td>
+                <td width="6%">@(((item.BuyPrice + item.ReducedPrice) * 0.01).ToString("0.00"))</td>
+                <td width="7%" hidden>@((item.ReducedPrice * 0.01).ToString("0.00"))</td>
+                <td width="6%">@((item.BuyPrice * 0.01).ToString("0.00"))</td>
+                <td width="5%">
+                    @*微信支付*@
+                    @if (item.PayDate != Convert.ToDateTime("0001-01-01 00:00:00") || item.BuyMode == (int)miniAppBuyMode.线下支付)  //暂默认微信支付
+                    {
+                        <span>@Enum.GetName(typeof(miniAppBuyMode), item.BuyMode)</span>
+                    }
+                </td>
+                @if (ViewBag.type == (int)miniAppFoodOrderType.堂食)
+                {
+                    <td width="5%">@(item.TableName)</td>
+                    <td width="24%">@(item.Message)</td>
+                    <td width="10%">@(item.CreateDateStr)</td>
+                    <td width="4%">@(Enum.GetName(typeof(miniAppFoodOrderState), item.State))</td>
+                }
+                else if (ViewBag.type == (int)miniAppFoodOrderType.拼团)
+                {
+                    @*<td width="5%">@(item.TablesNo)</td>*@
+                    <td width="4%">@(item.VerificationNum)</td>
+                    <td width="4%">@(item.GroupId)</td>
+                    <td width="20%">@(item.Message)</td>
+                    <td width="10%">@(item.CreateDateStr)</td>
+                    <td width="4%">@(Enum.GetName(typeof(miniAppFoodOrderState), item.State)) </td>
+                }
+                else
+                {
+                    <td width="8%">@(item.Address)</td>
+                    <td width="4%">@(Enum.GetName(typeof(miniAppOrderGetWay), item.GetWay))</td>
+                    <td width="6%">@(item.AccepterName)</td>
+                    <td width="6%">@(item.AccepterTelePhone)</td>
+                    <td width="8%">@(item.Message)</td>
+                    <td width="5%">@(item.CreateDateStr)</td>
+                    if (item.GetWay == (int)miniAppOrderGetWay.达达配送)
+                    {
+                        <td width="5%">@(item.DadaOrderStateStr)</td>
+                    }
+                    else
+                    {
+                        <td width="5%">@(Enum.GetName(typeof(miniAppFoodOrderState), item.State))</td>
+                    }
+                }
+                @*<td width="12%">@(item.Message)</td>
+                    <td width="6%">@(item.CreateDateStr)</td>
+                    <td width="4%">@(Enum.GetName(typeof(C_Enums.miniAppFoodOrderState), item.State))</td>*@
+                <td width="10%">
+                    @if (ViewBag.type == (int)miniAppFoodOrderType.拼团 && item.GroupState == (int)GroupState.开团成功)
+                    {
+                        <span>@(item.State == (int)MiniAppEntOrderState.已取消 ? "已取消付款" : "请等待拼团成功")</span>
+                    }
+                    else if (ViewBag.type == (int)miniAppFoodOrderType.堂食 || ViewBag.type == (int)miniAppFoodOrderType.拼团)
+                    {
+                        switch (item.State)
+                        {
+                            case (int)miniAppFoodOrderState.待付款:
+                                <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)miniAppFoodOrderState.已取消)" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                                if (item.BuyMode == (int)miniAppBuyMode.线下支付)
+                                {
+                                    <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)miniAppFoodOrderState.已完成)" style="margin-top:5px;">
+                                        确认付款
+                                    </a>
+                                }
+                                break;
+                            case (int)miniAppFoodOrderState.待接单:
+                                <a class="cancelOrder" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                    拒绝接单
+                                </a>
+                                <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)miniAppFoodOrderState.待就餐)" style="margin-top:5px;">
+                                    确认接单
+                                </a>
+                                break;
+                            case (int)miniAppFoodOrderState.待就餐:
+                                <a class="cancelOrder" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                                <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)miniAppFoodOrderState.已完成)" style="margin-top:5px;">
+                                    确认送达
+                                </a>
+                                break;
+                            case (int)miniAppFoodOrderState.退款失败:
+                                <a class="OpenOutOrderFailRemarkForm" onclick="OpenOutOrderFailRemarkForm(@item.Id)" href="#" style="margin-top:5px;">
+                                    查看退款失败原因
+                                </a>
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        //达达配送
+                        if (item.GetWay == (int)miniAppOrderGetWay.达达配送)
+                        {
+                            if (item.dadastate == 1 || item.dadastate == 2)
+                            {
+                                <a href="#" onclick="CancelOrder('@item.dadaorderid',@item.dadastate,'@item.sourceid')" data-id="@item.dadaorderid" data-oldState="@item.dadastate" data-sourceid="@item.sourceid" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                            }
+                            else if (item.State == (int)miniAppFoodOrderState.退款审核中)
+                            {
+                                <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.拒绝退款)" style="margin-top:5px;">
+                                    驳回审核
+                                </a>
+                                <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                    审核通过
+                                </a>
+                            }
+                            else if ((int)miniAppFoodOrderState.拒绝退款 == item.State)
+                            {
+                                <span>拒绝退款</span>
+                            }
+                            else if ((int)miniAppFoodOrderState.已退款 == item.State)
+                            {
+                                <span>已退款</span>
+                            }
+                        }
+                        else
+                        {
+                            switch (item.State)
+                            {
+                                case (int)miniAppFoodOrderState.待付款:
+                                    <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.已取消)" style="margin-top:5px;">
+                                        取消订单
+                                    </a>
+                                    break;
+                                case (int)miniAppFoodOrderState.待接单:
+                                    <a class="cancelOrder" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                        拒绝接单
+                                    </a>
+                                    <a class="updateState" @*onclick="updateState(this)"*@ href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.待送餐)" style="margin-top:5px;">
+                                        确认接单
+                                    </a>
+                                    break;
+                                case (int)miniAppFoodOrderState.待送餐:
+                                    <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                        取消订单
+                                    </a>
+                                    <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.待确认送达)" style="margin-top:5px;">
+                                        开始配送
+                                    </a>
+                                    break;
+                                case (int)miniAppFoodOrderState.待确认送达:
+                                    <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                        取消订单
+                                    </a>
+                                    <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.已完成)" style="margin-top:5px;">
+                                        确认送达
+                                    </a>
+                                    break;
+                                case (int)miniAppFoodOrderState.退款审核中:
+                                    <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.拒绝退款)" style="margin-top:5px;">
+                                        驳回审核
+                                    </a>
+                                    <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                        审核通过
+                                    </a>
+                                    break;
+                                case (int)miniAppFoodOrderState.拒绝退款:
+                                    switch (item.lastState)
+                                    {
+                                        case (int)miniAppFoodOrderState.待接单:
+                                            <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                                拒绝接单
+                                            </a>
+                                            <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.待送餐)" style="margin-top:5px;">
+                                                确认接单
+                                            </a>
+                                            break;
+                                        case (int)miniAppFoodOrderState.待送餐:
+                                            <a class="OpenConfForm" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.退款中)" style="margin-top:5px;">
+                                                取消订单
+                                            </a>
+                                            <a class="updateState" href="#" data-id="@item.Id" data-oldState="@item.State" data-laststate="@item.lastState" data-newState="@((int)miniAppFoodOrderState.待确认送达)" style="margin-top:5px;">
+                                                开始配送
+                                            </a>
+                                            break;
+                                        default:
+
+                                            break;
+                                    }
+                                    break;
+                                case (int)miniAppFoodOrderState.退款失败:
+                                    <a class="OpenOutOrderFailRemarkForm" onclick="OpenOutOrderFailRemarkForm(@item.Id)" href="#" style="margin-top:5px;">
+                                        查看退款失败原因
+                                    </a>
+                                    break;
+                            }
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+<div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    订单号:<span id="CurOrderNo"></span>
+                </h4>
+                <label style="float:right;">配送费：<label id="friPrice"></label>元</label>
+                <label style="float:right;margin-right:35px;">餐盒费：<label id="packinPrice"></label>元</label>
+            </div>
+            <div class="modal-body">
+
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd">确定</button>
+                <button type="button" class="btn btn-primary" id="printLabel" data-orderid="" onclick="LabelPrint(this)">
+                打印标签</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal bs-example-modal" id="tsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    <span id="tsTitle"></span>
+                </h4>
+            </div>
+            <div id="tsText" class="modal-body" style="text-align:center;">
+
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button id="tsConfBtn" type="button" class="btn btn-primary" data-id="" data-oldstate="" data-newstate="" onclick="updateStateCanncel()">确定</button>
+                <button id="tsCanncelBtn" type="button" class="btn ">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*达达取消订单*@
+<div class="modal bs-example-modal" id="dadatsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    <span id="dadatsTitle">
+
+                    </span>
+                </h4>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <span>取消订单原因:</span>
+                <select class="form-control width400" style="display:inline-block;" id="dadacancelselect" onchange="selectCancel()">
+                    @*<option v-for="(item,index) in cancellist" v-bind:value="item.id">{{item.reason}}</option>*@
+                </select>
+                <div id="inputcancelreason" style="clear:both;height: 80px;position: relative;margin: 0 auto;width: 490px;margin-top:10px;">
+                    <div style="height:100%; float:left;line-height:80px;display:inline-block;">
+                        <span>填写其他原因:</span>
+                    </div>
+                    <div style="height:100%; float:left;display:inline-block;">
+                        <textarea class="form-control width400" id="cancel_reason" style="display:inline-block;height:100%;" maxlength="200"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div id="dadatsText" class="modal-body" style="text-align:center;">
+
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button id="dadatsConfBtn" type="button" class="btn btn-primary" onclick="updatedadaOrderState()">确定</button>
+                <button id="dadatsCanncelBtn" type="button" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+@*蜂鸟取消订单*@
+<div class="modal bs-example-modal" id="fntsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    <span id="fntsTitle">
+
+                    </span>
+                </h4>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <span>取消订单原因:</span>
+                <select class="form-control width400" style="display:inline-block;" id="fncancelselect" onchange="selectfnCancel()">
+                    <option value="0">其他</option>
+                    <option value="1">联系不上商户</option>
+                    <option value="2">商品已经售完</option>
+                    <option value="3">用户申请取消</option>
+                    <option value="4">运力告知不配送 让取消订单</option>
+                    <option value="5">订单长时间未分配</option>
+                    <option value="6">接单后骑手未取件</option>
+                </select>
+                <div id="inputfncancelreason" style="clear:both;height: 80px;position: relative;margin: 0 auto;width: 490px;margin-top:10px;">
+                    <div style="height:100%; float:left;line-height:80px;display:inline-block;">
+                        <span>填写其他原因:</span>
+                    </div>
+                    <div style="height:100%; float:left;display:inline-block;">
+                        <textarea class="form-control width400" id="cancel_reason" style="display:inline-block;height:100%;" maxlength="200"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div id="fntsText" class="modal-body" style="text-align:center;">
+
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button id="fntsConfBtn" type="button" class="btn btn-primary" v-on:click="updatefnOrderState()">确定</button>
+                <button id="fntsCanncelBtn" type="button" class="btn" v-on:click="hidefnTsModel()">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="id_attrtitle">
+    <span>拒绝接单原因：</span>
+    <textarea id="nameVal" style="width:200px;height:80px;resize:none;" maxlength="100" placeholder="请填写拒绝接单原因" class="form-control" value="{#name#}" />
+</script>
+<script>
+    var appid = @ViewBag.appId;
+    //不同状态不同提示
+    function OpenOutOrderFailRemarkForm(x){
+        $("#tsTitle").text("查看退款失败原因");
+        $.post('/foods/getOutOrderFailRemark', { orderId : x }, function(result) {
+            $("#tsText").html(result);
+        });
+        $("#tsConfBtn").attr("onclick","javascript:closeTsModal()");
+
+        $("#tsModal").modal("show");
+    };
+
+    function LabelPrint(btn){
+        layer.open({
+            type:2,
+            title:'打印预览',
+            area:['400px','800px'],
+            content:String.raw`/Tools/LabelPrinter?appId=@ViewBag.appId&content=${$(btn).data('orderid')}`,
+            btn:['关闭']
+        });
+    }
+
+    $(function(){
+
+        
+
+        $("#export").click(function(){
+
+            window.location.href='/foods/ExportOrders?export=1&appid=@ViewBag.appId&type=@ViewBag.type&orderNum=@ViewBag.orderNum&verificationNum=@ViewBag.verificationNum&orderState=@ViewBag.orderState&=@ViewBag.foodGoodsType&pageIndex=@ViewBag.pageIndex&startTime=@ViewBag.StartTime&endTime=@ViewBag.EndTime&tableNo=@ViewBag.TableNo';
+        });
+
+
+
+        $(".OpenConfForm").on("click",function()
+        {
+            OpenConfForm($(this));
+        });
+
+        $(".updateState").on("click",function()
+        {
+            console.log($(this));
+            console.log(this);
+            updateState($(this));
+        });
+
+        $(".cancelOrder").on("click",function()
+        {
+            cancelOrder($(this));
+        });
+
+        //$(".OpenOutOrderFailRemarkForm").on("click",function()
+        //{
+        //    OpenOutOrderFailRemarkForm($(this));
+        //});
+
+        //不同状态不同提示
+        function OpenConfForm (x)
+        {
+
+            var orderid = $(x).data("id");
+            var oldstate = $(x).data("oldstate");
+            var newstate = $(x).data("newstate");
+            var laststate = $(x).data("laststate");
+            if(laststate == undefined || laststate == "undefined")
+            {
+                laststate = -999;
+            }
+
+            if((@(ViewBag.type) == @((int)miniAppFoodOrderType.堂食) || @(ViewBag.type) == @((int)miniAppFoodOrderType.拼团)))
+            {
+                if((oldstate == @((int)miniAppFoodOrderState.待付款) && newstate == @((int)miniAppFoodOrderState.已取消)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后用户将无法付款");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.待接单) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要拒绝本订单吗？拒绝后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.待就餐) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+            }
+            else if((@(ViewBag.type) == @((int)miniAppFoodOrderType.外卖)))
+            {
+                if((oldstate == @((int)miniAppFoodOrderState.待付款) && newstate == @((int)miniAppFoodOrderState.已取消)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后用户将无法付款");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.待接单) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要拒绝本订单吗？拒绝后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.待送餐) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.待确认送达) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.退款审核中) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("审核通过");
+                    $("#tsText").html("审核通过后，系统将自动发起退款，金额将原路退回。您确认要通过该退款申请吗？");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.退款审核中) && newstate == @((int)miniAppFoodOrderState.拒绝退款)))
+                {
+                    $("#tsTitle").text("驳回审核");
+                    $("#tsText").html("您确定要驳回审核吗？驳回后，系统将不会自动发起退款，请务必及时与用户沟通，以避免纠纷。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.拒绝退款) && laststate == @((int)miniAppFoodOrderState.待接单) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else if((oldstate == @((int)miniAppFoodOrderState.拒绝退款) && laststate == @((int)miniAppFoodOrderState.待送餐) && newstate == @((int)miniAppFoodOrderState.退款中)))
+                {
+                    $("#tsTitle").text("取消订单");
+                    $("#tsText").html("您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回。");
+                    $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+                }
+                else
+                {
+                    alert("数据错误!请刷新页面重试");
+                    return;
+                }
+            }
+
+            $("#tsConfBtn").attr("data-id",orderid);
+            $("#tsConfBtn").attr("data-oldstate",oldstate);
+            $("#tsConfBtn").attr("data-newstate",newstate);
+            $("#tsModal").modal("show");
+
+        };
+
+
+        function cancelOrder(x)
+        {
+            //一修改名称
+            //var $thisobj = $(x);
+            var orderid = $(x).data("id");
+            var state = $(x).data("newstate");
+            layer.open({
+                title: "",
+                content: $("#id_attrtitle").html().replace("{#name#}",""),
+                btn: ["保存", "取消"],
+                yes: function () {
+                    var _title = $("#nameVal").val().replace(/(^\s*)|(\s*$)/g, "");
+                    if (_title == "") {
+                        alert("请输入拒单原因");
+                        return;
+                    }
+                    $.post('/foods/updateTheShopOrderState', { appid : appid, orderid: orderid,state:state, cancleRemark:_title }, function(result) {
+                        $("#tsModal").modal('hide');
+                        alert(result.msg);
+                        if(result.isok)
+                        {
+                            setTimeout(function(){ window.location.reload();},1000)
+                        }
+                    });
+                },
+                no: function () { layer.closeAll(); },
+                cancel: function () {
+                    layer.closeAll();
+                }
+            });
+        }
+
+        function updateState(x)
+        {
+            console.log(x);
+            var orderid = $(x).data("id");
+            var state = $(x).data("newstate");
+
+            $.post('/foods/updateTheShopOrderState', { appid : appid, orderid: orderid,state:state }, function(result) {
+                $("#tsModal").modal('hide');
+                alert(result.msg);
+                if(result.isok)
+                {
+                    setTimeout(function(){ window.location.reload();},1000)
+                }
+            });
+        }
+
+
+
+        $("#tsCanncelBtn").click(function()
+        {
+            $("#tsModal").modal('hide');
+        });
+
+
+        $("#search").on("click",function()
+        {
+            var orderState =  $(".typeItem input.active").data("id");
+            window.location.href = "/foods/FoodGoodsOrderList?appid=" +@ViewBag.appId+ "&type=" +@ViewBag.type+"&orderNum=" + $("#orderNum").val() + "&verificationNum=" + $("#verificationNum").val() + "&orderState=" + orderState + "&foodGoodsType=" + $("#foodGoodsType").val() + "&nickName=" + $("#nickName").val() + "&SendWay=" + $("#SendWay").val() + "&startTime=" + $("#startTime").val() + "&endTime=" + $("#endTime").val() + "&tableNo=" + $("#tableNo").val();
+        });
+        $("#searchToday").on("click", function () {
+            var orderState =  $(".typeItem input.active").data("id");
+            window.location.href = "/foods/FoodGoodsOrderList?appid=" +@ViewBag.appId+ "&type=" +@ViewBag.type+"&orderNum=" + $("#orderNum").val() + "&verificationNum=" + $("#verificationNum").val() + "&orderState=" + orderState + "&foodGoodsType=" + $("#foodGoodsType").val() + "&nickName=" + $("#nickName").val() + "&SendWay=" + $("#SendWay").val() + "&startTime=" + $("#startTime").val() + "&endTime=" + $("#endTime").val() + "&tableNo=" + $("#tableNo").val()+"&searchToday=1";
+        })
+        $("#empty").on("click",function()
+        {
+            window.location.href = "/foods/FoodGoodsOrderList?appid=" + @ViewBag.appId+ "&type="+@ViewBag.type;
+        });
+        $(function () {
+            $("#ckbAll").click(function () {
+                if (this.checked) {
+                    $("#bcontent :checkbox").prop("checked", true);
+                } else {
+                    $("#bcontent :checkbox").prop("checked", false);
+                }
+            });
+
+        });
+        $(document).on("click", ".orderDtl", function() {
+            var id = $(this).data('id');
+            var fri = $(this).attr("data-friPrice");
+            var packin = $(this).attr('data-packinPrice');
+            $('#CurOrderNo').text($(this).data('ordernum'));
+            $('#friPrice').text(fri);
+            $('#packinPrice').text(packin);
+            $.post('/foods/getOrderDtlItem', { orderid: id }, function(result) {
+                $('#btnAdd').attr("data-itemid",id);
+                $('#addModal .modal-body').html(result);
+                $('#addModal').modal('show');
+                $('#printLabel').attr("data-orderid",id);
+            });
+        });
+        $("#btnAdd").click(function()
+        {
+            $("#addModal").modal('hide');
+        });
+
+        $(".changeOrderType").on("click",function()
+        {
+            changeOrderType($(this));
+        });
+
+        function changeOrderType(x)
+        {
+            var type = $(x).data("type");
+            window.location.href = "/foods/FoodGoodsOrderList?appid=" + @ViewBag.appId+ "&type=" + type;
+        }
+
+
+    });
+
+    function updateState(x)
+    {
+        console.log(x);
+        var orderid = $(x).data("id");
+        var state = $(x).data("newstate");
+
+        $.post('/foods/updateTheShopOrderState', { appid : appid, orderid: orderid,state:state }, function(result) {
+            $("#tsModal").modal('hide');
+            alert(result.msg);
+            if(result.isok)
+            {
+                setTimeout(function(){ window.location.reload();},1000)
+            }
+        });
+    }
+
+    function closeTsModal()
+    {
+        $("#tsModal").modal('hide');
+    }
+
+    function check(x)
+    {
+        $(".typeItem input").removeClass("active");
+        $(".typeItem input").css("background-color","White");
+        $(".typeItem input").css("color","#108EE9");
+
+        $(x).addClass("active");
+        $(x).css("background-color","#108EE9");
+        $(x).css("color","White");
+    }
+
+</script>
+<script>
+    var canceldadaorderpostdata={
+        order_id:'',
+        merchantid:'',
+        state:0,
+        cancel_reason_id:0,
+        cancel_reason:"",
+    }
+
+    //取消达达订单
+    function CancelOrder(orderid,oldstate,merchantid){
+        canceldadaorderpostdata.order_id = orderid;
+        canceldadaorderpostdata.merchantid = merchantid;
+        canceldadaorderpostdata.cancel_reason_id = 0;
+        canceldadaorderpostdata.cancel_reason="";
+        $("#inputcancelreason").hide();
+        $("#dadatsTitle").html("取消达达订单");
+        if((oldstate == @((int)DadaOrderEnum.待接单)))
+        {
+            $("#dadatsText").html("您确定要取消本订单吗?");
+        }
+        else if((oldstate == @((int)DadaOrderEnum.待取货)))
+        {
+            $("#dadatsText").html("接单后1－15分钟内取消订单，运费退回。同时扣除2元作为给配送员的违约金，您确定要取消?");
+        }
+        else
+        {
+            layer.msg("数据错误!请刷新页面重试");
+            return;
+        }
+
+        if($("#dadacancelselect").html()!=undefined && $("#dadacancelselect").html().trim().length>0)
+        {
+            $("#dadatsModal").modal("show");
+            return;
+        }
+        $.ajax({
+            type: "POST",
+            url: "/dadamanage/GetCancelOrderReasons",
+            data: canceldadaorderpostdata,
+            success: function (result) {
+                var cancellist = result.dada;
+                if(cancellist!=undefined && cancellist!=null && cancellist.length>0)
+                {
+                    canceldadaorderpostdata.cancel_reason_id = cancellist[0].id
+                    var dataarray = [];
+                    for (var i = 0; i < cancellist.length; i++) {
+                        var item = cancellist[i];
+                        dataarray[dataarray.length] = "<option value="+item.id+">"+item.reason+"</option>";
+                    }
+                    $("#dadacancelselect").html(dataarray.join());
+                }
+                $("#dadatsModal").modal("show");
+            },
+            error: function () {
+                layer.msg("通讯异常");
+            }
+        });
+    }
+    function updatedadaOrderState(){
+        if(canceldadaorderpostdata.cancel_reason_id<=0)
+        {
+            layer.msg("请选择取消原因");
+            return;
+        }
+        if(canceldadaorderpostdata.cancel_reason_id==10000 && canceldadaorderpostdata.cancel_reason.length<=0)
+        {
+            layer.msg("请填写取消原因");
+            return;
+        }
+        //更新普通订单状态
+        $.ajax({
+            type: "POST",
+            url: "/dadamanage/UpdateDadaOrderState",
+            data: canceldadaorderpostdata,
+            success: function (data) {
+                $("#dadatsModal").modal('hide');
+                layer.msg(data.msg);
+                setTimeout(function(){ window.location.reload();},1000)
+            },
+            error: function () {
+                layer.msg("通讯异常");
+            }
+        });
+    }
+
+    function selectCancel()
+    {
+        canceldadaorderpostdata.cancel_reason_id = $("#dadacancelselect").val();
+        canceldadaorderpostdata.cancel_reason = $("#dadacancelselect").find("option:selected").text();
+        if(canceldadaorderpostdata.cancel_reason_id==10000)
+        {
+            $("#inputcancelreason").show();
+        }
+        else{
+            $("#inputcancelreason").hide();
+        }
+    }
+
+    $("#dadatsCanncelBtn").click(function()
+    {
+        $("#dadatsModal").modal('hide');
+    });
+</script>
+<script>
+    var cancelfnorderpostdata = {
+        order_id: '',
+        state: 0,
+        cancel_reason_id: 0,
+        cancel_reason: "",
+    }
+
+    //取消蜂鸟订单
+    function CancelFNOrder(orderid, oldstate) {
+        cancelfnorderpostdata.order_id = orderid;
+        cancelfnorderpostdata.cancel_reason_id = 0;
+        cancelfnorderpostdata.cancel_reason = "";
+        $("#inputfncancelreason").hide();
+        $("#fntsTitle").html("取消蜂鸟订单");
+        $("#fntsText").html("您确定要取消本订单吗?");
+        $("#fntsModal").modal("show");
+    }
+    function updatefnOrderState() {
+        if (cancelfnorderpostdata.cancel_reason_id <= 0) {
+            layer.msg("请选择取消原因");
+            return;
+        }
+        if (cancelfnorderpostdata.cancel_reason_id == 10000 && cancelfnorderpostdata.cancel_reason.length <= 0) {
+            layer.msg("请填写取消原因");
+            return;
+        }
+        //更新普通订单状态
+        $.ajax({
+            type: "POST",
+            url: "/elemanage/CancelFNOrder",
+            data: cancelfnorderpostdata,
+            success: function (data) {
+                $("#fntsModal").modal('hide');
+                layer.msg(data.msg);
+                setTimeout(function () { window.location.reload(); }, 1000)
+            },
+            error: function () {
+                layer.msg("通讯异常");
+            }
+        });
+    }
+
+    function selectfnCancel() {
+        cancelfnorderpostdata.cancel_reason_id = $("#fncancelselect").val();
+        cancelfnorderpostdata.cancel_reason = $("#fncancelselect").find("option:selected").text();
+        if (cancelfnorderpostdata.cancel_reason_id == 0) {
+            $("#inputfncancelreason").show();
+        }
+        else {
+            $("#inputfncancelreason").hide();
+        }
+    }
+
+    $("#fntsCanncelBtn").click(function () {
+        $("#fntsModal").modal('hide');
+    });
+    $(function () {
+        layui.use('laydate', function () {
+            //时间选择器
+            laydate = layui.laydate;
+            laydate.render({
+                elem: '#startTime', //指定元素
+                type: 'datetime',
+                theme: 'grid',
+                format: 'yyyy-MM-dd HH:mm:ss',
+                value: '@ViewBag.StartTime',
+                done: function (value, date, endDate) {
+                    //console.log(value);
+                    $("#startTime").val(value);
+                }
+            });
+            laydate.render({
+                elem: '#endTime', //指定元素
+                type: 'datetime',
+                theme: 'grid',
+                format: 'yyyy-MM-dd HH:mm:ss',
+                value: '@ViewBag.EndTime',
+                done: function (value, date, endDate) {
+                    //console.log(value);
+                    $("#endTime").val(value);
+                }
+            });
+        });
+    })
+    function collectPrice(v) {
+        var items = $("input[name='orderSel']:checked");
+        var sum = 0;
+        items.each(function (i,v) {
+            sum += parseInt($(v).val());
+        })
+        if (items.length > 0) {
+            $("#tipsMsg").text("当前已选中" + items.length + "条订单,实收金额总和为：" + sum / 100);
+        } else {
+            $("#tipsMsg").text("");
+        }
+    }
+</script>

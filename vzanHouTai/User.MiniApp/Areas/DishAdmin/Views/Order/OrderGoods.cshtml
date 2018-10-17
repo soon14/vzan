@@ -1,0 +1,87 @@
+﻿@model ViewModel<DishShoppingCart>
+@{
+    ViewBag.Title = "OrderGoods";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<div class="page-container">
+    <div>
+        <div class="list-div" style="margin-bottom: 5px">
+            <table width="100%" cellpadding="3" cellspacing="1" class="table table-border table-bordered table-bg table-hover">
+                <tr>
+                    <td scope="col">选择</td>
+                    <td scope="col"><div align="center"><strong>商品名称</strong></div></td>
+                    <td scope="col"><div align="center"><strong>价格</strong></div></td>
+                    <td scope="col"><div align="center"><strong>数量</strong></div></td>
+                    <td scope="col"><div align="center"><strong>属性</strong></div></td>
+                    <td scope="col"><div align="center"><strong>小计</strong></div></td>
+                </tr>
+                @foreach (DishShoppingCart item in Model.DataList)
+                {
+                    <tr class="text-c">
+                        <td>
+                            <input type="checkbox" name="check_id" value="@item.id" />
+                        </td>
+                        <td>@item.goods_name</td>
+                        <td><div align="right">￥@(item.goods_price)元</div></td>
+                        <td><div align="right">@item.goods_number</div></td>
+                        <td></td>
+                        <td><div align="right" style="color:#ff0000;">￥@(item.goods_price * item.goods_number)元</div></td>
+                    </tr>
+                }
+            </table>
+            <div class="row cl">
+                <div class="" style="float: right;padding-right:15px;margin-top:10px;">
+                    <button class="btn btn-primary radius" type="button" onclick="tuikuan()"><i class="Hui-iconfont">&#xe632;</i> 确认退款</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $("#check_all_id").click(function () {
+                if ($(this).is(':checked') == true) {
+                    $('input[name="check_id"]').attr("checked", true);
+                } else {
+                    $('input[name="check_id"]').attr("checked", false);
+                }
+            });
+        })
+        function tuikuan() {
+            var chk_value = [];
+            $('input[name="check_id"]:checked').each(function () {
+                chk_value.push($(this).val());
+            });
+            if (chk_value.length == 0) {
+                alert('对不起，请选择要退款的菜品');
+                return false;
+            }
+            if (!confirm('确认要退款吗')) {
+                return false;
+            }
+            var ac_index = layer.msg('操作中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                data: { aId:@Model.aId,storeId:@Model.storeId,cartIds:chk_value,act:"refundCarts"},
+                dataType: "json",
+                url: "/DishAdmin/Order/OrderGoods",
+                success: function (data) {
+                    layer.close(ac_index);
+                    if (data.code == 0) {
+                        layer.alert(data.msg, { icon: 0 });
+                    } else {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    }
+                }
+            })
+        }
+    </script>
+
+}

@@ -1,0 +1,154 @@
+﻿@{
+    Layout = null;
+}
+@*模块跳转菜单*@
+<div style="margin-top:20px;overflow:hidden">
+    @*<ul class="chxn_nav_r">
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=1" title="首页">首页</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=2" title="1">1</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=3" title="2">2</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=4" title="3">3</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=5" title="4">4</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=6" title="5发展历程">5(发展历程)</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=8" title="6动态新闻">6(动态新闻)</a></li>
+            <li><a href="/Miapp/ModelData?Id=@ViewBag.appId&storename=@ViewBag.title&Level=7" style="line-height:15px;padding-top:10px;height:40px;" title="末页地址定位">末页<br />(地址定位)</a></li>
+        </ul>*@
+    <ul class="chxn_nav_r">
+        <li><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=1" title="首页">首页</a></li>
+        <li style="display:none;"><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=2" title="1">1</a></li>
+        <li style="display:none;"><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=3" title="2">2</a></li>
+        <li  style="display:none;"><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=4" title="3">3</a></li>
+        <li><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=5" title="产品展示">产品展示</a></li>
+        <li><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=6" title="5发展历程">(发展历程)</a></li>
+        <li><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=8" title="6动态新闻">(动态新闻)</a></li>
+        <li><a href="javascript:;" lang="Id=@ViewBag.appId&storename=@ViewBag.Title&Level=7" style="line-height:15px;padding-top:10px;height:40px;" title="末页地址定位">末页<br />(地址定位)</a></li>
+    </ul>
+</div>
+<div style="margin-top:5px;overflow:hidden">
+    <ul class="chxn_nav_r">
+        @if (string.IsNullOrWhiteSpace(ViewBag.hidden))
+        {
+            <li style="display:none;"><input type="button" value="隐藏" lang="1" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="2" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="3" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="4" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="5" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="6" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="7" /></li>
+            <li style="display:none;"><input type="button" value="隐藏" lang="8" /></li>
+        }
+        else
+        {
+            for (int i = 1; i <= 8; i++)
+            {
+                if (ViewBag.hidden.Contains(i.ToString()))
+                {
+                    <li><input type="button" value="显示" lang="@i" style="background-color:#169BD5;color:#fff;" /></li>
+                }
+                else
+                {
+                    <li><input type="button" value="隐藏" lang="@i" /></li>
+                }
+            }
+        }
+    </ul>
+</div>
+<script>
+    //模板颜色初始化
+    function initmodelcolor(color)
+    {
+        $("#modelcolor").css("background-color", color);
+        $("#modelcolor")[0].lang = color;
+    }
+    //初始化首页是否需要隐藏
+    function initModelData()
+    {
+        //判断是否隐藏
+        var temp = $(".chxn_nav_r>li>input")[0];
+        if (temp.value == "显示") {
+            $('#loadmodeldata').html("<div></div>");
+        }
+    }
+
+    $(function () {
+        initModelData();
+        $(".chxn_nav_r>li>input").click(function (e) {
+            var level = this.lang;
+            var hidden = this.value=="隐藏"?"0":"1";
+            var appid = @ViewBag.appId;
+            var tempinput = this;
+            $.post('/Miapp/AddOrEditHidden',
+                {
+                    level: level,
+                    appId: appid,
+                    hidden: hidden,
+                },
+                function (data) {
+                    if (data.Message) {
+                        var index = $(".chxn_nav_r>li>a").index($(".chxn_nav_r>li>a.itemon"));
+
+                        if (tempinput.value == "隐藏")
+                        {
+                            tempinput.style.backgroundColor = "#169BD5";
+                            tempinput.style.color = "#fff";
+                            tempinput.value = "显示";
+
+                            if(index==$(".chxn_nav_r>li>input").index(tempinput))
+                            {
+                                $('#loadmodeldata').css("display","none");
+                            }
+                        }
+                        else
+                        {
+                            tempinput.style.backgroundColor = "";
+                            tempinput.style.color = "#2c2b2b";
+                            tempinput.value="隐藏";
+
+                            if(index==$(".chxn_nav_r>li>input").index(tempinput))
+                            {
+                                $('#loadmodeldata').css("display","block");
+                                if($('#loadmodeldata')[0].innerHTML.length<20)
+                                {
+                                    //显示加载层
+                                    $('#loadModal2').modal('show');
+                                    $("#loadModal2").unbind();
+                                    //加载目标域
+                                    var parm =$(".chxn_nav_r>li>a.itemon")[0].lang;
+                                    $('#loadmodeldata').load("/Miapp/GetPartialRightViewModel?" + parm);
+                                    $('#model_left_pview').load("/Miapp/GetPartialLeftViewModel?" + parm);
+                                }
+                            }
+                        }
+                    }
+                });
+        });
+
+        $(".chxn_nav_r>li>a").click(function (e) {
+            if (!$(this).hasClass("itemon"))
+            {
+                //改变按钮背景色
+                $(".chxn_nav_r>li>a").css('background-color', '#FFFFFF').removeClass('itemon');
+                $(this).css('background-color', '#0099FF').addClass('itemon');
+
+                //判断是否隐藏
+                var index = $(".chxn_nav_r>li>a").index(this);
+                if (index >= 0) {
+                    var temp = $(".chxn_nav_r>li>input")[index];
+                    if (temp.value == "显示") {
+                        $('#loadmodeldata').html("<div></div>");
+                        return;
+                    }
+                }
+
+                //显示加载层
+                $('#loadModal2').modal('show');
+                $("#loadModal2").unbind();
+                $('#loadmodeldata').css("display","block");
+                //加载目标域
+                var parm = this.lang;
+                $('#loadmodeldata').load("/Miapp/GetPartialRightViewModel?" + parm);
+                $('#model_left_pview').load("/Miapp/GetPartialLeftViewModel?" + parm);
+            }
+        });
+    });
+</script>

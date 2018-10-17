@@ -1,0 +1,287 @@
+﻿@model C_UserInfo
+@{ Layout = null; }
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="/Content/pxhfang/css/base.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/reset.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/normalize.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/fontcss.css">
+    <script src="/Content/newhome/lib/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <script src="/Content/newhome/lib/layer-v3.1.0/layer/layer.js"></script>
+    <title>提现</title>
+    <style>
+        .icon_base {
+            font-family: helvetica;
+            text-align: center;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .eo_0 {
+            background: -webkit-linear-gradient(bottom, #ffc823, #ffae22);
+            -webkit-background-clip: text;
+        }
+
+        .eo_1 {
+            background: -webkit-linear-gradient(bottom, #61bcf7, #5ac5ed);
+            -webkit-background-clip: text;
+        }
+
+        .eo_2 {
+            background: -webkit-linear-gradient(bottom, #f76161, #ff978f);
+            -webkit-background-clip: text;
+        }
+
+        .bg_bottom_line {
+            border-bottom: 1px solid #faf7f5;
+        }
+
+        .tixian-btn {
+            width: 92vw;
+            line-height: 11.733333333333333vw;
+            text-align: center;
+            background-color: #f20033;
+            margin-left: 4vw;
+            margin-top: 13.333333333333334vw;
+            height: 11.733333333333333vw;
+            border-radius: 5.866666666666666vw;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="data">
+        <!-- 用户信息 -->
+        <div class="h180 bgcfff f c pl20">
+            <img src="@Model.HeadImgUrl" class="w130h130b">
+            <div class="f-c ml20">
+                <span class="c333 t32 f-B">@Model.NickName</span>
+                <span class="t22 c999 mt10">提现到微信红包</span>
+            </div>
+        </div>
+        <!-- 交易类型 -->
+        <div class="mt20">
+            <div class="bgcfff pl22" v-for="(item,index) in tixian_type">
+                <div class="fsb h130 pr20 bg_bottom_line" v-bind:index="index" v-bind:id="item.id" v-on:click="chooseType(index,$event)">
+                    <div class="f c">
+                        <i v-bind:class="item.fontcss"></i>
+                        <div class="f-c">
+                            <span class="t32 c333 f-B">{{item.content}}</span>
+                            <span class="t24 c666 mt12">可提现：
+                                <span class="cf0033">{{item.money}}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <i class="dzicon icon-xuanzhong_xuanzhong cf0033 t44" v-if="item.ischoose"></i>
+                    <i class="dzicon icon-weixuanzhong_weixuanzhong ccc t44" v-else></i>
+                </div>
+            </div>
+        </div>
+        <!-- 提现金额 -->
+        <div class="h160 bgcfff mt20 pt30 pl20 f-c jsa bg_bottom_line">
+            <span class="t28 c999">提现金额(元)</span>
+            <div class="f c">
+                <span class="t60 c333">￥</span>
+                <!-- v-bind:value="tixian_request.cashStr" -->
+                <input type="text" class="t60 c333 w320" style="border:none;" v-model="tixian_request.cashStr" v-on:input="input_cansh($event)">
+            </div>
+        </div>
+        <div class="h68 f c bgcfff pl20">
+            <span class="c999 t26">手续费:{{tixian_fee}} 实际到账:{{actually_money}}</span>
+        </div>
+        <!-- 提现按钮 -->
+        <div class="tixian-btn t36" v-on:click="AddApply()">提现</div>
+        <!-- 提现规则 -->
+        <div class='f-c t24 c999 l44 ml20 mt20' v-if="tixian_peizhi">
+            <!-- 以下有用到字段的都是后台可以配置的 -->
+            <span>1.单笔最多提现2万;</span>
+            <span>2.审核人员会在{{tixian_peizhi.dealDays || 0}}个工作日内处理提现;</span>
+            <span>3.需要实名认证的微信用户才可以提现;</span>
+            <!-- 店铺提现才会显示 -->
+            <span>4.订单交易成功后可提现金额才会增加;</span>
+            <!-- 代理商提现才会显示 -->
+            <span v-if="isAgent==1">5.代理入驻费支付后马上可抽成;</span>
+            <span v-if="isAgent==1">6.商家平台交易分润需在商家提现后代理商才会获得收益;</span>
+        </div>
+    </div>
+</body>
+
+<script>
+    $(function () {
+        var app = new Vue({
+            el: '#data',
+            data: {
+                tixian_type: [{
+                    fontcss: 'dzicon icon-icon_erweima-1 icon_base eo_0 t40 mr22',
+                    content: '店内扫码交易（手续费0%）',
+                    ischoose: true,
+                    isopen: false,
+                    money: 0,
+                    id: 4,
+                    fee: 0
+                },
+                {
+                    fontcss: 'dzicon icon-icon_jiaoyipingtai- icon_base eo_1 t40 mr22',
+                    content: '平台交易（手续费0%）',
+                    ischoose: false,
+                    isopen: false,
+                    money: 0,
+                    id: 3,
+                    fee: 0,
+                },
+                {
+                    fontcss: 'dzicon icon-icon_dailishouyi- icon_base eo_2 t40 mr22',
+                    content: '代理收益（手续费0%）',
+                    ischoose: false,
+                    isopen: false,
+                    money: 0,
+                    id: 5,
+                    fee: 0
+                },
+                ],
+                requestData: {
+                    storeId: 0,
+                    aid: 6933593,
+                    storeId: 0,
+                    utoken: '',
+                },
+                tixian_request: {
+                    aid: 6933593,
+                    storeId: 0,
+                    drawCashWay: 0, //提现方式 1银行卡 0微信 现仅支微信1
+                    cash: 0, //提现金额1
+                    applyType: 0, //applyType:（0：平台提现，1：店内扫码提现，2代理收益提现
+                    cashStr: 0, //输入的提现金额
+                    maxCash: 0,//最大的课提现金额
+                    xwkjUserId:'@Model.zbSiteId',
+                },
+                tixian_peizhi: null,
+                tixian_fee: 0, //手续费
+                actually_money: 0, //实际到账
+                fee: 0,//费率
+                isAgent: 0,//0不是代理 1是代理
+            },
+            mounted() {
+                this.isAgent = @ViewBag.isAgent;
+                this.tixian_type[2].isopen = (this.isAgent == 0 ? false : true)
+                this.tixian_request.storeId = @ViewBag.storeId
+                this.requestData.storeId = @ViewBag.storeId
+                this.requestData.utoken = '@ViewBag.utoken'
+                this.PlatFormInfo(this.requestData)
+                this.CashDetail(this.requestData)
+            },
+            methods: {
+                Gajax: function (url, data, type = "POST", callback) { //请求方法
+                    $.ajax({
+                        type: type,
+                        url: url,
+                        data: data,
+                        dataType: "json",
+                        contentType:"application/json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                callback(data)
+                            } else {
+                                layer.msg(data.Msg || data.msg)
+                            }
+                        }
+                    });
+                },
+                PlatFormInfo: function (data) {
+                    this.Gajax("/api/apiPin/PlatFormInfo", data, "GET", function (callback) {
+                        app.tixian_peizhi = callback.obj
+                        var _t = callback.obj
+                        var txType = app.tixian_type
+                        txType[0].content = '店内扫码交易（手续费' + Number(_t.qrcodeServiceFee) + '%）'
+                        txType[1].content = '平台交易（手续费' + Number(_t.serviceFee) + '%）'
+                        txType[2].content = '代理收益（手续费' + Number(_t.agentServiceFee) + '%）'
+                        txType[0].fee = Number(_t.qrcodeServiceFee)
+                        txType[1].fee = Number(_t.serviceFee)
+                        txType[2].fee = Number(_t.agentServiceFee)
+                        app.fee = Number(_t.qrcodeServiceFee)
+                    })
+                },
+                CashDetail: function (data) {
+                    var that = this
+                    that.Gajax("/api/apiPin/CashDetail", data, "GET", function (callback) {
+                        var _m = callback.obj
+                        var txType = app.tixian_type
+                        txType[0].money = _m.qrcodeCash||0.00
+                        txType[1].money = _m.cash||0.00
+                        txType[2].money = _m.agentCash||0.00
+                        app.tixian_request.applyType = app.tixian_type[0].id
+                        app.tixian_request.cashStr = app.tixian_type[0].money
+                        app.tixian_request.cash = app.tixian_type[0].money
+                        app.tixian_request.maxCash = app.tixian_type[0].money
+                        that.count_tixianMoney(app.fee, app.tixian_request.cashStr)
+                    })
+                },
+                chooseType: function (index, e) {
+                    var id = e.currentTarget.id
+                    for (let i = 0; i < app.tixian_type.length; i++) {
+                        app.tixian_request.applyType = app.tixian_type[index].id
+                        app.tixian_request.cashStr = app.tixian_type[index].money
+                        app.tixian_request.cash = app.tixian_type[index].money
+                        app.tixian_request.maxCash = app.tixian_type[index].money
+                        app.fee = app.tixian_type[index].fee
+                        if (i == index) {
+                            app.tixian_type[i].ischoose = true
+                        } else {
+                            app.tixian_type[i].ischoose = false
+                        }
+                    }
+                    this.count_tixianMoney(app.fee, app.tixian_request.cashStr)
+                },
+                input_cansh: function (e) {
+                    if (Number(app.tixian_request.cashStr) > Number(app.tixian_request.maxCash)) {
+                        app.tixian_request.cashStr = 0
+                        return
+                    }
+                    this.count_tixianMoney(app.fee, app.tixian_request.cashStr)
+                },
+                    AddApply: function () {
+                        var that = this
+                        var data = app.tixian_request
+                        if (Number(data.cashStr) < Number(app.tixian_peizhi.minTxMoney) || Number(data.cashStr) < 1) {
+                            var msg = ''
+                            if (Number(app.tixian_peizhi.minTxMoney) < 1) {
+                                msg = '金额低于1元时不可提现。'
+                            } else {
+                                msg = '金额低于' + app.tixian_peizhi.minTxMoney + '元时不可提现。'
+                            }
+                            layer.msg(msg)
+                            return
+                        }
+                        data.cash = Number(data.cashStr) * 100
+                        that.Gajax("/api/apiPin/AddApply?utoken=" + app.requestData.utoken,JSON.stringify(data), "POST", function (callback) {
+                            layer.msg('申请提现成功')
+                            app.tixian_type[0].ischoose=true
+                            app.tixian_type[1].ischoose=false
+                            app.tixian_type[2].ischoose=false
+                        app.CashDetail(app.requestData)
+                    })
+                },
+                count_tixianMoney: function (fee, actuallyMoney) {
+                    fee = Number(fee) /100
+                    var tixian_fee = (Number(actuallyMoney) * Number(fee)< '0.00' ? '0.01' : Number(actuallyMoney) * Number(fee))
+                    if(Number(tixian_fee)<0.1){
+                        tixian_fee=Math.ceil(tixian_fee*100)/100
+                    }else{
+                        tixian_fee=Math.ceil(tixian_fee*10)/10 
+                    }
+                    var actually_money = Number(actuallyMoney) - Number(tixian_fee)
+                    app.tixian_fee = tixian_fee
+                    app.actually_money = (actually_money).toFixed(2)
+                },
+            }
+        })
+    })
+</script>
+
+</html>

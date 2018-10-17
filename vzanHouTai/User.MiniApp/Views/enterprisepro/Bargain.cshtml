@@ -1,0 +1,299 @@
+﻿@using Entity.MiniApp.Tools
+@model  List<Bargain>
+@{
+    ViewBag.Title = "砍价管理";
+    ViewBag.PageType = 22;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int bargainSwtich = ViewBag.bargainSwtich;
+}
+
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+    .btnState { margin: 3px; width: 100px; background-color: white; border-color: #5e97fa; margin-bottom: 8px; background-color: White; color: #108EE9; }
+    .typeItem .active { background-color: #108EE9 !important;color:white !important; }
+</style>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="form-inline form-group">
+            &nbsp;砍价活动名称:
+           
+            <input id="goodsName" type="text" class="form-control" value="@ViewBag.BName" />
+           
+            &nbsp;发布时间 <input type="text" id="datetimepicker1" class="form-control" readonly value="@ViewBag.StartTime"> 至 <input type="text" id="datetimepicker2" class="form-control" readonly value="@ViewBag.EndTime">
+            <input id="search" style="margin-left:80px;" type="button" class="btn btn-primary" value="搜索" />
+            <div style="margin-top:7px;">
+                <table>
+                    <tr>
+                        <td>
+                            <div style="float:left;">
+                                &nbsp;状态:
+                            </div>
+                        </td>
+                        <td style="width:800px;">
+                            <div class="typeItem" style="float:left;width:800px;">
+                                <input class="col-sm-2 btn btn-default btnState" type="button" value="全部">
+                                <input class="col-sm-2 btn btn-default btnState" type="button" value="进行中">
+                                <input class="col-sm-2 btn btn-default btnState" type="button" value="已下架">
+                                <input class="col-sm-2 btn btn-default btnState" type="button" value="未开始">
+                                <input class="col-sm-2 btn btn-default btnState" type="button" value="已过期">
+
+                            </div>
+                        </td>
+                       
+                    </tr>
+                
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        
+        <th>砍价名称</th>
+        <th>有效时间</th>
+        <th>砍价底价</th>
+        <th>原价</th>
+        <th>减价最大值</th>
+        <th>减价最小值</th>
+        <th>自己砍价间隔时间</th>
+        <th>发布时间</th>
+        <th>小程序页面路径</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="8%">@(item.BName)</td>
+                <td>@(item.StartDate.ToString("yyyy-MM-dd HH:mm")) 至 @(item.EndDate.ToString("yyyy-MM-dd HH:mm"))</td>
+                <td>@((float.Parse(item.FloorPrice.ToString()) / 100))</td>
+                <td>@((float.Parse(item.OriginalPrice.ToString()) / 100))</td>
+                <td>@((float.Parse(item.ReduceMax.ToString()) / 100))</td>
+                <td>@((float.Parse(item.ReduceMin.ToString()) / 100))</td>
+                <td>@(item.IntervalHour)小时</td>
+                <td>@(item.CreateDate)</td>
+                <td>/pages/bargain/bargain?id=@item.Id</td>
+                <td>
+                    @{
+                        if (item.State == -1)
+                        {
+                            <span class="label label-warning">已下架</span>
+
+                        }
+                        else if (DateTime.Now > item.EndDate || item.RemainNum == 0)
+                        {
+                            <span class="label label-danger">已失效</span>
+
+                        }
+                        else if (DateTime.Now < item.StartDate && item.RemainNum > 0)
+                        {
+                            <span class="label label-warning">未开始</span>
+
+                        }
+                        else
+                        {
+                            <span class="label label-success">进行中</span>
+
+                        }
+
+
+
+
+                    }
+                </td>
+                <td>
+                    <a href="/tools/AddOrEditBargain?appId=@ViewBag.appId&PageType=@ViewBag.PageType&Id=@item.Id&BargainType=1" class="btn btn-primary btn-xs">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        编辑
+                    </a>
+                    <a href="javascript:;" class="btn btn-danger btn-xs btnDel" data-id="@item.Id">
+                        <span class="glyphicon glyphicon-remove-sign"></span>
+                        删除
+                    </a>
+
+
+                    @{
+                        if (item.State == 0)
+                        {
+                            <a href="javascript:;" class="btn btn-danger btn-xs btnDown" data-id="@item.Id">
+                                <span class="glyphicon glyphicon-remove"></span>
+                                下架
+                            </a>
+                        }
+                        else
+                        { <a href="javascript:;" class="btn btn-success btn-xs btnUp" data-id="@item.Id">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        上架
+                    </a>
+                        }
+                    }
+
+                </td>
+
+            </tr>
+                        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+@{
+    if (ViewBag.PageType == 22 && bargainSwtich == 1)
+    {
+        <div title="请升级更高版本">
+            <a href="#" class="btn btn-success" id="notUse">
+                <span class="glyphicon glyphicon-plus"></span>
+                新增砍价
+            </a>
+        </div>
+    }
+    else
+    {
+        <div>
+            <a href="/tools/AddOrEditBargain?appId=@ViewBag.appId&PageType=22&BargainType=1" class="btn btn-success" id="btnBatch_Pass">
+                <span class="glyphicon glyphicon-plus"></span>
+                新增砍价
+            </a>
+        </div>
+    }
+}
+
+
+
+
+<script>
+   
+    $(function () {
+
+        $(".btnState").eq(@ViewBag.State).addClass("active").siblings().removeClass("active");
+
+        $('#datetimepicker1').datetimepicker({
+            language: 'zh-CN',
+            format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+            weekStart: 1,
+            todayBtn: 0,
+            autoclose: 1,
+            todayHighlight: 1,
+            startView: 2,
+            forceParse: true,
+            showMeridian: 1,
+            minuteStep: 1
+        });
+        $('#datetimepicker2').datetimepicker({
+            language: 'zh-CN',
+            format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+            weekStart: 1,
+            todayBtn: 0,
+            autoclose: 1,
+            todayHighlight: 1,
+            forceParse: true,
+            showMeridian: 1,
+            minuteStep: 1
+        });
+
+        //约定：queryPara（参数）、pageQuery（查询方法）
+
+        var parseParam=function(param, key){
+            var paramStr="";
+            if(param instanceof String||param instanceof Number||param instanceof Boolean){
+                paramStr+="&"+key+"="+encodeURIComponent(param);
+            }else{
+                $.each(param,function(i){
+                    var k=key==null?i:key+(param instanceof Array?"["+i+"]":"."+i);
+                    paramStr+='&'+parseParam(this, k);
+                });
+            }
+            return paramStr.substr(1);
+        };
+
+
+
+        $("#search").click(function () {
+            //查询参数
+            var queryPara = {
+                PageType:@ViewBag.PageType,
+                appId: @ViewBag.appId,
+                BName: $("#goodsName").val(),
+                StartTime: $("#datetimepicker1").val(),
+                EndTime: $("#datetimepicker2").val(),
+                State:$(".btnState").index($(".typeItem .active")),
+                searchType: "pageSearch",
+            };
+            console.log(queryPara);
+            window.location.href='/enterprisepro/Bargain?'+parseParam(queryPara);
+        });
+
+
+
+        $(".btnState").click(function(){
+            $(this).addClass("active").siblings().removeClass("active");
+
+        });
+        $("#notUse").click(function(){
+            layer.msg("请升级更高版本");
+            return;
+        });
+
+        //上架
+        $(".btnUp").click(function () {
+            var bid=parseInt($(this).data("id"));
+            if(bid<=0)
+                return;
+            DelBargain("确认进行上架操作?",bid,0);
+        });
+
+        //下架
+        $(".btnDown").click(function () {
+            var bid=parseInt($(this).data("id"));
+            if(bid<=0)
+                return;
+            DelBargain("确认进行下架操作?",bid,0);
+        });
+
+        $(".btnDel").click(function () {
+            var bid=parseInt($(this).data("id"));
+            if(bid<=0)
+                return;
+            DelBargain("确认进行删除操作?",bid,1);
+        });
+
+
+    });
+
+    function DelBargain(txt,bid,actionType){
+        var outLayer=  layer.confirm(txt, {
+            btn: ['确定','取消'] //按钮
+        }, function(){
+            $.ajax({
+                type: "POST",
+                url: "/tools/DelBargain",
+                data: { Id: bid, appId:@ViewBag.appId,BargainType:1,actionType:actionType },
+                success: function (data) {
+                    layer.close(outLayer);
+                    if (data.code>0) {
+                        layer.msg(data.msg);
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 2000);
+
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                },
+                error: function () {
+                    AppTools.Alert("通讯异常");
+                }
+            });
+        });
+    }
+
+</script>

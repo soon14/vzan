@@ -1,0 +1,550 @@
+﻿@{
+    ViewBag.Title = "预订记录";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+@model List<EntGoodType>
+<style>
+    table.search-box { width: 950px; }
+    table.search-box .form-control { width: 150px; }
+    table.search-box select.form-control { width: 104px; }
+    table.search-box td { padding: 5px 0px; }
+    .layui-btn-primary:hover { border-color: #2196f3; color: #2196f3; }
+    .selected { border-color: #2196f3; color: #fff; background: #2196f3; }
+    .selected:hover { color: #fff; }
+    .btn-reset:hover { border-color: #009688; color: #009688; }
+    #editModal .modal-content { width: 350px; }
+    #dateTable .modal-content { width: 390px; }
+    .btnbox { text-align: center; margin-top: 16px; margin-bottom: 5px; }
+    .EditRoom { margin: 0 auto; }
+    .EditRoom tr { height: 39px; }
+    .dateBox ul li, .timeBox ul li { float: left; margin: 5px; }
+    .order-info td{padding:9px 2px;}
+</style>
+<div id="app" v-cloak>
+    <table class="search-box">
+        <tr>
+            <td class="tr">客户手机号：</td>
+            <td><input type="text" class="form-control" placeholder="" v-model="postdata.phone"></td>
+            <td class="tr">预订服务时间：</td>
+            <td style="width:200px;">
+                <div class="OpenTimeDiv" style="margin-bottom:5px">
+                    <input type="text" readonly="readonly" class="form-control storename" id="servicetime" style="width:200px;" />
+                </div>
+            </td>
+            <td class="tr">服务项目：</td>
+            <td><input type="text" class="form-control" placeholder="" v-model="postdata.serviceName" /></td>
+        </tr>
+        <tr>
+            <td class="tr">预订技师(工号)：</td>
+            <td><input type="text" class="form-control" placeholder="" style="width:200px;" v-model="postdata.jobNumber"></td>
+            <td class="tr">支付方式：</td>
+            <td>
+                <select class="form-control" v-model="postdata.payState">
+                    <option value="-1">全部</option>
+                    <option value="1">微信支付</option>
+                    <option value="2">储值支付</option>
+                </select>
+            </td>
+            <td class="tr">@*包间：*@</td>
+            <td>@*<input type="text" class="form-control" placeholder="" v-model="postdata.roomName">*@</td>
+
+        </tr>
+        <tr>
+            <td class="tr">预订状态：</td>
+            <td colspan="5">
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==-6}]" v-on:click="postdata.state=-6">全部</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==4}]" v-on:click="postdata.state=4">待服务</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==0}]" v-on:click="postdata.state=0">待付款</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==7}]" v-on:click="postdata.state=7">已超时</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==-2}]" v-on:click="postdata.state=-2">退款中</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==-4}]" v-on:click="postdata.state=-4">退款成功</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==-3}]" v-on:click="postdata.state=-3">退款失败</button>
+                <button type="button" :class="['layui-btn layui-btn-primary',{ 'selected':postdata.state==-1}]" v-on:click="postdata.state=-1">已取消</button>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="6" class="tr">
+                <button type="button" class="layui-btn" v-on:click="search">搜索</button>
+                <button type="button" class="layui-btn layui-btn-primary btn-reset" v-on:click="resets">重置</button>
+            </td>
+        </tr>
+    </table>
+
+    <table class="layui-table" lay-skin="line">
+        <thead>
+            <tr>
+                <th>预订单号</th>
+                <th>顾客手机号</th>
+                <th>服务项目</th>
+                <th>预订技师</th>
+                @*<th>包间</th>*@
+                <th>预订服务时间</th>
+                <th>创建时间</th>
+                <th>应付金额（元）</th>
+                <th>支付方式</th>
+                <th>预订状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tr v-for="(order,index) in orderList">
+            <td>{{order.OrderNum}}</td>
+            <td>{{order.AccepterTelePhone}}</td>
+            <td>{{order.goodsCarts[0].goodsMsg.name}}</td>
+            <td>{{order.goodsCarts[0].technicianName}}</td>
+            @*<td>{{order.goodsCarts[0].roomName}}</td>*@
+            <td>{{order.goodsCarts[0].showReservationTime}}</td>
+            <td>{{order.CreateDateStr}}</td>
+            <td>{{order.BuyPriceStr}}</td>
+            <td>{{order.BuyModeStr}}</td>
+            <td>{{order.StateStr}}</td>
+            <td>
+                <a href="javascript:;" class="editbtn" v-on:click="CancelOrder(index)" v-if="order.State==0||order.State==4||order.State==-5||order.State==7">取消</a>
+                <a href="javascript:;" class="editbtn" v-on:click="EditOrder(index)" v-if="order.State==4||order.State==-5||order.State==7">更改</a>
+                <a href="javascript:;" class="editbtn" v-on:click="createOrder(index)" v-if="order.State==4||order.State==-5||order.State==7">开单</a>
+                @*<a href="javascript:;" class="editbtn" v-on:click="EditOrder(index)" v-if="order.State==4&&order.goodsCarts[0].technicianId==0">分配技师</a>
+                <a href="javascript:;" class="editbtn" v-on:click="EditOrder(index)" v-if="order.State==4&&order.goodsCarts[0].roomNo==0">分配包间</a>*@
+
+            </td>
+        </tr>
+        <tr v-if="recordCount<=0">
+            <td colspan="13">还没有订单</td>
+        </tr>
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>postdata.pageSize"></div>
+
+    <!--#region 更改预订单 弹框-->
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">更改预订单</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="EditRoom">
+                        <tr>
+                            <td align="right" width="98">顾客手机号：</td>
+                            <td align="left">{{orderInfo.AccepterTelePhone}}</td>
+                        </tr>
+                        <tr>
+                            <td align="right">服务项目：</td>
+                            <td align="left"><span v-if="orderInfo.goodsCarts.length>0">{{orderInfo.goodsCarts[0].goodsMsg.name}}</span></td>
+                        </tr>
+                        <tr>
+                            <td align="right">预约服务时间：</td>
+                            <td align="left">
+                                <span v-if="orderInfo.goodsCarts.length>0">
+                                    {{orderInfo.goodsCarts[0].showReservationTime}}
+                                    <a href="javascript:;" v-on:click="ShowDate()">修改</a>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="right">预约技师：</td>
+                            <td align="left">
+                                <span v-if="orderInfo.goodsCarts.length>0">
+                                    {{orderInfo.goodsCarts[0].technicianName}}
+                                    <a href="javascript:;"v-on:click="ShowDate()">修改技师</a>
+                                </span>
+                            </td>
+                        </tr>
+                        @*<tr>
+                            <td align="right">包间：</td>
+                            <td align="left">
+                                <span v-if="orderInfo.goodsCarts.length>0">
+                                    <select v-model="orderInfo.goodsCarts[0].roomNo">
+                                        <option value="0">未分配</option>
+                                        <option v-for="room in roomList" :value="room.id">{{room.name}}</option>
+                                    </select>
+                                </span>
+                            </td>
+                        </tr>*@
+                        <tr>
+                            <td align="right">顾客留言：</td>
+                            <td align="left">{{orderInfo.Message.length==0?'无':orderInfo.Message}}</td>
+                        </tr>
+                        <tr>
+                            <td align="right">商家留言：</td>
+                            <td align="left">
+                                <textarea class="form-control" placeholder="不超过100字" style="max-height:100px;min-height:100px;max-width:200px;min-width:200px;" v-model="orderInfo.Remark"></textarea>
+                            </td>
+                        </tr>
+
+                    </table>
+                    <div class="btnbox">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" v-on:click="SaveInfo()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#endregion-->
+    <!--#region 更改服务时间-->
+    <div class="modal fade" id="dateTable" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">更改服务时间</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="dateBox" v-if="showDate">
+                        <table>
+                            <tr>
+                                <td>技师：</td>
+                                <td width="60">
+                                    <select v-model="serviceTimeInfo.technicianId" v-on:change="changeTechnician()">
+                                        <option v-for="technician in technicianList" :value="technician.id">{{technician.jobNumber}}</option>
+                                    </select>
+                                </td>
+                                <td>已选服务时间：</td>
+                                <td>
+                                    <span v-if="orderInfo.goodsCarts.length>0">
+                                        {{serviceTimeInfo.showReservationTime}}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                        <ul>
+                            <li v-for="(date,index) in dateList">
+                                <button type="button" :class="['layui-btn layui-btn-primary']" v-on:click="SelDate(index)">{{date.dayStr}}</button>
+
+                            </li>
+                            <div class="clearfix"></div>
+                        </ul>
+                        <div class="btnbox">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" v-on:click="chooseDate()">确定</button>
+                        </div>
+                    </div>
+                    <div class="timeBox" v-else>
+                        <ul>
+                            <li v-for="(item,index) in selTimeList">
+                                <button type="button" :class="['layui-btn layui-btn-primary']" v-on:click="SelTime(index)">{{item.time}}</button>
+                            </li>
+                            <li>
+                                <button type="button" :class="['layui-btn layui-btn-primary']" v-on:click="GoBack">返回上一级</button>
+                            </li>
+                            <div class="clearfix"></div>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#endregion-->
+    <!--#region 开单-->
+    <div class="modal fade" id="createOrder" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">开单</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="dateBox" v-if="showDate">
+                        <table class="layui-table order-info" lay-even lay-skin="nob">
+                            <tr>
+                                <td class="tr" width="111">顾客手机号：</td>
+                                <td class="tf">{{orderInfo.AccepterTelePhone}}</td>
+                                <td class="tr" width="90">预约技师：</td>
+                                <td class="tf"><span v-if="orderInfo.goodsCarts.length>0">{{orderInfo.goodsCarts[0].technicianName}}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="tr" width="112">预约服务时间：</td>
+                                <td class="tf" width="134"><span v-if="orderInfo.goodsCarts.length>0">{{orderInfo.goodsCarts[0].showReservationTime}}</span></td>
+                                <td class="tr" width="90">顾客留言：</td>
+                                <td class="tf">{{orderInfo.Message.length==0?'无':orderInfo.Message}}</td>
+                                @*<td class="tr">包间：</td>
+                                <td class="tf"><span v-if="orderInfo.goodsCarts.length>0">{{orderInfo.goodsCarts[0].roomName}}</span></td>*@
+                            </tr>
+                            <tr>
+                                
+                                <td class="tr">商家备注：</td>
+                                <td class="tf" colspan="3">{{orderInfo.Remark}}</td>
+                            </tr>
+                        </table>
+                        <table  class="layui-table" lay-skin="line">
+                            <tr>
+                                <th>服务项目</th>
+                                <th>原价（元）</th>
+                                <th>优惠金额（元）</th>
+                                <th>小计（元）</th>
+                            </tr>
+                            <tr>
+                                <td><span v-if="orderInfo.goodsCarts.length>0">{{orderInfo.goodsCarts[0].goodsMsg.name}}</span></td>
+                                <td>{{orderInfo.GoodsMoney}}</td>
+                                <td>{{orderInfo.ReducedPriceStr}}</td>
+                                <td>{{orderInfo.BuyPriceStr}}</td>
+                            </tr>
+                        </table>
+                        <div class="btnbox">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" v-on:click="saveOrder()">开单</button>
+                        </div>
+                    </div>
+                    <div class="timeBox" v-else>
+                        <ul>
+                            <li v-for="(item,index) in selTimeList">
+                                <button type="button" :class="['layui-btn layui-btn-primary']" v-on:click="SelTime(index)">{{item.time}}</button>
+                            </li>
+                            <div class="clearfix"></div>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#endregion-->
+
+
+
+</div>
+
+<script type="text/javascript">
+    var laydate,aa;
+    var defsearch = {
+        appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+               // name: '',
+                phone: '',
+                //sex: -1,
+                servicetime:'',
+                serviceName: '',
+                jobNumber: '',
+                roomName: '',
+                payState: -1,
+                state: -6,
+                Message:'',
+    };
+    var app = new Vue({
+        el: "#app",
+        data: {
+            orderList: [],
+            roomList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            dateList:@Html.Raw(JsonConvert.SerializeObject(ViewBag.dateList)),
+            technicianList:[],
+            timeList: [],
+            selTimeList:[],
+            recordCount: 0,
+            showDate: true,
+            postdata: {
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                //name: '',
+                phone: '',
+                servicetime: '',
+                serviceName: '',
+                jobNumber: '',
+                roomName: '',
+                payState: -1,
+                state: -6
+            },
+            orderInfo: {
+                Id: 0,
+                AccepterName: '',
+                AccepterTelePhone: '',
+                goodsCarts: [],
+                Message: '',
+                Remark:'',
+            },
+            serviceTimeInfo: {
+                technicianId: 0,
+            }
+        },
+        methods: {
+            //初始化日期控件
+            InitLayer: function () {
+                layui.use('laydate', function () {
+                    //时间选择器
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#servicetime', //指定元素
+                        theme: 'grid',
+                        range: '~',
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postdata.servicetime = value;
+                        }
+                    });
+                });
+            },
+            //重置搜索条件
+            resets: function () {
+                //app.postdata.servicetime = '';
+                $.extend(true, app.postdata, defsearch);
+                laydate.render({
+                    elem: '#servicetime', //指定元素
+                    value: ' ',
+                });
+
+            },
+            //获取列表信息
+            GetList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetReserveRecord", this.postdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.orderList = data.list;
+                        app.recordCount = data.recordCount;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use(['laypage', 'element'], function () {
+                    element = layui.element;
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            app.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.postdata.pageIndex = obj.curr;
+                                app.GetList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //取消预订
+            CancelOrder: function (index) {
+                layer.confirm('您确定要取消该预订吗？若顾客已支付费用，取消后金额将自动原路退回？', {
+                    btn: ['取消预订', '暂不取消'] //按钮
+                }, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/footbath/updateState", { appId: app.postdata.appId, id: app.orderList[index].Id, state: -1}, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            app.GetList();
+                        }
+                    })
+                });
+            },
+            //更改、分配包间、分配技师
+            EditOrder: function (index) {
+                var that = this;
+                $.extend(true, that.orderInfo, that.orderList[index]);
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetServiceTimeTable", { appid: that.orderInfo.aId, tid: that.orderInfo.goodsCarts[0].technicianId, serviceId: that.orderInfo.goodsCarts[0].FoodGoodsId }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.timeList = data.timeList;
+                        app.technicianList = data.technicianList;
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+                $('#editModal').modal('show');
+            },
+            //修改服务时间、修改技师
+            ShowDate: function () {
+                app.showDate = true;
+                $.extend(true, app.serviceTimeInfo, app.orderInfo.goodsCarts[0]);
+
+                $('#dateTable').modal('show');
+
+            },
+            //选中服务日期，选择服务时间
+            SelDate: function (index) {
+                app.serviceTimeInfo.showReservationTime = app.dateList[index].date;
+                app.selTimeList = app.timeList[index];
+                app.showDate = false;
+            },
+            //选中服务时间，返回日期界面
+            SelTime: function (index) {
+                app.serviceTimeInfo.showReservationTime += app.selTimeList[index].time;
+                app.showDate = true;
+            },
+            //确认修改服务时间、技师，返回更改界面
+            chooseDate: function () {
+                if (app.serviceTimeInfo.showReservationTime.length <= 0) {
+                    layer.msg("请选择服务时间");
+                    return;
+                }
+                Vue.set(app.orderInfo.goodsCarts,0, app.serviceTimeInfo);
+                $('#dateTable').modal('hide');
+            },
+            //切换技师，获取该技师服务时间列表
+            changeTechnician: function () {
+                if (app.serviceTimeInfo.technicianId == undefined) return;
+                app.serviceTimeInfo.showReservationTime = '';
+                //console.log(app.serviceTimeInfo.technicianId);
+                app.serviceTimeInfo.technicianName = app.technicianList.find(t => t.id === app.serviceTimeInfo.technicianId)['jobNumber'];
+                $.post("/footbath/GetServiceTimeTable", { appid: app.orderInfo.aId, tid: app.serviceTimeInfo.technicianId, serviceId: app.orderInfo.goodsCarts[0].FoodGoodsId }, function (data) {
+                    //layer.close(layerIndex);
+                    if (data.isok) {
+                        app.timeList = data.timeList;
+                        app.technicianList = data.technicianList;
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //保存更改
+            SaveInfo: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveReserve", { orderId:app.orderInfo.Id, appid: app.orderInfo.aId, ReservationTime: app.orderInfo.goodsCarts[0].showReservationTime, remark: app.orderInfo.Remark, roomNo: app.orderInfo.goodsCarts[0].roomNo, tid: app.orderInfo.goodsCarts[0].technicianId }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        app.GetList();
+                        $('#editModal').modal('hide');
+                    }
+                })
+            },
+            //开单窗口打开
+            createOrder: function (index) {
+                $.extend(true, app.orderInfo, app.orderList[index]);
+                $('#createOrder').modal('show');
+            },
+            //确认开单
+            saveOrder: function () {
+                layer.confirm('开单后请到【订单管理】查看订单。 \r\n 开单后金额将无法退回。您确定要开单吗？顾客已支付费用，取消后金额将自动原路退回？', {
+                    btn: ['确定开单', '取消'] //按钮
+                }, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/footbath/createOrder", { orderId: app.orderInfo.Id, appid: app.orderInfo.aId, }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            app.GetList();
+                            $('#createOrder').modal('hide');
+                        }
+                    })
+                });
+            },
+             //搜索
+            search: function () {
+                app.postdata.pageIndex = 1;
+                app.postdata.pageSize = 10;
+                app.GetList();
+            },
+            //返回上一级
+            GoBack: function () {
+                app.serviceTimeInfo.showReservationTime = '';
+                app.showDate = !app.showDate;
+            }
+        },
+        created: function () {
+            this.InitLayer();
+            this.GetList();
+        }
+    })
+</script>

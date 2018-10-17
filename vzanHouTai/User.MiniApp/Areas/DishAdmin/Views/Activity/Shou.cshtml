@@ -1,0 +1,102 @@
+﻿@model EditModel<DishGaojiConfig>
+@{
+    ViewBag.Title = "首单立减";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    活动管理
+    <span class="c-gray en">&gt;</span>
+    首单立减
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="aid" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        是否开启：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="huodong_shou_isopen" value="1" type="radio" @(Model.DataModel.huodong_shou_isopen == 1 ? "checked" : "") id="is_open-1">
+                            <label for="is_open-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input name="huodong_shou_isopen" type="radio" value="0" @(Model.DataModel.huodong_shou_isopen == 0 ? "checked" : "") id="is_open-2">
+                            <label for="is_open-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        立减金额：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="huodong_shou_jiner" placeholder="请输入金额" value="@(Model.DataModel.huodong_shou_jiner)" class="input-text" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+            //表单验证
+            $("#form-article-add").validate({
+                rules: {
+                    huodong_shou_jiner: {
+                        required: true,
+                    }
+                },
+                onkeyup: false,
+                focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {   //表单提交句柄,为一回调函数，带一个参数：form
+                    var l_index = layer.msg('数据更新中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, { icon: 0 });
+                            } else {
+                                layer.alert(data.msg, { icon: 1 }, function (index) {
+                                    window.location.reload();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+    </script>
+
+}

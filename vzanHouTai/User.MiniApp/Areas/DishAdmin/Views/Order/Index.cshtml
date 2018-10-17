@@ -1,0 +1,525 @@
+﻿@model ViewModel<DishOrder>
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+
+
+    int aId = ViewBag.aId;
+    int storeId = ViewBag.storeId;
+    string order_sn = ViewBag.order_sn;
+    int order_status = ViewBag.order_status;
+    int order_type = ViewBag.order_type;
+    int pay_status = ViewBag.pay_status;
+    int pay_id = ViewBag.pay_id;
+    DateTime? q_begin_time = ViewBag.q_begin_time;
+    DateTime? q_end_time = ViewBag.q_end_time;
+    int isToday = ViewBag.isToday;
+    List<DishPrint> printers = ViewBag.printer == null ? new List<DishPrint>() : ViewBag.printer;
+}
+@section styles{
+    <style>
+        .shop-preview { position: fixed; padding: 0 15px; bottom: 0; left: 0; z-index: 100; width: 100%; padding: 10px; background-color: #fcf8e3; border-color: #faebcc; }
+        .icheckbox-blue { position: relative; }
+        .btn-group { font-size: 12px; }
+        /*.page span { background: #5eb95e; }*/
+    </style>
+
+}
+<link href="~/Areas/DishAdmin/lib/My97DatePicker/4.8/skin/WdatePicker.css" rel="stylesheet" />
+<script src="~/Areas/DishAdmin/lib/My97DatePicker/4.8/WdatePicker.js"></script>
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 订单管理 <span class="c-gray en">&gt;</span> @(isToday == 1 ? "今日订单" : "全部订单") <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="Huialert Huialert-info" style="margin-top:5px;">
+        @*<p>1、当订单为店内(先吃饭后付款)时，请您及时将订单状态更新为已确认(否则订单不会打印小票)，以确保该订单有效</p>*@
+        <p>1、当订单为外卖、自取、店内(先付款后吃饭)时，如用户不进行支付，则订单超时会自动取消，无需处理</p>
+        <p>2、自提订单完成后请及时更新订单状态为已完成</p>
+    </div>
+    <div class="text-c">
+        <form method="get" class="search-form">
+            <input type="hidden" name="aId" value="@aId" />
+            <input type="hidden" name="storeId" value="@storeId" />
+            <input type="hidden" name="isToday" value="@isToday" />
+            <span class="select-box inline">
+                <select name="order_type" id="s_os_type" class="select">
+                    <option value="0" @(order_type == 0 ? "selected" : "")>订单类型</option>
+                    <option value="1" @(order_type == 1 ? "selected" : "")>店内</option>
+                    <option value="2" @(order_type == 2 ? "selected" : "")>外卖</option>
+                    <option value="3" @(order_type == 3 ? "selected" : "")>店内自提</option>
+                </select>
+            </span>
+            <span class="select-box inline">
+                <select name="order_status" id="s_os_status" class="select">
+                    <option value="-1" @(order_status == -1 ? "selected" : "")>订单状态</option>
+                    <option value="0" @(order_status == 0 ? "selected" : "")>未确认</option>
+                    <option value="1" @(order_status == 1 ? "selected" : "")>已确认</option>
+                    <option value="2" @(order_status == 2 ? "selected" : "")>已完成</option>
+                    <option value="3" @(order_status == 3 ? "selected" : "")>已取消</option>
+                </select>
+            </span>
+            <span class="select-box inline">
+                <select name="pay_status" id="s_ps_status" class="select">
+                    <option value="-1" @(pay_status == -1 ? "selected" : "")>支付状态</option>
+                    <option value="0" @(pay_status == 0 ? "selected" : "")>未付款</option>
+                    <option value="1" @(pay_status == 1 ? "selected" : "")>已付款</option>
+                    <option value="2" @(pay_status == 2 ? "selected" : "")>已退款</option>
+                </select>
+            </span>
+            <span class="select-box inline">
+                <select name="pay_id" id="s_pt_status" class="select">
+                    <option value="0" @(pay_id == 0 ? "selected" : "")>支付方式</option>
+                    <option value="1" @(pay_id == 1 ? "selected" : "")>@(DishEnums.PayMode.微信支付)</option>
+                    <option value="2" @(pay_id == 2 ? "selected" : "")>@(DishEnums.PayMode.线下支付)</option>
+                    <option value="3" @(pay_id == 3 ? "selected" : "")>@(DishEnums.PayMode.货到支付)</option>
+                    <option value="4" @(pay_id == 4 ? "selected" : "")>@(DishEnums.PayMode.余额支付)</option>
+                </select>
+            </span>
+            @if (isToday != 1)
+            {
+                <span> 开始日期：</span><input type="text" readonly name="q_begin_time" id="q_begin_time" placeholder="请选择开始日期" value="@(q_begin_time != null ?string.Format("{0:d}", q_begin_time): "")" class="input-text" style="width: 150px;" onClick="WdatePicker()">
+                <span>&nbsp; 结束日期：</span><input type="text" readonly name="q_end_time" id="q_end_time" placeholder="请输入结束日期" value="@(q_end_time != null ? string.Format("{0:d}", q_end_time) : "")" class="input-text" style="width: 150px;" onClick="WdatePicker()">
+            }
+            <input type="text" name="order_sn" id="order_sn" placeholder="订单号" value="@order_sn" style="width:250px" class="input-text">
+            <button name="" id="search" class="btn btn-success" type="button"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+            <button name="" onclick="import_data()" class="btn btn-success" type="button"><i class="Hui-iconfont">&#xe640;</i> 导出</button>
+        </form>
+    </div>
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <div style="float: left;">
+            <a style="text-decoration:none" class="btn btn-primary radius size-MINI" href="/DishAdmin/Order/Index?aId=@aId&storeId=@storeId&isToday=@isToday&order_status=-1&order_type=1"> 待确认订单(店内)</a>
+            <a style="text-decoration:none" class="btn btn-primary radius size-MINI" href="/DishAdmin/Order/Index?aId=@aId&storeId=@storeId&isToday=@isToday&order_status=1&order_type=3"> 待自提订单(店内)</a>
+            <a style="text-decoration:none" class="btn btn-primary radius size-MINI" href="/DishAdmin/Order/Index?aId=@aId&storeId=@storeId&isToday=@isToday&order_status=1&order_type=2"> 待商家接单(外卖)</a>
+        </div><span class="r">共有数据：<strong>@Model.TotalCount</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <p id="tipsMsg" style="text-align:right;"></p>
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="50">选择</th>
+                    <th>订单号</th>
+                    <th width="150">用户名</th>
+                    <th width="60">桌号</th>
+                    <th width="60">排号</th>
+                    <th width="60">订单金额</th>
+                    <th width="80">订单状态</th>
+                    <th width="80">支付方式</th>
+                    <th width="80">支付状态</th>
+                    <th width="150">下单时间</th>
+                    <th width="180">操作</th>
+                </tr>
+                @foreach (DishOrder item in Model.DataList)
+                {
+                    <tr>
+                        <td>
+                            <div class="check-box" style="position: relative;">
+                                <div class="icheckbox-blue"><input type="checkbox" name="check_id" value="@item.id" price="@item.settlement_total_fee" style="position: absolute; top: -20%; left: -20%; display: block; width: 140%; height: 140%; margin: 0px; padding: 0px; background: rgb(255, 255, 255); border: 0px; opacity: 0;"><ins class="iCheck-helper" style="position: absolute; top: -20%; left: -20%; display: block; width: 140%; height: 140%; margin: 0px; padding: 0px; background: rgb(255, 255, 255); border: 0px; opacity: 0;"></ins></div>
+                            </div>
+                        </td>
+                        <td>
+                            @switch (item.order_type)
+                            {
+                                case (int)DishEnums.OrderType.店内:
+                                    if (item.is_ziqu == 1)
+                                    {
+                                        <span class="label label-warning radius">店内自提</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="label label-warning radius">店内</span>
+                                    }
+                                    break;
+                                case (int)DishEnums.OrderType.外卖:
+                                    <span class="label label-success radius">外卖</span>
+                                    break;
+                                default:
+                                    <span class="label label-warning radius">@Enum.GetName(typeof(DishEnums.OrderType), item.order_type)</span>
+                                    break;
+                            }
+
+                            @item.order_sn
+                        </td>
+                        <td>@item.user_name</td>
+                        <td>
+                            @if (item.order_type == (int)DishEnums.OrderType.店内 && item.is_ziqu == 0)
+                            {
+                                <a href="javascript:void(0);" onclick="change_table('/DishAdmin/Order/Info?id=@item.id')">
+                                    @item.order_table_id
+                                    <span class="label label-warning radius">换</span>
+                                </a>
+                            }
+                        </td>
+                        <td>@item.order_haoma</td>
+                        <td>@item.settlement_total_fee</td>
+                        <td>
+                            @switch (item.order_status)
+                            {
+                                case (int)DishEnums.OrderState.已取消:
+                                    <span class="label radius">已取消</span>
+                                    break;
+                                case (int)DishEnums.OrderState.已确认:
+                                    <span class="label label-primary radius">已确认</span>
+                                    break;
+                                case (int)DishEnums.OrderState.未确认:
+                                    <span class="label label-warning radius">未确认</span>
+                                    break;
+                                case (int)DishEnums.OrderState.已完成:
+                                    <span class="label label-success radius">已完成</span>
+                                    break;
+                                default:
+                                    <span class="label label-warning radius">无</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @switch (item.pay_id)
+                            {
+                                case (int)DishEnums.PayMode.余额支付:
+                                    <span class="label label-danger radius">@(DishEnums.PayMode.余额支付)</span>
+                                    break;
+                                case (int)DishEnums.PayMode.货到支付:
+                                    <span class="label label-primary radius">@(DishEnums.PayMode.货到支付)</span>
+                                    break;
+                                case (int)DishEnums.PayMode.微信支付:
+                                    <span class="label label-warning radius">@(DishEnums.PayMode.微信支付)</span>
+                                    break;
+                                case (int)DishEnums.PayMode.线下支付:
+                                    <span class="label label-success radius">@(DishEnums.PayMode.线下支付)</span>
+                                    break;
+                                default:
+                                    <span class="label label-danger radius">未支付</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @switch (item.pay_status)
+                            {
+                                case (int)DishEnums.PayState.未付款:
+                                    <span class="label label-danger radius">未付款</span>
+                                    break;
+                                case (int)DishEnums.PayState.已付款:
+                                    <span class="label label-primary radius">已付款</span>
+                                    break;
+                                case (int)DishEnums.PayState.已退款:
+                                    <span class="label label-danger radius">已退款</span>
+                                    break;
+                                default:
+                                    <span class="label label-danger radius">未支付</span>
+                                    break;
+                            }
+                        </td>
+                        <td>@item.add_time.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="f-14 td-manage">
+                            <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="order_info('订单详情','/DishAdmin/Order/Info?id=@item.id&aId=@item.aId&storeId=@storeId')" href="javascript:;" title="查看"><i class="Hui-iconfont"></i> 查看</a>
+                            <a style="text-decoration:none" class="btn btn-success radius size-MINI" onclick="do_print('@item.id','/DishAdmin/Order/Info?id=@item.id&aId=@item.aId&storeId=@storeId&act=print',this)" href="javascript:;" title="打印"><i class="Hui-iconfont"></i> 打印</a>
+                            @if ((item.pay_id == (int)DishEnums.PayMode.微信支付 || item.pay_id == (int)DishEnums.PayMode.余额支付) && item.pay_status == (int)DishEnums.PayState.已付款 && item.pay_time != Convert.ToDateTime("0001-01-01 00:00:00"))
+                            {
+                                @*<a style="text-decoration:none" class="btn btn-danger radius size-MINI" onclick="order_goods_list('订单退款','/DishAdmin/Order/OrderGoods?orderId=@item.id&aId=@item.aId&storeId=@storeId')" href="javascript:;" title="单菜退款">单菜退款</a>*@
+                                <a class="btn btn-danger radius size-MINI" href="javascript:void(0);" onclick="do_tuikuan(@item.id,'/DishAdmin/Order/OrderGoods?orderId=@item.id&aId=@item.aId&storeId=@storeId&act=refundOrder',this)">退款</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </thead>
+            <tbody></tbody>
+        </table>
+        @if (Model.TotalCount > 0)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+
+        }
+    </div>
+</div>
+<div style="width: 100%;display: block;height: 30px;">&nbsp;</div>
+<div class="shop-preview">
+    <div class="alert alert-warning">
+        <input type="button" class="btn btn-secondary" name="btn_confirmall" value="确认" onclick="order_action_do('batchConfirm')">
+        <input type="button" class="btn btn-danger" name="btn_payall" value="付款" onclick="order_action_do('batchPay')">
+        <input type="button" class="btn btn-success" name="btn_finishall" value="完成" onclick="order_action_do('batchComplete')">
+        <input type="button" class="btn btn-default" name="btn_cancelall" value="取消" onclick="order_action_do('batchCancel')">
+        <input type="button" class="btn btn-warning" name="btn_shanchu" value="删除" onclick="order_action_do('batchDelete')">
+    </div>
+</div>
+
+<div id="choose-category" style="padding: 15px 30px;display: none;">
+    <select name="table_id" class="select" id="table_id_v">
+        <option value=0 selected disabled>选择桌号</option>
+        @foreach (DishTable item in ViewBag.Tables)
+        {
+            <option value=@item.id>@item.table_name</option>
+        }
+    </select>
+</div>
+
+
+<div id="choose-printer" style="padding: 15px 30px;display: none;">
+    <ul>
+        @foreach (DishPrint printer in printers)
+        {
+            <li>
+                <label for="printer_@printer.id">@printer.print_name</label>
+                <input id="printer_@printer.id" type="checkbox" name="selectedPrinter" value="@printer.id" />
+            </li>
+        }
+        @if(printers.Count == 0)
+        {
+            <li>暂无可用打印机，<a style="color:cornflowerblue" href="/DishAdmin/Printer/Index?aId=@aId&storeId=@storeId" >去添加</a></li>
+            @*<li>
+                <label for="printer_1">打印机1</label>
+                <input id="printer_1" type="checkbox" name="selectedPrinter" value="1" />
+            </li>
+            <li>
+                <label for="printer_2">打印机2</label>
+                <input id="printer_2" type="checkbox" name="selectedPrinter" value="2" />
+            </li>*@
+        }
+    </ul>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.text-c input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+
+            $(".icheckbox-blue").click(function()
+            {
+                var curCheckedBox = $(this);
+                if(curCheckedBox.hasClass("checked"))
+                {
+                    curCheckedBox.removeClass("checked");
+                    curCheckedBox.addClass("hover");
+                    curCheckedBox.find("input[name=check_id]").prop("checked",false);
+                }
+                else
+                {
+                    curCheckedBox.removeClass("hover");
+                    curCheckedBox.addClass("checked");
+                    curCheckedBox.find("input[name=check_id]").prop("checked",true);
+                }
+                //统计订单总额
+                var items = $("input[name=check_id]:checked");
+                var sum = 0;
+                items.each(function (i, v) {
+                    sum += parseFloat($(v).attr("price"))*100;
+                })
+                console.log("length:" + items.length);
+                console.log(parseFloat(sum/100));
+                if (items.length > 0) {
+                    $("#tipsMsg").text("当前已选中" + items.length + "条订单,合计订单金额：" + sum / 100);
+                } else {
+                    $("#tipsMsg").text("");
+                }
+
+            });
+        });
+        function change_table(turl) {
+            layer.open({
+                type: 1, title: '更改桌号', zIndex: 9998,
+                btn: ['确定', '取消'],
+                content: $("#choose-category"),
+                yes: function () {
+                    var layer_t_id = layer.msg('操作中', { icon: 16, shade: 0.5, zIndex: 9999 });
+                    var t_val = $("#table_id_v").val();
+                    $.ajax({
+                        type: "GET",
+                        url: turl,
+                        data: { aId : @aId ,storeId : @storeId ,order_table_id_zhen:t_val,act : "changeTable"},
+                        dataType: "json",
+                        success: function (data) {
+                            layer.close(layer_t_id);
+                            if (data.code == 1) {
+                                layer.msg(data.msg);
+                                window.location.reload();
+                            } else {
+                                layer.msg(data.msg);
+                                return false;
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                        }
+                    });
+                }
+            });
+        }
+
+        function order_goods_list(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(add_index);
+        }
+
+        function do_tuikuan(tid, url, e) {
+            //if (!confirm('确认要退款吗?\n\n此操作不可退回，请谨慎操作')) {
+            //    return false;
+            //}
+            layer.prompt({ title: '请输入退款原因（不可撤回，请谨慎操作）', formType: 2, area: ['400px', '230px']}, function (text, index) {
+                layer.close(index);
+
+                $(e).html("<img src='/Public/Home/images/icon32_loading_dark.gif' width='14' height='14'/>  退款中..");
+                $(e).attr('onclick', '');
+
+                $.ajax({
+                    type: "Post",
+                    url: url,
+                    data: { tid: tid, _: Date.now(), refundReason: text },
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code == 0) {
+                            $(e).html("退&nbsp;&nbsp;款");
+                            $(e).attr('onclick', "do_tuikuan(" + tid + ",'" + url + "'," + e + ")");
+                            layer.msg(data.msg);
+                        } else if (data.code == 2) {
+                            $(e).html("退&nbsp;&nbsp;款");
+                            $(e).attr('onclick', "do_tuikuan(" + tid + ",'" + url + "'," + e + ")");
+                            layer.msg(data.msg);
+                        } else if (data.code == 1) {
+                            $(e).html("已退款");
+                            layer.msg(data.msg);
+                        }
+                        //setTimeout(hidediv, 5000);
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            });
+            
+            
+            
+        }
+
+        function do_print(tid, url, e) {
+            function printAction(printerIds){
+                if(!printerIds){
+                    layer.msg('请选择打印机');
+                    return;
+                }
+                url += ('&printer=' + printerIds);
+                layer.msg('打印中', { icon: 16, shade: 0.5 });
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    data: {},
+                    dataType: "json",
+                    success: function (data) {
+                        layer.closeAll();
+                        layer.msg(data.msg);
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    }
+                });
+            }
+            printer = Array.from($('input[name=selectedPrinter]')).map(el => el.value);
+            if(printer.length == 1){
+                layer.confirm('确认打印该订单吗？',{
+                    title: '提示', zIndex: 9998,
+                    btn: ['确定打印', '取消'],
+                    yes: function () {
+                        printAction(printer);
+                    }
+                });
+            }
+            else{
+                layer.open({
+                    type: 1, title: '选择打印机', zIndex: 9998,
+                    btn: ['确定打印', '取消'],
+                    content: $('#choose-printer'),
+                    yes: function () {
+                        var chosePrint = Array.from($('input[name=selectedPrinter]:checked')).map(el => el.value).join(',');
+                        printAction(chosePrint);
+                    }
+                });
+            }
+        }
+
+        function order_action_do(type) {
+            var chk_value = [];
+            $('input[name="check_id"]:checked').each(function () {
+                chk_value.push($(this).val());
+            });
+            if (chk_value.length == 0) {
+                alert('对不起，请选择要操作的数据');
+                return false;
+            }
+            if (!confirm('确认要更新订单状态吗')) {
+                return false;
+            }
+            var ac_index = layer.msg('操作中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                data: { act: type, ids: chk_value,aId : @aId,storeId: @storeId },
+                dataType: "html",
+                url: "/DishAdmin/Order/Index",
+                success: function (data) {
+                    window.location.reload();
+                }
+            })
+        }
+
+
+
+        /*查看*/
+        function order_info(title, url) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+            });
+            layer.full(index);
+        }
+
+        $(function () {
+            //搜索功能
+            var btnSearch = $("#search"), form = btnSearch.closest('form');
+            btnSearch.click(function () {
+                layer.msg('搜索中', { icon: 16, shade: 0.5 });
+                var url = "/DishAdmin/Order/Index";
+                var param = form.serialize();
+                url = url.indexOf("?") != -1 ? url + "&" + param : url + "?" + param;
+                window.location.href = url;
+                return false;
+            });
+            form.submit(function () {
+                $("#search").click();
+                return false;
+            });
+
+            //回车自动提交
+            $('.search-form').find('input').keyup(function (event) {
+                if (event.keyCode === 13) {
+                    $("#search").click();
+                }
+            });
+        });
+
+        function import_data() {
+            var l_layer = layer.msg('导出中，请稍候', {
+                icon: 16,
+                shade: 0.5
+            });
+            var btnSearch = $("#search"),form = btnSearch.closest('form');
+
+            var url = "/DishAdmin/Order/Index";
+            var param = form.serialize();
+            url = url.indexOf("?") != -1 ? url + "&" + param : url + "?" + param + "&act=export";
+            window.location.href = url;
+            layer.close(l_layer);
+        }
+    </script>
+
+}

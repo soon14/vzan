@@ -1,0 +1,96 @@
+﻿@using Entity.MiniApp.Footbath
+@{
+    ViewBag.Title = "预订配置";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+@model FootBath
+<style>
+    #app{font-size:13px;}
+    .selected { border-color: #2196f3; color: #fff; background: #2196f3;display:block; }
+    .selected:hover { color: #fff; }
+    .navtitle { font-size: 16px; color: #218bdf; border-left: solid 2px #218bdf; padding-left: 10px; margin-top: 20px;margin-bottom:15px; }
+    .setting-box { width: 350px; border: 1px solid #ccc; border-radius: 4px; padding: 7px 10px; margin-top: 5px; color: #666666 }
+</style>
+<div id="app" v-cloak>
+    <button type="button" class="layui-btn layui-btn-primary selected" v-on:click="SaveReserveSetting()">保存</button>
+    <div style="float:left;width:440px;">
+        <div class="navtitle">预订填写信息</div>
+        @*<div class="setting-box">
+            顾客称呼<span class="fr color-orange">必填&nbsp;&nbsp;</span>
+        </div>*@
+        <div class="setting-box">
+            手机号<span class="fr color-orange">必填&nbsp;&nbsp;</span>
+        </div>
+        <div class="setting-box">
+            服务项目<span class="fr color-orange">必填&nbsp;&nbsp;</span>
+        </div>
+        <div class="setting-box">
+            服务时间<span class="fr color-orange">必填&nbsp;&nbsp;</span>
+            <div style="width:60%;margin:10px auto">
+                预定时间间隔：
+                <select v-model="storeInfo.switchModel.TimeInterval">
+                    <option value="30">30</option>
+                    <option value="60">60</option>
+                </select>
+                分钟
+            </div>
+            <div style="width:60%;margin:10px auto">
+                <span style="float:left;margin-top:6px;margin-right:5px;">最多提前   </span><input type="text" class="form-control" style="width:50px;float:left;" v-model="storeInfo.switchModel.PresetTime" onkeyup="if(this.value.length==1){this.value=this.value.replace(/[^1-9]/g,'')}else{this.value=this.value.replace(/\D/g,'')}" onafterpaste="if(this.value.length==1){this.value=this.value.replace(/[^1-9]/g,'')}else{this.value=this.value.replace(/\D/g,'')}" maxlength="2"/><span style="float:left;margin-top:6px;margin-left:2px;">天预订</span>
+                <div class="clearfix"></div>
+            </div>
+            <div style="line-height: 23px; margin-top: 20px;" class="color-orange">* 顾客可选的预订服务时间受门店营业时间影响<br />* 技师的工作时间将按预订时间间隔分拆被预约</div>
+        </div>
+        @*<div class="setting-box">
+            预订费用
+            <div style="width:84%;margin:10px auto">
+                <label><input name="ispay" type="radio" value="false" v-model="storeInfo.switchModel.AdvancePayment" />无需支付</label>
+                <label><input name="ispay" type="radio" value="true" v-model="storeInfo.switchModel.AdvancePayment" />需支付：顾客预订时需要按订单金额全额支付</label>
+            </div>
+        </div>*@
+        @*<div class="setting-box">
+            预订技师<span class="fr"><label><input type="checkbox" v-model="storeInfo.switchModel.PresetTechnician" />必填&nbsp;&nbsp;</label></span>
+            <div class="color-orange" style="margin-top: 20px;">
+                * 设置为非必填时，顾客预订时可以不选择技师，由商家分配
+            </div>
+        </div>*@
+        @*<div class="setting-box">
+            性别<span class="fr"><label><input type="checkbox" v-model="storeInfo.switchModel.WriteSex" />必填&nbsp;&nbsp;</label></span>
+        </div>*@
+        <div class="setting-box">
+            买家留言<span style="color:#9E9E9E;">可填写偏好或要求，不超过100字</span><span class="fr"><label><input type="checkbox" v-model="storeInfo.switchModel.WriteDesc" />必填&nbsp;&nbsp;</label></span>
+        </div>
+    </div>
+    @*<div style="float:left">
+        <div class="navtitle">预订自动锁定技师时间</div>
+        <div style="width:350px;margin-left:20px;">
+            <label style="margin-bottom: 15px;"><input name="isLock" type="radio" value="true" v-model="storeInfo.switchModel.AutoLock" />自动锁定</label><br />
+            <label style="margin-bottom: 15px;"><input name="isLock" type="radio" value="false" v-model="storeInfo.switchModel.AutoLock" />不自动锁定</label>
+        </div>
+        <div style="width:550px; line-height:25px;" class="color-orange">
+            温馨提示<br />
+            1. 设置为自动锁定时， 顾客提交预订后，系统将按预订服务项目自动锁定技师时间，用于防止技师时间冲突。<br /><br />例如，顾客A预订了当天11:00到门店进行全身按摩（服务时长为60分钟），选择了工号为110的技师，那么其他顾客选择工号110技师时，预订时间无法选择11:00-12:00，或者，顾客预订时间在11:00-12:00时，则无法选择工号110技师<br /><br /><br /><br />
+        </div>
+    </div>*@
+    <div class="clearfix"></div>
+</div>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            storeInfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+        },
+        methods: {
+            SaveReserveSetting: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveReserveSetting", app.storeInfo, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                })
+            }
+        },
+        created: function () {
+            var that = this;
+        }
+    })
+</script>

@@ -1,0 +1,304 @@
+﻿@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    /*.del { color: red; }*/
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+    .fc-h { -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; }
+    /*.info { color: cornflowerblue; }*/
+    .form-control { width: 35%; display: inline-block; }
+    .nowrap { white-space: nowrap; }
+    /*.modal-dialog{margin-top:0px!important}*/
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+
+    <div id="app" v-cloak>
+
+
+        <table class="table table-bordered viplevel ml_19" style="margin-top:20px;">
+            <tr class="active">
+                <th class="centertext nowrap">序号</th>
+                <th class="centertext nowrap">举报人</th>
+                <th class="centertext nowrap">被举报人</th>
+                <th class="centertext nowrap">被举报人电话</th>
+                <th class="centertext nowrap">举报原因</th>
+                <th class="centertext nowrap">处理状态</th>
+                <th class="centertext nowrap">举报时间</th>
+                <th class="centertext nowrap">操作</th>
+            </tr>
+            <tr v-for="(item,index) in reportMsglist">
+                <td class="centertext nowrap">
+                    <label>
+                        <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />
+                       {{item.Id}}
+                    </label>
+                </td>
+                <td class="centertext">
+                    {{item.ReportUserName}}
+                </td>
+                <td class="centertext">
+                    {{item.BeReportUserName}}
+
+                </td>
+
+                <td class="centertext">
+                    {{item.BeReportMsgPhone}}
+                </td>
+                @*<td class="centertext">
+                    <span v-on:click="viewMsg(item.msgId)" style="cursor:pointer" class="info" v-if="item.beReportMsgState==1">{{item.msgId}}</span>
+                    <span v-else>{{item.msgId}}</span>
+                </td>*@
+                <td class="centertext" style="max-width:200px;">
+                    {{item.ReportReason}}
+                </td>
+                <td class="centertext">
+                    <span class="del" v-if="item.ConfirmState==0">待处理</span>
+                    <span class="info" v-else>已处理</span>
+                </td>
+                <td class="centertext">
+                    {{item.AddTimeStr}}
+                </td>
+                <td class="centertext">
+                    <a href="javascript:void(0)" class="info btn btn-primary ml10" v-on:click="viewMsg(item.MsgId,item.Id)" v-if="item.ConfirmState==0">处理</a>
+                    <a href="javascript:void(0)" class="del btn btn-default ml10" v-on:click="delOrConfirmReportMsg(item.Id,0)">删除</a>
+
+                </td>
+            </tr>
+
+
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+
+        <div class="ml_19">
+            <a style="margin-left:10px;" href="javascript:;" v-on:click="delOrConfirmReportMsg(-1,0)" class="info btn btn-default ml10">批量删除</a>
+        </div>
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content" style="width:100%;">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            信息详情
+                        </h4>
+                    </div>
+                    <div class="modal-body" style="height:500px;overflow:auto">
+                        <div class="msgDetail">
+                            <p>{{viewMsgItem.detail}}</p>
+                            <div v-for="(imgPath,imgIndex) in viewMsgItem.imgs">
+                                <img v-bind:src="imgPath" style="max-width:100%;max-height:100%;" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default ml10" data-dismiss="modal">
+                            暂不处理
+                        </button>
+                        <button type="button" class="btn btn-primary ml10" v-on:click="delMsg(viewMsgItem.Id,viewMsgItem.reportId)">
+                            删除该发布信息
+                        </button>
+                    </div>
+
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+<script>
+    var ids;
+    var chk_value =[];
+    var app = new Vue({
+        el: "#app",
+        data: {
+            recordCount: 0,
+            reportMsglist: [],
+            postdata: {
+                aid:@Html.Raw(ViewBag.appId),
+                pageIndex: 1,
+                pageSize: 10
+            },
+            viewMsgItem:{
+                Id:0,
+                reportId:0,
+                detail:"",
+                imgs:[]
+            }
+
+
+        },
+
+        methods: {
+            viewMsg:function(id,reportId){
+                var that=this;
+                if(id<=0){
+                    layer.msg("被举报信息编号错误");
+                    return;
+                }
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Msg/GetMsgDetail',
+                    data: {Id:id,aid:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg,{time:500});
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                that.viewMsgItem.reportId=reportId;
+                                that.viewMsgItem.Id=id;
+                                that.viewMsgItem.detail=data.dataObj.MsgDetail;
+                                that.viewMsgItem.imgs=data.dataObj.ImgList;
+                                $("#myModal").modal('show');
+                            },500);
+
+                           
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+            },
+            delMsg:function(id,reportId){
+                var that=this;
+                if(id<=0){
+                    layer.msg('删除的帖子错误');
+                    return;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Msg/DelMsg',
+                    data: {ids:id,aid:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            that.delOrConfirmReportMsg(reportId,1);
+
+                            //window.setTimeout(function(){
+
+                            //    window.location.reload();
+                            //},2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+
+            delOrConfirmReportMsg:function(id,actionType){
+                //删除
+                var that=this;
+                if(id==-1){
+                    //表示批量删除
+                    if(chk_value.length<=0){
+                        layer.msg("请先选择需要删除的数据");
+                        return;
+                    }
+                }else{
+                    chk_value.push(id);
+                }
+
+                ids= chk_value.join(",");
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Msg/DelOrConfirmReportMsg',
+                    data: {ids:ids,actionType:actionType,aid:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+
+            //获取列表
+            getList: function () {
+                var that=this;
+                var index = layer.load(1);
+                $.post("/Plat/Msg/GetReportMsgList", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.reportMsglist = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getList();
+
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            }
+        },created:function(){
+            var that=this;
+            that.getList();
+        }
+    });
+</script>
+
+
+

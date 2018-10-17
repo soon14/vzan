@@ -1,0 +1,576 @@
+﻿<style>
+    .storelist { padding-left: 20px; }
+    .storelist li { line-height: 2; list-style-type: decimal; }
+    .pagerlist { font-size: 0; background: #fff; height: 50px; line-height: 50px; }
+
+    .pagerlist span { font-size: 14px; }
+
+    .pagerlist .jump { border: 1px solid #ccc; padding: 5px 8px; -webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+
+    .pagerlist .bgprimary { cursor: default; color: #fff; background: #337ab7; border-color: #337ab7; }
+</style>
+@using User.MiniApp.Model
+@model ViewModel<SubStoreGoodsView>
+@{
+
+
+    ViewBag.Title = "产品管理";
+    ViewBag.PageType = (int)TmpType.小程序多门店模板;
+    string path = "/MultiStore/GoodsManager";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+    List<object> imglist = (List<object>)ViewBag.CarouselList;
+    if (imglist == null)
+    {
+        imglist = new List<object>();
+    }
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int storeId = Utility.IO.Context.GetRequestInt("storeId", 0);
+    List<EntGoodType> goodTypeList =  EntGoodTypeBLL.SingleModel.GetList(string.Format("aid={0}", appid));
+    List<EntGoodLabel> goodLabelList = EntGoodLabelBLL.SingleModel.GetList(string.Format("aid={0}", appid));
+    FootBathBLL storeBLL = FootBathBLL.SingleModel;
+    List<FootBath> storeList = storeBLL.GetList(string.Format("appid={0} and homeid<>0", appid));
+    string manageType = Utility.IO.Context.GetRequest("manageType", "");
+    FootBath currentStore = null;
+    if (manageType == "fromAdmin")
+    {
+        if (storeId <= 0)
+        {
+            @:非法请求
+            return;
+        }
+        else
+        {
+            currentStore = storeBLL.GetModel(storeId);
+            ViewBag.Title = "管理门店产品";
+        }
+    }
+
+}
+@if (storeId == 0 && Model.CurrentUserRoles.Exists(p => p.StoreId == 0))
+{
+    <div class="alert alert-warning alert-dismissible" role="alert">
+        @if (storeList.Count > 0)
+        {
+            <p>共有@(storeList.Count)间门店，请选择要管理的门店：</p>
+            <ol class="storelist">
+                @foreach (FootBath item in storeList)
+                {
+                    <li><a href="/MultiStore/GoodsManager/subgoodlist?appId=@appid&storeId=@item.Id&manageType=fromAdmin">@(string.IsNullOrEmpty(item.StoreName) ? "[未设置门店名称]" : item.StoreName)</a></li>
+                }
+            </ol>
+        }
+        else
+        {
+            <p>未找到门店</p>
+        }
+    </div>
+}
+else
+{
+
+    <div id="app" class="container-fluid">
+
+        <div>
+            @if (manageType == "fromAdmin")
+            {
+
+                <div class="alert alert-warning alert-dismissible" role="alert">
+                    <p>
+                        <a href="/MultiStore/GoodsManager/subgoodlist?appId=@appid" class="glyphicon glyphicon-chevron-left">选择其他分店</a>
+                        您正在管理 <span class="text-danger">@(currentStore.StoreName)</span> 的产品
+                    </p>
+
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <p>提示：</p>
+                    <p>1、只有状态为已上架的产品才能购买</p>
+                    <p>2、库存为“无限制”时，购买产品不会扣减库存</p>
+                    <p>3、门店可以上下架和删除产品，但是只能编辑产品的库存。</p>
+                    <p>4、主店的产品删除时门店的产品将同时删除。主店产品下架后，门店产品不能编辑只能下架或直到库存销售完毕</p>
+                </div>
+            }
+
+            <div class="search ">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <label for="plist-pname">产品名称：</label>
+                        <input type="text" name="search" class="form-control" id="plist-pname" value="@(Utility.IO.Context.GetRequest("search", ""))" />
+                    </div>
+                    <div class="form-group ml10">
+                        <label>产品标签：</label>
+                        <select class="form-control" id="plist-plabels">
+                            <option value="">全部</option>
+                            @if (goodLabelList != null && goodLabelList.Count > 0)
+                            {
+                                foreach (EntGoodLabel item in goodLabelList)
+                                {
+                                    <option value="@(item.id)" @(Utility.IO.Context.GetRequestInt("plabels", 0) == item.id ? "selected" : "")>@(item.name)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group ml10">
+                        <label>产品分类：</label>
+                        <select class="form-control" id="plist-ptype">
+                            <option value="">全部</option>
+                            @if (goodTypeList != null && goodTypeList.Count > 0)
+                            {
+                                foreach (EntGoodType item in goodTypeList)
+                                {
+                                    <option value="@(item.id)" @(Utility.IO.Context.GetRequestInt("ptype", 0) == item.id ? "selected" : "")>@(item.name)</option>
+                                }
+                            }
+                        </select>
+
+                    </div>
+                    <div class="form-group ml10">
+                        <label>状态：</label>
+                        <select class="form-control" id="plist-tag">
+                            <option value="">全部</option>
+                            <option value="1" @(Utility.IO.Context.GetRequestInt("ptag", -1) == 1 ? "selected" : "")>已上架</option>
+                            <option value="0" @(Utility.IO.Context.GetRequestInt("ptag", -1) == 0 ? "selected" : "")>已下架</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary ml10" id="searchbtn">搜索</button>
+                    <a href="@(path)/subgoodlist?appId=@(appid)&storeId=@(storeId)" class="btn btn-default ml10" id="searchReset">重置</a>
+                </div>
+            </div>
+            <div class="mt10">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th width="60" align="center" style="text-align:center;"><input type="checkbox" id="selAll" /></th>
+                            <th width="300">产品名称</th>
+                            <th>产品分类</th>
+                            <th>产品标签</th>
+                            <th>价格（元）</th>
+                            <th>库存</th>
+                            <th>单位</th>
+                            <th>优先级</th>
+                            <th>最后更新时间</th>
+                            <th>状态</th>
+                            <th>总店状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (SubStoreGoodsView item in Model.DataList)
+                        {
+                            <tr>
+                                <td align="center">
+                                    <input type="checkbox" class="item_sel" value="@(item.Id)" />
+                                </td>
+                                <td>
+                                    @if (item.SubState == 0)
+                                    {
+                                        <a href="@(path)/pedit?appId=@appid&id=@item.Id" title="@item.name">@item.name</a>
+                                    }
+                                    else
+                                    {
+                                        @(item.name)
+                                    }
+                                </td>
+                                <td>@item.ptypestr</td>
+                                <td>@item.plabelstr</td>
+                                <td>@(item.price.ToString("#0.00"))</td>
+                                <td>@(item.stockLimit ? item.SubStock.ToString() : "不限库存")</td>
+                                <td>@item.unit</td>
+                                <td>@item.SubSort </td>
+                                <td>@(item.updatetime)</td>
+                                <td>
+                                    @if (item.SubTag == 1)
+                                    {
+                                        <span class="text-success">上架</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">下架</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.tag == 1)
+                                    {
+                                        <span class="text-success">上架</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">下架</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="nobr">
+                                        <input type="button" class='btn btn-sm @(item.SubTag == 1 ? "btn-primary" : "btn-warning") changeGoodTag ml10' value="@(item.SubTag == 1 ? "下架" : "上架")" data-pid="@(item.Pid)" data-id="@(item.Id)" data-tag="@(item.SubTag)" />
+
+                                        @if (item.SubTag == 0)
+                                        {
+                                            <a class="delp btn btn-danger btn-sm" data-pid="@(item.Pid)" data-id="@(item.Id)"><i class="glyphicon glyphicon-trash ml10"></i>删除</a>
+                                            <a href="@(path)/subgoodedit?appId=@appid&id=@item.Pid&storeId=@(item.StoreId)&subid=@item.Id&manageType=@manageType" class="btn btn-default btn-sm ml10"><i class="glyphicon glyphicon-pencil"></i>编辑</a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="page">
+                    @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                </div>
+            </div>
+            <div class="d-flex d-flex-center">
+                <a href="javascript:;" class="btn btn-success" id="btnPickGood" v-on:click="showAddGoodModel">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    新增产品
+                </a>
+                &nbsp;&nbsp;
+                <input type="button" class="btn btn-success batch-action" actin="1" value="批量上架" />
+                &nbsp;&nbsp;
+                <input type="button" class="btn btn-success batch-action" actin="0" value="批量下架" />
+            </div>
+        </div>
+
+        <div class="modal fade" id="AddGoodsModal" tabindex="-1" role="dialog" aria-labelledby="AddGoodsModal_label">
+            <div class="modal-dialog" role="document" style="width:1200px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="AddGoodsModal_label">添加门店产品<span class="text-warning">(只能添加主店上架中的产品，已添加过的产品不能重复选择)</span></h4>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-bordered table-condensed table-striped">
+                            <thead>
+                                <tr>
+                                    <th width="40">ID</th>
+                                    <th>产品名称</th>
+                                    <th>产品分类</th>
+                                    <th>价格</th>
+                                    <th width="100">状态</th>
+                                    <th width="100">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item,index) in goodModel.list">
+                                    <td align="center">{{item.id}}</td>
+                                    <td align="left"><div class="tbr" style="max-width:150px;">{{item.name}}</div></td>
+                                    <td>{{item.ptypestr}}</td>
+
+                                    <td>{{item.price}}</td>
+                                    <td>{{item.tag==1?'上架':'下架'}}</td>
+                                    <td align="center" valign="middle">
+                                        <input type="button" class="btn btn-default" v-if="item.enable" v-bind:class="{' btn-primary':item.sel}"
+                                               v-bind:value="item.sel?'取消':'选取'"
+                                               v-on:click="PickGoodItem(item,index)" />
+                                        <span v-else>已添加</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br />
+                        <div class="nodata" v-if="goodModel.list.length==0">
+                            暂无数据
+                        </div>
+                        <vue-pager ref="goodspager" name="goods"></vue-pager>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" v-on:click="PickGoodOK">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+    var aid =@appid;
+    var storeId =@storeId;
+        $(function () {
+            $(document)
+                .on("click", "#selAll", function () {
+                    $(".item_sel").prop("checked",$(this).prop("checked"));
+                })
+                .on("click", ".delp", function () {
+                    var that = $(this);
+                    var pid = $(this).data("pid");
+                    var subid = $(this).data("id");
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("@(path)/subgoodedit", { act: "del", id: pid, appId: aid, subid: subid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    layer.alert(data.msg);
+                                    if (data.isok) {
+                                        setTimeout(function () {
+                                            window.location.reload();
+                                        }, 2000);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                })
+                .on("click", "#searchbtn", function () {
+                    var skey = $("#plist-pname").val();
+                    var plabels = $("#plist-plabels").find("option:selected").val() || "";
+                    var ptype = $("#plist-ptype").find("option:selected").val() || "";
+                    var ptag = $("#plist-tag").find("option:selected").val() || "";
+
+                    window.location.href = "@(path)/subgoodlist?appId=" + aid + "&storeId=" + storeId + "&search=" + skey + "&plabels=" + plabels + "&ptype=" + ptype + "&ptag=" + ptag+"&manageType=@manageType";
+                })
+                .on("click",".changeGoodTag",function(){
+                    var tag=$(this).data("tag");
+                    var pid = $(this).data("pid");
+                    var subid = $(this).data("id");
+                    tag = (tag == 0 ? 1 : 0);
+                    $.post("@(path)/subgoodedit", {
+                        act: "tag",
+                        id: pid,
+                        appId: aid,
+                        tag: tag,
+                        storeId: storeId,
+                        subid: subid,
+                    })
+                            .then(function (data) {
+                                console.log(data);
+                                if (data.isok) {
+                                    layer.msg("操作成功", { time: 1000 });
+                                    setTimeout(function () {
+                                        window.location.reload();
+                                    }, 1000);
+                                }
+                                else {
+                                    layer.alert(data.msg);
+                                }
+                            });
+                })
+                .on("click", ".batch-action", function () {
+                    var selitems = $(".item_sel:checked");
+                    var actval = $(this).attr("actin");
+                    var actionName = (actval == "1" ? "批量上架" : "批量下架");
+                    if (selitems.length <= 0) {
+                        layer.msg("请选择要" + actionName + "的产品", { time: 1000 });
+                        return;
+                    }
+                    layer.open({
+                        title: "操作确认",
+                        content: "确定要" + actionName + "产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            var ids = [];
+                            $.each(selitems, function (i, obj) {
+                                ids.push($(obj).val());
+                            })
+
+                            $.post("@(path)/subgoodedit", { act: "batch", actval: actval, ids: ids.join(","), appId: aid, storeId: storeId })
+                                .then(function (data) {
+                                    console.log(data);
+                                    if (typeof data == "object") {
+                                        if (data.isok) {
+                                            layer.msg(actionName+"成功", { time: 1000 });
+                                            window.location.reload();
+                                        }
+                                        else {
+                                            layer.alert(data.msg);
+                                        }
+                                    }
+                                    else {
+                                        layer.alert(data);
+                                    }
+                                });
+
+                        }
+                    })
+
+                });
+    });
+
+        //分页组件
+        var vuepager = Vue.component("vue-pager", {
+            template: `<div class="vuepager" v-show="show">
+            <div class ="pagerlist">
+                <span class="jump" v-bind:class="{disabled:pstart}" v-on:click="jumpPage(--current_page)">上一页</span>
+                <span v-show="current_page>5" class="jump" v-on:click="jumpPage(1)">1</span>
+                <span class="ellipsis" v-show="efont">...</span>
+                <span  class="jump" v-for="(item,index) in indexs" v-bind:class="{bgprimary:current_page==item}" v-on:click="jumpPage(item)">{{item}}</span>
+                <span class="ellipsis" v-show="ebehind">...</span>
+                <span :class="{disabled:pend}" class="jump" v-on:click="jumpPage(++current_page)">下一页</span>
+                <span v-show="current_page<pagercount-4" class="jump" v-on:click="jumpPage(pagercount)">{{pagercount}}</span>
+            </div>
+        </div>
+        `,
+            props: ['name'],
+            data: function () {
+                return {
+                    current_page: 1, //当前页
+                    pagercount: 1, //总页数
+                    changePage: '',//跳转页
+                    list: [],
+                    nowIndex: 0,
+                    typeid: 0,
+                    pagerkey: ""
+                }
+            },
+            mounted: function () {
+                console.log("vue-pager mounted " + this.name);
+                if (this.name == "goods") {
+                    this.GetGoods();
+                }
+            },
+            computed: {
+                show: function () {
+                    return this.pagercount && this.pagercount != 1;
+                },
+                pstart: function () {
+                    return this.current_page == 1;
+                },
+                pend: function () {
+                    return this.current_page == this.pagercount;
+                },
+                efont: function () {
+                    if (this.pagercount <= 7) return false;
+                    return this.current_page > 5
+                },
+                ebehind: function () {
+                    if (this.pagercount <= 7) return false;
+                    var nowAy = this.indexs;
+                    return nowAy[nowAy.length - 1] != this.pagercount;
+                },
+                indexs: function () {
+
+                    var left = 1,
+                        right = this.pagercount,
+                        ar = [];
+                    if (this.pagercount >= 7) {
+                        if (this.current_page > 5 && this.current_page < this.pagercount - 4) {
+                            left = Number(this.current_page) - 3;
+                            right = Number(this.current_page) + 3;
+                        } else {
+                            if (this.current_page <= 5) {
+                                left = 1;
+                                right = 7;
+                            } else {
+                                right = this.pagercount;
+
+                                left = this.pagercount - 6;
+                            }
+                        }
+                    }
+                    while (left <= right) {
+                        ar.push(left);
+                        left++;
+                    }
+                    return ar;
+                },
+
+            },
+            created: function () {
+                console.log("vue-pager created " + this.name);
+            },
+            watch: {
+            },
+            methods: {
+                jumpPage: function (id) {
+                    this.current_page = id;
+                    if (this.name == "goods") {
+                        this.GetGoods();
+                    }
+                },
+                GetGoods: function () {
+                    var that = this;
+                    return $.post("/enterprise/plist", {
+                        appId: aid,
+                        storeId:storeId,
+                        actionType: 1,
+                        pageIndex: that.current_page,
+                        pageSize: 10
+                    }, function (data) {
+                        console.log(data);
+                        that.$parent.goodModel.list = data.DataList;
+                        that.pagercount = data.PageCount;
+
+                    }, 'json');
+                }
+            },
+
+        });
+        var ispost = false;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                goodModel: {
+                    list: [],
+
+                }
+            },
+            mounted: function () {
+                console.log("mounted");
+            },
+            methods: {
+                showAddGoodModel: function () {
+                    $("#AddGoodsModal").modal("show");
+                    var that = this;
+                    that.$nextTick(function () {
+                        if (that.$refs.goodspager) {
+                            that.$refs.goodspager.current_page = 1;
+                            that.$refs.goodspager.list = [];
+                            that.$refs.goodspager.GetGoods();
+                        }
+                    });
+                },
+                PickGoodItem: function (item,index) {
+                    item.sel = !item.sel
+                },
+                PickGoodOK: function () {
+
+                    var sellist = this.goodModel.list.filter(function (_item) {
+                        return _item.sel;
+                    });
+                    var ids = [];
+                    sellist.forEach(function (item) {
+                        ids.push(item.id);
+                    });
+                    if (ids.length == 0) {
+                        $("#AddGoodsModal").modal("hide");
+                        return;
+                    }
+
+                    if (ispost) {
+                        layer.msg("请勿重复提交");
+                        return;
+                    }
+                    if (!ispost) {
+                        ispost = true;
+                    }
+
+                    var loadPopIndex = layer.load(1, {
+                        shade: [0.8, '#fff']
+                    });
+                    $.post("/GoodsManager/AddStoreProduct", { appId: aid, storeId: storeId, ids: ids.join(",") }, function (res) {
+                        layer.close(loadPopIndex);
+                        layer.msg(res.msg);
+                        if (res.isok) {
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
+                        }
+                        else {
+
+                            $("#AddGoodsModal").modal("hide");
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+}

@@ -1,0 +1,435 @@
+﻿@model EditModel<DishOrder>
+@using BLL.MiniApp;
+@{
+    ViewBag.Title = "Info";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+    DishOrder order = Model.DataModel;
+    List<DishShoppingCart> carts = Model.DataModel.carts;
+    List<DishTransporter> dishTransporters = ViewBag.dishTransporters;
+
+    bool isDaiQueRen = order.peisong_type == (int)DishEnums.DeliveryType.商家配送 && order.peisong_status == (int)DishEnums.DeliveryState.待商家确认;
+    bool isDaiQuHuo = order.peisong_type == (int)DishEnums.DeliveryType.商家配送 && order.peisong_status == (int)DishEnums.DeliveryState.待取货;
+    bool isPeiSongZhong = order.peisong_type == (int)DishEnums.DeliveryType.商家配送 && order.peisong_status == (int)DishEnums.DeliveryState.配送中;
+    bool isYiWanCheng = order.peisong_type == (int)DishEnums.DeliveryType.商家配送 && order.peisong_status == (int)DishEnums.DeliveryState.已完成;
+
+    List<CommonLog> logList = CommonLogBLL.SingleModel.GetListBySql(string.Format("select * from CommonLog where StoreId={0} and aid={1} and ModuleName='{2}' and TemplateName='{3}' and AttachId={4} order by id asc", Model.storeId, Model.aId, CommonLogModule.订单.ToString(), TmpType.智慧餐厅.ToString(), Model.DataModel.id));
+}
+
+<div class="page-container">
+    <div>
+        <div class="list-div" style="margin-bottom: 5px">
+            <table width="98%" cellpadding="3" cellspacing="1" class="table table-border table-bordered table-bg table-hover">
+                <tr>
+                    <th colspan="4">基本信息</th>
+                </tr>
+                <tr>
+                    <td width="18%"><div align="right"><strong>订单号：</strong></div></td>
+                    <td width="34%">@order.order_sn</td>
+                    <td width="15%"><div align="right"><strong>订单状态：</strong></div></td>
+                    <td>
+                        @switch (order.order_status)
+                        {
+                            case (int)DishEnums.OrderState.已取消:
+                                <span class="label radius">已取消</span>
+                                break;
+                            case (int)DishEnums.OrderState.已确认:
+                                <span class="label label-primary radius">已确认</span>
+                                break;
+                            case (int)DishEnums.OrderState.未确认:
+                                <span class="label label-warning radius">未确认</span>
+                                break;
+                            case (int)DishEnums.OrderState.已完成:
+                                <span class="label label-success radius">已完成</span>
+                                break;
+                            default:
+                                <span class="label label-warning radius">无</span>
+                                break;
+                        }
+                        &nbsp;
+                        @switch (order.pay_status)
+                        {
+                            case (int)DishEnums.PayState.未付款:
+                                <span class="label label-danger radius">未付款</span>
+                                break;
+                            case (int)DishEnums.PayState.已付款:
+                                <span class="label label-primary radius">已付款</span>
+                                break;
+                            case (int)DishEnums.PayState.已退款:
+                                <span class="label label-danger radius">已退款</span>
+                                break;
+                            default:
+                                <span class="label label-danger radius">未支付</span>
+                                break;
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td><div align="right"><strong>姓名：</strong></div></td>
+                    <td>@order.user_name </td>
+                    <td><div align="right"><strong>下单时间：</strong></div></td>
+                    <td>@order.add_time_txt</td>
+                </tr>
+                <tr>
+                    <td><div align="right"><strong>支付方式：</strong></div></td>
+                    <td>@(order.pay_id > 0 ? Enum.GetName(typeof(DishEnums.PayMode), order.pay_id) : "未支付")</td>
+                    <td><div align="right"><strong>付款时间：</strong></div></td>
+                    <td>@order.pay_time</td>
+                </tr>
+                <tr>
+                    <td><div align="right"><strong>客户给商家的留言：</strong></div></td>
+                    <td colspan="3">@order.post_info 用餐人数：@order.yongcan_renshu</td>
+                </tr>
+                @if (order.pay_status == (int)DishEnums.PayState.已退款)
+                {
+                    <tr>
+                        <td><div align="right"><strong>退款原因：</strong></div></td>
+                        <td colspan="3">@(order.refundReason)</td>
+                    </tr>
+                }
+                <tr>
+                    <td><div align="right"><strong>商家备注：</strong></div></td>
+                    <td colspan="3"><input id="orderMark" type="text" value="@order.GetAttrbute().mark" /><button onclick="updateOrderMark(@order.id)">保存</button></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="list-div" style="margin-bottom: 5px">
+            <table width="100%" cellpadding="3" cellspacing="1" class="table table-border table-bordered table-bg table-hover">
+                <tr>
+                    <th colspan="8" scope="col">
+                        商品信息
+                        <span class="c-warning">
+                            <br />提示：<br />
+                            1，操作不可逆请谨慎操作<br />
+                            2，订单至少要保留一个菜品。<br />
+                            3，只有未支付的订单才可以修改<br />
+                            4，如果订单参与满减2018-8-13以后的订单才可以修改
+                        </span>
+                    </th>
+                </tr>
+                <tr>
+                    <td scope="col"><div align="center"><strong>商品名称</strong></div></td>
+                    <td scope="col"><div align="center"><strong>价格</strong></div></td>
+                    <td scope="col"><div align="center"><strong>数量</strong></div></td>
+                    <td scope="col"><div align="center"><strong>属性</strong></div></td>
+                    <td scope="col"><div align="center"><strong>小计</strong></div></td>
+                </tr>
+                @foreach (DishShoppingCart item in carts)
+                {
+                    <tr>
+                        <td>@item.goods_name</td>
+                        <td><div align="right">￥@item.goods_price 元</div></td>
+                        <td align="center">
+
+                            @if (order.pay_status == (int)DishEnums.PayState.未付款 && ((order.huodong_manjin_jiner > 0 && order.huodong_manjian_id > 0) || order.huodong_manjin_jiner == 0))
+                            {
+                                <div class="form-inline" style="text-align:center;">
+                                    @*<input type="button" value="+" style="width:30px;height:30px;" />*@
+
+                                    <div style="display:inline-block;width:40px;">
+                                        @if (carts.Count > 1)
+                                        {
+                                            <input type="button" value="删除全部" style="width:60px;height:30px;" class="changeDish" data-id="@(item.id)" data-number="-@(item.goods_number)" />
+                                        }
+                                    </div>
+                                    <div style="display:inline-block;width:40px; margin-left:20px;">
+                                        @if (carts.Count > 0 && item.goods_number > 0)
+                                        {
+                                            <input type="button" value="-1" style="width:30px;height:30px;" class="changeDish" data-id="@(item.id)" data-number="-1" />
+                                        }
+                                    </div>
+                                    <span style="display:inline-block;width:50px;text-align:center;">@item.goods_number</span>
+                                    <div style="display:inline-block;width:40px;">
+                                        <input type="button" value="+1" style="width:30px;height:30px;" class="changeDish" data-id="@(item.id)" data-number="1" />
+                                    </div>
+
+                                </div>
+                            }
+                            else
+                            {
+                                <span style="display:inline-block;width:120px;text-align:center;">@item.goods_number</span>
+                            }
+                        </td>
+                        <td>@item.goods_attr</td>
+                        <td><div align="right" style="color:#ff0000;">￥@(item.goods_price * item.goods_number)元</div></td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+
+        <div class="list-div" style="margin-bottom: 5px">
+            <table width="100%" cellpadding="3" cellspacing="1" class="table table-border table-bordered table-bg table-hover">
+                <tr>
+                    <th>费用信息</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div align="right">
+                            商品总金额：<strong>￥@order.goods_amount 元</strong>
+                            @if (order.dabao_fee > 0.00d)
+                            {
+                                <span>+ 打包费</span><strong>@order.dabao_fee </strong>
+                            }
+                            @if (order.shipping_fee > 0.00d)
+                            {
+                                <span>+ 运费</span><strong>@order.shipping_fee </strong>
+                            }
+                            @if (order.huodong_shou_jiner > 0.00d)
+                            {
+                                <span> 首单立减</span><strong>@order.huodong_shou_jiner </strong>
+                            }
+                            @if (order.huodong_manjin_jiner > 0.00d)
+                            {
+                                <span> 满减</span><strong>@order.huodong_manjin_jiner </strong>
+                            }
+                            @if (order.huodong_quan_jiner > 0.00d)
+                            {
+                                <span> 优惠金额</span><strong>@order.huodong_quan_jiner </strong>
+                            }
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><div align="right" style="color: #ff0000;"> = 订单总金额：<strong>￥@(order.settlement_total_fee)元</strong></div></td>
+                </tr>
+                <tr>
+                    <th>发票信息</th>
+                </tr>
+                <tr>
+                    <td>
+                        @if (order.fapiao_text.Equals("不需要发票"))
+                        {
+                            <div align="right">@order.fapiao_text</div>
+                        }
+                        else
+                        {
+                            <div align="right">【@order.fapiao_leixing_txt】【@order.fapiao_text】【@order.fapiao_no】</div>
+                        }
+                    </td>
+                </tr>
+                @if (order.is_ziqu == 1)
+                {
+                    <tr>
+                        <th>自取信息</th>
+                    </tr>
+                    <tr>
+                        <td style="padding:0;">
+                            <table border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td width="18%" style="border-left:0;"><div align="right"><strong>自取人姓名：</strong></div></td>
+                                    <td>@order.ziqu_username</td>
+                                </tr>
+                                <tr>
+                                    <td width="18%" style="border-left:0;border-bottom:0;"><div align="right"><strong>自取人电话：</strong></div></td>
+                                    <td style="border-bottom:0;">@order.ziqu_userphone</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                }
+                @if (logList != null && logList.Count > 0)
+                {
+                    <tr>
+                        <td><b>订单修改记录</b></td>
+                    </tr>
+                    foreach (var item in logList)
+                    {
+                        <tr>
+                            <td>
+                                @Html.Raw(item.Info) <br />
+                                @Html.Raw(item.AddTime)
+                            </td>
+                        </tr>
+                    }
+                }
+            </table>
+        </div>
+    </div>
+
+    @if (order.order_type == (int)DishEnums.OrderType.外卖)
+    {
+        <div class="list-div" style="margin-bottom: 5px">
+            <table width="98%" cellpadding="3" cellspacing="1" class="table table-border table-bordered table-bg table-hover">
+                <tbody>
+                    <tr>
+                        <th colspan="4">配送信息</th>
+                    </tr>
+                    <tr>
+                        <td width="18%"><div align="right"><strong>收货人：</strong></div></td>
+                        <td width="34%">@order.consignee</td>
+                        <td width="15%"><div align="right"><strong></strong></div></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td><div align="right"><strong>地址：</strong></div></td>
+                        <td>[@(string.Format("{0} {1} {2}", order.province, order.city, order.area))] @order.address </td>
+                        <td><div align="right"><strong>电话：</strong></div></td>
+                        <td>@order.mobile</td>
+                    </tr>
+                    <tr>
+                        <td><div align="right"><strong>客户给商家的留言：</strong></div></td>
+                        <td colspan="3">@order.post_info</td>
+                    </tr>
+                    <tr>
+                        <td><div align="right"><strong>配送员：</strong></div></td>
+                        <td colspan="3" id="tdPeiSongYuan">@order.peisong_user_name,@order.peisong_user_phone</td>
+                    </tr>
+                    <tr>
+                        <td><div align="right"><strong>配送方式：</strong></div></td>
+                        <td colspan="3">@Enum.GetName(typeof(DishEnums.DeliveryType), order.peisong_type)</td>
+                    </tr>
+                    <tr>
+                        <td><div align="right"><strong>配送状态：</strong></div></td>
+                        <td colspan="3">
+                            <span id="peisong_status_txt">@order.peisong_status_text</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><div align="right"><strong>操作：</strong></div></td>
+                        <!-- #region 待确认 -->
+                        <td colspan="3" class="operation" id="tdDaiQueRen" @(!isDaiQueRen ? "hidden" : "")>
+                            <a href="javascript:void(0);" class="btn btn-success radius size-XL" onclick="waimai_order_action_do('queren',@order.id)">确认接单</a>
+                            <a href="javascript:void(0);" class="btn btn-danger radius size-XL" onclick="waimai_order_action_do('quxiao',@order.id)">取消订单</a>
+                        </td>
+                        <!--#endregion -->
+                        <!-- #region 待取货 -->
+                        <td colspan="3" class="operation" id="tdDaiQuHuo" @(!isDaiQuHuo ? "hidden" : "")>
+                            <select name="psy_id" id="s_psy_id" style="height: 40px;line-height: 40px;font-size: 16px;">
+                                <option value="0">请选择配送员</option>
+                                @foreach (DishTransporter item in dishTransporters)
+                                {
+                                    <option value="@item.id" data-telephone="@item.dm_mobile">@item.dm_name</option>
+                                }
+                            </select>
+                            <a href="javascript:void(0);" class="btn btn-danger radius size-XL" onclick="waimai_order_action_peisong(@order.id)">确认配送</a>
+                        </td>
+                        <!--#endregion -->
+                        <!-- #region 配送中 -->
+                        <td colspan="3" class="operation" id="tdPeiSongZhong" @(!isPeiSongZhong ? "hidden" : "")>
+                            <a href="javascript:void(0);" class="btn btn-danger radius size-XL" onclick="waimai_order_action_do('wancheng',@order.id)">确认完成</a>
+                        </td>
+                        <!--#endregion-->
+                        <td colspan="3" class="operation" id="tdDefault" @(!isDaiQueRen && !isDaiQuHuo && !isPeiSongZhong ? "" : "hidden")></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section scripts{
+    <script>
+        function updateOrderMark(oid) {
+            var orderMark = $('#orderMark').val();
+            var ac_index = layer.msg('操作中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.post('/DishAdmin/Order/Info',{
+                act: 'mark',id:oid, aId : @order.aId,storeId: @order.storeId, orderMark: orderMark
+            }).then(function(result){
+                if(!result.code){
+                    layer.msg(result.msg);
+                }
+            });
+        }
+        function waimai_order_action_do(type,oid){
+            if(!confirm('确认要进行该操作吗')){
+                return false;
+            }
+            var ac_index = layer.msg('操作中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type:"POST",
+                data:{act:type,id:oid,aId:@order.aId,storeId:@order.storeId},
+                dataType:"json",
+                url:"/DishAdmin/Order/Info",
+                success:function(data){
+                    if(data.code == 1){
+                        if(type == "queren")
+                        {
+                            $("#peisong_status_txt").html("待取货");
+
+                            $(".operation").hide();
+                            $("#tdDaiQuHuo").show();
+                        }
+                        else if (type == "wancheng")
+                        {
+                            $("#peisong_status_txt").html("已完成");
+
+                            $(".operation").hide();
+                            $("#tdDefault").show();
+                        }
+
+                        layer.close(ac_index);
+                        layer.msg(data.msg);
+                    }else{
+                        layer.close(ac_index);
+                        layer.msg(data.msg);
+                        return false;
+                    }
+                }
+            })
+        }
+
+        function waimai_order_action_peisong(oid){
+            var psy_id = $("#s_psy_id").val();
+            if(psy_id == 0){
+                alert("请选择配送员");
+                return false;
+            }
+            if(!confirm('确认要进行该操作吗')){
+                return false;
+            }
+            var ac_index = layer.msg('操作中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type:"POST",
+                data:{id:oid,aId:@order.aId,storeId:@order.storeId,act:"peisong",psy_id:psy_id},
+                dataType:"json",
+                url:"/DishAdmin/Order/Info",
+                success:function(data){
+                    if(data.code == 1){
+                        $("#peisong_status_txt").html("配送中");
+                        $("#tdPeiSongYuan").html($("#s_psy_id option:selected").text() + "," + $("#s_psy_id option:selected").data("telephone"));
+
+                        $(".operation").hide();
+                        $("#tdPeiSongZhong").show();
+
+                        layer.close(ac_index);
+                        layer.msg(data.msg);
+                    }else{
+                        layer.close(ac_index);
+                        layer.msg(data.msg);
+                        return false;
+                    }
+                }
+            })
+        }
+
+        $(function () {
+            $(document).on("click", ".changeDish", function () {
+                var that = $(this);
+                if (confirm("更改后不能恢复，确定本次操作吗？")) {
+                    var ac_index = layer.load('请稍等...', { icon: 2, shade: .2 });
+                    var number = that.data("number");
+                    var cartId = that.data("id");
+                    $.post("/DishAdmin/Order/ChangeDish?orderId=@(Model.DataModel.id)&cartId=" + cartId + "&aId=@(Model.aId)&storeId=@(Model.storeId)&count=" + number).then(function (data) {
+                        layer.close(ac_index);
+                        alert(data.msg);
+                        if (data.code == 1) {
+                            window.location.reload();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
+}

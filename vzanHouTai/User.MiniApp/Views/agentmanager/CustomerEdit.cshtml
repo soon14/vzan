@@ -1,0 +1,615 @@
+﻿@using Entity.MiniApp
+@model  CustomerModel
+@{
+    Layout = null;
+    List<AreaRegion>
+    areaList = null;
+    AreaRegionBLL areabll =  AreaRegionBLL.SingleModel;
+    ViewBag.PageType = -1;
+}
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <meta charset="utf-8" />
+    <title>资料编辑</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="" name="author" />
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+    @*
+        <link href="@WebSiteConfig.SourceContent/content/??css/layer/layer.css" rel="stylesheet">*@
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    @*
+        <script src="@(WebSiteConfig.cdnurl)content/layer/layer.js"></script>*@
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+    <script src="@(WebSiteConfig.SourceContent)/fcontent/plugin/vue.min.js"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/js/bootstrap.js"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/agent/css/zzsc.css" rel="stylesheet" />
+    <style>
+        .userInfo {
+            width: 90%;
+        }
+
+            .userInfo span {
+                color: red;
+            }
+
+            .userInfo td {
+                padding: 8px 5px;
+                width: 250px;
+                text-align: left;
+            }
+
+        .textname {
+            text-align: right !important;
+            width: 100px !important;
+        }
+
+        .userInfo input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            margin-left: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: montserrat;
+            color: #2C3E50;
+            font-size: 13px;
+        }
+
+        .nosel_template, .sel_template {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .nosel_template li, .sel_template li {
+                width: 100%;
+                float: left;
+                margin-left: 3%;
+                margin-top: 29px;
+                display: flex;
+            }
+
+                .nosel_template li .tt0, .sel_template li .tt0 {
+                    text-align: left;
+                    width: 30px;
+                }
+
+                .nosel_template li .t1, .sel_template li .t1 {
+                    text-align: left;
+                    width: 120px;
+                }
+
+                .nosel_template li .t2, .sel_template li .t2 {
+                    text-align: center;
+                    width: 120px;
+                }
+
+        .placebox {
+            width: 30% !important;
+            float: left;
+        }
+
+        table.layui-form td {
+            padding: 7px 0px;
+        }
+
+        .selbox {
+            width: 85%;
+        }
+
+        .layui-form-select {
+            width: 90%;
+        }
+
+        textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            font-family: montserrat;
+            color: #2C3E50;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    @if (Model != null)
+    {
+        <div id="editdiv">
+            <div class="layui-tab layui-tab-card" style="width: 90%; margin: 20px auto;">
+                <ul class="layui-tab-title">
+                    <li class="@(ViewBag.type != "templatemsg" && ViewBag.type != "newtemplate" ? "layui-this":"")">基础信息</li>
+                    <li class="@(ViewBag.type == "newtemplate" ? "layui-this" : "")">已开通模板</li>
+                    <li>补充信息</li>
+
+                    <li class="@(ViewBag.type.Trim(',') == "templatemsg" ? "layui-this" : "")"
+                        onclick="checkBind(@Model.SessionId,@Model.id)" data-id="@Model.id" data-code="@Model.SessionId" id="tab_MsgTemplate">
+                        消息接收人
+                    </li>
+                </ul>
+                <div class="layui-tab-content">
+
+                    <div class="layui-tab-item @(ViewBag.type != "templatemsg" && ViewBag.type != "newtemplate" ? "layui-show" : "" )">
+                        <table class="userInfo">
+                            <tr>
+                                <td class="textname"><span>*</span>客户账号：</td>
+                                <td><p>@Model.LoginId</p></td>
+                            </tr>
+                            <tr>
+                                <td class="textname">
+                                    <span>*</span>客户名称：
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" value="@Model.username" id="username" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="textname">
+                                    <span>*</span>密码：
+                                </td>
+                                <td>
+                                    <a href="javascript:;" onclick="changePwd()">修改密码</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="textname">
+                                    <span>*</span>换绑：
+                                </td>
+                                <td>
+                                    <a href="javascript:;" onclick="changeUserInfo()">更换绑定账号</a>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+                    <div class="layui-tab-item @(ViewBag.type== "newtemplate"?"layui-show" : "")">
+                        <div style="height: 350px;overflow-y: auto;overflow-x: hidden;">
+
+                            @if (Model.sel_templateList != null && Model.sel_templateList.Count > 0)
+                            {
+                            <ul class="sel_template" style="width:100%;height:auto;">
+                                <li>
+                                    <div class="t1">模板名称</div>
+                                    <div class="t2">开通时间</div>
+                                    <div class="t2">到期时间</div>
+                                    <div class="t2">状态</div>
+                                </li>
+                                @for (var i = 0; i < Model.sel_templateList.Count; i++)
+                                    {
+                                    <li>
+                                        <div class="t1">
+                                            
+
+                                            <label title="@Model.sel_templateList[i].TName" onclick="selecttemplate('@Model.sel_templateList[i].TName',@Model.sel_templateList[i].Price)">@(Model.sel_templateList[i].TName.Length > 7 ? Model.sel_templateList[i].TName.Substring(0, 7) + "..." : Model.sel_templateList[i].TName)</label>
+                                        </div>
+                                        @*<div class="t2">购买价格:￥@(template.Price * 0.01)</div>*@
+                                        <div class="t2">
+                                            <label>@Model.sel_templateList[i].AddTimeStr</label>
+                                        </div>
+                                        <div class="t2">
+                                            <label>@Model.sel_templateList[i].outtime</label>
+                                        </div>
+                                        <div class="t2">
+                                            <label style="color:@(Model.sel_templateList[i].State>=0?"green;":"red;")">@Model.sel_templateList[i].statename</label>
+                                        </div>
+                                    </li>
+                                    }
+                                <div style="clear:both"></div>
+                            </ul>
+                            }
+                            else
+                            {
+                            <p>还没有开通任何模板</p>
+                            }
+                        </div>
+
+                        <div style="color:#FF6600;font-size:12px;">
+                            <div>温馨提示：</div>
+                            <div>1.请到【已开通模板管理】菜单下进行模板续期、启用/停用等操作</div>
+                        </div>
+                    </div>
+
+                    <div class="layui-tab-item">
+                        <table class="layui-form">
+                            <tr class="areadiv">
+                                <td class="textname">客户所在地区：</td>
+                                <td>
+                                    <div class="layui-form placebox" lay-filter="provincediv">
+                                        <select name="province" id="province" attr-field="province" lay-filter="province" class="form-control">
+                                            <option value="0">不限</option>
+                                            @(areaList = areabll.GetProvinceList())
+                                            @foreach (var item in areaList)
+                                            {
+                                            <option @(Model.provincecode == item.AreaCode ? "selected" : string.Empty) value="@item.AreaCode">@item.AreaName.Trim()</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="layui-form placebox" lay-filter="citydiv">
+                                        <select name="city" id="city" attr-field="city" lay-filter="city" class="form-control">
+                                            <option value="0">不限</option>
+                                            @if (Model.provincecode > 0)
+                                            {
+                                                areaList = areabll.GetChildAreaList(Model.provincecode);
+                                                foreach (var item in areaList)
+                                                {
+                                            <option @(Model.citycode == item.AreaCode ? "selected" : string.Empty) value="@item.AreaCode">@item.AreaName.Trim()</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="layui-form placebox" id="areadiv" lay-filter="areadiv">
+                                        <select name="area" id="area" lay-filter="area">
+                                            <option value="0">不限</option>
+                                            @if (Model.citycode > 0)
+                                            {
+                                                areaList = areabll.GetChildAreaList(Model.citycode);
+                                                foreach (var item in areaList)
+                                                {
+                                            <option @(Model.areacode == item.AreaCode ? "selected" : string.Empty) value="@item.AreaCode">@item.AreaName.Trim()</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            <tr>
+                                <td class="textname">客户所在行业：</td>
+                                <td>
+                                    <select class="form-control selbox" id="industryid">
+                                        <option value="0">不限</option>
+                                        <option value="1">餐饮美食</option>
+                                        <option value="2">旅游</option>
+                                        <option value="3">酒店</option>
+                                        <option value="4">KTV</option>
+                                        <option value="5">足疗按摩</option>
+                                        <option value="6">洗浴汗蒸</option>
+                                        <option value="7">酒吧</option>
+                                        <option value="8">桌游</option>
+                                        <option value="9">儿童乐园</option>
+                                        <option value="10">其他休闲娱乐</option>
+                                        <option value="11">车辆服务</option>
+                                        <option value="12">房产</option>
+                                        <option value="13">教育培训</option>
+                                        <option value="14">装修建材</option>
+                                        <option value="15">家政服务</option>
+                                        <option value="16">二手市场</option>
+                                        <option value="17">宠物</option>
+                                        <option value="18">婚庆摄影</option>
+                                        <option value="19">丽人</option>
+                                        <option value="20">批发采购</option>
+                                        <option value="21">医疗健康</option>
+                                        <option value="22">孕产护理</option>
+                                        <option value="23">亲子</option>
+                                        <option value="24">运动健身</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="textname">企业规模：</td>
+                                <td>
+                                    <select class="form-control selbox" id="companyscaleid">
+                                        <option value="0">不限</option>
+                                        <option value="1">15人以下</option>
+                                        <option value="2">16-50人</option>
+                                        <option value="3">51-100人</option>
+                                        <option value="4">100-200人</option>
+                                        <option value="5">201-300人</option>
+                                        <option value="6">301人以上</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="textname">备注：</td>
+                                <td>
+                                    <textarea style="max-width:420px;min-width:420px; min-height:150px; max-height:150px;" placeholder="内容不超过200字" id="remark">@Model.remark</textarea>
+                                </td>
+                            </tr>
+                        </table>
+
+
+                    </div>
+
+                    <div class="layui-tab-item @(ViewBag.type.Trim(',') == "templatemsg"? "layui-show" : "" )">
+                        <table class="userInfo">
+                            <tr>
+                                <td class="textname"><span>*</span>扫码绑定：</td>
+                                <td><p><img src="/QrCode/GetQrCode?code=@Model.SessionId" /></p><p>使用微信扫描二维码<br />绑定用户可接收小程序商户模板消息，如：下单支付通知<br />（暂不支持"多门店"版）</p></td>
+                            </tr>
+                            @if (Model.MsgAccounts == null || Model.MsgAccounts.Count == 0)
+                            {
+                                <tr>
+                                    <td class="textname">
+                                        <span>*</span>接收人微信：
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" disabled="disabled" value="@(Model.agentName + "（默认联系人）" )" id="username" />
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var account in Model.MsgAccounts)
+                                {
+                                    <tr>
+                                        <td class="textname">
+                                            <span>*</span>接收人微信：
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" disabled="disabled" value="@(account.NickName)" id="username" style="width:180PX;display:inline" />
+                                            <a href="javascript:;" class="layui-btn layui-btn-primary" id="btn_unbind" onclick="unBind(@Model.id,@account.Id)" style="display:inline-block">解绑</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div style="width:100%;text-align:center; margin-bottom:0px;">
+                <a href="javascript:;" class="layui-btn layui-btn-primary" onclick="closewin()">关闭</a>
+                <a href="javascript:;" class="layui-btn layui-btn-normal" onclick="saveInfo()">保存</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>数据不存在</p>
+    }
+    <script>
+        layui.use('element', function () {
+            element = layui.element;
+        });
+        layui.use('form', function () {
+            form = layui.form;
+            form.on('select(province)', function (data) {
+                $.post("/agentmanager/getAreaCode", { areacode: data.value }, function (data) {
+                    if (data) {
+                        var cityHtml = '<dd lay-value=="0">不限</dd>';
+                        var cityselHtml = '<option value="0">不限</option>';
+                        $.each(data, function (k, v) {
+                            cityHtml += '<dd lay-value="' + v.AreaCode + '">' + v.AreaName + '</dd>';
+                            cityselHtml += '<option value="' + v.AreaCode + '">' + v.AreaName + '</option>';
+                        });
+                        //console.log(cityselHtml);
+                        $("#city").html(cityselHtml);
+                        $("#area").siblings('.layui-form-select').children('.layui-anim').html('');
+                        $("#area").html('<option value="0">不限</option>');
+                        form.render('select');
+                    }
+                }, "json");
+            });
+
+            form.on('select(city)', function (data) {
+                $.post("/agentmanager/getAreaCode", { areacode: data.value }, function (data) {
+                    if (data) {
+                        var cityselHtml = '<option value="0">不限</option>';
+                        $.each(data, function (k, v) {
+                            cityselHtml += '<option value="' + v.AreaCode + '">' + v.AreaName + '</option>';
+                        });
+                        $("#area").html(cityselHtml);
+                        form.render('select');
+                        if (data.length > 0) {
+                            $("#areadiv").show();
+                            console.log("show");
+                        } else {
+                            console.log("hide");
+                            $("#areadiv").hide();
+                        }
+                    }
+                }, "json");
+            });
+        });
+        $(function () {
+            //$(".nosel_template li").click(function () {
+            //    $(this).find("input[type=checkbox]").click();
+            //})
+            $(".nosel_template li input[type=checkbox]").click(function (event) {
+                //阻止向上冒泡
+                event.stopPropagation();
+            })
+            $("#industryid").val(@Model.industryid);
+            $("#companyscaleid").val(@Model.companyscaleid);
+            if ($('#tab_MsgTemplate').attr('class')) {
+                $('#tab_MsgTemplate').click();
+            }
+        })
+        function closewin() {
+            parent.layer.closeAll();
+        }
+        function saveInfo() {
+            var nametest = /^[^\s]+$/;
+            var username = $.trim($("#username").val());
+            if (username == '') {
+                layer.msg("请填写用户名称");
+                return;
+            }
+            if (username.length > 28) {
+                layer.msg("客户名称过长，请勿超过28字");
+                return;
+            }
+            if (!nametest.test($.trim(username))) {
+                layer.msg("客户名称不能含有空格");
+                return;
+            }
+            //var pwd = $("#pwd").val();
+            //if (!(/^[a-zA-Z\d]+$/).test(pwd)) {
+            //    layer.msg("只能用数字或者字母作为密码");
+            //    return;
+            //}
+            //if (pwd.length < 6) {
+            //    layer.msg("密码长度不够，请输入至少6位密码");
+            //    return;
+            //}
+            var arrChk = $("input[name='template']:checked");
+            // console.log(arrChk);
+            var ids = "";
+            var years = "";
+            $.each(arrChk, function (i, value) {
+                ids += $(this).val() + ",";
+                years +=value.attributes.year.nodeValue+ ",";
+            });
+            var province = $("#province").val();
+            var city = $("#city").val();
+            var area = $("#area").val();
+            var industryid = $("#industryid").val();
+            var companyscaleid = $("#companyscaleid").val();
+            var remark = $("#remark").val();
+            if (remark.length > 200) {
+                layer.msg("备注内容不能超过200字");
+                return;
+            }
+            var industrselect = $("#industrselect").val();
+            if(industrselect==undefined)
+            {
+                industrselect="";
+            }
+            // console.log(ids);
+            var postdata = {
+                id: Number('@Model.id'),
+                username: username,
+                //pwd: pwd,
+                tids: ids,
+                province: province,
+                city: city,
+                area: area,
+                industryid: industryid,
+                companyscaleid: companyscaleid,
+                remark:remark,
+                years:years,
+                industrselect:industrselect,
+            }
+            //if(ids.trim() == "")
+            //{
+            //    layer.msg("请选择要开通的模板");
+            //    return;
+            //}
+            var ind =layer.load(1);
+
+            $.post("/agentmanager/saveEdit", postdata, function (data) {
+                layer.close(ind);
+                //layer.msg(data.Msg);
+                if (data.isok) {
+                    layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                        layer.load(1);
+                        window.parent.location.reload();//do something
+                    });
+                } else {
+                    layer.msg(data.Msg);
+                }
+            });
+
+        }
+        function changePwd() {
+            parent.layer.open({
+                type: 2,
+                title: "修改密码",
+                shade: 0,
+                // shade: [0.8, '#000'],
+                // skin: 'layui-layer-rim', //加上边框
+                area: ['650px', '350px'], //宽高
+                content: '/agentmanager/updatePwd?id=@Model.id'
+            });
+
+        }
+        function changeUserInfo() {
+            parent.layer.open({
+                type: 2,
+                title: "换绑账号",
+                shade: 0,
+                area: ['650px', '650px'], //宽高
+                content: '/agentmanager/ChangeUserInfo?id=@Model.id'
+            });
+        }
+
+        function changeyear(index,e,price) {
+            var year =$(e).val();
+            if(year<=0)
+            {
+                year = 1;
+                $(e).val(year)
+            }
+            if(year.indexOf('.')>=0)
+            {
+                year = Math.floor(year);
+                $(e).val(year)
+            }
+            var sumprice = year*price/100;
+            //$(".sumprice_"+index)[0].innerHTML = "￥"+sumprice;
+            $(".check_"+index)[0].attributes.year.nodeValue = year;
+        }
+        function selecttemplate(tname,price) {
+            $("#tname")[0].innerHTML=tname;
+            $("#price")[0].innerHTML=price/100;
+            $("#opentemplatedesc").modal("show");
+        }
+
+        function unBind(id,msgId) {
+            $.post('/AgentManager/UpdateMsgAccount', {
+                id: id,
+                msgId: msgId
+            }).then(function (result) {
+                if (result.isok) {
+                    layer.msg('解绑成功');
+                    var refresh = location.href.replace(location.search,'?type=templatemsg&id='+id);
+                    setTimeout(() => { location.replace(refresh); }, 3000);
+                    return;
+                }
+                layer.msg(result.Msg);
+            });
+        }
+
+        function checkBind(code, id) {
+            $.post('/AgentManager/BindMsgAccount', {
+                id: id,
+                code: code,
+            }).then(function (result) {
+                if (result.isok) {
+                    layer.msg('扫码成功,刷新中...');
+                    var refresh = location.href.replace(location.search,'?type=templatemsg&id='+id);
+                    setTimeout(() => { location.replace(refresh); }, 3000);
+                    return;
+                }
+                setTimeout(() =>{ checkBind(code,id); },1000);
+            })
+        }
+    </script>
+</body>
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="opentemplatedesc" tabindex="-1" role="dialog" style="z-index:9999999999" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">开通详情</h4>
+            </div>
+            <div class="modal-body">
+                <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                    <tr>
+                        <td>
+                            <div>
+                                模板名称：<span id="tname"></span>
+                            </div>
+                            <div>
+                                模板单价（元）：<span id="price"></span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

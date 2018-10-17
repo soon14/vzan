@@ -1,0 +1,267 @@
+﻿@model EditModel<DishActivity>
+@{
+    ViewBag.Title = "编辑活动";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+        <input type="hidden" name="aId" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        促销类型：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box radio_q_type">
+                            <input name="q_type" value="1" type="radio" @(Model.DataModel.q_type == 1 ? "checked" : "") id="q_type-1">
+                            <label for="q_type-1">代金券</label>
+                        </div>
+                        <div class="radio-box radio_q_type">
+                            <input name="q_type" value="2" type="radio" @(Model.DataModel.q_type == 2 ? "checked" : "") id="q_type-2">
+                            <label for="q_type-2">满额减</label>
+                        </div>
+                        <div class="dish_m_tips">
+                            代金券：可以在菜单页点击领取使用，每券每人限领一次；<br />
+                            满额减：设置后用户无需领取，订单额满足自动使用，一单一次，每人可使用多次；
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        是否开启：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="state" value="1" type="radio" @(Model.DataModel.state == 1 ? "checked" : "") id="state-1">
+                            <label for="state-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input name="state" value="0" type="radio" @(Model.DataModel.state == 0 ? "checked" : "") id="state-2">
+                            <label for="state-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        促销期限：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        @if (Model.DataModel.id == 0)
+                        {
+                            <input type="text" name="q_begin_time" id="q_begin_time" placeholder="请选择开始日期" value="@(DateTime.Now.ToString("yyyy-MM-dd 00:00"))" class="input-text" style="width: 150px;">
+                            @:到
+                            <input type="text" name="q_end_time" id="q_end_time" placeholder="请输入结束日期" value="@(DateTime.Now.AddDays(7).ToString("yyyy-MM-dd 23:59"))" class="input-text" style="width: 150px;">
+                        }
+                        else
+                        {
+                            <input type="text" name="q_begin_time" id="q_begin_time" placeholder="请选择开始日期" value="@(Model.DataModel.q_begin_time.ToString("yyyy-MM-dd HH:mm"))" class="input-text" style="width: 150px;">
+                            @:到
+                            <input type="text" name="q_end_time" id="q_end_time" placeholder="请输入结束日期" value="@(Model.DataModel.q_end_time.ToString("yyyy-MM-dd HH:mm"))" class="input-text" style="width: 150px;">
+                        }
+
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        促销名称：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="q_name" placeholder="请输入促销名称" value="@(Model.DataModel.q_name)" class="input-text">
+                    </div>
+                </div>
+                <div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            <span class="c-red">*</span>
+                            最低消费：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="q_xiaofei_jiner" id="q_xiaofei_jiner" placeholder="0.00" value="@(Model.DataModel.q_xiaofei_jiner)" class="input-text" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            <span class="c-red">*</span>
+                            <span id="q_type_one">代金券额度：</span>
+                            <span id="q_type_two" style="display:none;">满减额度：</span>
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="q_diyong_jiner" id="q_diyong_jiner" placeholder="0.00" value="@(Model.DataModel.q_diyong_jiner)" class="input-text" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="row cl" id="q_limit_num">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            发放数量：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="q_limit_num" placeholder="" value="@(Model.DataModel.q_limit_num)" class="input-text" style="width: 200px;">
+                            <div class="dish_m_tips">为0则不限制</div>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        促销描述：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <textarea name="q_shuoming" class="textarea" placeholder="促销描述...">@(Model.DataModel.q_shuoming)</textarea>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        排序：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="q_order" placeholder="99" value="@(Model.DataModel.q_order)" class="input-text" style="width: 500px;">
+                        <div class="dish_m_tips">数字越小越靠前</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button" id="cancel_button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+
+    @*<script src="~/Areas/DishAdmin/lib/laydate/laydate.js"></script>*@
+    <script type="text/javascript">
+
+        $(function () {
+            $(".radio_q_type").on("ifChanged",function () {
+                var pro_val = $('input:radio[name="q_type"]:checked').val();
+                if (pro_val == 2) {
+                    $("#q_type_one").hide();
+                    $("#q_type_two").show();
+                    $("#q_limit_num").hide();
+                } else {
+                    $("#q_type_one").show();
+                    $("#q_type_two").hide();
+                    $("#q_limit_num").show();
+                }
+            });
+            $("#cancel_button").click(function () {
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+            });
+
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            layui.use('laydate', function () {
+                var laydate = layui.laydate;
+
+                //执行一个laydate实例
+                laydate.render({
+                    elem: '#q_begin_time',
+                    format: 'yyyy-MM-dd HH:mm',
+                    istime: true,
+                    event: 'focus',
+                    //theme: 'molv'
+                });
+                laydate.render({
+                    elem: '#q_end_time',
+                    format: 'yyyy-MM-dd HH:mm',
+                    istime: true,
+                    event: 'focus',
+                    //theme: 'molv'
+                });
+            });
+
+            
+
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+            //表单验证
+            $("#form-article-add").validate({
+                rules: {
+                    q_name: {
+                        required: true,
+                    },
+                    q_type: {
+                        required: true
+                    },
+                    q_begin_time: {
+                        required: true
+                    },
+                    q_end_time: {
+                        required: true
+                    },
+                    q_xiaofei_jiner: {
+                        min:1
+                    },
+                    q_limit_num: {
+                        min:0,
+                    },
+                    q_shuoming: {
+                        required: true
+                    }
+
+                },
+                onkeyup: false,
+                //focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {   //表单提交句柄,为一回调函数，带一个参数：form
+                    var xiaofei = Number($("#q_xiaofei_jiner").val())||0;
+                    var diyong = Number($("#q_diyong_jiner").val())||0;
+                    if (diyong > xiaofei) {
+                        layer.msg('抵用金额不能超出消费金额');
+                        return;
+                    }
+                    var l_index = layer.msg('数据更新中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, { icon: 0 });
+                            } else {
+                                layer.alert(data.msg, { icon: 1 }, function (index) {
+                                    parent.layer.close(index);
+                                    parent.location.reload();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+        function getAttrList(cat_id) {
+            $.ajax({
+                type: "GET",
+                data: { goods_type: cat_id, goods_id: "0" },
+                dataType: "html",
+                url: "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_goods/getattrlist.html",
+                success: function (data) {
+                    $("#attrTable").html(data);
+                }
+            })
+        }
+
+    </script>
+
+}

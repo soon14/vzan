@@ -1,0 +1,91 @@
+﻿@using Entity.MiniApp.Footbath
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "支付方式";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+@model FootBath
+<style>
+    #app{ padding-top:10px;}
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form{width:665px; margin-top:30px;}
+    .layui-form tr { height: 50px; }
+    .layui-form .title { text-align: right; }
+</style>
+<div id="app" v-cloak>
+    <p>当预订费用设置为【无需支付】时（<a href="#">去设置</a>），顾客到店开单后再进行付款，付款时可选择以下支付方式：</p>
+    <table class="layui-form">
+        <tr>
+            <td class="title">现金：</td>
+            <td><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="storeModel.switchModel.CashPay" value="CashPay"></td>
+            <td class="title">微信支付（记账）：</td>
+            <td><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="storeModel.switchModel.WeChatPay" value="WeChatPay"></td>
+            <td class="title">银行卡支付（记账）：</td>
+            <td><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="storeModel.switchModel.BankCardPay" value="BankCardPay"></td>
+        </tr>
+        <tr>
+            <td class="title">储值支付：</td>
+            <td><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="storeModel.switchModel.SaveMoneyPay" value="SaveMoneyPay"></td>
+            <td class="title">支付宝支付（记账）：</td>
+            <td><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="storeModel.switchModel.Alipay" value="Alipay"></td>
+            <td class="title">其它：</td>
+            <td><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="storeModel.switchModel.OtherPay" value="OtherPay"></td>
+        </tr>
+    </table>
+</div>
+<script>
+    var form;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            storeModel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            isOpen:false,
+        },
+        methods: {
+            InitLayer: function () {
+                layui.use(['form'], function () {
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        if (data.value == 'CashPay') {
+                            app.storeModel.switchModel.CashPay = data.elem.checked;
+                        } else if (data.value == 'SaveMoneyPay') {
+                            app.storeModel.switchModel.SaveMoneyPay = data.elem.checked;
+                        } else if (data.value == 'WeChatPay') {
+                            app.storeModel.switchModel.WeChatPay = data.elem.checked;
+                        } else if (data.value == 'Alipay') {
+                            app.storeModel.switchModel.Alipay = data.elem.checked;
+                        } else if (data.value == 'BankCardPay') {
+                            app.storeModel.switchModel.BankCardPay = data.elem.checked;
+                        } else if (data.value == 'OtherPay') {
+                            app.storeModel.switchModel.OtherPay = data.elem.checked;
+                        }
+                        app.isOpen = data.elem.checked;
+                        app.SaveInfo();
+                    });
+                });
+            },
+            SaveInfo: function () {
+                layer.closeAll();
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SavePayWay", { appId: app.storeModel.appId, paySetting: app.storeModel.switchModel }, function (data) {
+                    layer.close(layerIndex);
+                    if (!data.isok) {
+                        layer.msg(data.msg);
+                    } else {
+                        if (app.isOpen) {
+                            layer.msg("已开启")
+                        } else {
+                            layer.msg("已关闭")
+                        }
+                    }
+                },"json")
+            },
+
+        },
+        created: function(){
+            this.InitLayer();
+        }
+    })
+</script>

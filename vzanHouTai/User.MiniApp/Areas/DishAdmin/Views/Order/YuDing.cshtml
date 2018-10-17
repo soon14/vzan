@@ -1,0 +1,128 @@
+﻿@model ViewModel<DishYuDing>
+@{
+    ViewBag.Title = "预定管理";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 订单管理 <span class="c-gray en">&gt;</span> 预定管理 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray">
+        <span class="r">共有数据：<strong>@(Model.TotalCount)</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="30">ID</th>
+                    <th width="80">预定人</th>
+                    <th width="80">联系电话</th>
+                    <th width="300">备注</th>
+                    <th width="80">预定时间</th>
+                    <th width="120">添加时间</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td>@(item.id)</td>
+                            <td>@(item.yuding_name)(@(item.yuding_renshu)人)</td>
+                            <td>@(item.yuding_phone)</td>
+                            <td>@(item.yuding_info)</td>
+                            <td>@(item.yuding_date + " " + item.yuding_time)</td>
+                            <td>@(item.addtime)</td>
+                        </tr>
+                    }
+                </tbody>
+            }
+
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        /*添加*/
+        function goods_add(title, url) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+        /*编辑*/
+        function goods_edit(title, url, id) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+        /*删除*/
+        function article_del(obj, id) {
+            layer.confirm('确认要删除吗？', function (index) {
+                $.ajax({
+                    type: 'POST',
+                    url: '',
+                    dataType: 'json',
+                    success: function (data) {
+                        $(obj).parents("tr").remove();
+                        layer.msg('已删除!', { icon: 1, time: 1000 });
+                    },
+                    error: function (data) {
+                        console.log(data.msg);
+                    },
+                });
+            });
+        }
+
+        /*下架*/
+        function article_stop(obj, id) {
+            layer.confirm('确认要下架吗？', function (index) {
+                $(obj).parents("tr").find(".td-manage").prepend('<a style="text-decoration:none" onClick="article_start(this,id)" href="javascript:;" title="发布"><i class="Hui-iconfont">&#xe603;</i></a>');
+                $(obj).parents("tr").find(".td-status").html('<span class="label label-defaunt radius">已下架</span>');
+                $(obj).remove();
+                layer.msg('已下架!', { icon: 5, time: 1000 });
+            });
+        }
+        $(function () {
+            //搜索功能
+            $("#search").click(function () {
+                layer.msg('搜索中', {
+                    icon: 16,
+                    shade: 0.5
+                });
+                var url = "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_goods/index.html";
+                var cate_id = $("#s_cate_id").val();
+                if (url.indexOf('?') > 0) {
+                    url += '&cate_id=' + cate_id;
+                } else {
+                    url += '?cate_id=' + cate_id;
+                }
+                var g_name = $("#g_name").val();
+                url += '&name=' + g_name;
+                window.location.href = url;
+            });
+
+            //回车自动提交
+            $('.search-form').find('input').keyup(function (event) {
+                if (event.keyCode === 13) {
+                    $("#search").click();
+                }
+            });
+
+        })
+    </script>
+
+}
+

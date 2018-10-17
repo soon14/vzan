@@ -1,0 +1,227 @@
+﻿@{
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+    ViewBag.Title = "小程序关键词转让";
+}
+@section cssSection{
+}
+<section class="keyword-wrap f fv fc">
+    <div class="banner-box">
+        <img src="@(WebSiteConfig.cdnurl)content/newhome/image/keyword/keyword-bg.png?@(WebSiteConfig.cdnVersion)" />
+        <div class="banner-text tc">
+            <h2 class="c-fff fz-56 mgb40">小程序关键词转让</h2>
+            <div class="input-box rel">
+                <input id="searchText" type="text" placeholder="请输入您需要的小程序关键词" />
+                <img id="searchKeyWord" src="@(WebSiteConfig.cdnurl)content/newhome/image/keyword/icon-search.png?@(WebSiteConfig.cdnVersion)" />
+            </div>
+        </div>
+    </div>
+    <div class="keyword-content pdt40 mgb80">
+        <ul class="classify-list f fc fw"></ul>
+        <ul class="keyword-list f fc fw"></ul>
+    </div>
+    <div class="masking-wrap">
+        <div id="keyword" class="popup-item f fv fc">
+            <img class="popup-close" src="@(WebSiteConfig.cdnurl)content/newhome/image/popup-close.png?@(WebSiteConfig.cdnVersion)" />
+            <h3 class="fz-24 c-333">购买关键词</h3>
+            <div>
+                <div class="input-item rel f f-end">
+                    <div class="input-type t-b c-333">关键词</div>
+                    <div id="keywordText" class="input-area"></div>
+                </div>
+                <div class="input-item rel f f-end">
+                    <span class="input-type t-b c-333">报价</span>
+                    <input id="price" class="input-area" type="text" placeholder="请输入您的报价" />
+                </div>
+                <div class="input-item rel f f-end">
+                    <span class="input-type t-b c-333">电话</span>
+                    <input id="phoneNum" class="input-area" type="text" placeholder="请输入联系电话" />
+                </div>
+                <div id="keywordSubmit" class="btn-ok fz-20" data-type="">确定提交</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+@section script{
+    <script>
+        (function () {
+            $(function () {
+
+                var keyWordArr = null;
+                var keywordId = null;
+                //获取关键词分类列表
+                $.ajax({
+                    url: '/dzhome/GetKeyWordTypeList',
+                    type: 'POST',
+                    success: function (res) {
+                        if (res.isok) {
+                            var classifyArr = res.dataObj;
+                            var defaultObj = { Name: "全部" };
+                            classifyArr.unshift(defaultObj);
+                            $.each(classifyArr, function (i, item) {
+                                if (i == 0) {
+                                    var html = '<li class="active" data-typeId="">' + item.Name + '</li>';
+                                } else {
+                                    var html = '<li data-typeId="' + item.Id + '">' + item.Name + '</li>';
+                                }
+                                $(".classify-list").append(html);
+                            })
+                        } else {
+                            layer.msg(res.Msg);
+                        }
+                    },
+                    error: function (err) {
+                        console.log("[GetKeyWordTypeList]:接口报错");
+                    }
+                })
+                //获取关键词列表
+                function getKeyWordList(params) {
+                    var _params = {
+                        typeId: "",
+                        name: "",
+                        pageIndex: 1,
+                        pageSize: 9999,
+                    }
+                    for (var key in params) {
+                        _params[key] = params[key]
+                    }
+                    $.ajax({
+                        url: '/dzhome/GetKeyWordList',
+                        type: "POST",
+                        data: _params,
+                        success: function (res) {
+                            if (res.isok) {
+                                keyWordArr = res.dataObj.list;
+                                $(".empty-data").remove();
+                                if (keyWordArr.length > 0) {
+                                    $.each(keyWordArr, function (i, item) {
+                                        var html = '<li class="f fc" data-id="' + item.Id + '"><p class="line line1" >' + item.Name + '</p><span class="switch"></span></li>'
+                                        $(".keyword-list").append(html);
+                                    })
+                                    //判断火狐浏览器，是则使用js达到文本省略号效果
+                                    if (navigator.userAgent.indexOf('Firefox') >= 0) {
+                                        $(".keyword-list>li>p").css("white-space", "nowrap");
+                                        $.each($(".keyword-list>li>p"), function (i, item) {
+                                            var text = $(item).text();
+                                            if (text.length > 5) {
+                                                $(item).text(text.substring(0, 4) + '...');
+                                            }
+                                        })
+                                    }
+                                } else {
+                                    var html = '<p class="empty-data tc fz-18">暂无关键词</p>';
+                                    $(".keyword-list").append(html);
+                                }
+
+                            } else {
+                                layer.msg(res.Msg);
+                            }
+
+                        },
+                        error: function (err) {
+                            console.log("[GetKeyWordList]:接口报错");
+                        }
+                    })
+                }
+                getKeyWordList();
+                //切换分类
+                $(document).on("click", ".classify-list>li", function () {
+                    $(".classify-list>li").removeClass("active");
+                    $(this).addClass("active");
+                    $(".keyword-list>li").remove();
+                    $("#searchText").val("");
+                    var _params = {};
+                    _params.typeId = $(this).attr("data-typeId");
+                    getKeyWordList(_params);
+                });
+                //搜索关键词
+                $("#searchKeyWord").on("click", function () {
+                    var search = $("#searchText").val();
+                    if (search != '') {
+                        $(".keyword-list>li").remove();
+                        $(".classify-list>li").removeClass("active");
+                        $(".classify-list>li").eq(0).addClass("active");
+                        var _params = {};
+                        _params.name = search;
+                        getKeyWordList(_params);
+                    } else {
+                        layer.msg("请输入您要查找的内容");
+                    }
+                })
+                // 回车键搜索  
+                $(document).keypress(function (e) {
+                    if (e.which == 13) {
+                        $("#searchKeyWord").trigger("click");
+                    }
+                });
+                //监听输入框退格
+                $("#searchText").bind("input", function () {
+                    if ($(this).val().length === 0) {
+                        $(".keyword-list>li").remove();
+                        getKeyWordList();
+                    }
+                })
+
+                //选择关键词
+                $(document).on("click", ".keyword-list>li", function () {
+                    $(".keyword-list>li").removeClass("active");
+                    $(this).addClass("active");
+                    var text = keyWordArr[$(this).index()].Name;
+                    keywordId = $(this).attr("data-id");
+                    $(".masking-wrap").show();
+                    $("#keywordText").text(text);
+                })
+                //关闭弹窗
+                $(".popup-close").on("click", function () {
+                    $(".masking-wrap").hide();
+                })
+                $("#keywordSubmit").on("click", function () {
+                    var price = $("#price").val();
+                    var phone = $("#phoneNum").val();
+                    var submitParams = {
+                        id: keywordId,
+                        phone,
+                        price
+                        }
+                    if (price != '' && phone != '') {
+                        applyKeyWord(submitParams);
+                        } else {
+                        var errInfo = (price == '' && '请输入您的报价') || (phone == '' && '请输入您的联系电话');
+                        layer.msg(errInfo);
+                    }
+                })
+                //提交报价
+                function applyKeyWord(params) {
+                    var _params = {
+                        id: '',
+                        phone: '',
+                        price: '',
+                    }
+                    for (var key in params) {
+                        _params[key] = params[key]
+                    }
+                    $.ajax({
+                        url: "/dzhome/ApplyKeyWord",
+                        data: _params,
+                        type: "POST",
+                        success: function (res) {
+                            if (res.isok) {
+                                layer.msg("报价成功");
+                                $(".masking-wrap").hide();
+                                $("#price").val("");
+                                $("#phoneNum").val("");
+                            } else {
+                                layer.msg(res.Msg);
+                            }
+                        },
+                        error: function (err) {
+                            console.log("[ApplyKeyWord]:接口报错");
+                        }
+                    })
+                }
+            })
+
+        })();
+    </script>
+}

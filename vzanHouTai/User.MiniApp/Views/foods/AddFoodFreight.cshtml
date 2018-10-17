@@ -1,0 +1,236 @@
+﻿@using Entity.MiniApp.Fds;
+@model List<FoodFreightTemplate>
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "餐饮菜品运费模板管理";
+}
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass">
+            <span class="glyphicon glyphicon-ok"></span>
+            添加运费模板
+        </a>
+    </div>
+    @*<div>
+            最多可添加20个分类
+        </div>*@
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+    <tr class="text-center">
+        <th>序号</th>
+        <th>模板名称</th>
+        <th>模板详情</th>
+        @*<th>是否默认</th>*@
+        <th>添加时间</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><label>@(i++)</label> </td>
+                <td>@(item.Name)</td>
+                <td>默认运费：@(item.BaseCount) 件内 @(item.BaseCost * 0.01)元，每增加1件，运费增加 @(item.ExtraCost * 0.01)元</td>
+                @*@if (item.IsDefault == 1)
+                    {
+                        <td>是</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                    }*@
+                <td>@(item.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                <td>
+                    <a style="margin-top: 5px;" href="#" data-itemid="@(item.Id)" data-name="@(item.Name)" class="btn btn-primary btn-xs temp-btn-setting">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        编辑
+                    </a>
+                    <a style="margin-top: 5px;" href="#" class="btn btn-danger btn-xs temp-btn-del" data-itemid="@(item.Id)" data-name="@(item.Name)" data-setval="-1" data-typename="state">
+                        <span class="glyphicon glyphicon-remove"></span>
+                        删除
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<script type="text/html" id="id_typeconfigtitle" hidden>
+    <span>模板名称:</span>
+    <input maxlength="20" placeholder="模板名称" id="nameVal" type="text" class="form-control" value="{#name#}">
+    <span>模板设置:</span>
+    <br />
+    <input id="Qty" placeholder="数量" type="text" class="form-control" style="width:80px; display: inline-flex;" value="{#qty#}" onkeyup="this.value=this.value.replace(/\D/g,'')" onafterpaste="this.value=this.value.replace(/\D/g,'')" maxlength="3" />件内
+    <input id="Money" placeholder="金额" type="text" class="form-control" style="width:80px; display: inline-flex;" value="{#money#}" maxlength="5" onkeyup="vr(this);" />元
+    <br />
+    <span>每增加1件,运费增加：</span>
+    <input id="ewMoney" placeholder="额外金额" type="text" class="form-control" style="width:80px; display: inline-flex;" value="{#ewmoney#}" maxlength="5" onkeyup="vr(this);" />元
+    <br />
+    <div hidden>
+        是否默认：
+        <input type="radio" class="checkbox-ickeck" name="checkDefault" id="newStoreStyle" value="1">
+        <label for="newStoreStyle">是</label> &nbsp;
+        <input type="radio" class="checkbox-ickeck" name="checkDefault" id="newStoreStyle" value="0">
+        <label for="newStoreStyle">否</label> &nbsp;
+    </div>
+    @*<input  placeholder="" name="checkDefault" type="radio" style="width:60px; display: inline-flex;" value="1"  />是
+        <input  placeholder="" name="checkDefault" type="radio" style="width:60px; display: inline-flex;" value="0" />否*@
+</script>
+<script>
+
+    function vr(n)
+    {
+        var reg = /^\d+\.?(\d{1,2})?$/;
+        while (!reg.test($(n).val()) && $(n).val() != "") {
+            $(n).val(checkStr($(n).val()));
+        }
+    }
+    //检查是否符合金额格式:只能输入数字且最多保留小数点后两位
+    function checkStr(str) {
+        return str.substring(0, str.length - 1);
+    }
+    var FoodId =@(ViewBag.FoodId);
+    $(function () {
+
+        //添加编辑模板
+        $(document).on("click", ".temp-btn-setting", function () {
+            $(".checkDefault").removeAttr("checked");
+
+            var $thisobj = $(this);
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            var qty = "";
+            var money = "";
+            var ewmoney = "";
+            var isDefault = 0;
+            $.ajax({
+                type: "get",
+                url: "/foods/getFoodFreight",
+                async: false,
+                data:
+                    {
+                        Id:itemid
+                    },
+                success: function (data) {
+                    if(data != "")
+                    {
+                        title = data.Name;
+                        qty = data.BaseCount;
+                        money = data.BaseCost * 1000/100000;
+                        ewmoney = data.ExtraCost * 1000/100000;
+                        isDefault = data.IsDefault;
+                    }
+                }
+            });
+
+            //$(".checkDefault").each(function(i,n)
+            //{
+            //    if($(n).val() == isDefault)
+            //    {
+            //        $(n).attr();
+            //    }
+            //})
+
+            $("input.checkbox-ickeck[name='checkDefault'][value='"+isDefault+"']").attr("checked","checked");
+           var a =  layer.open({
+                title: "",
+                content: $("#id_typeconfigtitle").html().replace("{#name#}",title).replace("{#qty#}",qty).replace("{#money#}",money).replace("{#ewmoney#}",ewmoney),
+                btn: ["保存", "取消"],
+                yes: function () {
+                    var name = $('#nameVal').val();
+                    if (name.trim().length === 0) {
+                        alert("请输入模板名称!");
+                        return;
+                    }
+                    var baseCount = $('#Qty').val();
+                    if (baseCount <= 0) {
+                        alert("请输入件数!");
+                        return;
+                    }
+                    var baseCost = $('#Money').val();
+                    base = parseFloat(baseCost);
+                    if (isNaN(parseFloat(baseCost))) {
+                        alert("请输入正确基础运费!");
+                        return;
+                    }
+                    var extraCost = $('#ewMoney').val();
+                    if (isNaN(parseFloat(extraCost))) {
+                        alert("请输入额外运费!");
+                        return;
+                    }
+                    var _default = $('input.checkbox-ickeck[name="checkDefault"]:checked').val();
+                    $.ajax({
+                        type: "Post",
+                        url: "/foods/AddFoodFreight",
+                        data:
+                            {
+                                appId:@(ViewBag.appId),
+                                Name:name,
+                                FoodId:FoodId,
+                                Id:itemid,
+                                BaseCount:baseCount,
+                                BaseCost:baseCost * 100,
+                                ExtraCost:extraCost * 100,
+                                IsDefault:_default
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.msg('操作成功');
+                                layer.closeAll(); 
+                                setTimeout(function(){
+                                    window.location.reload();
+                            
+                                },2000);
+                               
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                },
+                no: function () { layer.closeAll(); },
+                cancel: function () {
+                    layer.closeAll();
+                }
+            })
+        }).on("click",".temp-btn-del",function(){
+            var $thisobj = $(this);
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            layer.open({
+                title: "删除确认",
+                content: "确定要删除该运费模板么？",
+                btn: ["确定", "取消"],
+                yes: function () {
+                    var _title =title;
+                    $.ajax({
+                        type: "Post",
+                        url: "/foods/delFoodFreightTemplate",
+                        data:
+                            {
+                                Id:itemid,
+                                FoodId:FoodId
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.msg('操作成功');
+                                layer.closeAll(); 
+                                setTimeout(function(){
+                                    window.location.reload();
+                            
+                                },2000);
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                }
+            })
+        });
+    })
+</script>

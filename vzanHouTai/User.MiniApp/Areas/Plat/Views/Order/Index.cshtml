@@ -1,0 +1,247 @@
+﻿
+@using Entity.MiniApp.Plat;
+@model List<PlatApplyApp>
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "独立小程序";
+}
+
+@section styles{
+    <style>
+        .centertext {
+            vertical-align: inherit !important;
+            text-align: center;
+        }
+
+        .width200 {
+            width: 200px !important;
+            display: inline-block !important;
+        }
+
+        .width100 {
+            width: 100px !important;
+            display: inline-block !important;
+        }
+
+        .datetimebox {
+            float: none !important;
+        }
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="gray-bg" style="background-color:#fff;">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div id="app" v-cloak>
+
+            <div style="margin-left:17px;">
+                <div class="d-flex d-flex-center formsearch">
+                    <span>商家名称：</span><input type="text" v-model="postdata.storeName" class="input-sm layui-input width200" />
+                    <span>订单号：</span><input type="text" v-model="postdata.ordernum" class="input-sm layui-input width200" />
+                    <span>收货人：</span><input type="text" v-model="postdata.acceptername" class="input-sm layui-input width200" />
+                    <span>收货电话：</span><input type="text" v-model="postdata.acceptertelephone" class="input-sm layui-input width200" />
+                    <span>订单状态：</span>
+                    <select v-model="postdata.state" class="form-control width100">
+                        <option value="-999">全部</option>
+                        @foreach (PlatChildOrderState item in Enum.GetValues(typeof(PlatChildOrderState)))
+                        {
+                            <option value="@((int)item)">@(item.ToString())</option>
+                        }
+                    </select>
+                    <a href="#" v-on:click="Search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+                    <a href="#" v-on:click="ReSet()" class="btn btn-default ml10">重置</a>&nbsp;
+                </div>
+            </div>
+            <br />
+            <br />
+            <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+                <div class="layui-tab-item layui-show">
+                    <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+                        <tr class="active">
+                            <th class="centertext" style="min-width:160px;">订单号</th>
+                            <th class="centertext" style="min-width:60px;">商家名称</th>
+                            <th class="centertext">数量</th>
+                            <th class="centertext">订单金额(元)</th>
+                            <th class="centertext">实收金额(元)</th>
+                            <th class="centertext">支付方式</th>
+                            <th class="centertext" style="width:10%;">提/送货地址</th>
+                            <th class="centertext">配送方式</th>
+                            <th class="centertext">提/收货人</th>
+                            <th class="centertext">提/收货人电话</th>
+                            <th class="centertext" style="width:10%;">订单备注</th>
+                            <th class="centertext">下单时间</th>
+                            <th class="centertext">订单状态</th>
+                        </tr>
+                        <tr v-for="(item,index) in datalist">
+                            <td class="centertext"><a v-on:click="GetOrderDetail(index)">{{item.OrderNum}}</a></td>
+                            <td class="centertext">{{item.StoreName}}</td>
+                            <td class="centertext">{{item.QtyCount}}</td>
+                            <td class="centertext">{{item.SumPriceStr}}</td>
+                            <td class="centertext">{{item.BuyPriceStr}}</td>
+                            <td class="centertext">{{item.BuyModeStr}}</td>
+                            <td class="centertext">{{item.Address}}</td>
+                            <td class="centertext">{{item.GetWayStr}}</td>
+                            <td class="centertext">{{item.AccepterName}}</td>
+                            <td class="centertext">{{item.AccepterTelePhone}}</td>
+                            <td class="centertext">{{item.Message}}</td>
+                            <td class="centertext">{{item.AddTimeStr}}</td>
+                            <td class="centertext">{{item.StateStr}}</td>
+                        </tr>
+                        <tr v-if="datalist==null || datalist.length==0">
+                            <td colspan="15">暂无数据</td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+            </div>
+
+            <div id="orderdetailbox" hidden>
+                <div style="margin-top:10px;">
+                    <h4 style="float: left;">
+                        订单号:<span id="CurOrderNo">{{orderdetaildata.OrderNum}}</span>
+                    </h4>
+                    <label style="float:right; margin-right:20px;">运费：<label id="friPrice">{{orderdetaildata.FreightPriceStr}}</label> 元</label>
+                </div>
+                <div>
+                    <table class="table" style="display: block;overflow: auto;">
+                        <tr>
+                            <th width="10%">商品名称</th>
+                            <th width="12%">规格</th>
+                            <th width="8%">单价（元）</th>
+                            <th width="3%">数量</th>
+                            <th width="4%">原金额（元）</th>
+                            <th width="4%">实际金额（元）</th>
+                        </tr>
+                        <tr v-for="(item,index) in orderdetaildata.CartList">
+                            <td>{{item.GoodsName}}</td>
+                            <td>{{item.SpecInfo}}</td>
+                            <td>{{item.OriginalPriceStr}}</td>
+                            <td>{{item.Count}}</td>
+                            <td>{{item.OriginalPrice*item.Count*0.01}}</td>
+                            <td>{{item.Price*item.Count*0.01}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+            </div>
+</body>
+
+
+@section scripts{
+    <script>
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    ordernum: "",
+                    ladingcode: "",
+                    acceptername: "",
+                    acceptertelephone:"",
+                    getway:-1,
+                    state:-999,
+                    ordertype:2,
+                    storeName:'',
+                },
+                tsText:'',
+                tsTitle:'',
+                curEditOrder:"",
+                orderdetaildata:{},
+                isloading: false,
+                currenteditid:0,
+                playerindex:0,
+                type:0,
+                index:0,
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        _layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = _layer.load(1);
+                    $.post("/Plat/Order/GetDataList", this.postdata, function (data) {
+                        _layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.list;
+                        app.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                //订单详情
+                GetOrderDetail:function(index){
+                    app.orderdetaildata = app.datalist[index];
+                    window.setTimeout(function () {
+                        _layer.open({
+                            type: 1,
+                            zIndex: 999999,
+                            title: "订单详情",
+                            shade: 0.3,
+                            area: ['450px', '480px'], //宽高
+                            content: $("#orderdetailbox").html(),
+                            //btn: ["关闭"],
+                            end: function () {
+                                currenteditid = 0;
+                            },
+                            yes: function (index,layero) {
+                                _layer.close(index);
+                            },
+                        });
+                    }, 100);
+
+                },
+                Search:function()
+                {
+                    this.getdatalist();
+                },
+                ReSet:function(){
+                    app.postdata= {
+                        aid:@ViewBag.appId,
+                        pageIndex: 1,
+                        pageSize: 10,
+                        ordernum: "",
+                        ladingcode: "",
+                        acceptername: "",
+                        acceptertelephone:"",
+                        getway:-1,
+                        state:-999,
+                        ordertype:0,
+                    }
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+    </script>
+}

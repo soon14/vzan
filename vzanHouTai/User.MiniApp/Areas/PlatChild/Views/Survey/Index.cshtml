@@ -1,0 +1,287 @@
+﻿@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "运营情况";
+    string souceFrom = "TemplateDecoration";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+
+@section styles{
+
+    <style>
+        a:hover { color: #99CC00; /*鼠标经过的颜色变化*/ }
+        .headclass {width: 50px;height: 50px;border-radius: 50px;display: inline-block;}
+
+        .flexclass {flex-direction: column;display: flex;width: 49%;}
+
+        .flexbox {flex-direction: row;display: flex;}
+
+        .flexmargin > div {margin: 5px 0;}
+
+        .shenglueclass {overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
+        .gaikuang td {border:none !important;text-align:center;}
+
+        .fanwengliang td {border:none !important;text-align:center;}
+        .pv_title_class{font-weight:bold;font-size:35px;}
+        .goto{display: inline-block;width: 70px;border: 1px solid rgb(26, 173, 25);color: rgb(26, 173, 25) !important;border-radius: 10px;}
+    </style>
+}
+
+<body class="backgroundcolorfff">
+    <div class="animated fadeInUp">
+
+        <div style="height:100%;" class="form-horizontal set-form-content">
+            <div id="vbox" style=" height:auto; ">
+                <table class="table">
+                    <tr>
+                        <td>
+                            <div class="flexbox" style="background-color: #fff;padding: 10px;">
+                                <div class="flexclass flexmargin">
+                                    <div style="font-size:20px;font-weight:bold;">您好，欢迎来到小程序管理平台！</div>
+                                    <div>上次访问：{{reportdata.visitetime}}</div>
+                                </div>
+                                <div class="flexclass flexmargin" style="text-align: right;">
+                                    <div class="shenglueclass">总交易量</div>
+                                    <div class="shenglueclass pv_title_class">{{reportdata.sumpv}}</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h1 style="font-size:20px;margin-bottom:20px;"><span style="font-weight:bold;">|</span><span style="font-weight: bold;"> 店铺概况</span></h1>
+                            <table class="table gaikuang" style="margin-top: 5px;margin-bottom:0px;">
+                              
+                                <tr>
+                                    <td>
+                                        <p style="margin-top:5px;">当天订单</p>
+                                    <span class="pv_title_class">{{reportdata.newordercount}}</span>
+                                        <p style="margin-top:5px;"><a href="/PlatChild/Order/Index?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">总订单数</p>
+                                        <span class="pv_title_class">{{reportdata.ordercount}}</span>
+                                        <p style="margin-top:5px;"><a href="/PlatChild/Order/Index?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">领券人数</p>
+                                        <span class="pv_title_class">{{reportdata.couponcount}}</span>
+                                        <p style="margin-top:5px;"><a href="/coupons/CouponsList?appId=@aid&SouceFrom=@souceFrom&PageType=@((int)TmpType.小未平台子模版)" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">会员人数</p>
+                                        <span class="pv_title_class">{{reportdata.usercount}}</span>
+                                        <p style="margin-top:5px;"><a href="/common/VipList?appId=@aid&SouceFrom=@souceFrom&projectType=@((int)TmpType.小未平台子模版)" class="goto">查看</a></p>
+                                    </td>
+                                </tr>
+                                
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h1 style="font-size:20px;margin-bottom:20px;"><span style="font-weight:bold;">|</span><span style="font-weight: bold;"> 平台分销</span>
+                            <span style="font-size:14px;">
+                                说明：开启平台分销服务后，店中商品即可同步到平台中进行销售。订单会自动同步到您后台处理，订单金额可向平台申请提现（提现费率为{{reportdata.drawcashserver}}）
+                            </span>
+                                <a href="javascript:;" class="goto" style="float:right;font-size:14px;text-align:center;height: 20px;line-height: 18px;" v-on:click="opendistribution(reportdata.isopendistribution)">{{reportdata.isopendistribution==0?"开启":"关闭"}}</a>
+                            </h1>
+                            <table class="table gaikuang" style="margin-top: 5px;margin-bottom:0px;">
+                                <tr>
+                                    <td>
+                                        <p style="margin-top:5px;">平台订单数</p>
+                                        <span class="pv_title_class">{{reportdata.platordernum}}</span>
+                                        <p style="margin-top:5px;"><a href="/PlatChild/Order/Index?aid=@aid&orderType=1" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">平台交易总额</p>
+                                        <span class="pv_title_class">{{reportdata.platsumprice}}</span>
+                                        <p style="margin-top:5px;"><a href="/PlatChild/Order/Index?aid=@aid&orderType=1" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">已提现金额</p>
+                                        <span class="pv_title_class">{{reportdata.drawedcashprice}}</span>
+                                        <p style="margin-top:5px;"><a href="/PlatChild/Draw/Index?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">可提现金额</p>
+                                        <span class="pv_title_class">{{reportdata.candrawcashprice}}</span>
+                                        <p style="margin-top:5px;"><a href="/PlatChild/Draw/Index?aid=@aid" class="goto">提现</a></p>
+                                    </td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h1 style="font-size:20px;margin-bottom:20px;"><span style="font-weight:bold;">|</span><span style="font-weight: bold;"> 访问量（PV）</span></h1>
+                            <table class="table fanwengliang" style="margin-top: 5px;">
+                               
+                                <tr>
+                                    <td>
+                                        <p style="margin-top:5px;">当天</p>
+                                        <span class="pv_title_class">{{reportdata.todaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">昨天</p>
+                                        <span class="pv_title_class">{{reportdata.yeastodaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">近7天</p>
+                                        <span class="pv_title_class">{{reportdata.sevendaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">近30天</p>
+                                        <span class="pv_title_class">{{reportdata.thirthdaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">总累计</p>
+                                        <span class="pv_title_class">{{reportdata.sumpv}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="rel graphics-panel">
+                                            <canvas id="bar" style="width:98%;height:400px;"></canvas>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</body>
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)js/Chart.min.js"></script>
+    <script>
+        var _layer = parent.layer;
+        $(function(){
+            //点击左侧菜单
+            $(".goto").click(function () {
+                var url = this.href;
+                $(".J_iframe").attr("src", url);
+                var alist = parent.document.getElementsByClassName("J_menuItem")
+                var itemlist;
+                var pitemlist;
+
+                $.each(alist,function(i,val){
+                    if(val.href==url)
+                    {
+                        itemlist = val;
+                    }
+                    if(val.href==location.href)
+                    {
+                        pitemlist = val;
+                    }
+                });
+                $(pitemlist.parentElement).removeClass("active");
+                $(itemlist.parentElement).addClass("active");
+                $(itemlist.parentElement.parentElement).attr("aria-expanded",true);
+                $(itemlist.parentElement.parentElement).addClass("in");
+            });
+        })
+
+        var app = new Vue({
+            el: "#vbox",
+            data: {
+                recordCount: 0,
+                reportdata: [],
+                labels:[],
+                datas:[],
+                postdata: {
+                    aid:@aid,
+                },
+                isloading: false,
+            },
+            methods: {
+                getdata: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/PlatChild/Survey/GetData", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.reportdata = data.dataObj;
+                        app.daysale(app.reportdata.labels,app.reportdata.datas);
+                    })
+                },
+                opendistribution:function(isopen)
+                {
+                    isopen = isopen==0?1:0;
+                    var msg = "确认开启分销？";
+                    if(isopen==0)
+                    {
+                        msg = "确认关闭分销？";
+                    }
+                    _layer.confirm(msg, {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        _layer.load(1);
+                        $.post("/PlatChild/Survey/OpenDistribution", {aid:@aid,isOpen:isopen}, function (data) {
+                            _layer.closeAll();
+                            if (data.isok) {
+                                _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                        })
+                    }, function () {
+                    });
+                },
+                //chart bar图表插件
+                daysale:function(labels, data) {
+                    var chartData = {
+                        // x轴显示的label
+                        //labels:['1月', '2月', '3月', '4月', '5月','6月', '7月', '8月', '9月', '10月', '11月'],
+                        labels: labels,
+                        datasets: [
+                {
+                    fillColor: 'rgba(0,0,0,0)',// 填充色
+                    strokeColor: "rgb(26, 173, 25)",
+                    pointColor: "rgb(26, 173, 25)",
+                    //data:[60.01, 70.02, 80.1, 56.05, 40.9,60.54, 70.64, 80.25, 56, 40, 40], // 数据
+                    data: data,
+                    label: '—— 近30天访问趋势统计 ——' // 图例
+                }
+                        ]
+                    };
+                    // 柱状图选项设置
+                    var configs = {
+                        barShowStroke: true, // 是否显示线
+                        barStrokeWidth: 2,   // 线宽
+                        barValueSpacing: 5,// 柱状块与x值所形成的线之间的距离
+                        barDatasetSpacing: 1,// 在同一x值内的柱状块之间的间距
+                        scaleGridLineWidth: 1, // 网格线的线宽
+                        showTooltips: true, // 是否显示提示
+                        scaleBeginAtZero: false, // y轴标记是否从0开始
+                    };
+
+                    // 开始绘制柱状图
+                    var ctx = document.getElementById('bar').getContext('2d');
+                    var bar = new Chart(ctx).Line(chartData, configs);
+                    var legend = document.getElementById('legend');
+                },
+            },
+            created: function(){
+                this.getdata();
+                $("#app").show();
+            }
+        })
+    </script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.categories.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.stack.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.barnumbers.js"></script>
+}

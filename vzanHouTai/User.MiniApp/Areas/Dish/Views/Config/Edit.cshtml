@@ -1,0 +1,167 @@
+﻿@model EditModel<DishStore>
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Areas/Dish/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<body class="gray-bg">
+    <div>
+        <div class="wrapper wrapper-content animated fadeInUp">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="ibox-title">
+                        <h5>编辑门店</h5>
+                    </div>
+                    <div class="ibox-content xcx-list">
+
+                        <form method="post" class="form-horizontal" id="post_from">
+                            <input type="hidden" name="act" value="edit" />
+                            <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+                            <input type="hidden" name="aid" value="@(Model.aId)" />
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">门店名称</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" name="dish_name" value="@(Model.DataModel.dish_name)">
+                                </div>
+                            </div>
+                            @*<div class="form-group">
+                                <label class="col-sm-2 control-label">门店分类</label>
+                                <div class="col-sm-10">
+                                    <select name="dish_cate_id" id="s_cate_id" class="form-control">
+                                        <option value="0">请选择分类</option>
+                                        @if (ViewBag.dishCategoryList != null && ViewBag.dishCategoryList.Count > 0)
+                                        {
+                                            foreach (var item in ViewBag.dishCategoryList)
+                                            {
+                                                <option value="@(item.id)" @(Model.DataModel.dish_cate_id == item.id ? "selected" : "")>@(item.title)</option>
+                                            }
+                                        }
+
+                                    </select>
+                                </div>
+                            </div>*@
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">缩略图(建议尺寸320px*240px) </label>
+                                <div class="col-sm-10">
+                                    <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="dish_logo" style="width:160px;height:120px;">
+                                        <input type="hidden" name="dish_logo" id="cover_id_dish_logo" value="@(Model.DataModel.dish_logo)">
+                                        <div class="upload-img-box">
+                                            @if (!string.IsNullOrEmpty(Model.DataModel.dish_logo))
+                                            {
+                                                <div class="upload-pre-item2">
+                                                    <img src="@(Model.DataModel.dish_logo)" width="160" height="120">
+                                                    <em class="edit_img_icon"> </em>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">登陆用户名</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" name="login_username" value="@(Model.DataModel.login_username)" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">登陆密码(为空则不更新)</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" name="pwd" value="" autocomplete="off">
+                                </div>
+                            </div>
+                            @*<div class="form-group">
+                                <label class="col-sm-2 control-label">提现费率</label>
+                                <div class="col-sm-10 m-b">
+                                    <div class="input-group m-b">
+                                        <input type="text" class="form-control" name="cash_fee" value="@(Model.DataModel.cash_fee)" onkeyup="CheckFolat_D2(this)"><span class="input-group-addon"> %</span>
+                                    </div>
+                                    <span class="help-block m-b-none">商户申请提现时，每笔申请提现扣除的费用，默认为空，即提现不扣费，支持填写小数(不设置则启用全局费率配置)</span>
+                                </div>
+                            </div>*@
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">使用期限</label>
+                                <div class="col-sm-4">
+                                    <div class="input-group">
+                                        <input type="text" id="dish_begin_time" name="dish_begin_time" class="dish_begin_time form-control" placeholder="开始日期" value="@(Model.DataModel.dish_begin_time_Str)" data-date readonly />
+                                        <span class="input-group-addon">~</span>
+                                        <input type="text" id="dish_end_time" name="dish_end_time" class="dish_end_time form-control" placeholder="结束日期" value="@(Model.DataModel.dish_end_time_Str)" data-date readonly />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hr-line-dashed"></div>
+                            <div class="form-group">
+                                <div class="col-sm-4 col-sm-offset-2">
+                                    @*<a class="btn submit-btn ajax-post btn-primary" target-form="form-horizontal">确 定</a>*@
+                                    <button class="btn btn-primary radius" type="submit" id="submit_button"> 保存</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+    </div>
+
+
+</body>
+@section scripts{
+    <!--如果需要图片上传-->
+    <script src="~/Areas/DishAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+    <script src="~/Areas/DishAdmin/lib/dialog.js"></script>
+    <script src="~/Areas/DishAdmin/lib/admin_common.js"></script>
+
+    <script>
+        var UPLOAD_URL = "/tools/UpLoadImgFrm?appId=@(Model.aId)&storeId=@(Model.storeId)&multi_selection=0&frontMethod=1&maxImgSize=1&objType=1&imgWidth=320&imgHeight=240";
+        $(function () {
+            //初始化上传图片插件
+            initUploadImg();
+
+            //表单验证
+            $("#post_from").validate({
+                rules: {
+                    dish_name: {
+                        required: true,
+                    },
+                    dish_logo: {
+                        required: true
+                    },
+                    login_username: {
+                        required: true,
+                        minlength:6,
+                    }
+                },
+                onkeyup: false,
+                //focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {   //表单提交句柄,为一回调函数，带一个参数：form
+                    var l_index = layer.msg('@(Model.DataModel.id==0?"数据添加中": "数据更新中")', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        type: 'post',
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, { icon: 0 });
+                            } else {
+                                layer.msg(data.msg, {time:1000}, function () {
+                                    window.location.href = "/Dish/Config/index?aId=@Model.aId";
+                                });
+
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

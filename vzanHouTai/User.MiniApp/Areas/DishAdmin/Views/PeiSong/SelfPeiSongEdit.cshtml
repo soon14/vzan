@@ -1,0 +1,119 @@
+﻿@model EditModel<DishTransporter>
+@{
+    ViewBag.Title = "SelfPeiSongEdit";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+        <input type="hidden" name="aId" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        配送员姓名：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dm_name" placeholder="请输入配送员姓名" value="@(Model.DataModel.dm_name)" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        手机号码：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dm_mobile" placeholder="请输入配送员手机号码" value="@(Model.DataModel.dm_mobile)" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        排序：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="sort" placeholder="99" value="@(Model.DataModel.sort)" class="input-text" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        是否启用：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input id="state-1" name="state" value="1" type="radio" @(Model.DataModel.state == 1 ? "checked" : "")>
+                            <label for="state-1">启用</label>
+                        </div>
+                        <div class="radio-box">
+                            <input id="state-0" name="state" value="0" type="radio" @(Model.DataModel.state == 0 ? "checked" : "")>
+                            <label for="state-0">禁用</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+	$(function(){
+		$('.skin-minimal input').iCheck({
+			checkboxClass: 'icheckbox-blue',
+			radioClass: 'iradio-blue',
+			increaseArea: '20%'
+		});
+        
+        $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+		//表单验证
+		$("#form-article-add").validate({
+			rules:{
+                dm_name:{
+					required:true
+                },
+                dm_mobile: {
+                    required: true
+                }
+			},
+			onkeyup:false,
+			focusCleanup:true,
+			success:"valid",
+			submitHandler: function(form){
+				var l_index = layer.msg('数据提交中', {
+					icon: 16,
+					shade: 0.5
+				});
+				$("#submit_button").attr("disabled",true);
+				$(form).ajaxSubmit({
+					dataType:"json",
+					success:function( data ){
+						$("#submit_button").attr("disabled",false);
+						layer.close(l_index);
+						if( data.code == 0 ){
+							layer.alert(data.msg, {icon: 0});
+						}else{
+							layer.alert(data.msg, {icon: 1},function(index){
+								parent.layer.close(index);
+								parent.location.reload();
+							});
+						}
+					}
+				});
+			}
+		});
+
+	});
+    </script>
+
+}
+

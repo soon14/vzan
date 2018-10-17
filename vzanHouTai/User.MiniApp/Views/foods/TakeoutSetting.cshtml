@@ -1,0 +1,594 @@
+﻿@using User.MiniApp.comment
+@using Entity.MiniApp.Fds;
+@model Food
+@{
+    //小程序餐饮餐馆配置
+    ViewBag.Title = "外卖";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int sjsendway = (int)miniAppOrderGetWay.商家配送;
+    int dadasendway = (int)miniAppOrderGetWay.达达配送;
+    int kpzsendway = (int)miniAppOrderGetWay.快跑者配送;
+    int uusendway = (int)miniAppOrderGetWay.UU配送;
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-daterangepicker/daterangepicker.min.css" rel="stylesheet" type="text/css" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-colorpicker/bootstrap-clockpicker.min.css" rel="stylesheet" />
+
+<style>
+    .edui-modal { margin-top: 150px; }
+
+    .twxq-new-kuang { border: 1px solid #ccc; padding: 10px; margin-right: 10px; background: #fff; }
+
+    .twxq-edit-zhanshi { border: 2px dashed #fc7d7d; padding: 10px; min-height: 108px; position: relative; }
+
+    .spgl-bianji-bt { position: absolute; bottom: 0; right: 0; display: inline-block; background-color: rgba(0,0,0,0.3); color: #fff; padding: 0 5px; margin-left: 1px; font-size: 12px; }
+
+    .bz { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+    .spxqq-f p:first-child { font-size: 17px; }
+
+    .spxqq-f { text-align: center; margin-top: 17px; line-height: 25px; }
+
+    #label_1 { color: white; display: none; }
+
+    .checkKey { background-color: coral; color: white !important; border-color: transparent; }
+
+    .noCheckKey { background-color: white; border-color: black; color: black; }
+    .centertext { vertical-align: middle !important; text-align: center; }
+    .width200 { width: 200px !important }
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<input type="hidden" id="listenMap" value="" onchange="getMap();" />
+@Html.HiddenFor(m => m.Id)
+@Html.HiddenFor(m => m.appId)
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            <tr>
+                <td style="text-align: right;" width="20%">外卖<label style="color: red">*</label></td>
+                <td>
+                    <input class="TakeOutRadio" name="TakeOutRadio" type="radio" value="1" @(Model.TakeOut == 1 ? "checked" : "") /> 开启
+                    <input class="TakeOutRadio" name="TakeOutRadio" type="radio" value="0" @(Model.TakeOut == 0 ? "checked" : "") /> 关闭
+                    &nbsp;&nbsp;&nbsp;
+                    <label class="forinputmassage" for="DeliveryRange" style="color: red">* 关闭后,外卖小程序上将显示店铺休息中,顾客将无法下单</label>
+                </td>
+
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">外卖时段<label style="color: red">*</label></td>
+                <td>
+                    <input type="radio" @*class="TakeOutRadio" name="TakeOutRadio"  value="1" @(Model.TakeOut == 1 ? "checked" : "")*@ checked />
+                    @{ var weekOpenStrList = new List<string>() { "周一", "周二", "周三", "周四", "周五", "周六", "周日" }; }
+                    <label class="forinputmassage">@string.Join("、", weekOpenStrList.Where(x => Model.OpenDateStr.Contains(x)))</label>(与店铺的营业日期保持一致)
+                    @*<a href="/foods/Index?Id=@ViewBag.appid&appId=@ViewBag.appid">修改店铺营业时间</a>*@
+                    @if (Model.getOpenTimeList.Count > 1)
+                    {
+                        <div class="OpenTimeDiv" style="margin-bottom:5px">
+                            <input type="text" readonly="readonly" class="form-control width200 StartShopTime" id="StartShopTime" value="@Model.getOpenTimeList[1].StartTime" style="display:inline-block;" /><span>-</span>
+                            <input readonly="readonly" style="display:inline-block; " data-index="@(1)" type="text" id="EndShopTime" class="form-control width200 EndShopTime" value="@Model.getOpenTimeList[1].EndTime" />
+                        </div>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">配送范围<label style="color: red">*</label></td>
+                <td>
+                    <div class="form-inline">
+                        <span class="col-sm-2" style="width:60px;margin-top:5px;">半径</span>
+                        @(Html.TextBoxFor(m => m.DeliveryRange, new { @class = "form-control width100" }))
+                        <span style="width:80px;margin-top:5px;">公里内</span>
+                    </div>
+                    @*<label class="forinputmassage" for="DeliveryRange" style="color: red">* 若无外卖业务则填写0</label>*@
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">配送方式<label style="color: red">*</label></td>
+                <td>
+                    <input class="DistributionWay" name="DistributionWay" type="radio" onclick="selectdway(@sjsendway)" value="@sjsendway" @(Model.DistributionWay == sjsendway || Model.DistributionWay == 0 ? "checked" : "") /> 商家配送
+                    <input class="DistributionWay" name="DistributionWay" type="radio" onclick="selectdway(@dadasendway)" value="@dadasendway" @(Model.DistributionWay == dadasendway ? "checked" : "") /> 达达配送
+                    <input class="DistributionWay" name="DistributionWay" type="radio" onclick="selectdway(@kpzsendway)" value="@kpzsendway" @(Model.DistributionWay == kpzsendway ? "checked" : "") /> 快跑者配送
+                    <input class="DistributionWay" name="DistributionWay" type="radio" onclick="selectdway(@uusendway)" value="@uusendway" @(Model.DistributionWay == uusendway ? "checked" : "") /> UU配送
+                </td>
+            </tr>
+            <tr id="OutSide_box" style="display:@(Model.DistributionWay == uusendway ||Model.DistributionWay == kpzsendway || Model.DistributionWay == sjsendway || Model.DistributionWay ==0?"":"none")">
+                <td style="text-align: right;" width="20%">起送价<label style="color: red">*</label></td>
+                <td>
+                    <input name="OutSide" id="OutSide" maxlength="7" placeholder="请输入起送价" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@((Model
+    .OutSide * 0.01).ToString("0.00"))" class="form-control width400" />
+                </td>
+            </tr>
+            <tr id="ShippingFee_box" style="display:@(Model.DistributionWay == sjsendway || Model.DistributionWay ==0?"":"none")">
+                <td style="text-align: right;" width="20%">配送费<label style="color: red">*</label></td>
+                <td>
+                    <input name="ShippingFee" id="ShippingFee" maxlength="7" placeholder="请输入配送费" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@((Model
+    .ShippingFee * 0.01).ToString("0.00"))" class="form-control width400" />
+                </td>
+            </tr>
+            <tr id="PackinFee_box" style="display:@(Model.DistributionWay == uusendway || Model.DistributionWay == kpzsendway || Model.DistributionWay == sjsendway || Model.DistributionWay ==0?"":"none")">
+                <td style="text-align: right;" width="20%">餐盒费<label style="color: red">*</label></td>
+                <td>
+                    <input name="PackinFee" id="PackinFee" maxlength="7" placeholder="请输入餐盒费" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model
+    .PackinFeeStr)" class="form-control width400" />
+                </td>
+            </tr>
+            <tr id="KPZTeamToken_box" style="display:@(Model.DistributionWay == kpzsendway ?"":"none")">
+                <td style="text-align: right;" width="20%">团队密钥<label style="color: red">*</label></td>
+                <td>
+                    <input name="teamtoken" id="teamtoken" maxlength="20" placeholder="请输入合作的快跑者团队token" value="@(Model.KPZTeamToken)" class="form-control width400" />
+                    <div style="color:red;font-size:12px;">请联系合作的快跑者团队他们的token</div>
+                </td>
+            </tr>
+            <tr id="KPZPhone_box" style="display:@(Model.DistributionWay == kpzsendway ?"":"none")">
+                <td style="text-align: right;" width="20%">手机号<label style="color: red">*</label></td>
+                <td>
+                    <input name="kpzphone" id="kpzphone" maxlength="20" placeholder="请输入在快跑者中注册的手机号" value="@(Model.KPZPhone)" class="form-control width400" />
+                    <div style="color:red;font-size:12px;">请输入在快跑者中注册的手机号token</div>
+            </tr>
+            <tr id="UUPhone_box" style="display:@(Model.DistributionWay == uusendway ?"":"none")">
+                <td style="text-align: right;" width="20%">手机号<label style="color: red">*</label></td>
+                <td>
+                    <input name="uuphone" id="uuphone" maxlength="20" placeholder="请输入在UU请输入要注册的手机号" value="@(Model.UUModel.Phone)" class="form-control width400" />
+            </tr>
+            <tr id="UUPhoneCode_box" style="display:@(Model.DistributionWay == uusendway && string.IsNullOrEmpty(Model.UUModel.Phone) ?"":"none")">
+                <td style="text-align: right;" width="20%">短信验证码<label style="color: red">*</label></td>
+                <td>
+                    <input type="text" id="UUPhoneCode" placeholder="" value="" class="form-control width400" style="float: left;width: 300px !important;">
+                    <a href="javascript:;"  class="btn btn-primary" onclick="UUGetPhoneCode()">获取验证码</a>
+                </td>
+            </tr>
+            <tr id="UUButton_box" style="display:@(Model.DistributionWay == uusendway ?"":"none")">
+                <td></td>
+                <td style="text-align:left;">
+                    @if (string.IsNullOrEmpty(Model.UUModel.Phone))
+                    {
+                        <a href="javascript:;" class="btn btn-primary" onclick="UUSubmit()">确定注册</a>
+                    }
+                    else
+                    {
+                        <a href="javascript:;" class="btn btn-danger" onclick="cancelbind()">取消绑定</a>
+                    }
+                </td>
+            </tr>
+
+        </table>
+    </form>
+    <div class="col-md-offset-2">
+        <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+        <input type="button" class="btn btn-default width100" onclick="self.location=document.referrer;" value="返回" />
+    </div>
+</div>
+<!-- #region 选择地图位置弹窗 -->
+<div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+    <div class="modal-dialog modal-lg" role="document" style="width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+            </div>
+            <div class="modal-body">
+                <iframe name="mapframe" src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="ChooseLocationOK()">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- mapModal -->
+<div class="modal" id="mapModal" tabindex="-1" role="dialog" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="mapModalHidden" />
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="mapModalLabel">点击选取坐标位置</h4>
+            </div>
+            <div class="height500" id="mapModalContent">
+
+            </div>
+        </div>
+    </div>
+</div>
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+@section script{
+    <script>
+        var currDateTimeIndex = 0;
+        var newIndex = @(Model.getOpenTimeList.Count + 1);
+
+        function keyPress(ob) {
+            if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+                if (ob.t_value == undefined || ob.t_value.length == 1) {
+                    ob.value = "";
+                }
+                else {
+                    ob.value = ob.t_value;
+                }
+            }
+            else
+                ob.t_value = ob.value;
+        }
+        $('#btnMap').on('click', function () {
+            $("#ChooseLocationModal").modal("show");
+        });
+
+        $(function () {
+
+            $("#openTimeTd .StartShopTime").on("click",function()
+            {
+                currDateTimeIndex = $(this).data("index");
+            });
+            $("#openTimeTd .EndShopTime").on("click",function()
+            {
+                currDateTimeIndex = $(this).data("index");
+            });
+
+
+            // #region 保存
+            $('#saveBtn').click(function () {
+
+                var regDeliveryRange = /^[0-9]*[1-9][0-9]*$/;
+                if($('#DeliveryRange').val().length < 1||(!regDeliveryRange.test($('#DeliveryRange').val()) && $('#DeliveryRange').val() != 0 ))
+                {
+                    AppTools.Alert("配送范围仅能输入正整数");
+                    return;
+                }
+                if($('#DeliveryRange').val() > 9999)
+                {
+                    AppTools.Alert("配送范围最大为9999公里内");
+                }
+
+                var sideReg = /^(([1-9][0-9]*)|(([0]\.\d{0,2}|[1-9][0-9]*\.\d{0,2})))$/;
+                var OutSide = $("#OutSide").val();
+                if(OutSide == "")
+                {
+                    OutSide = 0;
+                }
+                else if(OutSide != 0 && !sideReg.test(OutSide))
+                {
+                    AppTools.Alert("起送价格式有误!");
+                    return;
+                }
+                if(OutSide > 9999.99)
+                {
+                    AppTools.Alert("起送价最大9999.99!");
+                    return;
+                }
+                var ShippingFee = $("#ShippingFee").val();
+                if(ShippingFee == "")
+                {
+                    ShippingFee = 0;
+                }else if(ShippingFee != 0 && !sideReg.test(ShippingFee))
+                {
+                    AppTools.Alert("配送费格式有误!");
+                    return;
+                }
+                if(ShippingFee > 9999.99)
+                {
+                    AppTools.Alert("配送费最大9999.99!");
+                    return;
+                }
+                var PackinFee = $("#PackinFee").val();
+                if (PackinFee == "") {
+                    PackinFee = 0;
+                } else if (PackinFee != 0 && !sideReg.test(PackinFee)) {
+                    AppTools.Alert("餐盒费格式有误!");
+                    return;
+                }
+                if (PackinFee > 9999.99) {
+                    AppTools.Alert("餐盒费最大9999.99!");
+                    return;
+                }
+                var DistributionWay =  $('input[name="DistributionWay"]:checked').val();
+                //快跑者配送
+                if(DistributionWay==4)
+                {
+                    var teamtoken = $("#teamtoken").val();
+                    if(teamtoken==undefined || teamtoken.trim().length<=0)
+                    {
+                        AppTools.Alert("请输入团队token!");
+                        return;
+                    }
+                    var phone = $("#kpzphone").val();
+                    if(phone==undefined || phone.trim().length<=0)
+                    {
+                        AppTools.Alert("请输入手机号!");
+                        return;
+                    }
+                }
+
+                $('#saveBtn').attr('disabled', "true");
+                $('#loadModal').modal('show');
+
+                saveStore();
+            });
+            function saveStore() {
+                var appId = $('#appId').val();
+                var Id = $('#Id').val();
+
+                var TakeOut =  $('input[name="TakeOutRadio"]:checked').val();
+
+                var DistributionWay =  $('input[name="DistributionWay"]:checked').val();
+                var DeliveryRange = $("#DeliveryRange").val();
+                var OutSide = $("#OutSide").val();
+                var ShippingFee = $("#ShippingFee").val();
+                var PackinFee = $("#PackinFee").val();
+                var StartShopTime = $("#StartShopTime").val();
+                var EndShopTime = $("#EndShopTime").val();
+                var teamtoken = $("#teamtoken").val();
+                var kpzphone = $("#kpzphone").val();
+                $.post('/foods/SaveTakeoutSetting',
+                    {
+                        Id: Id,
+                        appId: appId,
+                        rid:@ViewBag.appId,
+                        DeliveryRange:DeliveryRange,
+                        TakeOut:TakeOut,
+                        OutSide:OutSide * 10000/100,
+                        DistributionWay:DistributionWay,
+                        ShippingFee: ShippingFee * 10000 / 100,
+                        PackinFee: PackinFee * 10000 / 100,
+                        FoodsName: '@Model.FoodsName',
+                        StartShopTime: StartShopTime,
+                        EndShopTime: EndShopTime,
+                        teamtoken:teamtoken,
+                        kpzphone:kpzphone,
+                        colName:"DeliveryRange,TakeOut,OutSide,ShippingFee,DistributionWay,PackinFee,OpenTimeJson"
+                    },
+                    function (data) {
+                        $('#saveBtn').removeAttr('disabled');
+                        $('#loadModal').modal('hide');
+                        AppTools.Alert(data.Msg);
+                    });
+            }
+            // #endregion
+        });
+
+        // #region 省市级联
+        $('#ddProvince').change(function () {
+            var areaCode = $(this).val();
+            if(areaCode == "选择行省" || areaCode == "")
+            {
+                $('#ddArea option').remove();
+                $('#ddArea').append('<option>选择城市</option>');
+                $('#ddRegion option').remove();
+                $('#ddRegion').append('<option>选择区域</option>');
+                $('#ddArea').change();
+                $('#ddRegion').change();
+                return;
+            }
+            $.get('/stores/GetRegionJsonList?parentCode=' + areaCode,
+                function (data) {
+                    //if (data.length > 0) {
+                    $('#ddArea option').remove();
+                    $('#ddArea').append('<option>选择城市</option>');
+                    $('#ddRegion option').remove();
+                    $('#ddRegion').append('<option>选择区域</option>');
+                    for (var i = 0; i < data.length; i++) {
+                        var isSelected = "";
+                        if (data[i].Selected) {
+                            isSelected = "selected='selected'";
+                        }
+                        var option = "<option value='" + data[i].Value + "' " + isSelected + ">" + data[i].Text + "</option>";
+                        $("#ddArea").append(option);
+                    }
+                    $('#ddArea').change();
+                    //}
+                });
+        });
+        $('#ddArea').change(function () {
+            var areaCode = $(this).val();
+            if(areaCode == "选择城市")
+            {
+                $('#ddRegion option').remove();
+                $('#ddRegion').append('<option>选择区域</option>');
+                $('#ddRegion').change();
+                return;
+            }
+            $.get('/stores/GetRegionJsonList?parentCode=' + areaCode,
+                function (data) {
+                    //if (data.length > 0) {
+                    $('#ddRegion option').remove();
+                    $('#ddRegion').append('<option>选择区域</option>');
+                    for (var i = 0; i < data.length; i++) {
+                        var isSelected = "";
+                        if (data[i].Selected) {
+                            isSelected = "selected='selected'";
+                        }
+                        var option = "<option value='" + data[i].Value + "' " + isSelected + ">" + data[i].Text + "</option>";
+                        $("#ddRegion").append(option);
+                    }
+                    $('#ddRegion').change();
+                    //}
+                });
+        });
+        // #endregion
+
+        // #region 删除图片
+        function removeAttachmentFunction(file) {
+            if (file && file.id) {
+                //if (confirm("删除后不可恢复，确认删除吗？")) {
+                // 删除Logo
+                $.get('/foods/DeleteImg?id=' + file.id,
+                    function (data) {
+                        if (!data.Success) {
+                            AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                            return e.ee;
+                        }
+                    });
+                //}
+            }
+        }
+        // #endregion
+
+        //配送方式
+        function selectdway(value) {
+            $("#OutSide_box").hide();
+            $("#ShippingFee_box").hide();
+            $("#PackinFee_box").hide();
+            $("#KPZTeamToken_box").hide();
+            $("#KPZPhone_box").hide();
+            $("#UUPhone_box").hide();
+            $("#UUPhoneCode_box").hide();
+            $("#UUButton_box").hide();
+
+            switch (value) {
+                case 1:
+                    $("#OutSide_box").show();
+                    $("#ShippingFee_box").show();
+                    $("#PackinFee_box").show();
+                    break;
+                case 2:
+                    if (@ViewBag.OpenDadaTake==0) {
+                        $("input[name=DistributionWay]")[0].checked = true;
+                        layer.confirm('您还没开通达达配送', {
+                            btn: ['去开通', '取消'] //按钮
+                        }, function () {
+                            window.open("http://newopen.imdada.cn");
+                        }, function () {
+                        });
+                        return;
+                    }
+                    break;
+                case 4:
+                    $("#KPZTeamToken_box").show();
+                    $("#KPZPhone_box").show();
+                    $("#OutSide_box").show();
+                    $("#PackinFee_box").show();
+                    break;
+                case 5:
+                    $("#UUPhone_box").show();
+                    var phone = '@Model.UUModel.Phone';
+                    if(phone.length<=0)
+                    {
+                        $("#UUPhoneCode_box").show();
+                    }
+
+                    $("#UUButton_box").show();
+                    $("#OutSide_box").show();
+                    $("#PackinFee_box").show();
+                    break;
+            }
+        }
+        //uu配送发送验证码
+        function UUGetPhoneCode() {
+            var t_mobile = $("#uuphone").val();
+            $.post("/foods/UUSendPhoneCode", {aId:@(Model.appId),phone:t_mobile}, function (data) {
+                if(data.isok){
+                    layer.alert(data.Msg, {icon: 1});
+                }else{
+                    layer.alert(data.Msg, {icon: 0});
+                }
+            })
+        }
+
+        //uu配送取消绑定
+        function cancelbind()
+        {
+            layer.confirm("取消绑定后，您之前的订单就无法继续同步到UU跑腿平台，确定取消绑定？", {
+                btn: ['确定', '取消'] //按钮
+            }, function () {
+               $.post("/foods/UUCancelBind", {aId:@(Model.appId),id:@(Model.UUModel.Id)}, function (data) {
+                   if( data.isok){
+                       layer.alert(data.Msg, {icon: 1},function(index){
+                           window.location.reload();
+                       });
+                }else{
+                       layer.alert(data.Msg, {icon: 0});
+                }
+            })
+            }, function () {
+            });
+        }
+        function UUSubmit()
+        {
+            var dataJson = {
+                Id:@Model.UUModel.Id,
+                AId:@Model.UUModel.AId,
+                Phone:$("#uuphone").val(),
+                PhoneCode:$("#UUPhoneCode").val(),
+            };
+            $.post("/foods/SaveUUConfig", dataJson, function (data) {
+                if(data.isok){
+                    layer.alert(data.Msg, {icon: 1});
+                }else{
+                    layer.alert(data.Msg, {icon: 0});
+                }
+            })
+        }
+
+        $(function () {
+            //营业时间
+            //openTimeTd
+            $("#StartShopTime").clockpicker({
+                placement: 'bottom',
+                align: 'left',
+                autoclose: true,
+            });
+            $("#EndShopTime").clockpicker({
+                placement: 'bottom',
+                align: 'left',
+                autoclose: true,
+            })
+        })
+    </script>
+}

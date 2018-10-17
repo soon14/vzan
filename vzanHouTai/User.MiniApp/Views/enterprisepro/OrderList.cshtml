@@ -1,0 +1,402 @@
+﻿
+@model  List<EntGoodsOrder>
+@{
+    ViewBag.Title = "订单管理";
+    ViewBag.PageType = 22; 
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+    List<int> typeStr = ViewBag.checkType;
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+</style>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="form-inline form-group">
+            &nbsp;订单号:
+            <input id="orderNum" type="text" class="form-control" value="@ViewBag.orderNum" />
+            &nbsp;商品:
+            <input id="goodsName" type="text" class="form-control" value="@ViewBag.goodsName" />
+            &nbsp;收货人:
+            <input id="accName" type="text" class="form-control" value="@ViewBag.accName" />
+            &nbsp;收货电话:
+            <input id="accPhone" type="text" class="form-control" value="@ViewBag.accPhone" />
+            &nbsp;下单时间 <input type="text" id="startdate" class="form-control" readonly> 至 <input type="text" id="enddate" class="form-control" readonly>
+            <div style="margin-top:7px;">
+                <table>
+                    <tr>
+                        <td>
+                            <div style="float:left;">
+                                &nbsp;订单状态:
+                            </div>
+                        </td>
+                        <td style="width:800px;">
+                            <div class="typeItem" style="float:left;width:800px;">
+                                <input class="col-sm-2 btn btn-default @(ViewBag.orderState == -999 ? "active" : "" ) " data-id="-999" maxlength="8" type="button" style="margin:3px;width:100px;background-color:white;border-color:#5e97fa; margin-bottom:8px;@(ViewBag.orderState == -999 ? "background-color:#108EE9;color:white;" : "background-color:White;color:#108EE9;")" value="全部" onclick="check(this)" />
+                                @foreach (MiniAppEntOrderState item in Enum.GetValues(typeof(MiniAppEntOrderState)))
+                                {
+                                    <input class="col-sm-2 btn btn-default @(ViewBag.orderState == (int)item ? "active" : "" ) " data-id="@((int)item)" maxlength="8" type="button" style="margin:3px;width:100px;background-color:white;border-color:#5e97fa; margin-bottom:8px;@(ViewBag.orderState == (int)item ? "background-color:#108EE9;color:white;" : "background-color:White;color:#108EE9;")" value="@(item.ToString())" onclick="check(this)" />
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <input id="search" style="margin-left:80px;" type="button" class="btn btn-primary" value="搜索" />
+                            <input id="empty" type="button" class="btn btn-default" value="清除" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        
+        <th>订单号</th>
+        <th>商品</th>
+        <th>订单金额(元)</th>
+        <th hidden>优惠金额(元)</th>
+        <th>实收金额(元)</th>
+        <th>支付方式</th>
+        <th>配送地址</th>
+        <th>配送方式</th>
+        <th>收货人</th>
+        <th>收货电话</th>
+        <th>订单备注</th>
+        <th>下单时间</th>
+        <th>订单状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @*@{ int i = 1; }*@
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="8%"><a href="#" class="orderDtl" data-friPrice="@((item.FreightPrice * 0.01).ToString("0.00"))" data-ordernum="@item.OrderNum" data-id="@item.Id">@(item.OrderNum)</a> </td>
+                <td width="5%"><a href="#" class="orderDtl" data-friPrice="@((item.FreightPrice * 0.01).ToString("0.00"))" data-ordernum="@item.OrderNum" data-id="@item.Id">@(item.QtyCount)</a></td>
+                <td width="6%">@(((item.BuyPrice + item.ReducedPrice) * 0.01).ToString("0.00"))</td>
+                <td width="7%" hidden>@((item.ReducedPrice * 0.01).ToString("0.00"))</td>
+                <td width="6%">@((item.BuyPrice * 0.01).ToString("0.00"))</td>
+                <td width="5%">
+                    @*微信支付*@
+                    @if (item.PayDate != Convert.ToDateTime("0001-01-01 00:00:00"))  //暂默认微信支付
+                    {
+                        <span>@Enum.GetName(typeof(miniAppBuyMode), item.BuyMode)</span>
+                    }
+                </td>
+                <td width="18%">@(item.Address)</td>
+                <td width="5%">@(Enum.GetName(typeof(miniAppOrderGetWay),item.GetWay))</td>
+                <td width="3%">@(item.AccepterName)</td>
+                <td width="8%">@(item.AccepterTelePhone)</td>
+                <td width="12%">@(item.Message)</td>
+                <td width="8%">@(item.CreateDateStr)</td>
+                <td width="6%">@(Enum.GetName(typeof(MiniAppEntOrderState), item.State))</td>
+                <td width="18%">
+                    @switch (item.State)
+                    {
+                        case (int)MiniAppEntOrderState.待付款:
+                            <a onclick="OpenConfForm(this)" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)MiniAppEntOrderState.已取消)" style="margin-top:5px;">
+                                取消订单
+                            </a>
+                        break;
+                        case (int)MiniAppEntOrderState.待发货:
+                            <a onclick="OpenConfForm(this)" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)MiniAppEntOrderState.退款中)" style="margin-top:5px;">
+                                退款
+                            </a>
+                            <a onclick="OpenConfForm(this)" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)MiniAppEntOrderState.待收货)" style="margin-top:5px;">
+                                确认发货
+                            </a>
+                            break;
+                        case (int)MiniAppEntOrderState.待收货:
+                            <a onclick="OpenConfForm(this)" href="#" data-id="@item.Id" data-oldState="@item.State" data-newState="@((int)MiniAppEntOrderState.退款中)" style="margin-top:5px;">
+                                退款
+                            </a>
+                            break;
+                        case (int)MiniAppEntOrderState.退款失败:
+                            <a onclick="OpenOutOrderFailRemarkForm(@item.Id)" href="#" style="margin-top:5px;">
+                                查看退款失败原因
+                            </a>
+                        break;
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+<div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    订单号:<span id="CurOrderNo"></span>
+                </h4>
+                <label style="float:right; margin-right:20px;">运费：<label id="friPrice"></label> 元</label>
+            </div>
+            <div class="modal-body">
+                
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal bs-example-modal" id="tsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    <span id="tsTitle"></span>
+                </h4>
+            </div>
+            <div id="tsText" class="modal-body" style="text-align:center;">
+                
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button id="tsConfBtn" type="button" class="btn btn-primary" data-id=""  data-oldstate=""  data-newstate="" onclick="updateStateCanncel()">确定</button>
+                <button id="tsCanncelBtn" type="button" class="btn " >取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="id_attrtitle">
+    <span>拒绝接单原因：</span>
+    <textarea id="nameVal" style="width:200px;height:80px;resize:none;" maxlength="100" placeholder="请填写拒绝接单原因" class="form-control" value="{#name#}"/>
+</script>
+<script>
+    
+    $(function () {
+        inidate();
+        $("#ckbAll").click(function () {
+            if (this.checked) {
+                $("#bcontent :checkbox").prop("checked", true);
+            } else {
+                $("#bcontent :checkbox").prop("checked", false);
+            }
+        });
+
+    });
+    //初始化时间
+    function inidate() {
+        //开始时间
+        $('#startdate').datetimepicker({
+            language: "zh-CN",
+            autoclose: true,//选中之后自动隐藏日期选择框
+            clearBtn: true,//清除按钮
+            startView: 2,
+            format: 'yyyy-mm-dd',
+            minView: 2
+            //todayBtn: true,//今日按钮
+        }).on('changeDate', function (ev) {
+            //$("#startdate").val(ev.date.getFullYear() + '-' + (ev.date.getMonth() + 1) + '-' + ev.date.getUTCDate() + " " + ev.date.getUTCHours() + ":" + ev.date.getUTCMinutes());
+            $("#startdate").val(ev.date.getFullYear() + '-' + (ev.date.getMonth() + 1) + '-' + ev.date.getUTCDate());
+            $('#enddate').datetimepicker('setStartDate', ev.date);
+            $('#enddate').datetimepicker('setEndDate', (ev.date.getFullYear() + '-' + (ev.date.getMonth() + 2) + '-' + ev.date.getUTCDate()));
+        });
+        //结束时间
+        $('#enddate').datetimepicker({
+            language: "zh-CN",
+            autoclose: true,//选中之后自动隐藏日期选择框
+            clearBtn: true,//清除按钮
+            startView: 2,
+            format: 'yyyy-mm-dd',
+            minView: 2
+            //todayBtn: true,//今日按钮
+        }).on('changeDate', function (ev) {
+            //$("#enddate").val(ev.date.getFullYear() + '-' + (ev.date.getMonth() + 1) + '-' + ev.date.getUTCDate() + " " + ev.date.getUTCHours() + ":" + ev.date.getUTCMinutes());
+            $("#enddate").val(ev.date.getFullYear() + '-' + (ev.date.getMonth() + 1) + '-' + ev.date.getUTCDate());
+            $('#startdate').datetimepicker('setEndDate', ev.date);
+            $('#startdate').datetimepicker('setStartDate', (ev.date.getFullYear() + '-' + (ev.date.getMonth()) + '-' + ev.date.getUTCDate()));
+        });
+
+        //设置默认值
+        var datemo = new Date('@ViewBag.startdate');
+        $("#enddate").datetimepicker('setEndDate', datemo.getFullYear() + '-' + (datemo.getMonth() + 2) + '-' + datemo.getUTCDate());
+        var datemo2 = new Date('@ViewBag.enddate');
+        $("#startdate").datetimepicker('setStartDate', datemo2.getFullYear() + '-' + (datemo2.getMonth()) + '-' + datemo2.getUTCDate());
+
+        $("#startdate").val('@ViewBag.startdate');
+        $("#enddate").val('@ViewBag.enddate');
+        $('#enddate').datetimepicker('setStartDate', '@ViewBag.startdate');
+        $('#startdate').datetimepicker('setEndDate', '@ViewBag.enddate');
+
+    }
+    var appid = @ViewBag.appId;
+    //不同状态不同提示
+   
+    //不同状态不同提示
+    function OpenConfForm (x)
+    {
+
+        var orderid = $(x).data("id");
+        var oldstate = $(x).data("oldstate");
+        var newstate = $(x).data("newstate");
+        var laststate = $(x).data("laststate");
+        if(laststate == undefined || laststate == "undefined")
+        {
+            laststate = -999;
+        }
+
+        if((oldstate == @((int)MiniAppEntOrderState.待付款) && newstate == @((int)MiniAppEntOrderState.已取消)))
+        {
+            $("#tsTitle").text("取消订单");
+            $("#tsText").html("您确定要取消本订单吗？取消后用户将无法付款");
+            $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+
+        }
+        else if((oldstate == @((int)MiniAppEntOrderState.待发货) && newstate == @((int)MiniAppEntOrderState.退款中)))
+        {
+            $("#tsTitle").text("取消订单");
+            $("#tsText").html("您确定要拒绝本订单吗？拒绝后系统将自动发起退款，金额将原路退回。");
+            $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+        }
+        else if((oldstate == @((int)MiniAppEntOrderState.待收货) && newstate == @((int)MiniAppEntOrderState.退款中)))
+        {
+            $("#tsTitle").text("取消订单");
+            $("#tsText").html("您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回。");
+            $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+        }
+        else if((oldstate == @((int)MiniAppEntOrderState.待发货) && newstate == @((int)MiniAppEntOrderState.待收货)))
+        {
+            $("#tsTitle").text("确认发货");
+            $("#tsText").html("确定此订单已经发货了吗？");
+            $("#tsConfBtn").attr("onclick","javascript:updateState(this)");
+        }
+        else
+        {
+            alert("数据错误!请刷新页面重试");
+            return;
+        }
+
+    $("#tsConfBtn").attr("data-id",orderid);
+    $("#tsConfBtn").attr("data-oldstate",oldstate);
+    $("#tsConfBtn").attr("data-newstate",newstate);
+    $("#tsModal").modal("show");
+
+    };
+    
+    function updateState(x)
+    {
+        var orderid = $(x).data("id");
+        var state = $(x).data("newstate");
+        var oldState = $(x).data("oldstate");
+
+        $.post('/enterprisepro/updteOrderState', { orderid: orderid, state:state ,oldState:oldState}, function(result) {
+            $("#tsModal").modal('hide');
+            alert(result.msg);
+            if(result.isok)
+            {
+                setTimeout(function(){ window.location.reload();},1000)
+            }
+        });
+    }
+    //function cancelOrder(x)
+    //{
+    //    //一修改名称
+    //    //var $thisobj = $(x);
+    //    var orderid = $(x).data("id");
+    //    var state = $(x).data("newstate");
+    //    layer.open({
+    //        title: "",
+    //        //content: $("#id_attrtitle").html().replace("{#name#}",title),
+    //        content: $("#id_attrtitle").html().replace("{#name#}",""),
+    //        btn: ["保存", "取消"],
+    //        yes: function () {
+    //            var _title = $("#nameVal").val().replace(/(^\s*)|(\s*$)/g, "");
+    //            if (_title == "") {
+    //                alert("请输入参数名称");
+    //                return;
+    //            }
+    //            $.post('/foods/updateTheShopOrderState', { appid : appid, orderid: orderid,state:state, cancleRemark:_title }, function(result) {
+    //                $("#tsModal").modal('hide');
+    //                alert(result.msg);
+    //                if(result.isok)
+    //                {
+    //                    setTimeout(function(){ window.location.reload();},1000)
+    //                }
+    //            });
+    //        },
+    //        no: function () { layer.closeAll(); },
+    //        cancel: function () {
+    //            layer.closeAll();
+    //        }
+    //    });
+    //}
+
+
+
+
+    //不同状态不同提示
+    function OpenOutOrderFailRemarkForm(x)
+    {
+        $("#tsTitle").text("查看退款失败原因");
+        $.post('/enterprisepro/getOutOrderFailRemark', { orderId : x }, function(result) {
+            $("#tsText").html(result);
+        });
+        $("#tsConfBtn").attr("onclick","javascript:closeTsModal()");
+
+        $("#tsModal").modal("show");
+    };
+
+    function closeTsModal()
+    {
+        $("#tsModal").modal('hide');
+    }
+
+    $("#tsCanncelBtn").click(function()
+    {
+        $("#tsModal").modal('hide');
+    });
+
+
+
+    $("#search").on("click",function()
+    {
+         @*window.location.href = "/foods/FoodGoodsOrderList?appid="+@ViewBag.appId+ "&type="+@ViewBag.type+"&orderNum="+$("#orderNum").val() + "&orderState=" + $("#orderState").val()+"&foodGoodsType=" + $("#foodGoodsType").val();*@
+        var orderState =  $(".typeItem input.active").data("id");
+        window.location.href = "/enterprisepro/OrderList?appid="+@ViewBag.appId+"&goodsName="+$("#goodsName").val() +"&accName="+$("#accName").val() +"&accPhone="+$("#accPhone").val()  + "&orderNum="+$("#orderNum").val()+"&startdate="+$("#startdate").val() +"&enddate="+$("#enddate").val()  + "&orderState=" + orderState+"&foodGoodsType=" + $("#foodGoodsType").val();
+    });
+    $("#empty").on("click",function()
+    {
+        window.location.href = "/enterprisepro/OrderList?appid=" + @ViewBag.appId;
+    });
+    $(document).on("click", ".orderDtl", function() {
+        var id = $(this).data('id');
+        $('#CurOrderNo').text($(this).data('ordernum'));
+        $("#friPrice").text($(this).attr('data-friPrice'));
+        $.post('/enterprisepro/getOrderDtlItem', { orderid: id }, function(result) {
+            $('#btnAdd').attr("data-itemid",id);
+            $('#addModal .modal-body').html(result);
+            $('#addModal').modal('show');
+            //$('#editModal .modal-body').html(result);
+        });
+    });
+    $("#btnAdd").click(function()
+    {
+        $("#addModal").modal('hide');
+    });
+
+    function check(x)
+    {
+        $(".typeItem input").removeClass("active");
+        $(".typeItem input").css("background-color","White");
+        $(".typeItem input").css("color","#108EE9");
+
+        $(x).addClass("active");
+        $(x).css("background-color","#108EE9");
+        $(x).css("color","White");
+    }
+
+</script>

@@ -1,0 +1,371 @@
+﻿
+@using Entity.MiniApp.Plat
+@model PlatUserCash
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "提现管理";
+}
+
+@section styles{
+    <style>
+        .centertext {
+            vertical-align: inherit !important;
+            text-align: center;
+        }
+        .righttext{text-align:right;}
+
+        .width200 {
+            width: 200px !important;
+            display: inline-block !important;
+        }
+
+        .width100 {
+            width: 100px !important;
+            display: inline-block !important;
+        }
+
+        .datetimebox {
+            float: none !important;
+        }
+
+        .flexbox {
+            flex-direction: row;
+            display: flex;
+        }
+
+        .flexclass {
+            flex-direction: column;
+            display: flex;
+            width: 50%;
+        }
+
+        .flexmargin > div {
+            margin: 5px 0;
+        }
+
+        .usercashtotle {
+            background-color: #F2F2F2;
+            height: 100px;
+            padding:0px 25px;
+            padding-top: 5px;
+        }
+        .usercash{font-size: 60px;}
+        .usercashtitle{color: #999;}
+
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div id="app" class="container-fluid" v-cloak>
+            <div>
+                <div>
+                    <div class="flexbox" style="margin-left: 15px;">
+                        <div class="flexclass flexmargin">
+                            <div class="usercashtotle flexbox">
+                                <div class="flexclass flexmargin">
+                                    <span class="usercashtitle">累计提现金额（元）</span>
+                                    <div class="usercash">{{usercash.UseCashTotalStr}}</div>
+                                </div>
+                                <div class="flexclass flexmargin righttext">
+                                    <span class="usercashtitle">累计实际到账金额（元）</span>
+                                    <div class="usercash">{{usercash.InfactCashStr}}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <span>提现账号：</span>
+                                <div style="display: inline-block;">
+                                    <input type="radio" name="drawcashway" id="bankaccount" value="1" v-model="usercash.DrawCashWay" v-on:click="changedrawway(1)" />
+                                    {{usercash.Name}}
+                                    {{usercash.AccountBankStr}}
+                                    <a href="javascript:;" style="text-decoration: underline;" v-on:click="changebank()">{{usercash.AccountBankStr=="空"?"绑定账号":"更改账号"}}</a>
+                                </div>
+                            </div>
+                            <div>
+                                <span>提现金额：</span>
+                                @*<input type="text" value="0" class="input-sm form-control width100" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" maxlength="9" v-model="postdata.drawcashmoney" />元*@
+                                <input type="text" value="0" class="input-sm form-control width100" maxlength="9" v-model="postdata.drawcashmoney" />元
+                            </div>
+                        </div>
+                        <div class="flexclass flexmargin" style="margin-left:10px;">
+                            <div class="flexbox usercashtotle">
+                                <div class="flexclass flexmargin">
+                                    <span class="usercashtitle">累计手续费（元）</span>
+                                    <div class="usercash">{{usercash.ServerCashStr}}</div>
+                                </div>
+                                <div class="flexclass flexmargin righttext">
+                                    <span class="usercashtitle">可提现金额（元）</span>
+                                    <div class="usercash">{{usercash.UseCashStr}}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div><input type="radio" name="drawcashway" id="wxaccount" value="0" v-model="usercash.DrawCashWay" v-on:click="changedrawway(0)" />提现到微信账号</div>
+                            </div>
+                            <div>
+                                <span>提现手续费：{{postdata.drawcashmoneystr}}元</span>
+                                <span>实际到账金额：{{postdata.drawcashinfactmoney}}元</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <a href="javascript:;" class="btn btn-primary ml11" style="width:200px !important;" v-on:click="applydrawcash(usercash.Id)">申请提现</a>
+                </div>
+            </div>
+            <br />
+            <div class="mt10">
+                <table class="table table-bordered ml_19">
+                    <tr class="active">
+                        <th class="centertext">提现店铺</th>
+                        <th class="centertext">提现账户</th>
+                        <th class="centertext">提现前余额(元)</th>
+                        <th class="centertext">申请提现(元)</th>
+                        <th class="centertext">手续费(元)</th>
+                        <th class="centertext">实际转帐(元)</th>
+                        <th class="centertext">申请时间</th>
+                        <th class="centertext">处理时间</th>
+                        <th class="centertext">提现方式</th>
+                        <th class="centertext">提现状态</th>
+                        <th class="centertext">状态</th>
+                    </tr>
+                    <tr v-for="(item,index) in List">
+                        <td class="centertext">{{item.nickName}}<br />{{item.phone}}</td>
+                        <td class="centertext">{{item.accountName}}<br />{{item.account}}</td>
+                        <td class="centertext">{{item.BeforeApplyMoneyStr}}</td>
+                        <td class="centertext">{{item.applyMoneyStr}}</td>
+                        <td class="centertext">{{item.serviceMoneyStr}}</td>
+                        <td class="centertext">{{item.cashMoneyStr}}</td>
+                        <td class="centertext">{{item.AddTimeStr}}</td>
+                        <td class="centertext">{{item.state==0?"--":item.UpdateTimeStr}}</td>
+                        <td class="centertext">{{item.DrawCashWayStr}}</td>
+                        <td class="centertext">{{item.drawStateStr}}</td>
+                        <td class="centertext">{{item.stateStr}}</td>
+                    </tr>
+
+                    <tr v-if="List==null || List.length==0">
+                        <td colspan="11" class="centertext">暂无数据</td>
+                    </tr>
+                </table>
+                <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edithtml" hidden>
+        <div style='margin-top: 20px;margin-left: 20px;'>
+            <div>客户名称：</div>
+            <input type="text" value="" id="tempcustomername" class='form-control' maxlength="20" style='display: inline-block;width: 200px;' />
+            <div>提现账号：</div>
+            <input type="text" value="" id="tempaccountbank" class='form-control' maxlength="50" style='display: inline-block;width: 200px;' />
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var ids;
+        var chk_value =[];
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                List:[],
+                RecordCount: 0,
+                postdata: {
+                    aid:@ViewBag.appId,
+                    plataid:@Model.AId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    storename: "",
+                    state:-999,
+                    drawway:-999,
+                    drawstate:-999,
+                    drawcashmoney:0,
+                    userid:@Model.UserId,
+                    drawcashmoneystr:'',//手续费
+                    drawcashinfactmoney:'',//实际到账
+                },
+                usercash: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model)),
+                isloading:false,
+                currenteditid:0,
+                playerindex:0,
+            },
+
+            watch: {
+                postdata: {
+                    handler: function (ob,value) {
+                        if (!ob.drawcashmoney.match(/^\d+\.?\d?\d?$/)) {
+                            if (ob.drawcashmoney == undefined || ob.drawcashmoney.length == 1) {
+                                ob.drawcashmoney = "0";
+                            }
+                        }
+
+                        ob.drawcashmoneystr = (app.usercash.Fee*0.01*0.01*ob.drawcashmoney).toFixed(2);
+                        ob.drawcashinfactmoney = (ob.drawcashmoney-ob.drawcashmoneystr).toFixed(2);
+                    },
+                    deep:true//对象内部的属性监听，也叫深度监听
+                }
+            },
+            methods: {
+                getList:function(){
+                    var that=this;
+                    if (that.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    that.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/PlatChild/Draw/GetDataList", this.postdata, function (data) {
+                        layer.close(index);
+                        that.isloading = false;
+                        if (data.isok) {
+                            that.RecordCount = data.dataObj.count;
+                            that.List = data.dataObj.data;
+                            that.resetPage();
+                        }
+                    })
+                },
+                resetPage: function () {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.RecordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                //obj包含了当前分页的所有参数，比如：
+                                //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getList();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                applydrawcash:function(id){
+                    var drawcashmoney = parseInt(app.postdata.drawcashmoney*100);
+                    if(drawcashmoney<=0)
+                    {
+                        return _layer.msg("提现金额不能为0");
+                    }
+
+                    var index = layer.load(1);
+                    $.post("/PlatChild/Draw/ApplyDrawCash", {aid:@ViewBag.appId,id:id,drawcashmoney:drawcashmoney}, function (data) {
+                        layer.close(index);
+                        if(data.isok){
+                            _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                window.location.reload();
+                            });
+                        }
+                        else
+                        {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                },
+                changebank:function()
+                {
+                    app.playerindex=_layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: "更改提现账号",
+                        shade: 0.3,
+                        area: ['350px', '230px'], //宽高
+                        content: $("#edithtml").html().replace(/temp/g, ''),//this.adddiv(),
+                        btn: ["确定", "取消"],
+                        end: function () {
+                            isloading = 0;
+                        },
+                        yes: function () {
+                            if (app.currenteditid > 0) {
+                                return;
+                            }
+                            var customername = window.parent.document.getElementById("customername").value;
+                            if (customername == undefined || customername.length <= 0) {
+                                return _layer.msg("请输入客户名称");
+                            }
+                            var accountbank = window.parent.document.getElementById("accountbank").value;
+                            if (accountbank == undefined || accountbank.length <= 0) {
+                                return _layer.msg("请输入提现账号");
+                            }
+                            if(accountbank.length<11)
+                            {
+                                return _layer.msg("提现账号长度不能小于11位");
+                            }
+
+                            _layer.confirm("确定更改？", {
+                                btn: ['确定', '取消'] //按钮
+                            }, function () {
+                                app.currenteditid = _layer.load(1);
+                                $.post("/PlatChild/Draw/SaveBankInfo", {act:"bank",aid:@ViewBag.appId,id:app.usercash.Id,accountbank:accountbank,customername:customername}, function (data) {
+                                    if (data.isok) {
+                                        _layer.close(app.playerindex);
+                                        _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                            window.location.reload();
+                                        });
+                                    }
+                                    else {
+                                        _layer.msg(data.Msg);
+                                    }
+                                    _layer.close(app.currenteditid);
+                                    app.currenteditid = 0;
+                                })
+                            }, function () {
+                            });
+                        },
+                        success: function(layero, index){
+                            window.parent.document.getElementById("customername").value =app.usercash.Name;
+                            window.parent.document.getElementById("accountbank").value =app.usercash.AccountBank;
+                        }
+                    });
+                },
+                //更改提现方式
+                changedrawway:function(drawcashway){
+                    if(drawcashway==1)
+                    {
+                        if(app.usercash.AccountBankStr=="空")
+                        {
+                            app.usercash.DrawCashWay = 0;
+                            _layer.msg("请先绑定提现账号");
+                            return;
+                        }
+                    }
+                    app.currenteditid = _layer.load(1);
+                    $.post("/PlatChild/Draw/SaveBankInfo", {act:"",aid:@ViewBag.appId,id:app.usercash.Id,drawcashway:drawcashway}, function (data) {
+                        _layer.close(app.currenteditid);
+                        app.currenteditid = 0;
+                    })
+                },
+            }, created: function () {
+                var that=this;
+                that.getList();
+            }
+
+        });
+
+        function keyPress(ob) {
+            if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+                if (ob.t_value == undefined || ob.t_value.length == 1) {
+                    ob.value = "";
+                }
+                else {
+                    ob.value = ob.t_value;
+                }
+            }
+            else
+                ob.t_value = ob.value;
+        }
+    </script>
+}
+
+
+

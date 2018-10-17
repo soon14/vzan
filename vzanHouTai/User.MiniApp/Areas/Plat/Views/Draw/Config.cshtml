@@ -1,0 +1,97 @@
+﻿@using Entity.MiniApp.Plat
+@model PlatDrawConfig
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "独立小程序";
+}
+
+@section styles{
+    <style>
+        .centertext {vertical-align: inherit !important;text-align: center;}
+
+        .width200 {width: 200px !important;display: inline-block !important; }
+
+        .width100 {width: 100px !important;display: inline-block !important; }
+
+        .divbox{margin:20px 0px;}
+
+        .fontweight{font-weight: bold;}
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div style="margin-top:20px;margin-left:10px;">
+        <div class="divbox">
+            <span class="fontweight">最低提现金额：</span>
+            <input type="text" value="@Model.MinMoneyStr" class="input-sm form-control width100"  onkeyup="keyPress(this)" onafterpaste="keyPress(this)" maxlength="9" id="MinMoney"/>
+            <span>元</span>
+        </div>
+        <div class="divbox">
+            <span class="fontweight">最快处理时间：</span>
+            <input type="text" value="@Model.CommandTime" class="input-sm form-control width100" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="4" id="CommandTime"/>
+            <span>天内</span>
+        </div>
+        <div class="divbox">
+            <span class="fontweight">提现手续费：</span>
+            <input type="text" value="@Model.FeeStr" class="input-sm form-control width100" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" maxlength="9"  id="Fee"/>
+            <span>@(Model.FeeType == 0 ? "%" : "元")</span>
+        </div>
+        <div class="divbox">
+            <span class="fontweight" style="float:left;">支持提现方式：</span>
+            <div style="display:inline-block;">
+                @if (Model.DrawCashWayList == null || Model.DrawCashWayList.Count <= 0)
+                {
+                    <div><input type="checkbox" id="wxaccount" />提现到申请入驻的微信账号</div>
+                    <div style="margin:10px 0px;"><input type="checkbox" id="bankaccount" />提现银行卡</div>
+                }
+                else
+                {
+                    <div><input type="checkbox" id="wxaccount" @(Model.DrawCashWayList[0].IsOpen==1?"checked":"")/>提现到申请入驻的微信账号</div>
+                    <div style="margin:10px 0px;"><input type="checkbox" @(Model.DrawCashWayList[1].IsOpen==1?"checked":"") id="bankaccount" />提现银行卡</div>
+                }
+               
+            </div>
+        </div>
+
+        <div class="divbox">
+            <input type="button" class="btn btn-primary ml10" value="保存" onclick="save();"/>
+        </div>
+    </div>
+</body>
+@section scripts{
+    <script>
+        var _layer = parent.layer;
+        function keyPress(ob) {
+            if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+                if (ob.t_value == undefined || ob.t_value.length == 1) {
+                    ob.value = "";
+                }
+                else {
+                    ob.value = ob.t_value;
+                }
+            }
+            else
+                ob.t_value = ob.value;
+        }
+        function save()
+        {
+            var wxisopen = $("#wxaccount")[0].checked?"1":"0";
+            var bankisopen = $("#bankaccount")[0].checked?"1":"0";
+            var Fee = parseInt($("#Fee").val()*100);
+            var CommandTime = $("#CommandTime").val();
+            var MinMoney =parseInt($("#MinMoney").val()*100);
+            var data = [{ "Name": "微信", "IsOpen": wxisopen ,"DrawCashWay":@((int)DrawCashWay.微信提现)}, { "Name": "银行", "IsOpen": bankisopen ,"DrawCashWay":@((int)DrawCashWay.银行卡人工提现)}];
+            var DrawCashWay = JSON.stringify(data);
+            var postdata = {
+                aid:@ViewBag.appId,
+                MinMoney:MinMoney,
+                CommandTime:CommandTime,
+                Fee:Fee,
+                DrawCashWay:DrawCashWay,
+            }
+            $.post("/Plat/Draw/SaveInfo", postdata, function (data) {
+                _layer.msg(data.Msg);
+            })
+        }
+    </script>
+}

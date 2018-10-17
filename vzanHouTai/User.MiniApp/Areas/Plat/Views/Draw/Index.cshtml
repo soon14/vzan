@@ -1,0 +1,282 @@
+﻿
+@using Entity.MiniApp.Ent
+@model List<DrawCashApply>
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "提现管理";
+}
+
+@section styles{
+    <style>
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .width200 {width: 200px !important;display: inline-block !important;}
+        .width100 {width: 100px !important;display: inline-block !important;}
+        .datetimebox {float: none !important;}
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div id="app" class="container-fluid" v-cloak>
+            <div>
+                <div class="search">
+                    <div class="form-inline">
+                        <span>提现方式：</span>
+                        <select v-model="postdata.drawway" class="form-control width200">
+                            <option value="-999">全部</option>
+                            <option value="@((int)DrawCashWay.微信提现)">微信提现</option>
+                            <option value="@((int)DrawCashWay.银行卡人工提现)">银行卡人工提现</option>
+                        </select>
+                        <span>审核状态：</span>
+                        <select v-model="postdata.state" class="form-control width100">
+                            <option value="-999">全部</option>
+                            <option value="1">通过</option>
+                            <option value="-1">不通过</option>
+                        </select>
+                        <span>提现状态：</span>
+                        <select v-model="postdata.drawstate" class="form-control width100">
+                            <option value="-999">全部</option>
+                            <option value="2">提现成功</option>
+                            <option value="1">提现中</option>
+                            <option value="0">未开始提现</option>
+                            <option value="-1">提现失败</option>
+                        </select>
+                        <input type="text" v-model="postdata.storename" placeholder="输入店铺名称或电话搜索" class="input-sm layui-input width200" />
+
+                        <button type="submit" class="btn btn-primary ml10" v-on:click="Search()">搜索</button>
+                        <a href="#" class="btn btn-default ml10" v-on:click="searchReset()">重置</a>
+                    </div>
+                </div>
+                <br />
+                <div class="mt10">
+                    <table class="table table-bordered ml_19">
+                        <tr class="active">
+                            <th class="centertext">提现店铺</th>
+                            <th class="centertext">提现账户</th>
+                            <th class="centertext">提现前余额(元)</th>
+                            <th class="centertext">申请提现(元)</th>
+                            <th class="centertext">手续费(元)</th>
+                            <th class="centertext">实际转帐(元)</th>
+                            <th class="centertext">申请时间</th>
+                            <th class="centertext">处理时间</th>
+                            <th class="centertext">提现方式</th>
+                            <th class="centertext">提现状态</th>
+                            <th class="centertext">状态</th>
+                            <th class="centertext">操作</th>
+                        </tr>
+                        <tr v-for="(item,index) in List">
+                            <td class="centertext">{{item.nickName}}<br/>{{item.phone}}</td>
+                            <td class="centertext">{{item.accountName}}<br />{{item.account}}</td>
+                            <td class="centertext">{{item.BeforeApplyMoneyStr}}</td>
+                            <td class="centertext">{{item.applyMoneyStr}}</td>
+                            <td class="centertext">{{item.serviceMoneyStr}}</td>
+                            <td class="centertext">{{item.cashMoneyStr}}</td>
+                            <td class="centertext">{{item.AddTimeStr}}</td>
+                            <td class="centertext">{{item.state==0?"--":item.UpdateTimeStr}}</td>
+                            <td class="centertext">{{item.DrawCashWayStr}}</td>
+                            <td class="centertext">{{item.drawStateStr}}</td>
+                            <td class="centertext">{{item.stateStr}}</td>
+                            <td class="centertext">
+                                <a href="javascript:;" class="btn btn-primary ml11" v-on:click="updateState(item.Id,1)" v-if="item.state==0">通过</a>
+                                <a href="javascript:;" class="btn btn-default ml11"  v-on:click="updateState(item.Id,-1)" v-if="item.state==0">不通过</a>
+                                <a href="javascript:;" class="btn btn-primary ml11" v-on:click="confirmdrawcash(item.Id,-1)" v-if="item.drawState==1 && item.drawCashWay==1">确认提现</a>
+                                <a href="javascript:;" class="btn btn-primary ml11" v-on:click="showdrawmessage(index)" v-if="item.drawState==-1 && item.state==1">失败原因</a>
+                                <span v-if="item.state!=0 && item.drawCashWay==0 && item.drawState!=-1">--</span>
+                            </td>
+                        </tr>
+
+                        <tr v-if="List==null || List.length==0">
+                            <td colspan="11" class="centertext">暂无数据</td>
+                        </tr>
+                    </table>
+                    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+                </div>
+                @*<div class="ml_19" v-if="List!=null&& List.length>0">
+                    <span class="label label-info" style="cursor:pointer;" v-on:click="updateState(-2,1)">批量通过审核</span>
+                    <span class="label label-danger" style="cursor:pointer;" v-on:click="updateState(-2,-1)">批量不通过审核</span>
+                </div>*@
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+   <script>
+    var ids;
+    var chk_value =[];
+    var _layer = parent.layer;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            List:[],
+            RecordCount: 0,
+             postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    storename: "",
+                    state:-999,
+                    drawway:-999,
+                    drawstate:-999,
+                },
+            isloading:false,
+            currenteditid:0,
+        },
+        methods: {
+            getList:function(){
+                var that=this;
+                if (that.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                that.isloading = true;
+                _layer.load(1);
+                $.post("/Plat/Draw/GetDataList", this.postdata, function (data) {
+                    that.isloading = false;
+                    if (data.isok) {
+                        that.RecordCount = data.dataObj.count;
+                        that.List = data.dataObj.data;
+                        that.resetPage();
+                    }
+                    _layer.closeAll();
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.RecordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getList();
+                            }
+                        }
+                        , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search:function(){
+                app.getList();
+            },
+            searchReset:function(){
+                window.location.reload();
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+            updateState:function(drawcashApplyId,state){
+                var ids;
+                var msg = "";
+                if(drawcashApplyId==-2){
+                    msg = state==-1?"确定审核不通过？":"确定审核通过？";
+                    //表示批量更新 先判断是否选择了
+                    if(chk_value.length<=0){
+                        layer.msg("请先选择需要审核的请求");
+                        return;
+                    }
+                    ids= chk_value.join(",");
+                }else{
+                    msg = state==-1?"确定审核不通过？":"确定审核通过？";
+                    //表示单个更新 则先判断提交的Id是否合法
+                    if(drawcashApplyId<=0){
+                        layer.msg("提现申请记录未选择");
+                        return;
+                    }
+
+                    ids=drawcashApplyId;
+                }
+                _layer.confirm(msg, {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    _layer.load(1);
+                    $.post("/Plat/Draw/UpdateDrawCashApply", {aid:@ViewBag.appId,ids:ids,state:state}, function (data) {
+                        layer.msg(data.Msg);
+                        if(data.isok){
+                            window.setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
+                        }
+                        _layer.closeAll();
+                    })
+                }, function () {
+                });
+            },
+            //确认已提现
+            confirmdrawcash:function(id){
+                _layer.confirm("确定已提现成功？", {
+                    btn: ['确定', '关闭'] //按钮
+                }, function () {
+                    _layer.load(1);
+                    $.post("/Plat/Draw/ConfirmDrawCash", {aid:@ViewBag.appId,id:id}, function (data) {
+                    _layer.msg(data.Msg);
+                    if(data.isok){
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                    _layer.closeALL();
+                })
+                }, function () {
+                });
+            },
+            showdrawmessage:function(index){
+                var msg = app.List[index].remark
+                //_layer.msg(msg);
+                _layer.confirm(msg, function () {
+                    _layer.closeAll();
+                }, function () {
+                });
+            },
+        }, created: function () {
+            var that=this;
+            that.getList();
+        }
+
+    });
+
+    $('#startTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        weekStart: 1,
+        todayBtn: 0,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+    $('#endTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        weekStart: 1,
+        todayBtn: 0,
+        autoclose: 1,
+        todayHighlight: 1,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+</script>
+}
+
+
+

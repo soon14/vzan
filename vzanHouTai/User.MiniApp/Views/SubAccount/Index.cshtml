@@ -1,0 +1,214 @@
+﻿@model Tuple<List<AuthGroup>,List<AuthRole>, int , int >
+@{
+    ViewBag.Title = "Setting";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("appId", 0);
+    List<AuthGroup> authGroup = Model.Item1;
+    List<AuthRole> authRole = Model.Item2;
+    int groupCount = Model.Item3;
+    int roleCount = Model.Item4;
+}
+
+@section styles{
+    <style>
+        .layui-table th, .layui-table td {
+            text-align: center !important;
+        }
+
+        .layui-form-switch {
+            margin-top: 0px !important;
+            width: 56px !important;
+            line-height: 25px !important;
+            height: 25px !important;
+        }
+    </style>
+}
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <a class="btn btn-primary radius" style="margin-left:0px;" href="/SubAccount/Group?aid=@aid">新增账号分组</a>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list">
+            <table class="layui-table" lay-skin="line">
+                <thead>
+                    <tr>
+                        <th>分组名称</th>
+                        <th style="width:50%">管理菜单</th>
+                        <th>备注</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (authGroup != null && authGroup.Count > 0)
+                    {
+                        foreach (AuthGroup group in authGroup)
+                        {
+                            <tr>
+                                <td>@group.Name</td>
+                                <td>@group.NavMenu</td>
+                                <td>@group.Remark</td>
+                                <td>@group.AddTime.ToString()</td>
+                                <td>
+                                    <a class="btn btn-primary btn-sm" href="/SubAccount/Group?aid=@group.Aid&groupId=@group.Id">编辑</a>
+                                    <a class="btn btn-danger btn-sm" onclick="deleteGroup(@group.Id)" >删除</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" style="text-align:center;">请新增分组</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div id="pager"></div>
+        </div>
+    </div>
+
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <a class="btn btn-primary radius" style="margin-left:0px;" href="/SubAccount/Account?aid=@aid">新增账号</a>
+            <a class="btn btn-primary radius" style="margin-left:0px;" target="_blank" href="/SubAccount/Login?appId=@aid">子账号登陆入口</a>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list">
+            <table class="layui-table" lay-skin="line">
+                <thead>
+                    <tr>
+                        <th>账号名称</th>
+                        <th>所属分组</th>
+                        <th>登陆名</th>
+                        <th>备注</th>
+                        <th>创建人</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (authRole != null && authRole.Count > 0)
+                    {
+                        foreach (AuthRole role in authRole)
+                        {
+                            <tr>
+                                <td>@role.Name</td>
+                                <td>@role.GroupName</td>
+                                <td>@role.LoginName</td>
+                                <td>@role.Remark</td>
+                                <td>@role.CreateUserName</td>
+                                <td>@role.AddTime.ToString()</td>
+                                <td>
+                                    <a class="btn btn-primary btn-sm" href="/SubAccount/Account?aid=@role.AId&roleId=@role.Id">编辑</a>
+                                    <a class="btn btn-danger btn-sm" onclick="deleteRole(@role.Id)">删除</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align:center;">请新增账号</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div id="rolePager"></div>
+        </div>
+    </div>
+</body>
+
+<input id="groupCount" type="hidden" value="@groupCount"/>
+<input id="roleCount" type="hidden" value="@roleCount" />
+
+@section scripts{
+    <script type="text/javascript">
+        layui.use(['element','laypage','form'], function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            laypage.render({
+                elem: 'pager'
+                , count: Number($('#groupCount').val()) //数据总数，从服务端得到
+                , curr: getUrlParaValue('groupPageindex')//当前页
+                , limit: 10
+                , jump: function (obj, first) {
+                    //首次执行
+                    if (first) {
+                        return;
+                    }
+                    if(!getUrlParaValue('groupPageindex')){
+                        location.href = location.href+='&groupPageindex='+obj.curr;
+                        return;
+                    }
+                    replaceParamVal('groupPageindex', obj.curr);
+                }
+               , theme: '#3eb94e'
+                , layout: ['prev', 'page', 'next', 'skip']
+            });
+            laypage.render({
+                elem: 'rolePager'
+               , count: Number($('#roleCount').val()) //数据总数，从服务端得到
+               , curr: getUrlParaValue('rolePageindex')//当前页
+               , limit: 10
+               , jump: function (obj, first) {
+                   //首次执行
+                   if (first) {
+                       return
+                   }
+                   if(!getUrlParaValue('rolePageindex')){
+                       location.href = location.href+='&rolePageindex='+obj.curr;
+                       return;
+                   }
+                   replaceParamVal('rolePageindex', obj.curr);
+               }
+               , theme: '#3eb94e'
+               , layout: ['prev', 'page', 'next', 'skip']
+            });
+        });
+
+        function getUrlParaValue (sVar) {
+            return decodeURI(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURI(sVar).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+        }
+
+        function replaceParamVal(paramName,replaceWith) {
+            var oUrl = this.location.href.toString();
+            var re=eval('/('+ paramName+'=)([^&]*)/gi');
+            //alert(location.href.search(re));
+            var nUrl = oUrl.replace(re,paramName+'='+replaceWith);
+            this.location = nUrl;
+        }
+
+        function deleteGroup(id) {
+            layer.confirm("确定删除该分组，及所属用户吗？", function () {
+                var layerIndex = layer.load(2);
+                $.post("/SubAccount/DeleteGroup", { aid:@aid,groupId: id }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.code == 1) {
+                        //layer.msg('删除成功');
+                        window.location.reload();
+                        return;
+                    }
+                    layer.msg(data.msg);
+                })
+            })
+        }
+
+        function deleteRole(id) {
+            layer.confirm("确定删除该账号吗？", function () {
+                var layerIndex = layer.load(2);
+                $.post("/SubAccount/DeleteRole", { aid:@aid,roleId: id }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.code == 1) {
+                        //layer.msg('删除成功');
+                        window.location.reload();
+                        return;
+                    }
+                    layer.msg(data.msg);
+                })
+            })
+        }
+    </script>
+}

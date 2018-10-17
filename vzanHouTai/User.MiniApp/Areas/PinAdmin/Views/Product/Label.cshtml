@@ -1,0 +1,175 @@
+﻿@model ViewModel<PinGoodsLabel>
+@{
+    string name = "标签";
+    string editPath = "/PinAdmin/Product/LabelEdit";
+
+    ViewBag.Title = name+"管理";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+
+
+
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> @(name)管理 <span class="c-gray en">&gt;</span> @(name)列表 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l">
+            <a onclick="batch_sort()" href="javascript:void(0);" class="btn btn-secondary radius"><i class="Hui-iconfont">&#xe675;</i> 一键排序</a>
+            <a class="btn btn-primary radius" onclick="goods_add('添加@(name)','@(editPath)?aid=@(Model.aId)&storeid=@(Model.storeId)')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 添加@(name)</a>
+        </span>
+        <span class="r">共有数据：<strong>@Model.TotalCount</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="25">排序</th>
+                    <th width="80">ID</th>
+                    <th width="">@(name)名称</th>
+                    <th width="120">操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count() > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td class="td-status"><input type="text" name="sort[]" value="@(item.sort)" data-id="@(item.id)" data-pre="@(item.sort)" class="input-text is_order_val" style="width: 100px;" /></td>
+                            <td>@(item.id)</td>
+                            <td>@(item.name)</td>
+                            <td class="f-14 td-manage">
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="goods_edit('编辑@(name)','@(editPath)?aid=@(item.aId)&storeid=@(item.storeId)&id=@(item.id)')" href="javascript:;" title="编辑"><i class="Hui-iconfont">&#xe6df;</i> 编辑</a>
+                                <a style="text-decoration:none" class="btn btn-danger radius size-MINI del" data-id="@(item.id)" title="删除"><i class="Hui-iconfont">&#xe6e2;</i> 删除</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            }
+
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        /*添加*/
+        function goods_add(title, url) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+        /*编辑*/
+        function goods_edit(title, url, id) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+        /*删除*/
+        function article_del(obj, id) {
+            layer.confirm('确认要删除吗？', function (index) {
+                $.ajax({
+                    type: 'POST',
+                    url: '?act=del&aId=@(Model.aId)&storeId=@(Model.storeId)',
+                    dataType: 'json',
+                    success: function (data) {
+                        $(obj).parents("tr").remove();
+                        layer.msg('已删除!', { icon: 1, time: 1000 });
+                    },
+                    error: function (data) {
+                        console.log(data.msg);
+                    },
+                });
+            });
+        }
+
+        function batch_sort() {
+
+            var sort_data = [];
+            $(".is_order_val").each(function () {
+                var sort_item = $(this);
+                if (sort_item.data("pre") != sort_item.val()) {
+                    sort_data.push(sort_item.data("id") + "_" + sort_item.val());
+                }
+            })
+            if (sort_data.length <= 0) {
+                layer.msg('没有检测到要修改的行')
+                return;
+            }
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "?act=sort",
+                data: { sortData: sort_data.join(","), t: Math.random(),storeId:@(Model.storeId) },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.msg, { time: 1500 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+        $(function () {
+
+            //回车自动提交
+            $('.search-form').find('input').keyup(function (event) {
+                if (event.keyCode === 13) {
+                    $("#search").click();
+                }
+            });
+
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "?act=del&aid=@(Model.aId)&storeId=@(Model.storeId)",
+                        data: { act: 'del', id: id, t: Math.random() },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 2000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 2000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+        })
+    </script>
+
+}
+

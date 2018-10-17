@@ -1,0 +1,280 @@
+﻿@using Entity.MiniApp.Plat
+@model PlatStoreCategoryConfig
+@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+
+    /*.edit { color: cornflowerblue; }
+    .del { color: red; }*/
+    .tipSpan { color: #ccc; margin-left: 5px; }
+
+    .layui-laypage span { background-color: #eff0f4; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+
+    <div id="app_StoreList" v-cloak>
+        <div style="margin-bottom:20px;">
+            <label><input type="radio" name="SyncSwitch" value="0" v-model="platStoreCategoryConfig.SyncSwitch" v-on:click="updateGoodsDBSync()"/>手动选择</label>
+            <label><input type="radio" name="SyncSwitch" value="1" v-model="platStoreCategoryConfig.SyncSwitch" v-on:click="updateGoodsDBSync()"/>自动同步</label>
+        </div>
+
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <div>
+                        <label for="plist-pname">店铺名称：</label>
+                        <input type="text" name="storeName" class="form-control" v-model="postdata.storeName"/>
+                        <label for="plist-pname">商品名称：</label>
+                        <input type="text" name="goodsName" class="form-control" v-model="postdata.goodsName"/>
+                        <label for="plist-pname">店铺大类：</label>
+                        <select class="form-control" v-model="firstCategoryId" style="width: 200px; margin-left: 5px;" v-on:change="GetScondCategory(firstCategoryId)">
+                            <option v-bind:value="item.Id" v-for="(item,index) in firstCategory">{{item.Name}}</option>
+                        </select>
+
+                        <label for="plist-pname">店铺小类：</label>
+                        <select class="form-control" v-model="postdata.categoryName" style="width: 200px; margin-left: 5px;">
+                            <option v-bind:value="item.Name" v-for="(item,index) in secondCategory">{{item.Name}}</option>
+                        </select>
+
+                        <label for="plist-pname">状态：</label>
+                        <select class="form-control" v-model="postdata.goodsSync">
+                            <option value="-1">全部</option>
+                            <option value="0">未同步</option>
+                            <option value="1">已同步</option>
+
+                        </select>
+
+                        <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                        <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                    </div>
+
+
+                </div>
+
+
+
+            </div>
+        </div>
+        <div style="margin-top:20px;">
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">序号</th>
+                    <th class="centertext">店铺名称</th>
+                    <th class="centertext">店铺类别</th>
+                    <th class="centertext">产品名称</th>
+                    <th class="centertext">价格</th>
+                    <th class="centertext">库存</th>
+                    <th class="centertext">排序</th>
+                   
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in goodsDBList">
+                    <td class="centertext">
+                        <label>
+                            <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                        </label>
+                    </td>
+               
+                    <td class="centertext">
+                        {{item.StoreName}}
+                    </td>
+                    <td class="centertext">
+                        {{item.CurFirstCategoryName}}-{{item.CurSecondCategoryName}}
+                    </td>
+                    <td class="centertext">
+                        {{item.Name}}
+                    </td>
+                    <td class="centertext">
+                        {{item.Price}}
+                    </td>
+                    <td class="centertext">
+                        {{item.Stock}}
+                    </td>
+                    <td class="centertext">
+                        {{item.Sort}}
+                    </td>
+                    <td class="centertext">
+                        <a href="javascript:void(0)" class="edit btn btn-primary ml10" v-on:click="sync(0,item.Id,1)" v-if="item.Synchronized==0">同步</a>
+                        <a href="javascript:void(0)" class="del btn btn-default ml10" v-on:click="sync(0,item.Id,0)" v-else>取消</a>
+                    </td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;"></div>
+            <div class="ml_19">
+
+                <a class="btn btn-primary ml10" v-on:click="sync(-1,0,1)">
+                    批量同步
+                </a>
+                <a class="btn btn-default ml10" v-on:click="sync(-1,0,0)">
+                    批量取消
+                </a>
+               
+            </div>
+        </div>
+
+     
+
+    </div>
+
+
+</div>
+
+
+<script>
+    var ckids=[];
+    var app = new Vue({
+        el: "#app_StoreList",
+        data: {
+            platStoreCategoryConfig:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            postdata: {
+                aid:@ViewBag.appId,
+                storeName:"",
+                goodsName:"",
+                goodsSync:-1,
+                categoryName:"",
+                pageIndex: 1,
+                pageSize: 10
+            },
+            firstCategoryId:0,
+            firstCategory:@Html.Raw(JsonConvert.SerializeObject(ViewBag.FirstCategory)),
+            secondCategory:[],
+            goodsDBList:[]
+        },
+
+        methods: {
+            ckSave:function(id){
+                for(var i = 0; i < ckids.length; i++){
+                    if(id === ckids[i]){
+                        ckids.splice(i,1);
+                        return ;
+                    }
+                }
+                return ckids.push(id);
+            },
+            search:function(){
+                var that=this;
+                that.postdata.pageIndex=1;
+                that.getList();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+            GetScondCategory:function(parentId){
+                var that=this;
+                $.post("/Plat/Store/GetCategoryList", {appId:@ViewBag.appId,isFirstType:2,isList:-1,parentId:parentId}, function (data) {
+                    that.secondCategory = data.dataObj.list;
+                 
+                })
+            },
+            sync:function(type,id,act){
+                if(type==0){
+                    ckids.push(parseInt(id));
+                }
+                if(ckids.length<=0){
+                    layer.msg("请选择要操作的产品");
+                    return;
+                }
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/SyncGoods',
+                    data: {ids:ckids.join(","),aid:@ViewBag.appId,act:act},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            updateGoodsDBSync:function(){
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/UpdateStoreCategoryLevel',
+                    data: {Id:@(Model.Id),appId:@ViewBag.appId,act:1},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                that.sortCategoryList=[];//翻页后清空 之前编辑了排序的数据
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getList();
+
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //获取分类列表
+            getList: function () {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Store/GetGoodsDB", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.goodsDBList = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+
+
+        },created:function(){
+            var that=this;
+            that.getList();
+
+        }
+    });
+</script>

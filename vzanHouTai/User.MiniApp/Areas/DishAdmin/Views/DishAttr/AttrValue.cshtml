@@ -1,0 +1,127 @@
+﻿@model ViewModel<DishAttr>
+@{
+    ViewBag.Title = "属性值管理";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 商品类型 <span class="c-gray en">&gt;</span> 属性管理 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray">
+        <span class="l">
+            <a class="btn btn-primary radius" onclick="attr_add('添加属性','/DishAdmin/DishAttr/AttrValueEdit?aid=@(Model.aId)&storeid=@(Model.storeId)&fid=@(ViewBag.fid)')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 添加属性</a>
+        </span>
+        <span class="r"></span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th>编号</th>
+                    <th>属性名称</th>
+                    <th>商品类型</th>
+                    @*<th>属性值的录入方式</th>*@
+                    <th>可选值列表</th>
+                    <th>排序</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count() > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td>@item.id</td>
+                            <td>@item.attr_name</td>
+                            <td>@item.cat_name</td>
+                            @*<td>从列表中选择</td>*@
+                            <td width="50%">@item.attr_values_fmt</td>
+                            <td>@item.sort</td>
+                            <td>
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="attr_edit('编辑商品属性','/DishAdmin/DishAttr/AttrValueEdit?id=@item.id&aid=@(item.aid)&storeId=@(item.storeId)')" href="javascript:;" title="编辑"><i class="Hui-iconfont">&#xe6df;</i> 编辑</a>
+                                <a style="text-decoration:none" class="btn btn-danger radius size-MINI del" data-id="@(item.id)" title="删除"><i class="Hui-iconfont">&#xe6e2;</i> 删除</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            }
+        </table>
+    </div>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        function attr_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '400px']
+            });
+        }
+        function attr_edit(title, url) {
+            var edit_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '400px']
+            });
+        }
+        function category_sort() {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            var sort_data = '';
+            $(".is_order_val").each(function () {
+                sort_data = sort_data + $(this).val() + ',';
+            })
+            $.ajax({
+                type: "POST",
+                url: "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_category/setsort.html",
+                data: { sort_data: sort_data, t: Math.random() },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+        $(function () {
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除该分类吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/DishAdmin/DishAttr/AttrValue?aid=@(Model.aId)&storeId=@(Model.storeId)",
+                        data: { act: 'del', id: id, t: Math.random() },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 2000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 2000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+        })
+    </script>
+}

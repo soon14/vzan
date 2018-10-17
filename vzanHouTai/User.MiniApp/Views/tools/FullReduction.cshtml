@@ -1,0 +1,301 @@
+﻿@using Entity.MiniApp.Tools
+@model FullReduction
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "满减优惠";
+
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<link href="~/Areas/Qiye/static/css/style.css" rel="stylesheet">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .form-control { display: inline-block !important; width: 200px; }
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+</style>
+<div id="app" class="container-fluid" v-cloak>
+
+    <div style="margin-top:20px;">
+        <div class="ml_19">
+            <a class="btn btn-primary ml10" v-on:click="addedit(-1)">
+                新增
+            </a>
+
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered ml_19">
+                <tr class="active">
+                    <th class="centertext">序号</th>
+                    <th class="centertext">与会员折扣是否互斥</th>
+                    <th class="centertext">优惠政策</th>
+                    <th class="centertext">使用次数</th>
+                    <th class="centertext">活动时间</th>
+                    <th class="centertext">状态</th>
+                    <th class="centertext">操作</th>
+                </tr>
+
+                <tr v-for="(item,index) in reduceList">
+                    <td class="centertext">
+                        {{item.Id}}
+                    </td>
+
+                    <td class="centertext">
+                        <span class="label label-success" v-if="item.VipDiscount==1">是</span>
+                        <span class="label label-danger" v-else>否</span>
+                    </td>
+                    <td class="centertext">
+                        订单满{{item.OrderMoneyStr}}元,优惠{{item.ReducetionMoneyStr}}元
+                    </td>
+                    <td class="centertext">
+                        {{item.UseCount}}次
+                    </td>
+                    <td class="centertext">
+                        {{item.StartTimeStr}}-{{item.EndTimeStr}}
+                    </td>
+                    <td class="centertext">
+                        <span class="label label-success" v-if="item.State==1">{{item.StateStr}}</span>
+                        <span class="label label-danger" v-else-if="item.State==-1">{{item.StateStr}}</span>
+                        <span class="label label-default" v-else>{{item.StateStr}}</span>
+                    </td>
+
+                    <td class="centertext">
+                        <a href="javascript:void(0)" class="edit btn btn-primary ml10" v-on:click="addedit(index)">编辑</a>
+                        <a href="javascript:void(0)" class="del btn btn-default ml10" v-on:click="del(index)">删除</a>
+                    </td>
+                </tr>
+
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;"></div>
+        </div>
+
+    </div>
+
+
+    <!--满减活动设置-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        满减优惠
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <div>
+                            <label>优惠政策:</label>满
+                            <input type="text" name="orderMoney" value="" class="form-control" v-model="ItemInfo.OrderMoneyStr" />元,减<input type="text" name="reduceMoney" value="" class="form-control" v-model="ItemInfo.ReducetionMoneyStr" />元
+
+                        </div>
+                        <div style="margin-top:10px;">
+                            <div style="margin-top:10px;">
+                                <label>有效期:</label>
+                                <input type="text" name="startTime" class="form-control" id="startTime" readOnly="readOnly" v-model="ItemInfo.StartTimeStr"/>到<input type="text" name="endTime" readOnly="readOnly" value="" class="form-control" id="endTime" v-model="ItemInfo.EndTimeStr" />
+                            </div>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <div style="margin-top:10px;">
+                                <label>与会员折扣互斥:&nbsp;&nbsp;</label>
+                                <label><input type="radio" value="0" name="VipDiscount" v-model="ItemInfo.VipDiscount" />否</label>
+                                <label><input type="radio" value="1" name="VipDiscount" v-model="ItemInfo.VipDiscount" />是</label>
+                            </div>
+                        </div>
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                        保存
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+
+</div>
+<script>
+
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            reduceList:[],
+            ItemInfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            editIndex: 0,
+            RecordCount: 0,
+            postdata:{
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10
+            },
+            isloading:false
+        },
+        methods: {
+            getList:function(){
+                var that=this;
+                if (that.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                that.isloading = true;
+
+                var index = layer.load(1);
+                $.post("/tools/GetListFullReduction", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.reduceList = data.dataObj.list;
+                    that.resetPage();
+                })
+            },
+            del:function(index){
+                var that=this;
+                if(parseInt(index)<0){
+                    layer.msg("请选择需要删除的活动");
+                    return;
+                }
+                var indexLoad = layer.load(1);
+                $.ajax({
+                    type: 'POST',
+                    url: '/tools/SaveFullReduction',
+                    data: {fullReduction:that.reduceList[index],aid:@ViewBag.appId,actionType:-1},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.closeAll();
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+            },
+            InitLayui:function(){
+                var that=this;
+                layui.use(['laydate','laypage'], function(){
+                    var laydate = layui.laydate;
+                    var laypage = layui.laypage;
+                    //执行一个laydate实例
+                    laydate.render({
+                        elem: '#startTime',
+                        format: 'yyyy-MM-dd HH:mm:ss' ,
+                        theme: 'grid',
+                        type: 'datetime',
+                        value: that.ItemInfo.StartTimeStr,
+                        min:'@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")',
+                        done: function (value, date, endDate) {
+                            that.ItemInfo.StartTimeStr=value;
+                        }
+
+                    });
+                    laydate.render({
+                        elem: '#endTime',
+                        format: 'yyyy-MM-dd HH:mm:ss' ,
+                        theme: 'grid',
+                        type: 'datetime',
+                        value: that.ItemInfo.EndTimeStr,
+                        min:'@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")',
+                        done: function (value, date, endDate) {
+                            that.ItemInfo.EndTimeStr=value;
+                        }
+
+                    });
+
+                    laypage.render({
+                        elem: 'pages'
+                               , count: app.RecordCount //数据总数，从服务端得到
+                               , curr: app.postdata.pageIndex //当前页
+                               , limit: app.postdata.pageSize
+                               , jump: function (obj, first) {
+                                   //obj包含了当前分页的所有参数，比如：
+                                   //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                                   console.log(obj.limit); //得到每页显示的条数
+                                   that.postdata.pageIndex = obj.curr;
+
+                                   //首次执行
+                                   if (!first) {
+                                       that.getList();
+
+                                   }
+                               }
+                               , theme: '#1E9FFF'
+                               , layout: ['prev', 'page', 'next', 'skip']
+                    });
+
+                });
+            },
+            resetPage: function () {
+                var that=this;
+                that.InitLayui();
+            },
+            saveInfo:function(){
+                var that=this;
+                if (!/^\d*.?\d{0,2}$/.test(Number(that.ItemInfo.OrderMoneyStr))||!/^\d*.?\d{0,2}$/.test(Number(that.ItemInfo.ReducetionMoneyStr))||Number(that.ItemInfo.OrderMoneyStr)<=0||Number(that.ItemInfo.ReducetionMoneyStr)<=0){
+                    layer.msg("价格请输入大于0的数字，最多两位小数！");
+                    return;
+                }
+                that.ItemInfo.StartTime  =that.ItemInfo.StartTimeStr;
+                that.ItemInfo.EndTime  =that.ItemInfo.EndTimeStr;
+                that.ItemInfo.OrderMoney=  parseInt(parseFloat(that.ItemInfo.OrderMoneyStr)*10000*0.01);
+                that.ItemInfo.ReducetionMoney=  parseInt(parseFloat(that.ItemInfo.ReducetionMoneyStr)*10000*0.01);
+                var index = layer.load(1);
+                $.ajax({
+                    type: 'POST',
+                    url: '/tools/SaveFullReduction',
+                    data: {fullReduction:that.ItemInfo,aid:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.closeAll();
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            //添加编辑窗口
+            addedit: function (index) {
+                var that=this;
+                that.editIndex = index;
+                if (typeof (index) != "undefined"&&index!=-1) {//编辑
+                    that.ItemInfo = JSON.parse(JSON.stringify(this.reduceList[index]));
+                }else{
+                    that.ItemInfo = @Html.Raw(JsonConvert.SerializeObject(Model));
+                }
+                $('#myModal').modal('show')
+            },
+
+
+        }, created: function () {
+            var that=this;
+            that.getList();
+            that.InitLayui();
+
+        }
+
+    });
+
+
+
+</script>

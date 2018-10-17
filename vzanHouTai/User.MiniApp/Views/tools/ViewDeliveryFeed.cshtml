@@ -1,0 +1,218 @@
+﻿@model Entity.MiniApp.Tools.DeliveryFeedback
+@{
+    //物流信息组件
+    ViewBag.Title = "物流信息";
+    Layout = "";
+    
+}
+
+<head>
+    <link rel="stylesheet" href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=2" />
+    <script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+</head>
+
+@if (Model == null)
+{
+    <body>
+        <blockquote class="layui-elem-quote" style="height:100%;margin-bottom:0">
+            <ul class="layui-timeline">
+                <li v-for="feedData in feed.data" class="layui-timeline-item">
+                    <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                    <div class="layui-timeline-content layui-text">
+                        <h3 class="layui-timeline-title">暂无动态</h3>
+                        <p>
+                            该订单信息无物流信息，暂时无法跟踪
+                        </p>
+                    </div>
+                </li>
+            </ul>
+        </blockquote>
+    </body>
+    return;
+}
+
+<body>
+    <div id="app" v-cloak>
+        <blockquote class="layui-elem-quote" v-bind:style="{height: feed ? 'auto' : '100%'}">
+            <div class="layui-form-item">
+                <label class="layui-form-label" style="font-size:12px;color:#009688;text-overflow:initial;white-space:normal;text-align:left">
+                    实时物流跟踪，支持大部份主流的物流公司。（由于近期顺丰、天天、百世、申通政策限制，暂时无法实时同步物流信息，用户可复制物流单号自行查询）
+                </label>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.CompanyCode) && !string.IsNullOrWhiteSpace(Model.DeliveryNo))
+            {
+                <ul v-if="!feed && !feed.length && !feed.data && !feed.data.length" class="layui-timeline">
+                    <li class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                        <div class="layui-timeline-content layui-text">
+                            <h3 class="layui-timeline-title">暂无动态</h3>
+                            <p>
+                                等待物流方提供数据
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+                <ul v-if="feed && feed.length" class="layui-timeline">
+                    <li v-for="data in feed" class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                        <div class="layui-timeline-content layui-text">
+                            <h3 class="layui-timeline-title">{{data.AcceptTime}} </h3>
+                            <p>
+                                {{data.AcceptStation}}
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+                <ul v-if="feed && feed.data && feed.data.length" class="layui-timeline">
+                    <li v-for="data in feed.data" class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                        <div class="layui-timeline-content layui-text">
+                            <h3 class="layui-timeline-title">{{data.time}} </h3>
+                            <p>
+                                {{data.context}}
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            }
+            else if(!Model.IsTrack)
+            {
+                <ul class="layui-timeline">
+                    <li class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                        <div class="layui-timeline-content layui-text">
+                            <h3 class="layui-timeline-title">商家自配送</h3>
+                        </div>
+                    </li>
+                </ul>
+                <style>.layui-elem-quote{height:100%!important}</style>
+            }
+            else
+            {
+                <ul class="layui-timeline">
+                    <li class="layui-timeline-item">
+                        <i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+                        <div class="layui-timeline-content layui-text">
+                            <h3 class="layui-timeline-title">暂无动态</h3>
+                            <p>
+                                该订单信息未完善，暂时无法跟踪
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            }
+
+            <hr class="layui-bg-black">
+            <div class="layui-form" style="font-size:14px">
+                @if (!string.IsNullOrWhiteSpace(Model.CompanyTitle) && !string.IsNullOrWhiteSpace(Model.DeliveryNo))
+                {
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">物流公司：</label>
+                        <div class="layui-input-block">
+                            <label class="layui-form-label">@Model.CompanyTitle</label>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">物流单号：</label>
+                        <div class="layui-input-block">
+                            <label class="layui-form-label">@Model.DeliveryNo</label>
+                        </div>
+                    </div>
+                }
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">收货人：</label>
+                    <div class="layui-input-block">
+                        <label class="layui-form-label">@Model.ContactName</label>
+                    </div>
+                </div>
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">联系方式：</label>
+                    <div class="layui-input-block">
+                        <label class="layui-form-label">@Model.ContactTel</label>
+                    </div>
+                </div>
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">收货地址：</label>
+                    <div class="layui-input-block">
+                        <p style="line-height:3rem">@Model.Address</p>
+                    </div>
+                </div>
+
+                <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">备注：</label>
+                    <div class="layui-input-block">
+                        <label v-if="'@Model.Mark'" class="layui-form-label">@Model.Mark</label>
+                        <label v-else class="layui-form-label">无</label>
+                    </div>
+                </div>
+            </div>
+        </blockquote>
+    </div>
+</body>
+
+<script type="application/json" id="feedJson">
+    @(Html.Raw(Model.FeedBack))
+</script>
+<script>
+    $(function () {
+        var feedData = $.trim($('#feedJson').text());
+        feedData = feedData ? JSON.parse(feedData) : {};
+        var app = new Vue({
+            el: '#app',
+            data: {
+                feed: feedData
+            },
+            methods: {
+
+            },
+            created: function () {
+
+            },
+            updated: function () {
+                app.$nextTick(function () {
+                })
+            }
+        })
+    });
+
+</script>
+
+<style>
+    .layui-form-switch {
+        width: 57px;
+        margin-top: 0px;
+    }
+
+    .layui-form {
+        padding: 1.4rem;
+    }
+
+    .layui-form-label {
+        width: auto;
+    }
+
+    .companyBtn {
+        padding-left: 0;
+        color: rgb(63, 164, 237);
+        cursor: pointer;
+    }
+
+    .layui-form-radio span {
+        display: none !important;
+    }
+
+    .layui-timeline{
+        margin-left:1.4rem;
+        margin-top:1.4rem
+    }
+    .layui-input-block label{
+        font-size:15px
+    }
+    .layui-elem-quote {
+        margin-bottom: 0;
+    }
+</style>

@@ -1,0 +1,150 @@
+﻿@{
+    Layout = "/Views/Shared/_MobileHomeLayout.cshtml";
+    ViewBag.Title = "大树视频";
+}
+@section cssSection{
+}
+<script src="/livecontent/aodianplay/player.js"></script>
+<div id="mvList" class="container" v-cloak>
+    <ul class="video-label-list f fc">
+        <li class="video-label f1" v-for="(label,index) in videoLabel" v-on:click="toggleLabel(index)"><span v-bind:class="{'active-label':index==labelNum}">{{label}}</span></li>
+    </ul>
+    <div class="videList-area f fj fw">
+        <div class="video-item" v-for="(video,index) in videoArr" v-on:click="playVideo(index)">
+            <div style="width:100%;min-height:2.06rem;">
+                <img v-bind:src="video.ImageUrl" />
+            </div>
+            <div class="video-title">
+                <h4>{{video.Title}}</h4>
+                <p class="f fc fj"><span>{{video.PlayTimeStr}}</span><span>{{video.playcountformat}}人浏览</span></p>
+            </div>
+        </div>
+    </div>
+    <div style="text-align:center;padding-bottom:0.2rem" v-if="!showTip"><span v-on:click="loadVideoData" style="display:inline-block;padding:0.1rem 0.2rem; border:0.01rem solid #ddd">加载更多</span></div>
+    <p v-if="showTip" style="text-align:center;font-size:0.2rem;color:#666;padding:0.2rem 0;">已加载所有视频</p>
+    <div  class="player-area f fc fc-h" v-show="showMasking" v-on:click.stop="closeVideo">
+        @*<div><img src="/Content/newhome/image/newhome/videoMasking.gif" v-show="!showVideo"/></div>*@
+        @*<div style="position:relative;"><img v-bind:src="currentImg" v-show="!showVideo"/><img class="videoPlay-btn" src="@(WebSiteConfig.cdnurl)content/newhome/image/newhome/eleventh-play.png" v-on:click.stop="playVideo" v-show="!showVideo"/></div>*@
+        <div id="videoPlayer" v-show="showVideo"></div>
+    </div>
+</div>
+@section script{
+    <script src="@(WebSiteConfig.cdnurl)content/newhome/lib/vue.js"></script>
+    <script>
+        var mv = new Vue({
+            el: "#mvList",
+            data: {
+                labelNum: 0,
+                videoLabel: ["公开课", "内训","小视频"],
+                videoArr: [],
+                showTip: false,
+                showMasking: false,
+                showVideo: false,
+                showLoad:false,
+                currentImg: "",
+                currentPlayUrl: "",
+                //isAndroid:false,
+                videoListParam: {
+                    typeid: 0,
+                    pageIndex: 1,
+                    pageSize: 8
+                },
+            },
+            mounted: function () {
+                this.getVideoList();
+                //this.distinguishSystem();
+                //this.loadVideoData();
+            },
+            methods: {
+                distinguishSystem: function () {
+                    var u = navigator.userAgent;
+                    var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1;
+                    //alert(isAndroid);
+                },
+                toggleLabel: function (i) {
+                    mv.videoArr = [];
+                    mv.showTip = false;
+                    mv.labelNum = i;
+                    mv.videoListParam.typeid = i;
+                    mv.videoListParam.pageIndex = 1;
+                    mv.getVideoList();
+                },
+                getVideoList: function () {
+                    var that = this;
+                    var showLayer = layer.load(2);
+                    //this.videoListParam.pageIndex++;
+                    $.ajax({
+                        type: "POST",
+                        url: "/dzhome/GetVideoPlayList ",
+                        data: {
+                            typeid: that.videoListParam.typeid,
+                            pageIndex: that.videoListParam.pageIndex,
+                            pageSize: that.videoListParam.pageSize,
+                        },
+                        success: function (res) {
+                            layer.close(showLayer);
+                            console.log(res.data);
+                            if (res != undefined && res != null) {
+                                if (res.isok) {
+                                    if (res.data == "") {
+                                        mv.showTip = true;
+                                    }
+                                    mv.videoArr = mv.videoArr.concat(res.data);
+                                   
+                                }
+                            }
+                        },
+                        error: function (err) {
+                            console.log("GetVideoPlayList:err");
+                        }
+                    })
+                },
+                loadVideoData: function () {
+                    mv.videoListParam.pageIndex++;
+                    mv.getVideoList();
+                    
+                },
+                getVideoInfo: function (videoIndex) {
+                    
+                    
+                },
+                playVideo: function (videoIndex) {
+                    this.showMasking = true;
+                    this.currentImg = this.videoArr[videoIndex].ImageUrl;
+                    this.currentPlayUrl = this.videoArr[videoIndex].PlayUrl;
+                    $("html,body").css("overflow", "hidden");
+                    var w = "100%";//视频宽度
+                    var h = "100%";//视频高度
+                    var url = mv.currentPlayUrl;//视频地址
+                    var objectPlayer = new aodianPlayer({
+                        container: 'videoPlayer',//播放器容器ID，必要参数
+                        hlsUrl: url,//控制台开通的APP hls地址，必要参数
+                        /* 以下为可选参数*/
+                        width: w,//播放器宽度，可用数字、百分比等
+                        height: h,//播放器高度，可用数字、百分比等
+                        autostart: true,//是否自动播放，默认为false
+                        bufferlength: 1,//设置flv的缓存时间。默认为3秒
+                        //adveDeAddr: mv.currentImg,//封面图片链接
+                        //adveWidth: w,//封面图宽度
+                        //adveHeight: h,//封面图高度
+                    });
+
+                    setTimeout(function () {
+                        $("#liveVideo").trigger("play");
+                          mv.showVideo = true;
+                    }, 600)
+
+                },
+                closeVideo: function () {
+                    mv.showMasking = false;
+                    mv.showVideo = false;
+                    $("#liveVideo").trigger("pause");
+                    $("html,body").css("overflow", "");
+                }
+            }
+        })
+    </script>
+
+}
+
+

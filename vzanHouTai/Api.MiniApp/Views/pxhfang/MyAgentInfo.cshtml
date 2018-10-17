@@ -1,0 +1,227 @@
+﻿@using Entity.MiniApp.Pin
+@model PinAgent
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="/Content/pxhfang/css/base.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/reset.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/normalize.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/fontcss.css">
+    <script src="http://j.vzan.cc/dz/content/newhome/lib/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <title>代理商首页</title>
+    <style>
+        .header { height: 36vw; background-image: url("http://i.vzan.cc/image/png/2018/7/14/105936b6c96cd868664d21b1adfb35c62abca0.png"); background-size: cover; padding-bottom: 2.6666666666666665vw; }
+
+        .user-img { width: 18.4vw; height: 18.4vw; border-radius: 9.2vw; border: 4rpx solid rgba(182, 182, 182, 1); }
+
+        .head-line { width: 0.26666666666666666vw; height: 8vw; background-color: #eee; }
+
+        .body-item { padding: 5.333333333333333vw 2.6666666666666665vw 3.3333333333333335vw 2.6666666666666665vw; }
+
+        .black-point { width: 0.5333333333333333vw; height: 2.6666666666666665vw; background-color: #333; }
+
+        .agent-btn { width: 45.333333333333336vw; height: 11.733333333333333vw; color: white; border-radius: 5.866666666666666vw; }
+
+           .grey-border {
+            border: 0.5333333333333333vw solid rgba(182, 182, 182, 1);
+        }
+
+        .agent-level {
+            bottom: 0;
+            right: -3.666666666666666vw;
+            border-radius: 2.933333333333333vw;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .check-policy{
+            top: 0;
+            right: -38.333333333333336vw;
+            width: 25.333333333333332vw;
+            background:rgba(255,255,255,0.2);
+            border-radius: 3.6vw;
+            line-height: 7.2vw;
+            text-align: center;
+        }
+    </style>
+    <script>
+
+
+    </script>
+</head>
+
+<body>
+    <div id='data'>
+
+        <!-- header -->
+        <div class='header f-cc'>
+            <div class='fc user-img pr'>
+                <img src='@Model.userInfo.HeadImgUrl' mode='aspectFill' class='w130h130b'></img>
+                <div class="pa f-c l44 agent-level">
+                    <div class="pa f-c l44 padl20 t22 agent-level grey-border">
+                        <div class="level-css t32">@Model.AgentLevelName</div>
+                    </div>
+                    <div class="pa check-policy">
+                        <span class="t32 cfff mt20" v-on:click='checkPolicy($event)'>查看政策</span>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <span class='cfff t36'>@Model.userInfo.NickName</span>
+        </div>
+        <div class="h190 w690 f c bgcfff mb20 ml30" style="margin-top:-4vw">
+            <div class="f-cc w5005">
+                <span class="t54 f-B">@Model.moneyStr</span>
+                <span class="c666 t26 mt8">累积总收益</span>
+            </div>
+            <div class="head-line"></div>
+            <div class="f-cc w5005">
+                <span class="t54 f-B">@Model.cashStr</span>
+                <span class="c666 t26 mt8">可提现</span>
+            </div>
+        </div>
+
+        <!-- 直接代理收益 -->
+        <div class="w690 h382 bgcfff ml30 body-item f-c jsb">
+            <div class="f c">
+                <div class="black-point mr12"></div>
+                <span class="t32 c333">直接代理收益</span>
+            </div>
+            <!-- 代理 -->
+            <div class="f c bgcfff mb20 ml30" data-type='0' data-extractType='0' v-on:click='goIncomeList($event)'>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.First.AgentCount</span>
+                    <span class="c999 t28 mt16">邀请代理</span>
+                </div>
+                <div class="head-line"></div>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.First.AgentSumMoney</span>
+                    <span class="c999 t28 mt16">邀请分佣</span>
+                </div>
+            </div>
+            <!-- 商户 -->
+            <div class="f c bgcfff mb20 ml30" data-type='1' data-extractType='0' v-on:click='goIncomeList($event)'>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.First.StoreCount</span>
+                    <span class="c999 t28 mt16">邀请商户</span>
+                </div>
+                <div class="head-line"></div>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.First.OrderSum</span>
+                    <span class="c999 t28 mt16">交易分润</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 二级代理收益 -->
+        <div class="w690 h382 bgcfff ml30 body-item f-c jsb mt20">
+            <div class="f c">
+                <div class="black-point mr12"></div>
+                <span class="t32 c333">二级代理分润</span>
+            </div>
+            <!-- 代理 -->
+            <div class="f c bgcfff mb20 ml30" data-type='0' data-extractType='1' v-on:click='goIncomeList($event)'>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.Second.AgentCount</span>
+                    <span class="c999 t28 mt16">邀请代理</span>
+                </div>
+                <div class="head-line"></div>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.Second.AgentSumMoney</span>
+                    <span class="c999 t28 mt16">邀请分佣</span>
+                </div>
+            </div>
+            <!-- 商户 -->
+            <div class="f c bgcfff mb20 ml30" data-type='1' data-extractType='1' v-on:click='goIncomeList($event)'>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.Second.StoreCount</span>
+                    <span class="c999 t28 mt16">邀请商户</span>
+                </div>
+                <div class="head-line"></div>
+                <div class="f-cc w5005">
+                    <span class="t54 cf0033">@Model.Second.OrderSum</span>
+                    <span class="c999 t28 mt16">交易分润</span>
+                </div>
+            </div>
+        </div>
+
+        <div class='fsa mt60 padl20'>
+            <div class='btn-1 mpunset agent-btn bgb415 fc' v-on:click='goApplyTixian()'>
+                <span class='dzicon icon-wechat cfff t50'></span>
+                <span class='t30 ml10'>申请提现</span>
+            </div>
+
+            <div class='btn-1 mpunset agent-btn bgf0033 fc' v-on:click='goTixianRecords()'>
+                <span class='dzicon icon-icon_tixianjilu cfff t50'></span>
+                <span class='t30 ml10'>提现记录</span>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+<script>
+    var Gajax = function (url, data, callback) { //请求方法
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            dataType: "json",
+            success: function (data) {
+                if (data.isok) {
+                    callback(data)
+                } else {
+                    alert(data.msg)
+                }
+            }
+        });
+    }
+    var data = new Vue({
+        el: '#data',
+        data: {
+        },
+        mounted() {
+            $(function () {
+                var url = location.search; //获取url中"?"符后的字串
+                var theRequest = new Object();
+                if (url.indexOf("?") != -1) {
+                    var str = url.substr(1);
+                    strs = str.split("&");
+                    for (var i = 0; i < strs.length; i++) {
+                        theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+                    }
+                }
+
+            })
+
+
+        },
+        methods: {
+            goIncomeList: function (e) {
+                var type = e.currentTarget.dataset.type
+                var extractType = e.currentTarget.dataset.extracttype
+                console.log(e.currentTarget.dataset)
+                window.location.href = '/pxhfang/MyIncomeList?utoken=@ViewBag.utoken&openId=@ViewBag.openId&appid=@WebSiteConfig.GongZhongAppId&testpxhappid=@Model.userInfo.appId&phone=@Model.userInfo.TelePhone&type=' + type + '&extractType=' + extractType
+            },
+            goApplyTixian: function () {
+                window.location.href = '/pxhfang/TiXian?id=@Model.userInfo.zbSiteId&openId=@ViewBag.openId&appid=@WebSiteConfig.GongZhongAppId&testpxhappid=@Model.userInfo.appId&phone=@Model.userInfo.TelePhone';
+            },
+            goTixianRecords: function () {
+                window.location.href = '/pxhfang/AgentTixianRecord?utoken=@ViewBag.utoken&id=@Model.userInfo.zbSiteId&openId=@ViewBag.openId&appid=@WebSiteConfig.GongZhongAppId&testpxhappid=@Model.userInfo.appId&phone=@Model.userInfo.TelePhone';
+            },
+            checkPolicy:function(){
+                
+            }
+        }
+    })
+
+</script>
+
+</html>
+

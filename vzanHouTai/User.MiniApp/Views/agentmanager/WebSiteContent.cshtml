@@ -1,0 +1,651 @@
+﻿@model AgentWebSiteInfo
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "内容管理";
+    ViewBag.PageType = -1;
+    string bannerArry = Model.pageMsgConfigModel.bannerImgs;
+    string MobileBannerArry = Model.pageMsgConfigModel.MobileBannerImgs;
+    if (bannerArry == null|| string.IsNullOrEmpty(bannerArry))
+    {
+        bannerArry= "http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180201/15145031fbbd4d838a2bcf3b9c19165e.png,http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180201/ae6ab2fe6b15454e93664b93e7697ea7.png,http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180201/74b92f8da3e24cc6888bb4d1b15755bd.png";
+    }
+    if (MobileBannerArry == null || string.IsNullOrEmpty(MobileBannerArry))
+    {
+        MobileBannerArry = "http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180418/135a3a79373e49008b1bfee0c2923750.png,http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180418/5afc62d8ff7943a0a39f782f301e48ab.png,http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180418/2db5230a452445a3b014cf6ae7d6e905.png";
+    }
+}
+<style>
+    .form-control { width: 35%; display: inline-block; }
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; cursor: pointer; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .contact { margin-bottom: 5px; }
+    .pageModel { width: 300px; height: 400px; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+    .imgItem, .pageMsg { margin-top: 10px; }
+    .pageModel { padding: 20px; }
+        .pageModel p { font-family: 'Arial Normal', 'Arial'; font-weight: 400; font-style: normal; font-size: 14px; color: #999999; }
+        .pageModel .modelTitle { font-family: 'Arial Black', 'Arial Normal', 'Arial'; font-weight: 900; font-style: normal; font-size: 16px; color: #3399CC; }
+    .msgHeadr { height: 10%; }
+    .imgItem { height: 40%; }
+    .pageMsg { height: 40%; }
+    .action { text-align: right; }
+    .actionItem { background-color: rgb(24,155,212); display: inline-block; border: solid 1px rgb(24,155,212); border-radius: 5px; width: 50px; text-align: center; }
+        .actionItem span { color: white; cursor: pointer; }
+    .pageModelItem { border: 1px solid #ccc; margin-right: 10px;margin-bottom:5px; }
+    .layui-form-switch{margin-top:0px;width:55px;}
+    .imgItem img { height: 100%; width: 100%; }
+</style>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<div id="app" v-cloak>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td style="text-align: right;">PC端轮播图：</td>
+            <td align="left">
+                <div class="pslideimgs">
+                    <div class="i_Posters rel">
+
+                        <div style="position:relative;" v-for="(item,index) in bannerImgs">
+                            <img :src="item" style="display:block;height:150px;width:150px;" />
+                            <span v-on:click="clearImg(0,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                        </div>
+                        <div class="plus-button" v-on:click="UploadImg(0)">
+                            <div class="s-image-uploader-wrapper">
+                                <div>
+                                    <div class="plus">+</div>
+                                    <div class="plus-label">上传图片</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <label class="forinputmassage" style="color:#ccc;">建议尺寸：1920*640px</label>
+            </td>
+
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">移动端轮播图：</td>
+            <td align="left">
+                <div class="pslideimgs">
+                    <div class="i_Posters rel">
+
+                        <div style="position:relative;" v-for="(item,index) in MobileBannerImgs">
+                            <img :src="item" style="display:block;height:150px;width:150px;" />
+                            <span v-on:click="clearImg(2,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                        </div>
+                        <div class="plus-button" v-on:click="UploadImg(2)">
+                            <div class="s-image-uploader-wrapper">
+                                <div>
+                                    <div class="plus">+</div>
+                                    <div class="plus-label">上传图片</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <label class="forinputmassage" style="color:#ccc;">建议尺寸：750*400px</label>
+            </td>
+
+        </tr>
+
+        <tr>
+            <td style="text-align: right;" width="20%">视频展示：</td>
+            <td>
+                <div class="layui-form">
+                    <input type="checkbox" name="videoSwitch" lay-filter="videoSwitch" lay-skin="switch" lay-text="开启|关闭" v-model="agentWebSiteInfo.pageMsgConfigModel.videoSwitch">
+                    <label class="forinputmassage" style="color:#ccc;">* 开启则会在页面出现视频展示</label>
+                </div>
+               
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="20%">自定义模块：</td>
+            <td>
+                <div class="pslideimgs">
+                    <div class="i_Posters rel">
+                        <div class="d-flex d-flex-center" style="box-shadow:none;">
+                            <div class="d-flex" style="flex-wrap:wrap;">
+                                <div style="position:relative;" class="pageModelItem" v-for="(item,index) in agentWebSiteInfo.pageMsgConfigModel.listCustomModel">
+                                    <div>
+                                        <div class="pageModel d-flex flex-v">
+                                            <div class="msgHeadr">
+                                                <h1 class="modelTitle">{{item.modelName}}</h1>
+                                                <p>{{item.modelDescription}}</p>
+                                            </div>
+                                            <div class="imgItem">
+                                                <img :src="item.modelBanners" />
+                                            </div>
+                                            <div class="pageMsg">
+                                                <p><span>{{item.modelContent}}</span></p>
+                                            </div>
+                                            <div class="action" v-on:click="editModel(index)">
+                                                <div class="actionItem">
+                                                    <span>编辑</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <span class="DelPoster" v-on:click="clearModel(index)"><i class="glyphicon glyphicon-remove"></i></span>
+                                </div>
+                                <div class="plus-button" style="height:400px;width:300px;display:inline-block;" v-on:click="editModel(-1)">
+
+                                    <div class="s-image-uploader-wrapper" style="margin-top:50%!important">
+                                        <div>
+                                            <div class="plus">+</div>
+                                            <div class="plus-label">添加</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                      
+
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">联系我们：</td>
+            <td>
+                <div class="contact">
+                    <label>联系电话<label style="color: red">*</label></label> <input maxlength="100" class="form-control width300" v-model="agentWebSiteInfo.pageMsgConfigModel.telephone"/>
+                </div>
+                <div class="contact">
+                    <label>联系邮箱<label style="color: red">*</label></label> <input maxlength="100" class="form-control width300" v-model="agentWebSiteInfo.pageMsgConfigModel.email"/>
+                </div>
+                <div class="contact">
+                    <label>联系地址<label style="color: red">*</label></label> <input maxlength="100" class="form-control width300" v-model="agentWebSiteInfo.pageMsgConfigModel.address"/>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" value="保存" v-on:click="saveInfo"/>
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+
+    </table>
+    <div style="display: none;">
+        <button id="browse_file_img">上传图片</button>
+        <button id="start_upload_img" v-on:click="uploadFile('img')">开始上传</button>
+    </div>
+
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        模块编辑
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <table class="table table-condensed table-hover cancel-table-td-border ">
+                            <tr>
+                                <td style="text-align: right;">模块图片：<label style="color: red">*</label></td>
+                                <td align="left">
+                                    <div class="pimg">
+                                        <img style="height:150px;width:150px;" :src="curModelItem.modelBanners" v-if="curModelItem.modelBanners!=''" v-on:click="UploadImg(1)" />
+                                        <div class="plus-button" v-on:click="UploadImg(1)" v-else>
+                                            <div class="s-image-uploader-wrapper">
+                                                <div>
+                                                    <div class="plus">+</div>
+                                                    <div class="plus-label">上传图片</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <label class="forinputmassage" style="color:#ccc;">建议尺寸：572x408px</label>
+                                </td>
+
+                            </tr>
+
+                            <tr>
+                                <td style="text-align: right;" width="20%">模块名称：<label style="color: red">*</label></td>
+                                <td>
+                                    <input placeholder="10字符以内模块名称"  maxlength="10" class="form-control width300" style="width:100%;" v-model="curModelItem.modelName" />
+
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right;" width="20%">模块描述：<label style="color: red">*</label></td>
+                                <td>
+                                    <input placeholder="30字符内模块描述"  maxlength="30" class="form-control width300" style="width:100%;" v-model="curModelItem.modelDescription" />
+
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right;">模块内容：<label style="color: red">*</label></td>
+                                <td>
+                                    <textarea maxlength="300" placeholder="300字符内模块内容" style="resize:none;margin: 0px;width:100%;height: 230px;display:block;" v-model="curModelItem.modelContent" class="form-control">{{curModelItem.modelContent}}</textarea>
+                                </td>
+                            </tr>
+
+                           
+                        </table>
+
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveModelItem()">
+                        保存
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div>
+
+
+
+
+</div>
+
+<script>
+    var mask;
+    var MAX_IMG_SIZE = 1, MAX_AUDIO_SIZE = 10, MAX_VIDEO_SIZE = 20;
+    var uploader = {
+        img: {
+            filePath: ''
+        },
+        video: {
+            filePath: ''
+        },
+        audio: {
+            filePath: ''
+        }
+    };
+
+    //自定义模块对象
+    var modelItemData={
+        modelName:"",
+        modelDescription:"",
+        modelBanners:"",
+        modelContent:""
+    }
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            agentWebSiteInfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            bannerImgs:@Html.Raw(JsonConvert.SerializeObject(bannerArry.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList())),
+            curModelItem:JSON.parse(JSON.stringify(modelItemData)),
+            editIndex:-1,
+            MobileBannerImgs:@Html.Raw(JsonConvert.SerializeObject(MobileBannerArry.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList())),
+        },
+        mounted: function () {
+            var that = this;
+            that.initUploader('img');
+        },
+        created:function(){
+
+            var that=this;
+            that.InitLayer();
+        },
+        methods: {
+            saveModelItem:function(){
+                var that=this;
+                if(that.curModelItem.modelName.modelBanners<=0||that.curModelItem.modelBanners==''){
+                    layer.msg("请上传一张模块展示图");
+                    return ;
+                }
+
+                if(that.curModelItem.modelName.length<=0||that.curModelItem.modelName==''){
+                    layer.msg("请填写合法的模块名称10字符内");
+                    return ;
+                }
+                if(that.curModelItem.modelName.modelDescription<=0||that.curModelItem.modelDescription==''){
+                    layer.msg("请填写合法的模块描述30字符内");
+                    return ;
+                }
+                if(that.curModelItem.modelName.modelContent<=0||that.curModelItem.modelContent==''){
+                    layer.msg("请填写合法的模块内容300字符内");
+                    return ;
+                }
+
+
+                if(that.editIndex>-1){
+                    //表示编辑修改
+                    that.agentWebSiteInfo.pageMsgConfigModel.listCustomModel[that.editIndex]=that.curModelItem;
+                }else{
+                    that.agentWebSiteInfo.pageMsgConfigModel.listCustomModel.push(that.curModelItem);
+                }
+
+                layer.msg("操作成功!",{time:2000});
+                $('#myModal').modal('hide');
+            },
+            editModel:function(index){
+                var that=this;
+                that.editIndex=index;
+                if(typeof (that.editIndex) != "undefined"&&that.editIndex>-1){
+                    //表示编辑
+                    that.curModelItem = JSON.parse(JSON.stringify(that.agentWebSiteInfo.pageMsgConfigModel.listCustomModel[that.editIndex]));
+                    $('#myModal').modal('show');
+                }else{
+                    //表示新增
+                    that.curModelItem = JSON.parse(JSON.stringify(modelItemData));
+                    $('#myModal').modal('show');
+                }
+            },
+            InitLayer: function () {
+                var that=this;
+                layui.use(['form', 'element'], function () {
+                    element = layui.element;
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        switch (data.elem.name) {
+                            case "videoSwitch":
+                                that.agentWebSiteInfo.pageMsgConfigModel.videoSwitch = data.elem.checked;
+                                break;
+                        }
+                    });
+                });
+            },
+            saveInfo:function(){
+                var that=this;
+                if( that.bannerImgs.length>0){
+                    that.agentWebSiteInfo.pageMsgConfigModel.bannerImgs= that.bannerImgs.join(",");
+                }else{
+                    layer.msg("PC端轮播图至少一张");
+                    return ;
+                }
+
+                if( that.MobileBannerImgs.length>0){
+                    that.agentWebSiteInfo.pageMsgConfigModel.MobileBannerImgs= that.MobileBannerImgs.join(",");
+                }else{
+                    layer.msg("移动端轮播图至少一张");
+                    return ;
+                }
+
+                if (!/^(0?(13[0-9]|15[012356789]|17[013678]|18[0-9]|14[57])[0-9]{8})|(400|800)([0-9\\-]{7,10})|(([0-9]{4}|[0-9]{3})(-| )?)?([0-9]{7,8})((-| |转)*([0-9]{1,4}))?$/.test(that.agentWebSiteInfo.pageMsgConfigModel.telephone)) {
+                    layer.msg("请填写正确的联系电话");
+                    return ;
+                }
+                if (!/^[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/.test(that.agentWebSiteInfo.pageMsgConfigModel.email)) {
+                    layer.msg("请填写正确的联系邮箱");
+                    return ;
+                }
+
+
+                if(that.agentWebSiteInfo.pageMsgConfigModel.address.length<=0||that.agentWebSiteInfo.pageMsgConfigModel.address==''){
+                    layer.msg("请填写正确的联系地址");
+                    return ;
+                }
+
+
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/agentmanager/SetWebSiteContent',
+                    data: {agentWebSiteInfo:that.agentWebSiteInfo },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.msg);
+                        if(data.isok){
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            UploadImg: function (type) {
+                app.uploadImgType = type;
+                $('#browse_file_img').click();
+            },
+            clearImg: function (type, index) {
+                var that = this;
+                if(type==0){
+                    //表示内容轮播图
+                    if (that.bannerImgs.length > 0) {
+                        that.bannerImgs.splice(index, 1);
+                    }
+
+                    that.agentWebSiteInfo.pageMsgConfigModel.bannerImgs = that.bannerImgs.join(",");
+                }
+
+                if(type==2){
+                    //表示移动端轮播图
+                    if (that.MobileBannerImgs.length > 0) {
+                        that.MobileBannerImgs.splice(index, 1);
+                    }
+
+                    that.agentWebSiteInfo.pageMsgConfigModel.MobileBannerImgs = that.MobileBannerImgs.join(",");
+                }
+
+            },
+            clearModel:function(index){
+                var that = this;
+                if(typeof (index) != "undefined"&&index>-1){
+                    that.agentWebSiteInfo.pageMsgConfigModel.listCustomModel.splice(index, 1)
+                }
+            },
+            initUploader: function (type) {
+                var that = this;
+                var options = {
+                    browse_button: 'browse_file_' + type,
+                    url: 'http://oss.aliyuncs.com',
+                    flash_swf_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                    silverlight_xap_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                    filters: {
+
+                    },
+                    multi_selection: false
+
+                };
+                switch (type) {
+                    case 'img':
+
+                        options.filters = {
+
+                            mime_types: [
+                                {
+                                    title: "图片文件",
+                                    extensions: "jpg,jpeg,gif,png"
+                                },
+                            ],
+                            //max_file_size: '5mb'
+                        }
+                        break;
+                    case 'video':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "视频文件",
+                                    extensions: "mp4,m3u8",
+                                },
+                            ],
+                            //max_file_size: '20mb'
+                        }
+
+                        break;
+                    case 'audio':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "音频文件",
+                                    extensions: "mp3",
+                                },
+                            ],
+                            //max_file_size: '10mb'
+                        }
+
+
+                        break;
+                }
+                //如果还有当前类型的上传组件实例的话则先把其销毁
+                if (uploader[type].instance) {
+                    console.log('destroy uploader :' + type);
+                    uploader[type].instance.destroy();
+                }
+                uploader[type].instance = new plupload.Uploader(options);
+
+                uploader[type].instance.init();
+
+                uploader[type].instance.bind('BeforeUpload', function (d, f) {
+
+
+                    //取到文件后缀名
+
+                    var fileName = f.name;
+                    var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                    //转成Mb
+                    var fileSize = f.size / 1024 / 1024;
+                    var flag = true;
+
+                    switch (type) {
+                        case 'img':
+                            if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                                layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                                flag = false;
+                            }
+                            if (fileSize > MAX_IMG_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_IMG_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'audio':
+                            if (!['mp3'].contains(ext)) {
+                                layer.msg('请上传正确的音频格式文件，后缀名可为：mp3');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_AUDIO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_AUDIO_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'video':
+                            if (!['mp4', 'm3u8'].contains(ext)) {
+                                layer.msg('请上传正确的视频格式文件，后缀名可为：mp4,m3u8');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_VIDEO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_VIDEO_SIZE + 'Mb');
+                                flag = false;
+                            }
+                            break;
+                    }
+                    //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                    if (!flag) {
+                        that.initUploader(type);
+                    }
+
+                    uploader.token.key += '.' + ext;
+                    uploader[type].instance.setOption(uploader.token);
+
+                });
+
+                uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                    $('#start_upload_' + type).click();
+                });
+                uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+
+                    mask = layer.load(0, {
+                        content: file.percent + "%", shade: [0.8, '#393D49'],
+
+                        success: function (layero) {
+                            layero.find('.layui-layer-content').css('color', 'white').css('font-size', '2rem').css('background', 'none');
+                        }
+                    });
+                });
+                uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+
+
+                    layer.close(mask);
+                    var fileName = f[0].name;
+                    var fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                    var filePath = uploader[type].filePath + '.' + fileExt;
+                    if (that.uploadImgType == 0) {
+                        if(that.bannerImgs.length>=5){
+                            layer.msg("PC端最多5张轮播图!",{time:2000});
+                            return;
+                        }
+                        that.bannerImgs.push(filePath);
+
+                    }
+                    else if(that.uploadImgType == 2){
+                        if(that.MobileBannerImgs.length>=5){
+                            layer.msg("移动端最多5张轮播图!",{time:2000});
+                            return;
+                        }
+                        that.MobileBannerImgs.push(filePath);
+                    }
+                    else{
+                        that.curModelItem.modelBanners=filePath;
+                    }
+
+                    //上传完成后重新初始上传组件
+                    that.initUploader(type);
+
+                });
+
+            },
+            uploadFile: function (type) {
+                //   var that = this;
+                $.get('/upload/initupload', {
+                    type: type
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+                    uploader[type].filePath = data.host + '/' + filePath;
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    uploader.token = multipartParams;
+                    uploader[type].instance.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+                    uploader[type].instance.start();
+                })
+
+            }
+
+        }
+
+
+    });
+
+
+
+
+
+</script>

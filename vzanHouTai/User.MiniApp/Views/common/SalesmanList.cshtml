@@ -1,0 +1,371 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+</style>
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">分销员手机号：</label>
+                    <input type="text" name="search" class="form-control" id="TelePhone" value="" />
+                </div>
+
+                <div class="form-group ml10">
+                    <label>起止时间：</label>
+                    <input type="text" name="search" class="form-control" id="startTime" value="" />至
+                    <input type="text" name="search" class="form-control" id="endTime" value="" />
+                </div>
+                <div class="form-group">
+                    <label for="plist-pname">所属上级分销员：</label>
+                    <input type="text" name="search" class="form-control" id="parentSaleManKeyMsg" value="" placeholder="昵称或者手机号码" />
+                </div>
+
+                <button type="submit" class="btn btn-primary ml10" v-on:click="Search()">搜索</button>
+                <a href="#" class="btn btn-default ml10" v-on:click="searchReset()">重置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered ml_19">
+                <tr class="active">
+                    <th class="centertext">序号</th>
+                    <th class="centertext">手机号码</th>
+                    <th class="centertext">昵称</th>
+                    <th class="centertext">标识码</th>
+                    <th class="centertext">成交笔数</th>
+                    <th class="centertext">成交金额(元)</th>
+                    <th class="centertext">备注</th>
+                    <th class="centertext">状态</th>
+                    <th class="centertext">加入时间</th>
+                    <th class="centertext">所属上级</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in SalesmanList">
+                    <td class="centertext">
+                        <label>
+                            @if (ViewBag.state != -1)
+                            {
+                            <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />
+                            } {{item.Id}}
+                        </label>
+                    </td>
+
+                    <td class="centertext">
+                        {{item.TelePhone}}
+                    </td>
+                    <td class="centertext">
+                        {{item.nickName}}
+                    </td>
+                    <td class="centertext">
+                        {{item.UserId}}
+                    </td>
+                    <td class="centertext">
+                        {{item.orderCount}}
+                    </td>
+                    <td class="centertext">
+                        {{item.orderPrice}}
+                    </td>
+                    <td class="centertext">
+                        {{item.Remark}}
+                    </td>
+
+                    <td class="centertext">
+                        <span class="label label-success" v-if="item.state==2">通过</span>
+                        <span class="label label-danger" v-else-if="item.state==1">未通过审核</span>
+                        <span class="label label-danger" v-else-if="item.state==-1">已被清退</span>
+                        <span class="label label-danger" v-else>待审核</span>
+                    </td>
+                    <td class="centertext">
+                        {{item.AddTimeStr}}
+                    </td>
+                    <td class="centertext"v-if="item.ParentSalesmanId>0">
+                        {{item.ParentSalesmanNickName}}({{item.ParentSalesmanPhone}})
+                    </td>
+                    <td class="centertext" v-else>
+                        暂无上级
+                    </td>
+                    <td class="centertext">
+
+                        @{
+                            if (ViewBag.state == -1)
+                            {
+                                <span class="label label-info" style="cursor:pointer;" v-on:click="updateSaleManState(index,2)" v-if="item.state!=2">恢复状态</span>
+                            }
+                            else
+                            {
+                                if (ViewBag.state == 2)
+                                {
+                                    <span class="label label-danger" style="cursor:pointer;" v-on:click="updateSaleManState(index,-1)">清退</span>
+                                }
+                                else
+                                {
+                                    <span class="label label-info" style="cursor:pointer;" v-on:click="updateSaleManState(index,2)" v-if="item.state!=2">通过审核</span>
+                                    <span class="label label-danger" style="cursor:pointer;" v-on:click="updateSaleManState(index,1)" v-if="item.state!=1">不通过审核</span>
+                                    <span class="label label-default" style="cursor:pointer;" v-on:click="updateSaleManState(index,0)" v-if="item.state!=0">变为待审核</span>
+                                }
+                                <span class="label label-success" v-on:click="editRemark(index)" style="cursor:pointer;">备注</span>
+                            }
+
+
+                        }
+
+                    </td>
+
+                </tr>
+
+                <tr v-if="SalesmanList==null || SalesmanList.length==0">
+                    <td colspan="12">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+        </div>
+        <div class="ml_19" v-if="SalesmanList!=null&& SalesmanList.length>0">
+            @{
+                if (ViewBag.state != -1)
+                {
+
+
+
+                    if (ViewBag.state == 2)
+                    {
+                        <a href="javascript:;" v-on:click="updateSaleManState(-1,-1)">+批量清退</a>
+                    }
+                    else
+                    {
+                        <span class="label label-info" style="cursor:pointer;" v-on:click="updateSaleManState(-1,2)">批量通过审核</span>
+                        <span class="label label-danger" style="cursor:pointer;" v-on:click="updateSaleManState(-1,1)">批量不通过审核</span>
+                    }
+                }
+            }
+        </div>
+    </div>
+
+    <!--备注设置-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        备注设置
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+
+                        <div style="margin-top:10px;">
+                            <div style="margin-top:10px;">
+                                <label>备注:&nbsp;&nbsp;</label>
+                                <label><input type="text" class="form-control" style="width:100%;display:inline-block;" maxlength="20" v-model="ItemInfo.Remark" placeholder="1-20字写下简单备注" /></label>
+                            </div>
+                        </div>
+
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="updateSaleMane(0)">
+                        保存
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+
+</div>
+<script>
+    var ids;
+    var chk_value =[];
+    var ItemData= {
+        Id:0,
+        Remark:""
+    };
+    var app = new Vue({
+        el: "#app",
+        data: {
+            SalesmanList:[],
+            ItemInfo:JSON.parse(JSON.stringify(ItemData)),
+            editIndex: 0,
+            RecordCount: 0,
+            postdata:{
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                state:@ViewBag.state,
+                TelePhone:"",
+                startTime:"",
+                endTime:"",
+                parentSaleManKeyMsg:""
+            },
+            isloading:false
+        },
+        methods: {
+            getList:function(){
+                if (this.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                this.isloading = true;
+                var index = layer.load(1);
+                $.post("/common/GetSalesmanList", this.postdata, function (data) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (data.isok) {
+                        app.RecordCount = data.model.RecordCount;
+                        app.SalesmanList = data.model.SalesmanList;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.RecordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search:function(){
+                this.postdata.TelePhone=$("#TelePhone").val();
+                this.postdata.startTime=$("#startTime").val();
+                this.postdata.endTime=$("#endTime").val();
+                this.postdata.parentSaleManKeyMsg=$("#parentSaleManKeyMsg").val();
+                this.getList();
+            },
+            searchReset:function(){
+                window.location.reload();
+            },
+            updateSaleMane:function(type){
+
+                layer.msg("正在处理....");
+                var index = layer.load(1);
+                $.post("/common/UpdateSaleMan", {appId:@ViewBag.appId,salesMan:app.ItemInfo,ids:ids,type:type}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                    if(data.isok){
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 2000);
+                    }
+
+                })
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+
+            //备注更新
+            editRemark: function (index) {
+                this.editIndex = index;
+                if (typeof (index) != "undefined"&&index!=-1) {//编辑
+                    this.ItemInfo = JSON.parse(JSON.stringify(this.SalesmanList[index]));
+                }else{
+
+                    //表示批量保存 先判断是否一个都没选择
+                    if(chk_value.length<=0){
+                        layer.msg("请先选择分销员");
+                        return;
+                    }
+
+                    ids= chk_value.join(",");
+
+                }
+                $('#myModal').modal('show')
+            },
+            //清退或者审核
+            updateSaleManState: function (index,state) {
+                this.editIndex = index;
+                if (typeof (index) != "undefined"&&index!=-1) {//编辑
+                    this.ItemInfo = JSON.parse(JSON.stringify(this.SalesmanList[index]));
+                    this.ItemInfo.state=state;
+
+                }else{
+                    this.ItemInfo.state=state;
+                    //表示批量保存 先判断是否一个都没选择
+                    if(chk_value.length<=0){
+                        layer.msg("请先选择分销员");
+                        return;
+                    }
+
+                    ids= chk_value.join(",");
+
+                }
+
+                this.updateSaleMane(1,ids);
+
+            },
+
+
+        }, created: function () {
+            this.getList();
+        }
+
+    });
+
+    $('#startTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        weekStart: 1,
+        todayBtn: 0,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+    $('#endTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        weekStart: 1,
+        todayBtn: 0,
+        autoclose: 1,
+        todayHighlight: 1,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+
+
+
+</script>

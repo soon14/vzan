@@ -1,0 +1,226 @@
+﻿
+@{
+    ViewBag.Title = "送花管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+<style>
+    table.search-box { width: 950px; margin-top:25px;}
+    table.search-box .form-control { width: 150px; }
+    table.search-box select.form-control { width: 104px; }
+    table.search-box td { padding: 5px 0px; }
+    .layui-btn-primary:hover { border-color: #2196f3; color: #2196f3; }
+    .btn-reset:hover { border-color: #009688; color: #009688; }
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form span { font-size: 16px; font-weight: bold; margin-left: 20px; }
+    .layui-form label { color: #ff6a00; font-weight: normal; }
+    .layui-table th, .layui-table td{ text-align: center }
+</style>
+<div id="app" v-cloak>
+    <div class="layui-form">
+        <span>客户可送花查看技师相册：</span><input type="checkbox" lay-skin="switch" lay-text="开|关" v-model="ShowPhotoByGift">
+        <label v-if="ShowPhotoByGift">* 开启后，顾客可在技师主页送花查看技师的付费相册</label>
+        <label v-else>* 关闭后，技师主页的相册模块将隐藏</label>
+    </div>
+    <table class="search-box">
+        <tr>
+            <td class="tr">工号：</td>
+            <td><input type="text" class="form-control" placeholder="" v-model="postdata.jobNumber"></td>
+            <td class="tr">技师姓名：</td>
+            <td><input type="text" class="form-control" placeholder="" v-model="postdata.name"></td>
+            <td class="tr">性别：</td>
+            <td>
+                <select v-model="postdata.sex">
+                    <option value="0">全部</option>
+                    <option value="1">女</option>
+                    <option value="2">男</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="tr">顾客昵称：</td>
+            <td><input type="text" class="form-control" placeholder="" v-model="postdata.nickName"></td>
+            <td class="tr">创建时间：</td>
+            <td>
+                <div class="OpenTimeDiv" style="margin-bottom:5px">
+                    <input type="text" readonly="readonly" class="form-control storename" id="createtime" style="width:200px;" />
+                </div>
+            </td>
+            <td class="tr"></td>
+            <td>
+                <button type="button" class="layui-btn" v-on:click="search()">搜索</button>
+                <button type="button" class="layui-btn layui-btn-primary btn-reset" v-on:click="resets">重置</button>
+            </td>
+        </tr>
+    </table>
+
+    <table class="layui-table" lay-skin="line">
+        <thead>
+            <tr>
+                <th>技师工号</th>
+                <th>技师名称</th>
+                <th>性别</th>
+                <th>顾客昵称</th>
+                <th>支付金额（元）</th>
+                <th>创建时间</th>
+            </tr>
+        </thead>
+        <tr v-for="(gift,index) in giftList">
+            <td>{{gift.jobNumber}}</td>
+            <td>{{gift.name}}</td>
+            <td>{{gift.sexStr}}</td>
+            <td>{{gift.nickName}}</td>
+            <td>{{gift.priceStr}}</td>
+            <td>{{gift.createTimeStr}}</td>
+        </tr>
+        
+        <tr v-if="recordCount<=0">
+            <td colspan="6">还没有人送花</td>
+        </tr>
+        <tr v-else>
+            <td class="color-orange">合计</td>
+            <td colspan="3"></td>
+            <td class="color-orange">{{sumPrice}}</td>
+            <td></td>
+        </tr>
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>postdata.pageSize"></div>
+
+
+</div>
+
+<script type="text/javascript">
+    var laydate, form;
+    var defsearch = {
+        appId:@ViewBag.appId,
+        pageIndex: 1,
+        pageSize: 10,
+        name: '',
+        jobNumber: '',
+        sex: 0,
+        createtime: '',
+        nickName: '',
+
+    };
+    var app = new Vue({
+        el: "#app",
+        data: {
+            ShowPhotoByGift:@Html.Raw(ViewBag.ShowPhotoByGift?"true":"false"),
+            isOpen: 0,
+            giftList: [],
+            sumPrice:0,
+            recordCount: 0,
+            postdata: {
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                name: '',
+                jobNumber: '',
+                sex: 0,
+                createtime: '',
+                nickName: '',
+            },
+        },
+        methods: {
+            //初始化日期控件
+            InitLayer: function () {
+                layui.use(['laydate', 'form'], function () {
+                    //时间选择器
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#createtime', //指定元素
+                        theme: 'grid',
+                        range: '~',
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postdata.createtime = value;
+                        }
+                    });
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        app.ShowPhotoByGift = data.elem.checked;
+                        if (app.ShowPhotoByGift) app.isOpen = 1;
+                        else app.isOpen = 0;
+                        app.SaveConfig();
+                    });
+                });
+            },
+            //重置搜索条件
+            resets: function () {
+                //app.postdata.servicetime = '';
+                $.extend(true, app.postdata, defsearch);
+                $("#createtime").val("");
+                laydate.render({
+                    elem: '#servicetime', //指定元素
+                    value: ' ',
+                });
+
+            },
+            //获取列表信息
+            GetList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetGiftList", this.postdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.giftList = data.list;
+                        app.recordCount = data.recordCount;
+                        app.sumPrice = data.sumPrice;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use(['laypage', 'element'], function () {
+                    element = layui.element;
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            app.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.postdata.pageIndex = obj.curr;
+                                app.GetList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //配置开关
+            SaveConfig: function () {
+                layer.closeAll();
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveGiftConfig", { isOpen: app.isOpen, appId: app.postdata.appId }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        if (app.ShowPhotoByGift) {
+                            layer.msg("已开启");
+                        } else {
+                            layer.msg("已关闭");
+                        }
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            search: function () {
+                this.postdata.pageIndex = 1;
+                this.GetList();
+            }
+        },
+        created: function () {
+            this.InitLayer();
+            this.GetList();
+        }
+    })
+</script>

@@ -1,0 +1,140 @@
+﻿@using Entity.MiniApp.Conf;
+@model ViewModel<GoodsComment>
+@{
+    if (ViewBag.SouceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+    ViewBag.Title = "评论管理";
+}
+<style>
+    .centertext {
+        vertical-align: middle !important;
+        text-align: center;
+    }
+
+    span.layui-laypage-curr, span.layui-laypage-skip {
+        float: none;
+        padding-top: 0;
+    }
+
+    .searchul {
+        width: 100%;
+        margin: 20px 0px 14px 0px;
+    }
+
+        .searchul li { /*width:25%;*/
+            float: left;
+            margin-right: 25px;
+        }
+
+            .searchul li span {
+                float: left;
+                padding-top: 5px;
+                padding-right: 8px;
+            }
+
+            .searchul li input, .searchul li select {
+                width: 140px;
+            }
+</style>
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+<div id="app" style="margin:5px;">
+    <div style="margin-left:17px;">
+        <ul class="searchul">
+            <li><span>商品名称:</span><input type="text" value="@ViewBag.GoodsName" id="goodsname" class="input-sm form-control" /></li>
+        </ul>
+        <div class="d-flex d-flex-center formsearch">
+            <a href="#" onclick="Search()" class="btn btn-primary">搜索</a>
+        </div>
+    </div>
+    <br />
+    <br />
+
+    <table class="layui-table">
+        <thead>
+            <tr>
+                <th class="centertext" width="80">ID</th>
+                <th class="centertext" width="300">商品名称</th>
+                <th class="centertext">微信昵称</th>
+                <th class="centertext" width="300">评论内容</th>
+                <th class="centertext">评分</th>
+                <th class="centertext">描述评分</th>
+                <th class="centertext">物流评分</th>
+                <th class="centertext">服务评分</th>
+                <th class="centertext">评论时间</th>
+                <th class="centertext">是否隐藏</th>
+                <th class="centertext">是否匿名</th>
+                <th class="centertext" width="180">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.DataList != null && Model.DataList.Count > 0)
+            {
+                for (int i = 0; i < Model.DataList.Count; i++)
+                {
+                    <tr>
+                        <td>@Model.DataList[i].Id</td>
+                        <td><div style="height:50px;overflow:auto;">@Model.DataList[i].GoodsName</div></td>
+                        <td>@Model.DataList[i].NickName</td>
+                        <td width="200"><div style="height:50px;overflow:auto;">@Model.DataList[i].Comment</div></td>
+                        <td>@Model.DataList[i].PraiseStr</td>
+                        <td>@Model.DataList[i].DescriptiveScore</td>
+                        <td>@Model.DataList[i].LogisticsScore</td>
+                        <td>@Model.DataList[i].ServiceScore</td>
+                        <td>@Model.DataList[i].AddTimeStr</td>
+                        <td>@Model.DataList[i].HiddenStr</td>
+                        <td>@Model.DataList[i].AnonymousStr</td>
+                        <td>
+                            <a href="/common/AddOrEditGoodsComment?id=@Model.DataList[i].Id&appId=@ViewBag.appId&SouceFrom=@ViewBag.SouceFrom" class="layui-btn layui-btn-normal">编辑</a>
+                            <a href="javascript:;" onclick="DelComment(@Model.DataList[i].Id,-1)" class="layui-btn layui-btn-danger">删除</a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="12" style="text-align:center;">暂无数据</td>
+                </tr>
+            }
+        </tbody>
+       
+    </table>
+
+    <div class="page" style="margin-top:60px;text-align:center;">
+        @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+    </div>
+</div>
+<script>
+    var _layer = parent.layer;
+
+    function Search() {
+        location.href = "/common/goodscommentlist?appId=@ViewBag.appId&SouceFrom=@ViewBag.SouceFrom&storeId=@ViewBag.StoreId&type=@ViewBag.Type&pageIndex=@Model.PageIndex&pageSize=@Model.PageSize&goodsname=" + $("#goodsname").val();
+    }
+
+    function DelComment(id,state) {
+        _layer.confirm('此操作不可逆,确定删除该数据？', {
+            btn: ['确定', '取消'] //按钮
+        }, function () {
+            $.post("/common/DelComment", { id: id,state:state,appId:@ViewBag.appId }, function (returnData) {
+                if (returnData.isok) {
+                    layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                        layer.load(1);
+                        Search();
+                    });
+                }
+                else {
+                    layer.msg(returnData.Msg);
+                }
+            });
+        }, function () {
+        });
+    }
+</script>
+

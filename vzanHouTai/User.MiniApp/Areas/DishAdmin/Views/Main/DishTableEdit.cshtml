@@ -1,0 +1,146 @@
+﻿@model EditModel<DishTable>
+@{
+    ViewBag.Title = "DishTableAdd";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>基本设置</span>
+            </div>
+            <div class="tabCon">
+                <input type="hidden" name="id" id="id" value="@(Model.DataModel.id)" class="input-text">
+                <input type="hidden" name="aid" value="@(Model.DataModel.aId)" class="input-text">
+                <input type="hidden" name="storeId" value="@(Model.DataModel.storeId)" class="input-text">
+                <input type="hidden" name="act" value="save" class="input-text">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        名称(桌台号)：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="table_name" placeholder="请输入桌台号" value="@(Model.DataModel.table_name)" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        可供就餐人数：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <input type="text" name="table_renshu" placeholder="@(Model.DataModel.table_renshu)" value="@(Model.DataModel.table_renshu)" class="input-text" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        排序：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="table_sort" placeholder="@(Model.DataModel.table_sort)" value="@(Model.DataModel.table_sort)" class="input-text">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button" onclick="refreshForm()">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+                @if (Model.DataModel.id > 0)
+                {
+                    <button class="btn btn-danger radius" onclick="table_del('@(Model.DataModel.id)')" type="button">&nbsp;&nbsp;删除&nbsp;&nbsp;</button>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+
+	    $(function(){
+		    $('.skin-minimal input').iCheck({
+			    checkboxClass: 'icheckbox-blue',
+			    radioClass: 'iradio-blue',
+			    increaseArea: '20%'
+		    });
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+		    //表单验证
+		    $("#form-article-add").validate({
+			    rules:{
+				    table_name:{
+                        required: true,
+                        maxlength:6
+				    },
+				    table_renshu:{
+					    required:true,
+					    min:1,
+					    max:50
+				    },
+				    table_sort:{
+					    required:true,
+					    min:0,
+					    max:999
+				    }
+			    },
+			    onkeyup:false,
+			    focusCleanup:true,
+			    success:"valid",
+			    submitHandler: function(form){
+				    var l_index = layer.msg('数据提交中', {
+					    icon: 16,
+					    shade: 0.5
+				    });
+				    $("#submit_button").attr("disabled",true);
+				    $(form).ajaxSubmit({
+					    dataType:"json",
+					    success:function( data ){
+						    $("#submit_button").attr("disabled",false);
+						    layer.close(l_index);
+						    if( data.code == 0 ){
+							    layer.alert(data.msg, {icon: 0});
+						    }else{
+							    layer.alert(data.msg, {icon: 1},function(index){
+								    parent.layer.close(index);
+								    parent.location.reload();
+							    });
+						    }
+					    }
+				    });
+			    }
+		    });
+
+	    });
+
+	    //删除桌台
+	    function table_del() {
+	    if (confirm('确定要删除桌台吗?')) {
+	        $.ajax({
+	            url: "/DishAdmin/Main/DishTableEdit",
+	            type: 'post',
+	            data: {id :$("#id").val(),act:"del",aid:@(Model.DataModel.aId),storeId:@(Model.DataModel.storeId)},
+	            success: function (data) {
+	                
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 });
+                        setTimeout(function () { refreshForm(); }, 500);
+                    }
+                    else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+	            },
+	            error: function () {
+	                alert('error');
+	            }
+	        });
+	    }
+	}
+
+        //刷新父页面来关闭这个窗体
+	    function refreshForm() {
+	        parent.location.reload();
+	    }
+    </script>
+
+}

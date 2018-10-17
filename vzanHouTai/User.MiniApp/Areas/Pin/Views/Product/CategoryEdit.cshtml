@@ -1,0 +1,194 @@
+﻿@model EditModel<PinCategory>
+@{
+    string name = "分类";
+    ViewBag.Title = name + (Model.DataModel.id==0? "添加" : "编辑");
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int fid = Utility.IO.Context.GetRequestInt("fid",0);
+    int aid= Utility.IO.Context.GetRequestInt("aid", 0);
+    List<PinCategory> firstCategory =  PinCategoryBLL.SingleModel.GetList(string.Format("aid={0} and state=1 and fid=0 and storeid=0", aid), 1000, 1, "*", "sort desc");
+    if (Model.DataModel.id == 0 && fid > 0)
+    {
+        Model.DataModel.fId = fid;
+    }
+}
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3>@ViewBag.Title</h3>
+        </div>
+        <div class="ibox-content xcx-list">
+            @if (Model != null)
+            {
+            <form class="form-horizontal" id="post_form" method="post">
+                <input type="hidden" name="act" value="edit" />
+                <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+                <input type="hidden" name="aId" value="@(Model.aId)" />
+                <input type="hidden" name="storeId" value="@(Model.storeId)" />
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">
+                        <span class="text-danger">*</span>
+                        @(name)名称：
+                    </label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" name="name" value="@Model.DataModel.name">
+                    </div>
+                </div>
+                @if (fid > 0||Model.DataModel.fId>0)
+                {
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">
+                            <span class="text-danger">*</span>
+                            一级分类：
+                        </label>
+                        <div class="col-sm-4">
+                            <select class="form-control" name="fId">
+                                <option value="">请选择一级分类</option>
+                                @if (firstCategory != null && firstCategory.Count > 0)
+                                {
+                                    foreach (var item in firstCategory)
+                                    {
+                                        <option value="@(item.id)" @(item.id==Model.DataModel.fId?"selected":"")>@(item.name)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">分类图片(建议尺寸100px*100px)</label>
+                    <div class="col-sm-10">
+                        <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="img">
+                            <input type="hidden" name="img" id="cover_id_img" value="@(Model.DataModel.img)">
+                            <input type="file" id="upload_picture_img" />
+                            <div class="upload-img-box">
+                                @if (!string.IsNullOrEmpty(Model.DataModel.img))
+                                {
+                                    <div class="upload-pre-item2">
+                                        <img src="@(Model.DataModel.img)" width="100" height="100">
+                                        <em class="edit_img_icon"> </em>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">是否显示</label>
+                    <div class="col-sm-10">
+                        <label class="radio-inline">
+                            <input type="radio" name="state" value="1" @(Model.DataModel.state == 1 ? "checked" : "")>显示
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="state" value="0" @(Model.DataModel.state == 0 ? "checked" : "")>关闭
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">
+                        排序（数字越大越靠前）：
+                    </label>
+                    <div class="col-sm-4 layui-form">
+                        <input type="text" class="form-control" name="sort" value="@Model.DataModel.sort" placeholder="默认99">
+                    </div>
+                </div>
+                <div class="hr-line-dashed"></div>
+                <div class="form-group">
+                    <div class="col-sm-4 col-sm-offset-2">
+                        <button class="btn submit-btn ajax-post btn-primary" type="submit" id="submit_button">保 存</button>
+
+                        <a class="btn submit-btn ajax-post btn-primary" href="Category?aId=@(Model.aId)&fid=@(fid)">取 消</a>
+                    </div>
+                </div>
+            </form>
+            }
+            else
+            {
+                <p>对象不存在</p>
+            }
+        </div>
+
+    </div>
+
+    @section scripts{
+        <!--如果需要图片上传-->
+        <script src="~/Areas/DishAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+        <script src="~/Areas/DishAdmin/lib/dialog.js"></script>
+        <script>
+        var UPLOAD_DIALOG_URL = "/tools/UpLoadImgFrm?appId=@(Model.aId)&storeId=@(Model.storeId)&multi_selection=0&frontMethod=1&maxImgSize=1&objKey=img&objType=1&remainCount=1";
+        $(function () {
+            //初始化上传图片插件
+            initUploadImg();
+        });
+
+        //上传图片组件
+        function initUploadImg(opts) {
+            $(".upload-img-view").dragsort({
+                itemSelector: ".upload-pre-item22", dragSelector: ".upload-pre-item22", dragBetween: false, placeHolderTemplate: "<div class='upload-pre-item22'></div>", dragSelectorExclude: 'em', dragEnd: function () { $(".upload-pre-item22").attr('style', '') }
+            });
+            $uploadDom = $('.uploadrow2');
+            if (opts && opts.uploadDom) {
+                $uploadDom = opts.uploadDom;
+            }
+            $uploadDom.each(function (index, obj) {
+                $(obj).click(function () {
+                    uploadImgDialog(obj, opts);
+                });
+
+            });
+        }
+        function uploadImgDialog(obj, opts) {
+            var maxCount = parseInt($(obj).data('max'));
+            var field = $(obj).attr('rel');
+            uploadObj = obj;
+            $uploadHtml = '<div><div class="upload_dialog" style="height:520px;overflow-y:hidden;overflow-x:hidden;"><div><iframe id="goodsIframe" name="goodsIframe" style="height:520px;width:100%; border:none" border="0" src="' + UPLOAD_DIALOG_URL + '&max=' + maxCount + '&field=' + field + '"></iframe></div></div></div>';
+            $.Dialog.open("上传图片", { width: 800, height: 560 }, $uploadHtml);
+        }
+        </script>
+        <script type="text/javascript">
+            $(function () {
+
+                //表单验证
+                $("#post_form").validate({
+                    rules: {
+                        name: {
+                            required: true,
+                            minlength: 1,
+                            maxlength: 5,
+                        },
+                        fId: {
+                            required: true,
+                        }
+                    },
+                    onkeyup: false,
+                    focusCleanup: false,
+                    success: "valid",
+                    submitHandler: function (form) {
+                        var l_index = layer.msg('数据提交中', {
+                            icon: 16,
+                            shade: 0.5
+                        });
+                        $("#submit_button").attr("disabled", true);
+                        $(form).ajaxSubmit({
+                            dataType: "json",
+                            success: function (data) {
+                                $("#submit_button").attr("disabled", false);
+                                layer.close(l_index);
+                                if (data.code == 0) {
+                                    layer.alert(data.msg, { icon: 0 });
+                                } else {
+                                    layer.msg(data.msg, { icon: 1,time:1000 }, function (index) {
+                                        layer.close(l_index);
+                                        window.location.href = "Category?aId=@(Model.aId)&fid=@(fid)";
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+
+            });
+        </script>
+
+    }
+</body>

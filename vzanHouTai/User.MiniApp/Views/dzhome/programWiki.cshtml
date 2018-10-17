@@ -1,0 +1,197 @@
+﻿@using Entity.MiniApp.Home
+@{
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+    ViewBag.Title = "小未程序—微信小程序|微信小程序问答|微信小程序资讯";
+    List<Homenews> commonNewsList = ViewBag.commonNewsList != null ? (List<Homenews>)ViewBag.commonNewsList : null;
+    List<Homenews> hotNewsList = ViewBag.hotNewsList != null ? (List<Homenews>)ViewBag.hotNewsList : null;
+    List<Homebkmenu> menuList = ViewBag.menuList != null ? (List<Homebkmenu>)ViewBag.menuList : null;
+}
+@section cssSection{
+    @*<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/newhome/css/programWiki.css" />*@
+}
+<section id="app" v-cloak class="wiki-wrap w-full f fv fc" >
+    <!--搜索栏-->
+    <div class="header_search f">
+        <h1>小程序百科</h1>
+        <div class="search-box f fv fc-h">
+            <!--搜索栏-->
+            <div class="search f fc">
+                <input type="text" v-model="postdata.title" id="search_save" placeholder="请输入你的问题" />
+                <div class="search-btn" v-on:click="getWiki()">搜索</div>
+            </div>
+            @if (commonNewsList != null && commonNewsList.Count > 0)
+            {
+                   <!--搜索关键词-->
+                <div class="search_key f">
+                    @foreach (var news in commonNewsList)
+                    {
+
+                        <a class="c-fff60" href="javascript:;" v-on:click="TurnToDetail(@news.Id)">@news.title</a>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+    <!--选项卡内容-->
+    <div class="middle_content bg-f7 f fc-h">
+        <div class="main_content f fj">
+            <div class="select_content bg-fff f">
+                <!--菜单-->
+                <ul class="select-list" id="select_left">
+                    <li v-on:click="getChange(-1)" v-bind:class="{'menu-active':postdata.menuId==0}"><span>全部</span></li>
+                    <li v-for="(menu,index) in menuList" v-on:click="getChange(index)" v-bind:class="{'menu-active':postdata.menuId==menu.Id}"><span>{{menu.name}}</span></li>
+                </ul>
+                <!--列表-->
+                <div class="select-item f fc fv" v-if="!postdata.showDetail">
+                    <ul class="w-full" v-if="list_wiki.length>0">
+                        <li class="select-question" v-for="news in list_wiki" v-on:click="TurnToDetail(news.id)">
+                            <div class="select-title f fc fj">
+                                <h3 class="line line1">{{news.title}}</h3>
+                                <img src="@(WebSiteConfig.cdnurl)content/newhome/image/more.png" />
+                            </div>
+                            <div class="select-label pdt10 f fc">
+                                <p v-for="tag in news.taglist">{{tag}}</p>
+                            </div>
+                            <p class="description line line2">{{news.Description}}</p>
+
+                        </li>
+                    </ul>
+                    <div v-else class="empty-content">暂无数据~</div>
+                    <div class="btn-more mgy40" v-on:click="getLoadMore" v-if="recordCount>list_wiki.length">查看更多</div>
+                </div>
+                <!--内页-->
+                <div class="select-inside w-full" v-else-if="newsInfo!=null">
+                    <p>{{selMenuIndex>=0?menuList[selMenuIndex].name:"全部"}}>{{newsInfo.title}}</p>
+                    <div class="inside-content f fv">
+                        <h3 class="fz-18 c-333">{{newsInfo.title}}？</h3>
+                        <p></p>
+                        <div class="newsInfo-content" v-html="newsInfo.content"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="right-content f fv fc">
+                <img src="@(WebSiteConfig.cdnurl)content/newhome/image/qcore_right.png" />
+                <div class="hot-question bg-fff">
+                    <h3 class="fz-18 c-333">热门问题</h3>
+                    <ul>
+                        <li v-for="hotNews in hotNewsList" v-on:click="TurnToDetail(hotNews.Id)">
+                            <div class="hot-item f fc fj">
+                                <p class="line line1">{{hotNews.title}}</p>
+                                <img src="@(WebSiteConfig.cdnurl)content/newhome/image/more.png" />
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@section script{
+    <script type="text/javascript">
+        //window.onload=function(){
+            var app = new Vue({
+                el: "#app",
+                data: {
+
+                    menuList:@Html.Raw(JsonConvert.SerializeObject(menuList)),
+                    selMenuIndex:-1,
+                    loadmore: false,
+                    scrollLoading: false,
+                    recordCount: 0,
+                    postdata: {
+                        showDetail: @(ViewBag.showDetail==null?"false":(bool)ViewBag.showDetail?"true":"false"),
+                        pageIndex: 1,
+                        pageSize: 5,
+                        menuId: @Html.Raw(ViewBag.menuId == null?0: ViewBag.menuId),
+                        title: '',
+                        newsId:@Html.Raw(ViewBag.newsId==null?0: ViewBag.newsId),
+                    },
+                    list_wiki: [],
+                    hotNewsList:@Html.Raw(JsonConvert.SerializeObject(hotNewsList)),
+                    commonNewsList:@Html.Raw(JsonConvert.SerializeObject(commonNewsList)),
+                    newsInfo:null,
+                },
+                //初始化
+                created: function () {
+                    if (this.postdata.showDetail) {
+                        this.TurnToDetail(this.postdata.newsId);
+                    } else {
+                        this.getWiki();
+                    }
+                },
+                methods: {
+                    //切换分类
+                    getChange: function (index) {
+                        this.loadmore = false;
+                        this.selMenuIndex = index;
+                        if (index >= 0) {
+                            this.postdata.menuId = this.menuList[index].Id;
+                        } else {
+                            this.postdata.menuId = 0;
+                        }
+                        this.postdata.pageIndex = 1;
+                        this.postdata.showDetail = false;
+                        this.getWiki();
+                    },
+                    //加载更多
+                    getLoadMore: function () {
+                        this.loadmore = true;
+                        this.postdata.pageIndex++;
+                        this.getWiki();
+                    },
+                    //获取列表页数据
+                    getWiki: function (index, fun) {
+                        var wikiLoad = layer.load(2);
+                        $.post("/dzhome/GetBkNewsList", this.postdata, function (data) {
+                            layer.close(wikiLoad)
+                            app.scrollLoading = false;
+                            app.recordCount = data.recordCount;
+                            if (data.isok == true) {
+                                window.history.pushState(null, null, 'programWiki?menuId=' + app.postdata.menuId);
+                                if (app.loadmore == true) {
+                                    app.list_wiki = app.list_wiki.concat(data.newsList)
+                                }
+                                else {
+                                    app.list_wiki = data.newsList
+                                }
+                            }
+                        });
+
+                    },
+                    //跳转到内容页 获取内容页数据
+                    TurnToDetail: function (newsId) {
+                        var layerIndex = layer.load(1);
+                        $.post("/dzhome/GetBkNews", { newsId: newsId }, function (data) {
+                            layer.close(layerIndex);
+
+                            if (data.isok) {
+                                app.newsInfo = data.news;
+                                app.postdata.showDetail = true;
+                                window.history.pushState(null, null, 'programWiki?showDetail=true&newsId=' + data.news.Id)
+                            } else {
+                                layer.msg(data.msg);
+                            }
+                        })
+                    }
+                },
+
+            })
+            $(window).scroll(function () {
+                var scrollTop = $(this).scrollTop();
+                var scrollHeight = $(document).height();
+                var windowHeight = $(this).height();
+                //			滑到底部加载更多问题
+                if ((scrollTop + windowHeight > (scrollHeight - 50)) && app.recordCount > app.list_wiki.length && !app.postdata.showDetail && !app.scrollLoading) {
+                    app.scrollLoading = true;
+                    app.getLoadMore();
+                }
+            });
+            //window.addEventListener("popstate", function () {
+            //    var currentUrl = history.state.url;
+            //    $(".container").load(currentUrl + " #container");
+            //});
+        //}
+    </script>
+}
+

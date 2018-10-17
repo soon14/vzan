@@ -1,0 +1,246 @@
+﻿@model C_UserInfo
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="/Content/pxhfang/css/base.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/reset.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/normalize.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/fontcss.css">
+    <script src="/Content/newhome/lib/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <script src="/Content/newhome/lib/layer-v3.1.0/layer/layer.js"></script>
+    <title>提现记录</title>
+     <style>
+        .choose-bobo {
+            border-bottom: 0.5333333333333333vw solid #f20033;
+        }
+
+        .bg_bottom_line {
+            border-bottom: 1px solid #faf7f5;
+        }
+
+        .apply-item {
+            width: 92vw;
+            line-height: 11.733333333333333vw;
+            text-align: center;
+            border: 0.26666666666666666vw solid #f20033;
+            margin-left: 4vw;
+            height: 11.733333333333333vw;
+            border-radius: 5.866666666666666vw;
+            color: white;
+        }
+
+        .apply-btn {
+            width: 34.666666666666664vw;
+            border-radius: 5.866666666666666vw;
+            background-color: #f20033;
+        }
+    </style>
+    <script>     
+
+    </script>
+</head>
+
+<body>
+    <div id='data'>
+        <!-- 用户信息 -->
+        <div class="h180 bgcfff f c pl20 mb1">
+            <img src="@Model.HeadImgUrl" class="w130h130b" alt="">
+            <div class="f-c ml20">
+                <span class="c333 t32 f-B">@Model.NickName</span>
+                <span class="t22 c999 mt10">@Model.TelePhone</span>
+            </div>
+        </div>
+
+
+        <div class="h100 bgcfff fsa t32 l88">
+            <div v-for="item in hType" v-bind:class="item.ischoose?'cf0033 choose-bobo':'c666'" v-bind:id="item.id" v-on:click="getList($event)">{{item.content}}</div>
+        </div>
+
+        <!-- 列表 -->
+        <div class="mt10"></div>
+        <div class="fsb bgcfff bg_bottom_line h130" v-for="(item,index) in tixianList" v-if="tixianList.length>0">
+            <div class="f c ml20">
+                <div v-if="type==0">
+                    <!-- 这是被选中的选项样式 -->
+                    <i class="dzicon dzicon icon-xuanzhong_xuanzhong cf0033 t44 mr10" v-if="item.ischoose" v-on:click="choose(index)"></i>
+                    <!-- 这个是未选中的选项样式 -->
+                    <i class="dzicon icon-weixuanzhong_weixuanzhong ccc t44 mr10" v-else v-on:click="choose(index)"></i>
+                </div>
+                <div class="f-c">
+                    <div class="f">
+                        <i class="dzicon icon-icon_danhao- t24 cde mr10"></i>
+                        <span class="t24 c333">单号：{{item.outTradeNo}}</span>
+                    </div>
+                    <div class="f mt16">
+                        <i class="dzicon icon-icon_shijian- t24 cde mr10"></i>
+                        <span class="t24 c333">时间：{{item.receivingtimeStr}}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="f-c mr22">
+                <span class="cf0033 t24" v-if="type==0">待返现</span>
+                <span class="cf0033 t24" v-else-if="type==1">申请中</span>
+                <span class="cf0033 t24" v-else="type==2">已返现</span>
+                <span class="c333 t32 mt16">{{item.returnMoneyStr}}</span>
+            </div>
+        </div>
+        <div v-if="tixianList.length==0">
+            <div class="tc t32 mt20 c999">暂无数据</div>
+        </div>
+        <div class="apply-item fsb t36 mt80" v-if="type==0 && tixianList.length>0">
+            <div class="f ml50" v-on:click="chooseAll()">
+                <i class="dzicon dzicon icon-xuanzhong_xuanzhong cf0033 t44 mr10" v-if="ischooseAll"></i>
+                <i class="dzicon icon-weixuanzhong_weixuanzhong ccc t44 mr10" v-else></i>
+                <span class="t28 c333">全选</span>
+            </div>
+            <div class="apply-btn t36" v-on:click="ApplyDrawCase($event)">一键申请</div>
+        </div>
+        <!-- 水印 -->
+        <div class="fc mt87">
+            <img src="http://i.vzan.cc/image/png/2018/7/19/150734facd33146ed6461d97dbc1a991bf8239.png" class="h78 w160" alt="">
+        </div>
+    </div>
+</body>
+
+<script>
+    var _appid = '@WebSiteConfig.GongZhongAppId';
+    var Gajax = function (url, data, callback) { //请求方法
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            dataType: "json",
+            success: function (data) {
+                if (data.isok) {
+                    callback(data)
+                } else {
+                    layer.msg(data.Msg)
+                }
+            }
+        });
+    }
+    function GetTiXianList(state=0) { //请求提现列表
+        var that = this
+        Gajax("/pxhfang/GetTiXianList", {
+            appid: _appid,
+            state: state, //0：未提现，1：提现中，2：提现成功
+            pageIndex: that.data.requestData.pageIndex,
+            pageSize: 100,
+            phone: that.data.requestData.phone,
+            openId: that.data.requestData.openId
+        }, (callback) => {
+            that.data.requestData.state = state
+            that.data.tixianList = callback.dataObj.list
+        })
+    }
+        var data = new Vue({
+            el: '#data',
+            data: {
+                requestData: {
+                    pageIndex: 1,
+                    state: 0,
+                    phone: '',
+                    openId: ''
+                },
+                type: 0,
+                ischooseAll: false,
+                tixianList: [],//列表
+                hType: [ //类型
+                    { content: '待返现', ischoose: true, id: 0 },
+                    { content: '申请中', ischoose: false, id: 1 },
+                    { content: '已返现', ischoose: false, id: 2 },
+                ],
+            },
+            mounted() {
+                $(function () {
+                    //var url = location.search; //获取url中"?"符后的字串
+                    //var theRequest = new Object();
+                    //if (url.indexOf("?") != -1) {
+                    //    var str = url.substr(1);
+                    //    strs = str.split("&");
+                    //    for (var i = 0; i < strs.length; i++) {
+                    //        theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+                    //    }
+                    //}
+                    data.requestData.phone = '@Model.TelePhone';
+                    data.requestData.openId = '@Model.OpenId';
+                    GetTiXianList()
+                })
+            },
+            methods: {
+                getList: function (e) {
+                    var state = e.target.id;
+                    data.type = e.target.id;
+                    for (let i = 0; i < data.hType.length; i++) {
+                        if (state == data.hType[i].id) {
+                            data.hType[i].ischoose = true
+                        } else {
+                            data.hType[i].ischoose = false
+                        }
+                    }
+                    GetTiXianList(state)
+                },
+                ApplyDrawCase: function () {
+                    var orderIds = ''
+                    for (let i = 0; i < data.tixianList.length; i++) {
+                        if (data.tixianList[i].ischoose == true) {
+                            orderIds += data.tixianList[i].id + ','
+                        }
+                    }
+                    if (!orderIds) {
+                        layer.msg('请选择需要返现的订单')
+                        return
+                    }
+                    Gajax("/pxhfang/ApplyDrawCase", {
+                        orderIds: orderIds,
+                        phone: data.requestData.phone,
+                        openId: data.requestData.openId,
+                        appid:_appid,
+                    }, (callback) => {
+                        GetTiXianList()
+                    })
+                },
+                chooseAll: function () {
+                    var nums = 0;
+                    for (let i = 0; i < data.tixianList.length; i++) {
+                        if (data.tixianList[i].ischoose == true) {
+                            nums++
+                        };
+                        data.$set(data.tixianList[i], "ischoose", true);
+                        this.ischooseAll = true;
+                        if (nums == data.tixianList.length) {
+                            data.$set(data.tixianList[i], "ischoose", false);
+                            this.ischooseAll = false;
+                        }
+                    }
+                },
+                choose: function (index) {
+                    if (data.tixianList[index].ischoose == true) {
+                        data.$set(data.tixianList[index], "ischoose", false);
+                        this.ischooseAll = false;
+                    } else {
+                        data.$set(data.tixianList[index], "ischoose", true);
+                    }
+                    var nums = 0;
+                    for (let i = 0; i < data.tixianList.length; i++) {
+                        if (data.tixianList[i].ischoose == true) {
+                            nums++
+                        };
+                        if (nums == data.tixianList.length) {
+                            this.ischooseAll = true;
+                        }
+                    }
+                },
+            },
+        })
+</script>
+
+</html>

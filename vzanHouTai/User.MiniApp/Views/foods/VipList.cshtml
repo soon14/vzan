@@ -1,0 +1,385 @@
+﻿@using User.MiniApp.Comment;
+@using Entity.MiniApp.Conf;
+@using Entity.MiniApp.User;
+@model List<VipLevel>
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "会员列表";
+}
+<style>
+    .centertext { vertical-align: middle !important; text-align: center; }
+    span.layui-laypage-curr, span.layui-laypage-skip { float: none; padding-top: 0; }
+    #logModal .modal-dialog { width: 952px; }
+    .searchul { width: 100%; margin: 20px 0px 14px 0px; }
+    .searchul li { /*width:25%;*/ float: left; margin-right: 25px; }
+    .searchul li span { float: left; padding-top: 5px; padding-right: 8px; }
+    .searchul li input, .searchul li select { width: 140px; }
+</style>
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+<div id="app" v-cloak>
+    <div style="margin-left:17px;">
+        <ul class="searchul">
+            <li><span>微信昵称:</span><input type="text" v-model="postdata.username" class="input-sm form-control" /></li>
+            <li>
+                <span>会员级别:</span>
+                <select v-model="postdata.levelid" class="form-control">
+                    <option value="0" selected>全部</option>
+                    @foreach (var x in Model)
+                    {
+                        <option value="@x.Id">@x.name</option>
+                    }
+                </select>
+            </li>
+            <li><span>手机号码:</span><input type="text" v-model="postdata.telePhone" class="input-sm form-control" /></li>
+        </ul>
+        <div class="d-flex d-flex-center formsearch" >
+            从：
+            <div class="input-daterange input-group" id="datepicker" style="width:400px;">
+                <input type="text" class="input-sm form-control" id="startDate" v-model="postdata.startDate" readonly />
+                <span class="input-group-addon">到</span>
+                <input type="text" class="input-sm form-control" id="endDate" v-model="postdata.endDate" readonly />
+            </div>
+
+            <a href="#" v-on:click="Search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+            <a href="#" v-on:click="ClearParam()" class="btn btn-default">清除</a>
+
+        </div>
+    </div>
+    <br />
+    <br />
+
+
+    <table class="table table-bordered viplevel ml_19">
+        <tr class="active">
+            <th class="centertext">会员头像</th>
+            <th class="centertext">会员名称</th>
+            <th class="centertext">微信会员卡</th>
+            <th class="centertext">会员级别</th>
+            <th class="centertext">折扣</th>
+            <th class="centertext">储值余额</th>
+            <th class="centertext">消费总额</th>
+            <th class="centertext">手机号码</th>
+            <th class="centertext">创建时间</th>
+            <th class="centertext">修改时间</th>
+            <th class="centertext">操作</th>
+        </tr>
+        <tr v-for="(vipInfo,index) in viplist">
+            <td>
+                <img v-bind:src="vipInfo.headimgurl" width="80" height="80" />
+            </td>
+            <td class="centertext">
+                {{vipInfo.username}}
+            </td>
+            <td class="centertext">{{vipInfo.WxVipCode}}</td>
+            <td class="centertext">{{vipInfo.levelInfo.name}}</td>
+            <td class="centertext" v-if="vipInfo.levelInfo.type==0">无折扣</td>
+            <td class="centertext" v-else-if="vipInfo.levelInfo.type==1">全场{{vipInfo.levelInfo.discount /10}}折</td>
+            <td class="centertext" v-else-if="vipInfo.levelInfo.type==2">指定商品{{vipInfo.levelInfo.discount /10}}折</td>
+            <td class="centertext" v-else>未知数据</td>
+            <td class="centertext">{{vipInfo.AccountMoneystr}}</td>
+            <td class="centertext">{{vipInfo.pricestr}}</td>
+            <td class="centertext">{{vipInfo.TelePhone}}</td>
+            <td class="centertext">{{vipInfo.showaddtime}}</td>
+            <td class="centertext">{{vipInfo.showupdatetime}}</td>
+            <td class="centertext">
+                <a href="javascript:;" v-on:click="getloglist(index)">查看储值变更记录</a>
+                <a href="javascript:;" v-on:click="editInfo(index)">修改会员等级</a>
+                @*<a href="javascript:;" style="color:red;" v-on:click="delInfo(index)">删除</a>*@
+            </td>
+        </tr>
+        <tr v-if="viplist==null || viplist.length==0">
+            <td colspan="9">暂无数据</td>
+        </tr>
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+    <!--修改会员级别-->
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择产品</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <tr>
+                            <td align="right">会员名称:</td>
+                            <td align="left">{{editdata.username}}</td>
+                        </tr>
+                        <tr>
+                            <td align="right">会员级别:</td>
+                            <td align="left">
+                                <select v-model="editdata.levelid" class="form-control" style="width:150px;">
+                                    <option value="0">请选择会员等级</option>
+                                    <option v-for="levelinfo in levelList" v-bind:value="levelinfo.Id">{{levelinfo.name}}</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr v-for="levelInfo in levelList" v-if="levelInfo.Id==editdata.levelid">
+                            <td align="right">会员折扣:</td>
+                            <td align="left" v-if="levelInfo.type==0">无折扣</td>
+                            <td v-else-if="levelInfo.type==1">全场{{levelInfo.discount /10}}折</td>
+                            <td v-else-if="levelInfo.type==2">指定商品{{levelInfo.discount /10}}折</td>
+                            <td v-else>未知数据</td>
+                        </tr>
+                    </table>
+                    @*<vue-pager ref="goodpager" name="goods"></vue-pager>*@
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveEdit()">修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--变更明细-->
+    <div class="modal fade" id="logModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">储值变更明细</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <tr>
+                            <th class="centertext">变更前金额（元）</th>
+                            <th class="centertext">变更金额（元）</th>
+                            <th class="centertext">变更后金额（元）</th>
+                            <th class="centertext">变更类型</th>
+                            <th width="300" class="centertext">变更原因</th>
+                            <th class="centertext">变更时间</th>
+                        </tr>
+                        <tr v-for="log in savemoneydata.list">
+                            <td class="centertext">{{log.BeforeMoneyStr}}</td>
+                            <td class="centertext">{{log.ChangeMoneyStr}}</td>
+                            <td class="centertext">{{log.AfterMoneyStr}}</td>
+                            <td class="centertext" v-if="log.Type==0">储值</td>
+                            <td class="centertext" v-else-if="log.Type==1">退款</td>
+                            <td class="centertext" v-else-if="log.Type==-1">消费</td>
+                            <td class="centertext" v-else>未知</td>
+                            <td>{{log.ChangeNote}}</td>
+                            <td class="centertext">{{log.CreateDateStr}}</td>
+                        </tr>
+                        <tr v-if="savemoneydata.list==null || savemoneydata.list.length==0">
+                            <td colspan="7">暂无数据</td>
+                        </tr>
+
+                    </table>
+                    <div id="mpages" style="text-align: center;margin-top: 0.5rem;" v-show="savemoneydata.count>0"></div>
+
+                    @*<vue-pager ref="goodpager" name="goods"></vue-pager>*@
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            recordCount: 0,
+            viplist: [],
+            levelList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            postdata: {
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                username: "",
+                telePhone: "",
+                levelid: 0,
+                leveltype: -1,
+                startDate:"",
+                endDate:""
+            },
+            editdata: {
+                appId:@ViewBag.appId,
+                username: '',
+                vid: 0,
+                levelid: 0,
+                discount: 10,
+                index: 0
+            },
+            savemoneydata: {
+                list: [],
+                count: 0,
+                postdata: {
+                    uid: 0,
+                    appid:@ViewBag.appId,
+                    pageSize: 10,
+                    pageIndex:1
+                }
+            },
+            isloading: false,
+        },
+        methods: {
+            getvipList: function () {
+                if (this.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                this.isloading = true;
+                var index = layer.load(1);
+                $.post("/stores/GetVipList", this.postdata, function (data) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (data.isok) {
+                        app.recordCount = data.model.recordCount;
+                        app.viplist = data.model.relationList;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function (/*issearch*/) {
+                //if (issearch) this.pageIndex = 1;
+                //console.log(issearch);
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    //console.log(laypage)
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getvipList();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+
+            @*delInfo: function (index) {
+                layer.confirm('您确定要删除该会员吗？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    var layerindex = layer.load(1);
+                    $.post("/stores/DelVipInfo", { appId: app.postdata.appId, vid: app.viplist[index].Id }, function (data) {
+                        layer.close(layerindex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            app.viplist.splice(index, 1);
+                        }
+                    })
+                });
+            },*@
+
+            editInfo: function (index) {
+                this.editdata.username = this.viplist[index].username;
+                this.editdata.vid = this.viplist[index].Id;
+                this.editdata.levelid = this.viplist[index].levelid;
+                this.editdata.discount = this.viplist[index].levelInfo.discount;
+                this.editdata.index = index;
+                $('#editModal').modal('show');
+            },
+            getloglist: function (index) {
+                this.savemoneydata.postdata.uid = this.viplist[index].uid;
+                this.getSaveMoneyInfo();
+            },
+            getSaveMoneyInfo:function(){
+                $.post("/savemoney/getMiniAppSaveMoneyLoglist", this.savemoneydata.postdata, function (data) {
+                    if (data.isok) {
+                        app.savemoneydata.list = data.list;
+                        app.savemoneydata.count = data.count;
+                        app.resetSaveMoneyInfo();
+                        $('#logModal').modal('show');
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            resetSaveMoneyInfo: function (/*issearch*/) {
+                //if (issearch) this.pageIndex = 1;
+                //console.log(issearch);
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    //console.log(laypage)
+                    laypage.render({
+                        elem: 'mpages'
+                        , count: app.savemoneydata.count //数据总数，从服务端得到
+                        , curr: app.savemoneydata.postdata.pageIndex //当前页
+                        , limit: app.savemoneydata.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.savemoneydata.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getSaveMoneyInfo();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            saveEdit: function () {
+                var index = layer.load(1);
+                $.post("/stores/saveEdit", this.editdata, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        app.viplist[app.editdata.index].levelInfo = data.levelinfo;
+                        app.viplist[app.editdata.index].levelid=data.levelinfo.Id
+                        $('#editModal').modal('hide');
+                    }
+                })
+            },
+            ClearParam:function()
+            {
+                this.postdata.pageIndex= 1;
+                this.postdata.pageSize= 10;
+                this.postdata.username= "";
+                this.postdata.levelid= 0;
+                this.postdata.leveltype= -1;
+                this.postdata.startDate="";
+                this.postdata.endDate=""
+                this.postdata.endDate = "";
+            },
+            Search:function()
+            {
+
+                this.postdata.startDate = $("#startDate").val();
+                this.postdata.endDate = $("#endDate").val();
+                this.getvipList();
+            }
+        },
+        created: function(){
+            this.getvipList();
+            //$("#app").show();
+        }
+    })
+
+
+    $('.input-daterange').datepicker({
+        format: "yyyy-mm-dd",
+        language: "zh-CN",
+        //autoclose: true,
+        todayHighlight: true
+    });
+</script>
+

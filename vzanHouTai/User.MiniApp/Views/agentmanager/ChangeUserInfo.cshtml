@@ -1,0 +1,249 @@
+﻿@using Entity.MiniApp.Conf;
+@{
+    Layout = null;
+    ViewBag.PageType = -1;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>换绑账号</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="" name="author" />
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/js/bootstrap.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+    <script src="//j.vzan.cc/fcontent/plugin/vue.min.js"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/agent/css/zzsc.css" rel="stylesheet" />
+    <style>
+        .templatelist {
+            width: 100%;
+            float: left;
+            display: flex;
+            flex-direction: column;
+            height: 250px;
+        }
+
+            .templatelist li {
+                float: left;
+                margin-right: 3%;
+                margin-bottom: 21px;
+                display: flex;
+            }
+
+                .templatelist li .tt0 {
+                    text-align: left;
+                    width: 30px;
+                    margin-top: 5px;
+                }
+
+                .templatelist li .t1 {
+                    text-align: left;
+                    width: 120px;
+                    line-height: 30px;
+                }
+
+                .templatelist li .t2 {
+                    text-align: center;
+                    width: 120px;
+                }
+
+        #msform input[type=checkbox] {
+            width: 20px;
+            /*margin: 0px 0px 0px -10px;*/
+        }
+
+        .areadiv .layui-form-select {
+            width: 33%;
+            float: left;
+        }
+
+        .layui-form-select dl {
+            margin-left: 10px;
+        }
+
+        .layui-anim-upbit {
+            text-align: left;
+        }
+
+        .tips {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="addcustomer" style="width:100%; height:auto; " hidden>
+        <form id="msform">
+            <!-- progressbar -->
+            <ul id="progressbar">
+                <li class="active"><span class="buzhou">第一步</span></li>
+                <li><span class="buzhou">第二步</span></li>
+                <li><span class="buzhou">第三步</span></li>
+            </ul>
+            <!-- fieldsets -->
+            <fieldset>
+                <input type="hidden" id="sessid_old" value="@Session["qrcodekey"]" />
+                <img src="/QrCode/GetQrCode?code=@Session["qrcodekey"]" id="oldcode" alt="" style="border: 8px solid #fff;" />
+                <p class="tips">
+                    请用<span style="color:red; font-weight:bold;font-size:18px;">旧账号</span>绑定的微信扫描二维码
+                </p>
+                <p class="tips">小提示：可截图二维码后通过微信/QQ发给客户</p>
+                <input type="button" hidden name="next" class="next action-button" value="下一步" v-on:click="checkuserInfo($event)" id="qrCodebtn_old" />
+            </fieldset>
+            <fieldset>
+                <input type="hidden" id="sessid_new" value="" />
+                <img src="" id="newcode" alt="" style="border: 8px solid #fff;" />
+                <p class="tips">
+                    请用<span style="color:red; font-weight:bold;font-size:18px;">新账号</span>绑定的微信扫描二维码
+                </p>
+                <p class="tips">小提示：可截图二维码后通过微信/QQ发给客户</p>
+                <p class="tips">如果改客户微信还没开通账号，会自动开通一个账号</p>
+                <input type="button" hidden name="next" class="next action-button" value="下一步" v-on:click="checkuserInfo($event)" id="qrCodebtn_new" />
+            </fieldset>
+            <fieldset>
+                <input type="hidden" id="savekey" value="" />
+                <input type="hidden" id="savelogin" value="" />
+                <div style="width:197px;height:197px;margin: 0 auto;border: 0 none;border-radius: 3px;box-shadow: 0 0 15px 1px rgba(0, 0, 0, 0.4);margin-bottom: 60px;margin-top: 20px;text-align:center;font-family: -webkit-body;">
+                    <div style="padding-top: 40px;">
+                        <img src="@(WebSiteConfig.cdnurl)content/newhome/image/changeuserinfosuccess.png" />
+                    </div>
+                    <div style="margin: 10px 0px;">
+                        扫描成功
+                    </div>
+                    <div>
+                        新绑定账号：<span id="newlogin"></span>
+                    </div>
+                </div>
+                <input type="button" name="previous" class="previous action-button" value="上一步" v-on:click="prevbtn($event)" />
+                <input type="button" name="next" class="next action-button" value="保存" v-on:click="save($event)"/>
+            </fieldset>
+        </form>
+    </div>
+    @*<script src="@(WebSiteConfig.cdnurl)content/agent/js/jquery.easing.min.js"></script>*@
+    <script src="@(WebSiteConfig.cdnurl)content/agent/js/zzsc.js"></script>
+    <script>
+        var vm = new Vue({
+            el: "#addcustomer",
+            methods: {
+                //第一步
+                //第二步
+                checkuserInfo: function (e) {
+                    this.nextbtn(e);
+                },
+                //第三步
+                save: function (e) {
+                    var savelogin = $("#savelogin").val();
+                    var savekey = $("#savekey").val();
+                    if(savekey.length<=0)
+                    {
+                        return layer.msg("请刷新重试");
+                    }
+
+                    layer.confirm('您确定要更成账号'+savelogin+'？', {
+                        btn: ['是','否'] //按钮
+                    }, function(){
+                        var id = @ViewBag.customerid;//代理商与客户关系表ID
+                        $.ajax({
+                            type: "POST",
+                            url: "/agentmanager/SaveUserInfo",
+                            data: { savekey: savekey ,id:id},
+                            xhrFields: {
+                                withCredentials: true
+                            },
+                            success: function (returnData) {
+                                if (returnData.isok) {
+                                    layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                                        layer.load(1);
+                                        window.parent.location.reload();//do something
+                                    });
+                                }
+                                else {
+                                    layer.msg(returnData.Msg);
+                                }
+                            }
+                        });
+                    }, function(){
+                    });
+                },
+                //下一步
+                nextbtn: function (e) {
+                    var _this = e.target;
+                    var current_fs = $(_this).parent();
+                    var next_fs = $(_this).parent().next();
+
+                    $("#progressbar li").eq($("fieldset").index(next_fs)).addClass("active");
+                    next_fs.show();
+                    current_fs.hide();
+                },
+                //上一步
+                prevbtn: function (e) {
+                    var _this = e.target;
+                    var current_fs = $(_this).parent();
+                    var previous_fs = $(_this).parent().prev();
+                    $("#progressbar li").eq($("fieldset").index(current_fs)).removeClass("active");
+                    $("#progressbar li").eq($("fieldset").index(previous_fs)).addClass("active");
+
+                    current_fs.hide();
+                    previous_fs.show();
+                },
+            },
+            created: function () {
+                $("#addcustomer").show();
+            }
+        })
+
+        var _key = $('#sessid_old').val();
+        var _type=1;
+        function ChangeUserlogin() {
+            //var type = 1;//1:第一步，2：第二步
+            var id = @ViewBag.customerid;//代理商与客户关系表ID
+            $.ajax({
+                type: "POST",
+                url: "/agentmanager/ChangeUserlogin",
+                xhrFields: {
+                    withCredentials: true
+                },
+                data: { wxkey: _key ,id:id,type:_type},
+                success: function (returnData) {
+                    if (returnData.isok) {
+                        if(_type==1)
+                        {
+                            $("#sessid_new").val(returnData.dataObj);
+                            _key = returnData.dataObj;
+                            $("#newcode").attr("src", "/QrCode/GetQrCode?code=" + returnData.dataObj);
+                            $("#qrCodebtn_old").click();
+                            _type=2
+                        }
+                        else{
+                            $("#sessid_new").val(returnData.dataObj.sessionkey);
+                            _key = returnData.dataObj.sessionkey;
+                            $("#newcode").attr("src", "/QrCode/GetQrCode?code=" + returnData.dataObj.sessionkey);
+
+                            $("#newlogin").html(returnData.dataObj.savelogin);
+                            $("#savelogin").val(returnData.dataObj.savelogin);
+                            $("#savekey").val(returnData.dataObj.savekey);
+                            $("#qrCodebtn_new").click();
+                        }
+                    }
+                    else {
+                        if(returnData.code==-2)
+                        {
+                            $("#sessid_old").val(returnData.dataObj);
+                            _key = returnData.dataObj;
+                            $("#oldcode").attr("src", "/QrCode/GetQrCode?code=" + returnData.dataObj);
+                            layer.msg(returnData.Msg)
+                        }
+                    }
+                }
+            });
+        }
+        $(function () {
+            setInterval(ChangeUserlogin, 2000);
+        })
+
+    </script>
+</body>
+</html>

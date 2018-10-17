@@ -1,0 +1,129 @@
+﻿@model ViewModel<DrawCashApply>
+@{
+    ViewBag.Title = "提现审核";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+}
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5>@ViewBag.Title<span style="color:red;margin-left:15px;">点击审核通过，后台会自动进入提现到账服务，请确定无误再通过审核</span></h5>
+
+                </div>
+                <div class="ibox-content ">
+                    <div class="">
+                        <div class="row m-b-sm m-t-sm">
+                            <div class="col-md-1 text-right" style="width: auto;">
+
+                            </div>
+                        </div>
+                    </div>
+                    <table id="categorys" class="table table-hover table-condensed table-bordered">
+                        <thead>
+                            <tr>
+                                <th>提现用户</th>
+                                <th>提现店铺</th>
+                                <th>审核状态</th>
+                                <th>提现状态</th>
+                                <th>资金类型</th>
+                                <th>申请提现金额</th>
+                                <th>提现后剩余金额</th>
+                                <th>手续费</th>
+                                <th>实际到账</th>
+                                <th>申请时间</th>
+                                <th>处理时间</th>
+                                <th width="250">操作</th>
+                        </thead>
+                        <tbody>
+                            @foreach (DrawCashApply item in Model.DataList)
+                            {
+                                <tr>
+                                    <td>@item.nickName</td>
+                                    <td>@(item.pinStore==null?string.Empty:item.pinStore.storeName)</td>
+                                    <td>@item.stateStr</td>
+                                    <td>@item.drawStateStr</td>
+                                    @if (item.applyType == (int)DrawCashApplyType.拼享惠代理收益)
+                                    {
+                                        <td>代理提成</td>
+                                    }
+                                    else if (item.applyType == (int)DrawCashApplyType.拼享惠平台交易)
+                                    {
+                                        <td>平台交易</td>
+                                    }
+                                    else if (item.applyType == (int)DrawCashApplyType.拼享惠扫码收益)
+                                    {
+                                        <td>扫码收益</td>
+                                    }
+                                    else
+                                    {
+                                        <td>未知来源 @item.applyType</td>
+                                    }
+                                    <td>@item.applyMoneyStr 元</td>
+                                    <td>@item.useCash 元</td>
+                                    <td>@item.serviceMoneyStr 元</td>
+                                    <td style="color:red;">@item.cashMoneyStr 元</td>
+                                    <td>@item.AddTimeStr</td>
+                                    <td>@item.UpdateTimeStr</td>
+                                    <td>
+                                        @if (item.state == (int)ApplyState.审核不通过 && item.drawState == (int)DrawCashState.未开始提现)
+                                        {
+                                            <a href="javascript:;" class="btn btn-sm btn-primary radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核通过))">通过审核</a>
+                                            <a href="javascript:;" class="btn btn-sm btn-success radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,2)">人工提现</a>
+                                            <a href="javascript:;" class="btn btn-sm btn-default radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.删除))">删除</a>
+
+                                        }
+                                        else if (item.state == (int)ApplyState.审核通过 && item.drawState == (int)DrawCashState.未开始提现)
+                                        {
+                                            <a href="javascript:;" class="btn btn-sm btn-danger radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核不通过))">不通过审核</a>
+                                        }
+                                        else if (item.state == (int)ApplyState.待审核 && item.drawState == (int)DrawCashState.未开始提现)
+                                        {
+                                            <a href="javascript:;" class="btn btn-sm btn-primary radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核通过))">通过审核</a>
+                                            <a href="javascript:;" class="btn btn-sm btn-danger radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,@((int)ApplyState.审核不通过))">不通过审核</a>
+                                            <a href="javascript:;" class="btn btn-sm btn-success radius" style="margin:3px 5px;" onclick="UpdateState(@item.Id,2)">人工提现</a>
+                                        }
+
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <ul class="pagination pagination-lg">
+                            <li>
+                            </li>
+                        </ul>
+                    </nav>
+                    @if (Model.TotalCount > Model.PageSize)
+                    {
+                        <div class="page">
+                            @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script>
+        function UpdateState(id, state) {
+            layer.confirm("确定要执行此操作吗？", function () {
+                var layerIndex = layer.load(2);
+                $.post("/pin/main/updatestate", { aid:@Model.aId,id: id, state: state }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.code == 1) {
+                        layer.msg(data.msg, { time: 700, anim: 1 }, function () {
+                            window.location.reload();
+                        })
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                });
+            })
+        }
+    </script>
+}

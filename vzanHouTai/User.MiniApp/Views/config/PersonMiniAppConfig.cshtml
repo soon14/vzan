@@ -1,0 +1,566 @@
+﻿@using Entity.MiniApp
+@using Entity.MiniApp.ViewModel
+@using User.MiniApp.comment
+
+@model ConfigViewModel
+@{
+    ViewBag.Title = "小程序管理";
+
+    if (ViewBag.SouceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+
+    ViewBag.tid = Model.XcxTemplate == null ? 0 : Model.XcxTemplate.Id;
+    var needpay = 1;
+    if (ViewBag.PageType == 10 || ViewBag.PageType == 12 || ViewBag.PageType == 3 || ViewBag.PageType == 1 || ViewBag.PageType == 4)
+    {
+        needpay = 0;
+    }
+}
+<style>
+    table th {
+        text-align: center;
+    }
+
+    td {
+        word-break: break-all;
+        word-wrap: break-word;
+        border-top: none !important;
+        margin: 0px 10px;
+    }
+
+    table tr td, th {
+        vertical-align: middle;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    .td_templateinfo_leftcss {
+        width: 100px;
+        text-align: right;
+    }
+
+    .bordertop tr {
+        border-top: 1px solid #E5E5E5 !important;
+    }
+
+    .servicetd {
+        display: inline-block;
+        margin: 10px 0px;
+        width: 100%;
+        text-align: left;
+    }
+
+    a {
+        color: #337ab7;
+        text-decoration: none;
+    }
+
+    .width300 {
+        width: 300px !important;
+    }
+</style>
+<script src="@(WebSiteConfig.cdnurl)js/dowlodimg/canvas2image.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/dowlodimg/jquery.base64.js"></script>
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<input type="hidden" id="uid" value="@Model.UserXcxTemplate.Id" />
+<table class="table table-condensed cancel-table-td-border" style="margin-top:10px;">
+    <tr>
+        <td style="width: 180px;text-align:right;">小程序名称：</td>
+        <td>
+            <input id="appName" type="text" class="width300 form-control" value="@(Model.UserXcxTemplate.Name)" />
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 180px;text-align:right;">小程序AppId：</td>
+        <td>
+            <input id="appid" type="text" class="width300 form-control" value="@(Model.UserXcxTemplate.AppId)" />
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 180px;text-align:right;">小程序密钥：</td>
+        <td>
+            <input id="appsr" type="text" class="width300 form-control" value="@(Model.UserXcxTemplate.Appsr)" />
+        </td>
+    </tr>
+    @if (!string.IsNullOrEmpty(Model.miniappqrcode))
+    {
+        <tr>
+            <td style="text-align:right;">小程序二维码：</td>
+            <td>
+                <img src="@Model.miniappqrcode" style="width:50px;height:50px;" />
+                <a style="" id="clicklockbigimg">查看大图</a>
+                <a href="@Model.miniappqrcode" target="_blank" download="filename.jpg">下载图片</a>
+            </td>
+        </tr>
+    }
+
+    <tr>
+        <td style="text-align:right;">模板名称：</td>
+        <td>
+            @if (Model.XcxTemplate != null)
+            {
+                <label>@Model.XcxTemplate.TName</label>
+                <a style="" id="clicktemplate">查看模板详情</a>
+            }
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">小程序底部logo：</td>
+        <td>
+            @Html.FileUploadFor("bottomlogo", initImageList: (List<object>)ViewBag.LogoImgList, controllerWidth: 120, removeCallback: "removeAttachmentFunction")
+            <label class="forinputmassage">限制1M以内，建议上传图片大小 ( 80*40px )的透明背景图片</label>
+            <br />
+            <input type="button" class="btn btn-primary width100 mt10" id="savelogo" value="保存logo" />
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align: right;padding-top: 10px;">
+            上传校验文本：
+        </td>
+        <td>
+            <input type="file" id="filewx" />
+            <input type="button" class="btn  btn-info width100" id="savefilewx" style="margin-top:5px;" value="上传" />
+            <div style="color:red;">
+                <div>上传注意事项</div>
+                <div>
+                    <div>1，文件必须是txt格式</div>
+                    <div>2，文件大小必须小于50字节，查看文件大小方法：右键点击文件，选择属性</div>
+                    <div>3，该文件是校验业务域名（wtApi.vzan.com）所用，如没用业务域名，则无需上传</div>
+                </div>
+            </div>
+        </td>
+    </tr>
+
+    @if (needpay == 1)
+    {
+        <tr>
+            <td style="text-align:right;">小程序商户号：</td>
+            <td class="form-inline">
+                <input id="mc_id" type="text" class="width300 form-control" value="@(Model.paycenter.Mch_id)" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">商户号秘钥：</td>
+            <td class="form-inline">
+                <input id="mc_key" type="text" class="width300 form-control" value="@(Model.paycenter.Key)" />
+                <input type="button" class="btn btn-primary width100 mt10" id="checkMck" value="检测商户号" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;padding-top: 10px;">
+                商户证书：
+            </td>
+            <td>
+                @if (Model.CerInstallInfo != null)
+                {
+                    if (Model.CerInstallInfo.State == -1)
+                    {
+                        <div>于@(Model.CerInstallInfo.UpdateTimeStr)成功安装了证书</div>
+                    }
+                    else if (Model.CerInstallInfo.State >= 0)
+                    {
+                        <div>证书安装中</div>
+                    }
+                    else
+                    {
+                        <div>于@(Model.CerInstallInfo.UpdateTimeStr)证书安装失败，失败原因：@(Model.CerInstallInfo.ErrorMsg)</div>
+                    }
+                }
+
+                <input type="file" id="file" />
+                <input type="button" class="btn  btn-info width100" id="savefile" style="margin-top:5px;" value="上传" />
+                <div style="color:red;">
+                    <div>上传注意事项及影响（如果您之前有让客服安装了证书，请忽略这一步，如果您的证书没安装或者更新了证书，请您手动点击上传证书安装）</div>
+                    <div>
+                        <div>1，证书格式必须是zip，并且保证解压后的只有4个文件，<a href="@(WebSiteConfig.cdnurl)content/newhome/image/certzip.jpg" target="_blank">查看大图</a></div>
+                        @if (ViewBag.PageType == (int)TmpType.小未平台 || ViewBag.PageType == (int)TmpType.拼享惠)
+                        {
+                            <div>
+                                2，上传证书才能在小程序提现和退款，提现必须开通企业付款到零钱功能
+                                <br />
+                                <a style="text-decoration:underline;font-size:16px;" href="https://www.vzan.cc/t/d-27962982" target="_blank">点击查看提现的相关细节问题</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div>
+                                2，上传证书才能在小程序退款
+                            </div>
+                        }
+                    </div>
+                </div>
+            </td>
+        </tr>
+    }
+
+    <tr>
+        <td></td>
+        <td>
+            <div class="">
+                <input type="button" class="btn btn-primary width100 mt10" id="ChangeAuthoAppType" value="进入第三方授权界面" />
+                <input type="button" class="btn btn-primary width100 mt10" id="saveAppInfo" value="保存" />
+                <a class="btn btn-primary width100 mt10" href="@(Model.XcxTemplate.AppCodeUrl == null ? "":Model.XcxTemplate.AppCodeUrl)">下载小程序代码</a>
+                <a class="btn btn-primary width100 mt10" target="_blank" href="http://www.xiaochengxu.com.cn/site/publish/">操作文档</a>
+            </div>
+        </td>
+    </tr>
+</table>
+
+@*小程序模板详情*@
+<div class="modal bs-example-modal-md" id="templateinfoModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>小程序模板详情</h4>
+            </div>
+            <div class="modal-body text-center">
+                @if (Model.XcxTemplate != null)
+                {
+                <table class="tr-highlight bordertop" style="width:100%;">
+                    <tr style="border-top: none !important;">
+                        <td class="text-right" style="width:30%;">模板名称：</td>
+                        <td class="servicetd">@Model.XcxTemplate.TName</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">模板ID：</td>
+                        <td class="servicetd">@Model.XcxTemplate.TId</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">版本：</td>
+                        <td class="servicetd">@Model.XcxTemplate.Version</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">简介：</td>
+                        <td class="servicetd">
+                            @Model.XcxTemplate.Desc
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">添加时间：</td>
+                        <td class="servicetd">@Model.XcxTemplate.AddTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">修改时间：</td>
+                        <td class="servicetd">@Model.XcxTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                </table>
+                }
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetemplateinfo">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*查看大图*@
+<div class="modal bs-example-modal-sm" id="testqrcodModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>图片</h4>
+            </div>
+            <div class="modal-body text-center">
+                <img id="testqrcodeimg" style="" src="" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetestqrcode">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section script{
+    <script>
+        var mask;
+        var _layer = parent.layer;
+        var imghave = "@ViewBag.isshouquan";
+        var logoimg = "@ViewBag.LogoImg";
+
+
+        $(function () {
+            //获取体验二维码
+            $('#gettestqrcode').on('click', function () {
+                var tid = '@ViewBag.tid';
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(@needpay==1)
+                {
+                    if(mc_id.trim()=="")
+                    {
+                        layer.msg("请输入小程序商户号");
+                        return;
+                    }
+                    if(mc_key.trim()=="")
+                    {
+                        layer.msg("请输入商户秘钥");
+                        return;
+                    }
+                }
+
+                $.post('/config/GettestQrcode',
+                { Id: @ViewBag.Id,tid:tid,appsr:appstr.trim(),mc_id:mc_id,mc_key:mc_key,needpay:@needpay }, function (result) {
+
+                    if(result.isok>0)
+                    {
+                        $("#testqrcodModal").show();
+                        $("#testqrcodeimg").attr("src", "data:image/jpeg;base64," + result.imgdata);
+                    }
+                    else{
+                        layer.msg(result.msg);
+                    }
+                });
+            });
+            $('#closetestqrcode').on('click', function () {
+                $("#testqrcodModal").hide();
+            });
+
+            //查看大图
+            $('#clicklockbigimg').on('click', function () {
+                $("#testqrcodeimg").attr("src", '@Model.miniappqrcode');
+                $("#testqrcodModal").show();
+            });
+            $('#closetestqrcode').on('click', function () {
+                $("#testqrcodModal").hide();
+            });
+
+            //检测商户号，商户秘钥
+            $('#checkMck').on('click', function () {
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(mc_id.trim()=="")
+                {
+                    layer.msg("请输入小程序商户号");
+                    return;
+                }
+                if(mc_key.trim()=="")
+                {
+                    layer.msg("请输入商户秘钥");
+                    return;
+                }
+
+                $.post('/config/CheckMerchanInfo',
+                { aid: @ViewBag.appId, mc_id:mc_id,mc_key:mc_key }, function (result) {
+                    layer.msg(result.Msg);
+                });
+            });
+
+            //模板详情
+            $('#clicktemplate').on('click', function () {
+                $("#templateinfoModal").show();
+            });
+            $('#closetemplateinfo').on('click', function () {
+                $("#templateinfoModal").hide();
+            });
+
+            //保存底部logo图片
+            $('#savelogo').on('click', function () {
+                var imgArray = [];
+                var imgs = $('input[name="bottomlogo"]');
+                for (var j = 0; j < imgs.length; j++) {
+                    imgArray.push($(imgs[j]).val());
+                }
+                var ImgUrl = imgArray.join();
+                if (ImgUrl == "")
+                {
+                    ImgUrl = logoimg;
+                }
+
+                var appid = "@ViewBag.appId";
+                var data = [{ "Value": ImgUrl, "Param": "logoimg" }];
+                var datajson = JSON.stringify(data);
+
+                $.post('/config/SaveConfig',
+               { id: appid, datajson: datajson }, function (returnData) {
+                   if(returnData.isok>0)
+                   {
+                       layer.msg(returnData.msg, { anim: 0, time: 1000 }, function () {
+                           //window.location.reload();
+                       });
+                   }
+                   else{
+                       layer.msg(returnData.msg);
+                   }
+               });
+            });
+
+            //保存小程序信息
+            $('#saveAppInfo').on('click', function () {
+                var appid = $("#appid").val();
+                var appsr = $("#appsr").val();
+                var name = $("#appName").val();
+                if(name.length<=0)
+                {
+                    layer.msg("请输入小程序名称");
+                    return;
+                }
+                if(appsr.length<=0)
+                {
+                    layer.msg("请输入小程序密钥");
+                    return;
+                }
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(@needpay==1)
+                {
+                    if(mc_id.length<=0)
+                    {
+                        layer.msg("请输入商户号");
+                        return;
+                    }
+                    if(mc_key.length<=0)
+                    {
+                        layer.msg("请输入商户号密钥");
+                        return;
+                    }
+                }
+                $.post('/config/SaveAppInfo',
+               { name:name,aid: @ViewBag.Id, appid:appid.trim(),appsr:appsr.trim(),mcid:mc_id,mckey:mc_key,needPay:@needpay,pageType:@ViewBag.PageType}, function (returnData) {
+                   if(returnData.isok>0)
+                   {
+                       layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                           //window.location.reload();
+                       });
+                   }
+                   else{
+                       layer.msg(returnData.Msg);
+                   }
+               });
+            });
+
+            //上传证书
+            $("#savefile").click(function () {
+                var mc_id = $("#mc_id").val();
+                if(mc_id.length<=0)
+                {
+                    layer.msg("请输入小程序商户号");
+                    return;
+                }
+                if($("#file")[0].files.length<=0)
+                {
+                    layer.msg("请选择要上传的证书");
+                    return;
+                }
+                var date = new Date();
+                var time = ""+date.getFullYear() +  (date.getMonth() + 1) + date.getUTCDate() +  date.getHours() +  date.getUTCMinutes()+date.getSeconds();
+
+                var selectedFiles = $("#file")[0].files;
+                var data = new FormData();
+                var filename = "";
+                var mc_id = $("#mc_id").val();
+                for (var i = 0; i < selectedFiles.length; i++) {
+                    filename =mc_id+"_"+time+"_"+ $("#file")[0].files[0].name;
+                    data.append( filename, selectedFiles[i]);
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Upload/UploadFile",
+                    contentType: false,
+                    processData: false,
+                    data: data,
+                    success: function (result) {
+                        layer.msg(result.msg);
+                        if(result.isok)
+                        {
+                            $.post("/config/AddAutoInstallCert",{aid:@ViewBag.Id,name:filename,mc_id:mc_id},function()
+                            {
+                                window.location.reload();
+                            });
+                        }
+                    },
+                    error: function (e) {
+                        layer.msg("系统繁忙");
+                    }
+                });
+            });
+
+            //上传校验码
+            $("#savefilewx").click(function () {
+                if($("#filewx")[0].files.length<=0)
+                {
+                    layer.msg("请选择要上传的证书");
+                    return;
+                }
+                var date = new Date();
+                var time = ""+date.getFullYear() +  (date.getMonth() + 1) + date.getUTCDate() +  date.getHours() +  date.getUTCMinutes()+date.getSeconds();
+
+                var selectedFiles = $("#filewx")[0].files;
+                var filename = "";
+                var data = new FormData();
+                for (var i = 0; i < selectedFiles.length; i++) {
+                    filename =$("#filewx")[0].files[0].name;
+                    data.append( filename, selectedFiles[i]);
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Upload/UploadCheckDomainFile",
+                    contentType: false,
+                    processData: false,
+                    data: data,
+                    success: function (result) {
+                        layer.msg(result.Msg);
+                    },
+                    error: function (e) {
+                        layer.msg("系统繁忙");
+                    }
+                });
+            });
+
+            //更新代码提交方式
+            $('#ChangeAuthoAppType').on('click', function () {
+                $.post('/config/ChangeAuthoAppType',
+              { aid: @ViewBag.Id, authoType:1}, function (returnData) {
+                  if(returnData.isok>0)
+                  {
+                      layer.msg("跳转中...", { anim: 0, time: 1000 }, function () {
+                          window.location.reload();
+                      });
+                  }
+                  else{
+                      layer.msg(returnData.Msg);
+                  }
+              });
+            });
+        })
+
+        function DownLoadReportIMG(imgPathURL) {
+            //如果隐藏IFRAME不存在，则添加
+            if (!document.getElementById("IframeReportImg"))
+                $('<iframe style="display:none;" id="IframeReportImg" name="IframeReportImg" onload="DoSaveAsIMG();" width="0" height="0" src="about:blank"></iframe>').appendTo("body");
+            if (document.all.IframeReportImg.src != imgPathURL) {
+                //加载图片
+                document.all.IframeReportImg.src = imgPathURL;
+            }
+            else {
+                //图片直接另存为
+                DoSaveAsIMG();
+            }
+        }
+        function DoSaveAsIMG() {
+            if (document.all.IframeReportImg.src != "about:blank")
+                window.frames["IframeReportImg"].document.execCommand("SaveAs");
+        }
+        //判断是否为ie浏览器
+        function browserIsIe() {
+            if (!!window.ActiveXObject || "ActiveXObject" in window)
+                return true;
+            else
+                return false;
+        }
+
+        function removeAttachmentFunction(file) {
+            logoimg = "";
+        }
+    </script>
+}
+

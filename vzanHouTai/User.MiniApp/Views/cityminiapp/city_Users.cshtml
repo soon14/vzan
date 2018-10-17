@@ -1,0 +1,227 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 49;
+    ViewBag.Title = "用户管理";
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+    .fc-h { -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+    .del { color: red; }
+    .edit { color: cornflowerblue; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content">
+
+    <div id="app" v-cloak>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <label for="plist-pname">用户昵称：</label>
+                    <input type="text" name="userName" class="form-control" id="userName" value="" />
+                    <label for="plist-pname">用户手机号码：</label>
+                    <input type="text" name="userPhone" class="form-control" id="userPhone" value="" />
+                    <label for="plist-pname">创建时间：</label>
+                    <input type="text" name="addTime" class="form-control" id="addTime" value="" />
+                </div>
+
+                <div style="display:inline-block;margin-left:10px;">
+                    <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                    <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                </div>
+
+            </div>
+        </div>
+        <div>
+            <table class="table table-bordered viplevel ml_19" style="margin-top:20px;">
+                <tr class="active">
+                    <th class="centertext">编号</th>
+                    <th class="centertext">用户昵称</th>
+                    <th class="centertext">手机号码</th>
+                    <th class="centertext">发布信息数</th>
+                    <th class="centertext">置顶信息数</th>
+                    <th class="centertext">置顶总金额</th>
+                    <th class="centertext">创建时间</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in userlist">
+                    <td class="centertext">
+                        <label>
+                            @*<input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />*@{{item.Id}}
+                        </label>
+                    </td>
+
+                    <td class="centertext">
+                        {{item.userName}}
+                    </td>
+                    <td class="centertext">
+                        {{item.phone}}
+                    </td>
+                    <td class="centertext">
+                        {{item.msgTotalCount}}
+                    </td>
+                    <td class="centertext">
+                        {{item.topMsgTotalCount}}天
+                    </td>
+                    <td class="centertext">
+                        {{item.topMsgCostTotalPrice}}元
+                    </td>
+                    <td class="centertext">
+                        {{item.addTimeStr}}
+                    </td>
+                    <td class="centertext">
+                        <a href="javascript:void(0)" class="del" v-on:click="updateState(item.Id)" v-if="item.state==0">屏蔽</a>
+                        <a href="javascript:void(0)" class="edit" v-on:click="updateState(item.Id)" v-else>取消屏蔽</a>
+
+                    </td>
+                </tr>
+
+
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="userlist.length>0"></div>
+        </div>
+
+    </div>
+
+
+
+
+
+</div>
+
+
+<script>
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            recordCount: 0,
+            userlist: [],
+            postdata: {
+                appId:@Html.Raw(ViewBag.appId),
+                startTime:"",
+                endTime:"",
+                userName:"",
+                userPhone:"",
+                pageIndex: 1,
+                pageSize: 10
+            },
+
+        },
+
+        methods: {
+
+            search:function(){
+                var that=this;
+
+                that.postdata.userName=$("#userName").val();
+                that.postdata.userPhone=$("#userPhone").val();
+                that.getList();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+
+            //更新用户状态
+            updateState:function(id){
+                if(id<=0){
+                    layer.msg("请选择需要操作的用户");
+                    return;
+                }
+                var that=this;
+                var index = layer.load(1);
+                $.post("/cityminiapp/UpdateUsersState", {id:id,appId:@ViewBag.appId}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.Msg);
+                    if(data.isok){
+                        window.setTimeout(function () {
+                            window.location.reload();
+                        }, 2000);
+                    }
+
+                })
+
+
+            },
+
+            //获取分类列表
+            getList: function () {
+                var that=this;
+                var index = layer.load(1);
+                $.post("/cityminiapp/getUsers", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.userlist = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },init:function(){
+                var that=this;
+                layui.use(['laydate'], function(){
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#addTime', //指定元素
+                        theme: 'grid',
+                        range: '~',
+                        value: '',
+                        done: function (value, date, endDate) {
+                            $("#addTime").val(value);
+                            if(value != '' && value != 'undefined' )
+                            {
+                                that.postdata.startTime = date.year + "-" + date.month + "-" + date.date;
+                                that.postdata.endTime = endDate.year + "-" + endDate.month + "-" + endDate.date;
+                            }
+                            else
+                            {
+                                that.postdata.startdate = "";
+                                that.postdata.enddate = "";
+                            }
+                        }
+                    });
+                });
+
+            }
+        },created:function(){
+            var that=this;
+            that.getList();
+            that.init();
+        }
+    });
+</script>
+
+
+

@@ -1,0 +1,372 @@
+﻿
+@model ViewModel<EntNewsType>
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "内容分类";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int newsTypeSwtich = ViewBag.newsTypeSwtich;
+}
+
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、分类名称不能超过10个字，且不能重复</p>
+            <p>2、小类总数不能超过12个</p>
+            <p>3、分类若已关联了至少一个资讯，则该分类不可删除</p>
+            <p>4、大类若已关联了至少一个小类，则该大类不可删除</p>
+            <p>5、大类总数不能超过6个</p>
+            <p>6.大类,小类均必需录入</p>
+            <p>7.二级分类模式未开启时，前端只会显示小类类目；开启二级分类，则同时显示大类-小类选择，管理员可随时修改分类显示模式，分类数据及关系不会被删除。</p>
+        </div>
+
+        <div>
+            <button class="btn btn-primary ml10" v-on:click="updateNewsTypeLevel()" v-if="@ViewBag.NewsTypeLevel==0">
+                开启二级分类
+            </button>
+            <button class="btn btn-danger ml10" v-on:click="updateNewsTypeLevel()" v-else>
+                关闭二级分类
+            </button>
+        </div>
+        <div class="mt10">
+
+            <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+                <ul class="layui-tab-title">
+                    <li v-bind:class="[@Model.TypeIndex==0?errorClassTab:activeClassTab]" v-on:click="TabType(1)">小类管理</li>
+                    <li v-bind:class="[@Model.TypeIndex==0?activeClassTab:errorClassTab]" v-on:click="TabType(0)">大类管理</li>
+                </ul>
+                <div class="layui-tab-content">
+                    <div v-bind:class="[@Model.TypeIndex==0?errorClassContent:activeClassContent]">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="100">分类序号</th>
+                                    <th>分类名称</th>
+                                    <th>图片</th>
+                                    <th width="200">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item,index) in list">
+                                    <td>{{index+1}}</td>
+                                    <td>{{item.name}}</td>
+                                    <td>
+                                        <div>
+                                            <img v-bind:src="item.ImgUrl" alt="未上传图片" width="50" height="50" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a v-on:click="del(index)" class="btn btn-danger"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                                        <a v-on:click="edit(index)" class="btn btn-primary"> 编辑 </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                        </table>
+                    </div>
+                    <div v-bind:class="[@Model.TypeIndex==0?activeClassContent:errorClassContent]">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="100">分类序号</th>
+                                    <th>分类名称</th>
+                                    <th>图片</th>
+                                    <th width="200">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item,index) in list">
+                                    <td>{{index+1}}</td>
+                                    <td>{{item.name}}</td>
+                                    <td>
+                                        <div>
+                                            <img v-bind:src="item.ImgUrl" alt="未上传图片" width="50" height="50" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a v-on:click="del(index)" class="btn btn-danger"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                                        <a v-on:click="edit(index)" class="btn btn-primary"> 编辑 </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+
+
+            </div>
+
+
+
+        </div>
+        <div>
+            @{
+                if (Model.PageType == 22 && newsTypeSwtich == 1)
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" disabled="disabled" title="请升级到更高版本">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增分类
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" v-on:click="addNew">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增分类
+                    </button>
+                }
+            }
+
+        </div>
+    </div>
+
+
+    <!-- #region 编辑修改弹窗 -->
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        资讯分类
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        @{
+                            if (Model.PageType == 22 && Model.TypeIndex!=0)
+                            {
+                                <tr>
+                                    <td><span>所属大类：</span></td>
+                                    <td>
+                                       
+                                        <select style="display:inline-block;width:200px;" class="form-control" v-model="edititem.ParentId">
+                                            <option value="-2">请选择</option>
+                                            @{
+
+                                                foreach (EntNewsType item in Model.FirstDataList)
+                                                {
+                                                    <option value="@item.id">@item.name</option>
+                                                }
+                                            }
+
+                                        </select>
+
+                                    </td>
+
+                                </tr>
+
+
+                                                }
+                        }
+                        <tr>
+                            <td><span>分类名称：</span></td>
+                            <td><input maxlength="10" placeholder="分类名称" style="width:200px;" v-model="edititem.name" type="text" class="form-control"></td>
+                        </tr>
+                        <tr>
+                            <td><span>图片：</span></td>
+                            <td>
+                                <span>分类图标：<span style="color:red;">*</span></span><img v-if="edititem.ImgUrl==''" style="margin-left:5px;width:55px;height:55px;" src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180308/97259ef92d7c45c3af657077e734f186.png" /><img v-bind:src="edititem.ImgUrl" v-else style="width:55px;height:55px;margin-left:5px;" />
+                                <a href="#" class="btn btn-info ml10" v-on:click="UploadImg()">上传图标</a>
+
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- #endregion -->
+
+</div>
+<script>
+    layui.use('element', function () {
+        var $ = layui.jquery
+        , element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+    });
+    var typeIndex=@Model.TypeIndex;
+    var item = {
+        id:0,
+        name: "",
+        aid:@appid,
+        state:1,
+        ImgUrl:"",
+        curMaterialPath:"",
+        ParentId:-2
+    };
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            edititem:JSON.parse(JSON.stringify(item)),
+            editid:0,
+            list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+            curMaterialPath:"",
+            activeClassTab: 'tab_element layui-this',
+            errorClassTab: 'tab_element',
+            activeClassContent: 'layui-tab-item layui-show',
+            errorClassContent: 'layui-tab-item',
+        },
+        coumputed:{
+            totalcount:function(){
+                return this.list.length;
+            }
+        },
+        watch:{
+            curMaterialPath:function(){
+                var that=this;
+                that.edititem.ImgUrl=that.curMaterialPath;
+            }
+        },
+        mounted: function () {
+            console.log("mounted");
+        },
+        methods: {
+            updateNewsTypeLevel:function(){
+                $.ajax({
+                    type: 'POST',
+                    url: '/enterprise/UpdateNewsTypeLevel',
+                    data: {appId:@appid},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            TabType:function(typeIndex){
+                window.location.href="/enterprisepro/newstype?appId=@appid&typeIndex="+typeIndex;
+            },
+            UploadImg: function () {
+                var that=this;
+                var framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=0&maxImgSize=1&objKey=curMaterialPath&objType=1&remainCount=1";
+                $("#uploadFrame").attr("src",framSrc);
+                $("#addModal_UploadImg").modal('show');
+
+            },
+            addNew: function () {
+                if(this.list.length>=12){
+                    layer.alert("无法新增分类！您已添加了12个资讯分类，已达到上限，请编辑已有的分类或删除部分分类后再进行新增。");
+                    return;
+                }
+                this.editid = 0;
+                this.edititem=item;
+
+                $('#addModal').modal('show');
+
+            },
+            save: function () {
+                var that=this;
+                var _typename=$.trim(that.edititem.name);
+                if(_typename.length==0||_typename.length>10){
+                    layer.msg("分类名称不能为空，且不能超过10个字",{time:1000});
+                    return;
+                }
+
+                var _imgUrl=$.trim(that.edititem.ImgUrl);
+                if(_imgUrl==null||_imgUrl.length==0){
+                    layer.msg("请先上传图片",{time:1000});
+                    return;
+                }
+
+
+                if(typeIndex!=0&&that.edititem.ParentId<=0){
+                    layer.msg("请选择所属大类",{time:1000});
+                    return;
+                }
+
+
+                if(typeIndex==0){
+                    that.edititem.ParentId=0;
+                }
+
+                $.post("/@(dirName)/newstype", $.extend(that.edititem,{appId:item.aid}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            $('#addModal').modal('hide');
+                            layer.msg("保存成功",{time:1000});
+
+                            window.location.reload();
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            edit:function(index){
+                $('#addModal').modal('show');
+                this.edititem=JSON.parse(JSON.stringify(this.list[index]));
+            },
+            del:function(index){
+                var that=this;
+                layer.open({
+                    title: "删除确认",
+                    content: "确定要删除该分类么？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        $.post("/@(dirName)/newstype",{act:"del",id:that.list[index].id,appId:item.aid})
+                        .then(function(data){
+                            console.log(data);
+                            if(typeof data=="object"){
+                                if(data.isok){
+                                    layer.msg("删除成功",{time:1000});
+                                    that.list.splice(index,1);
+                                }
+                                else{
+                                    layer.alert(data.msg);
+                                }
+                            }
+                            else{
+                                layer.alert(data);
+                            }
+                        });
+
+                    }
+                })
+            }
+        }
+    });
+</script>

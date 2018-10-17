@@ -1,0 +1,499 @@
+﻿@{
+    ViewBag.Title = "代理商列表";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = ViewBag.aid;
+}
+@section styles{
+    <style>
+        #tb tr { display: block; margin-bottom: 10px !important; }
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .nowrap { white-space: nowrap; }
+        .table-condensed th, .table-condensed td { text-align: center; }
+        .search-area { background: rgba(252, 248, 227, 1); padding: 19px 12px; margin-bottom: 1px; }
+    </style>
+}
+<body class="gray-bg">
+
+    <div id="app" v-cloak>
+        <div class="search-area">
+            <div class="row">
+                <div class="col-sm-3 col-lg-2 col-xs-6">电话：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.phone" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">昵称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.nickName" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">父级代理昵称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.fnickName" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">父级代理手机：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.fphone" /></div>
+
+                <div class="col-sm-3 col-lg-3 col-xs-3">
+                    <a href="javascript:;" class="btn btn-sm  btn-primary radius" v-on:click="searchList()"> <i class="fa fa-search"></i> 搜索</a>
+                </div>
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <span>总数：{{recordCount}}</span>
+                </div>
+                <div class="ibox-content xcx-list">
+                    <table class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th width="40">代理ID</th>
+                                <th style="text-align: center;">头像</th>
+                                <th>昵称</th>
+                                <th>电话</th>
+                                <th>父级代理</th>
+                                <th>代理等级</th>
+                                <th>累计入驻费</th>
+                                <th>入驻日期</th>
+                                <th>有效期至</th>
+                                <th>操作</th>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(agent,index) in list">
+                                <td>{{agent.id}}</td>
+
+                                <td align="center" v-if="agent.userInfo!=null"><img :src="agent.userInfo.HeadImgUrl" width="50" v-if="agent.userInfo.HeadImgUrl"></td>
+                                <td v-else><img src="" width="50" alt="没有头像"></td>
+
+                                <td align="center" v-if="agent.userInfo!=null">{{agent.userInfo.NickName}}</td>
+                                <td v-else></td>
+                                <td v-if="agent.userInfo!=null">{{agent.userInfo.TelePhone}}</td>
+                                <td v-else></td>
+                                <td v-if="agent.pinAgentDec!=null">{{agent.pinAgentDec.UserName }}［{{agent.pinAgentDec.AgentLevelName}}］<br />{{agent.pinAgentDec.Phone}}</td>
+                                <td v-else>————</td>
+                                <td>{{agent.AgentLevelName}}</td>
+                                <td><span style="color:cornflowerblue;cursor:pointer;" v-on:click="GetChangeMoneyLog(agent.id)">{{agent.TotalAgentMoney}}</span></td>
+                                <td>{{agent.addTimeStr}}</td>
+                                <td v-if="!agent.IsExpired">{{agent.ExpireTimeStr}}</td>
+                                <td v-else>已过期</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a style="margin-right: 8px;" href="javascript:;" class="btn btn-sm btn-outline btn-default radius confirm" v-on:click="UpdateAgent(agent.id,agent.AgentLevel)">
+                                            <i class="glyphicon glyphicon-arrow-up"></i> 升级
+                                        </a>
+                                        <a style="margin-right: 8px;" href="javascript:;" class="btn btn-sm btn-outline btn-default radius confirm" v-on:click="AddTimeLength(index)">
+                                            <i class="glyphicon glyphicon-retweet"></i> 续费
+                                        </a>
+                                        <a style="margin-right: 8px;" href="javascript:;" class="btn btn-sm btn-outline btn-default radius confirm" v-on:click="setAgent(index,0)">
+                                            <i class="fa fa-trash"></i> 取消代理
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="list.length<=0">
+                                <td colspan="16" align="center">查无数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="postdata.pageSize<recordCount"></div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!--代理费用日志Start-->
+        <div class="modal fade" id="changeLogModal" tabindex="-1" role="dialog" aria-labelledby="changeLogModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="changeLogModalLabel">
+                            代理交费记录
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div style="border-style:none;" class="ibox-content xcx-list">
+                            <table class="table table-hover table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th class="centertext nowrap">操作</th>
+                                        <th>费用</th>
+                                        <th>详情</th>
+                                        <th>发生日期</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr v-for="(log,index) in changeMoneyLoglist">
+                                        <td>{{log.ChangeTypeStr}}</td>
+                                        <td>{{log.ChangeMoneyStr}}</td>
+                                        <td>{{log.Remark}}</td>
+                                        <td>{{log.AddTimeStr}}</td>
+                                    </tr>
+                                    <tr v-if="changeMoneyLoglist.length<=0">
+                                        <td colspan="16" align="center">查无数据</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <nav aria-label="Page navigation" class="text-center">
+                                <div id="logsPages" style="text-align: center;margin-top: 0.5rem;" v-show="changeMoneyLogPostdata.pageSize<changeMoneyLogCount"></div>
+                            </nav>
+
+                        </div>
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+        <!--代理费用日志End-->
+        <!--代理续费Start-->
+        <div class="modal fade" id="addAgentTimeModal" tabindex="-1" role="dialog" aria-labelledby="addAgentTimeModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="addAgentTimeModalLabel">
+                            代理续费
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div style="margin-top:10px;">
+                            <div style="margin-left:55px;">
+                                <table id="tb">
+                                    <tr>
+                                        <td>续期:</td>
+                                        <td>
+                                            <select v-model="selAddTime" :change="changeTime()">
+                                                <option :value="Item.Time" v-for="(Item,index) in curAddTimeList">{{Item.Txt}}</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>收费:</td>
+                                        <td><span>{{selAddTimeMoney}}元</span></td>
+                                    </tr>
+
+
+                                </table>
+
+                            </div>
+                        </div>
+
+
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-primary" v-on:click="SaveAddTimeLength()">
+                            确认
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!--代理续费End-->
+        <!--代理升级等级Start-->
+        <div class="modal fade" id="updateAgentModal" tabindex="-1" role="dialog" aria-labelledby="updateAgentModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="updateAgentModalLabel">
+                            代理升级
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div style="margin-top:10px;">
+                            <div style="margin-left:55px;">
+                                <table id="tb">
+                                    <tr>
+                                        <td>等级:</td>
+                                        <td>
+                                            <select v-model="selUpdateAgentLevel" v-on:change="changeUpdateAgentLevel()">
+                                                <option :value="agentLevel.LevelId" v-for="(agentLevel,index) in NextAgentLevelList">{{agentLevel.LevelName}}</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>收费:</td>
+                                        <td><input type="text" class="form-control" style="width:100px;display: inline;" v-model="selUpdateAgentLevelMoney" value="" />元</td>
+                                    </tr>
+                                    
+                                    <tr>
+                                        <td>期限:</td>
+                                        <td><span>升级后，代理有效期默认重新计算一年有效期，从升级当天起计算</span></td>
+                                    </tr>
+                                    
+
+                                </table>
+
+                            </div>
+                        </div>
+
+
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-primary" v-on:click="SaveUpdateAgent()">
+                            确认
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!--代理升级等级End-->
+
+    </div>
+</body>
+
+@section scripts{
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                list: [],
+                recordCount: 0,
+                postdata:{
+                    pageIndex: 1,
+                    pageSize: 10,
+                    aid:@aid,
+                    phone: '',
+                    nickName: '',
+                    fnickName:'',
+                    fphone:''
+                },
+                NextAgentLevelList:[],
+                selUpdateAgentLevel:-1,
+                selUpdateAgentLevelMoney:0,
+                curAgentId:0,
+                curAddTimeList:[],
+                selAddTime:-1,
+                selAddTimeMoney:0,
+                changeMoneyLoglist: [],
+                changeMoneyLogCount: 0,
+                changeMoneyLogPostdata:{
+                    pageIndex: 1,
+                    pageSize: 5,
+                    aid:@aid,
+                    agentId:0
+                },
+
+            },
+
+            methods: {
+                setAgent: function (index, state) {
+                    var that = this;
+                    if(that.list[index].userInfo==null){
+                        layer.msg("该数据为错误的旧数据,请重新选择");
+                        return;
+                    }
+
+                    if (state == 0) {
+                        layer.confirm("是否确认要取消" + that.list[index].userInfo.NickName + "的代理身份？", { btn: ['确定', '取消'] }, function () {
+                            var layerIndex = layer.load(2);
+                            $.post("/Pin/Config/SetAgent", { aid: that.postdata.aid, userid: that.list[index].userInfo.Id, state: state }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.msg);
+                                if (data.code == 1) {
+                                    that.GetList();
+                                }
+
+                            })
+                        });
+                    }
+
+                },
+
+
+                GetChangeMoneyLog:function(agentId){
+                    var that = this;
+                    var layerIndex = layer.load(2);
+                    that.changeMoneyLogPostdata.agentId=agentId;
+                    $.post("/Pin/Config/GetChangeLogList", that.changeMoneyLogPostdata, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code==1) {
+                            that.changeMoneyLoglist = data.obj.list;
+                            that.changeMoneyLogCount = data.obj.recordCount;
+                            that.changeMoneyLogResetPage();
+                            $('#changeLogModal').modal('show');
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                },
+                changeMoneyLogResetPage: function () {
+                    var that = this;
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'logsPages'
+                            , count: that.changeMoneyLogCount //数据总数，从服务端得到
+                            , curr: that.changeMoneyLogPostdata.pageIndex //当前页
+                            , limit: that.changeMoneyLogPostdata.pageSize
+                            , jump: function (obj, first) {
+                                that.changeMoneyLogPostdata.pageIndex = obj.curr;
+                                //首次执行
+                                if (!first) {
+                                    that.GetChangeMoneyLog();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                SaveUpdateAgent:function(){
+                    var that=this;
+                    var agentFee = that.selUpdateAgentLevelMoney;
+                    var reg = /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
+                    if (!reg.test(agentFee)) {
+                        layer.msg("请输入正确的金额");
+                        return;
+                    }
+                    agentFee = parseInt(agentFee * 100);
+                    if (agentFee <0) {
+                        layer.msg("金额不能为负数");
+                        return;
+                    }
+
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Config/UpdateAgentLevel", { aid: that.postdata.aid,agentLevel:that.selUpdateAgentLevel,agentFee:agentFee,agentId:that.curAgentId }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.code == 1) {
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+
+                    })
+                },
+                changeUpdateAgentLevel:function(){
+                    var that=this;
+                    var obj=that.NextAgentLevelList.find(x=>x.LevelId==that.selUpdateAgentLevel);
+                    if(obj!=undefined&&obj!=null){
+                        that.selUpdateAgentLevelMoney= Number(obj.AgentFeeStr);
+                        return;
+                    }
+                    that.selUpdateAgentLevelMoney=0;
+                    return;
+
+                },
+                UpdateAgent:function(agentId,agentLevel){
+                    var that=this;
+                    if(parseInt(agentId)<=0){
+                        layer.msg("请选择需要升级的代理商");
+                        return;
+                    }
+                    if(parseInt(agentLevel)<0){
+                        layer.msg("当前代理商等级错误");
+                        return;
+                    }
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Config/GetUpdateAgentLevelList", { aid: that.postdata.aid,agentLevel:agentLevel }, function (data) {
+                        layer.close(layerIndex);
+
+                        if (data.code == 1) {
+                            that.NextAgentLevelList=data.obj.list;
+                        }
+
+                    })
+
+                    that.curAgentId=agentId;
+                    $('#updateAgentModal').modal('show');
+
+                },
+                SaveAddTimeLength:function(){
+                    var that=this;
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Config/AddAgentTime", { aid: that.postdata.aid,timeLength:that.selAddTime,agentId:that.curAgentId }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.code == 1) {
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+
+                    })
+                },
+                changeTime:function(){
+                    var that=this;
+                    var obj=that.curAddTimeList.find(x=>x.Time==that.selAddTime);
+                    if(obj!=undefined&&obj!=null){
+                        that.selAddTimeMoney= Number(obj.Money);
+                        return;
+                    }
+                    that.selAddTimeMoney=0;
+                    return;
+                },
+                AddTimeLength:function(index){
+                    if(index<0||index==undefined){
+                        layer.msg("请选择需要续费的代理商");
+                        return;
+                    }
+
+                    var that=this;
+                    that.selAddTime=-1;
+                    that.curAddTimeList=that.list[index].AgentLevelTimeList;
+                    that.curAgentId=that.list[index].id;
+                    $('#addAgentTimeModal').modal('show');
+
+                },
+                GetList: function () {
+                    var that = this;
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Config/GetAgentList", that.postdata, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code==1) {
+                            that.list = data.obj.list;
+                            that.recordCount = data.obj.recordCount;
+                            that.resetPage();
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                },
+                resetPage: function () {
+                    var that = this;
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: that.recordCount //数据总数，从服务端得到
+                            , curr: that.postdata.pageIndex //当前页
+                            , limit: that.postdata.pageSize
+                            , jump: function (obj, first) {
+                                that.postdata.pageIndex = obj.curr;
+                                //首次执行
+                                if (!first) {
+                                    that.GetList();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+
+                searchList: function () {
+                    var that = this;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+
+            },
+            mounted: function () {
+                var that = this;
+                that.GetList();
+            }
+        })
+    </script>
+}

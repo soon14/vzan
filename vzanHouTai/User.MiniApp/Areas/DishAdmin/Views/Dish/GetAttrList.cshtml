@@ -1,0 +1,110 @@
+﻿
+@{
+    ViewBag.Title = "";
+    Layout = null;
+}
+
+<table width="100%" id="attrTable">
+    @if (ViewBag.dishAttrList != null)
+    {
+        //添加
+        if (ViewBag.goods_id == 0)
+        {
+            int line = 0;
+            foreach (var item in ViewBag.dishAttrList)
+            {
+
+                <tr>
+                    <td class=''><a href='javascript:;' onclick='addSpec(this)'>[+]</a>@(item.attr_name)</td>
+                    <td>
+                        <input type='hidden' name='attr[@(line)].id' value='0' />
+                        <input type='hidden' name='attr[@(line)].attr_id' value='@(item.id)' />
+                        <input type='hidden' name='attr[@(line)].goods_id' value='@(ViewBag.goods_id)' />
+                        <input type='hidden' name='attr[@(line)].attr_type_id' value='@(ViewBag.goods_type)' />
+                        <select name="attr[@(line)].value">
+                            <option value="">属性选择</option>
+                            @foreach (var subItem in item.attr_values_arr)
+                            {
+                                <option value="@(subItem)">@(subItem)</option>
+                            }
+                        </select> 价格
+                        <input type="text" name="attr[@(line)].price" value="" size="5" maxlength="10" />元
+                    </td>
+                </tr>
+                ++line;
+            }
+        }
+        //修改
+        else if (ViewBag.goods_id > 0)
+        {
+            int line = 0;
+            HashSet<int> flag = new HashSet<int>();
+            foreach (DishAttr attrItem in ViewBag.dishAttrList)
+            {
+                foreach (DishGoodAttr goodAttrItem in ViewBag.goodAttrList)
+                {
+                    bool isExists = false;
+                    if (attrItem.id == goodAttrItem.attr_id)
+                    {
+                        isExists = flag.Contains(attrItem.id);
+                        if (!isExists)
+                        {
+                            flag.Add(goodAttrItem.attr_id);
+                        }
+
+                        <tr>
+                            <td class=''><a href='javascript:;' onclick='@(!isExists?"addSpec(this)":"removeSpec(this)")'>[@(!isExists ? "+" : "-")]</a>@(attrItem.attr_name)</td>
+                            <td>
+                                <input type='hidden' name='attr[@(line)].id' value='@(goodAttrItem.id)' />
+                                <input type='hidden' name='attr[@(line)].attr_id' value='@(goodAttrItem.attr_id)' />
+                                <input type='hidden' name='attr[@(line)].goods_id' value='@(ViewBag.goods_id)' />
+                                <input type='hidden' name='attr[@(line)].attr_type_id' value='@(ViewBag.goods_type)' />
+
+                                <select name="attr[@(line)].value">
+                                    <option value="">属性选择</option>
+                                    @foreach (var subItem in attrItem.attr_values_arr)
+                                    {
+                                        <option value="@(subItem)" @(goodAttrItem.value == subItem ? "selected" : "")>@(subItem)</option>
+                                    }
+                                </select> 价格
+                                <input type="text" name="attr[@(line)].price" value="@(goodAttrItem.price)" size="5" maxlength="10" />元
+                            </td>
+                        </tr>
+                        ++line;
+                    }
+
+                }
+
+            }
+            List<DishAttr> dishAttrList = (List<DishAttr>)ViewBag.dishAttrList;
+            foreach (DishAttr item in dishAttrList)
+            {
+                if (!flag.Contains(item.id))
+                {
+                    <tr>
+                        <td class=''><a href='javascript:;' onclick='addSpec(this)'>[+]</a>@(item.attr_name)</td>
+                        <td>
+                            <input type='hidden' name='attr[@(line)].id' value='0' />
+                            <input type='hidden' name='attr[@(line)].attr_id' value='@(item.id)' />
+                            <input type='hidden' name='attr[@(line)].goods_id' value='@(ViewBag.goods_id)' />
+                            <input type='hidden' name='attr[@(line)].attr_type_id' value='@(ViewBag.goods_type)' />
+                            <select name="attr[@(line)].value">
+                                <option value="">属性选择</option>
+                                @foreach (var subItem in item.attr_values_arr)
+                                {
+                                    <option value="@(subItem)">@(subItem)</option>
+                                }
+                            </select> 价格
+                            <input type="text" name="attr[@(line)].price" value="" size="5" maxlength="10" />元
+                        </td>
+                    </tr>
+                    ++line;
+                }
+            }
+
+
+        }
+
+    }
+</table>
+

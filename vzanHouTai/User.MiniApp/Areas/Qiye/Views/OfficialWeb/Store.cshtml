@@ -1,0 +1,156 @@
+﻿@using Entity.MiniApp.Qiye
+@{
+    ViewBag.Title = "店铺配置";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+
+@model QiyeStore
+<link href="/content/newhome/css/dzbase.css?2018-3-27" rel="stylesheet" />
+
+<style>
+    td,tr{border:none!important;}
+    .warn { color: red; }
+</style>
+
+
+<div style="height:100%;margin-top:10px;" class="form-horizontal set-form-content backgroundcolorfff" id="app" v-cloak>
+    <div>
+        <table class="table viplevel ml_19">
+
+            <tr>
+
+                <td align="right" valign="top">到店自取：</td>
+                <td align="left">
+                    <div class="d-flex d-flex-center">
+                        <label for="SwitchReceiving">
+                            <input type="checkbox" name="SwitchReceiving" v-model="store.SwitchModel.SwitchReceiving" />
+                        </label>
+                        <label class="forinputmassage color-red">* 开启到店自提功能,为客户提供到门店取货的选择</label>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+
+                <td align="right">
+                    <label>自取地址:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+
+                    <input type="text" maxlength="30" class="form-control" style="display:block;width:500px;cursor:pointer;" v-model="store.Location" readonly="readonly" v-on:click="ChooseLocation()" />
+                </td>
+            </tr>
+   
+            <tr style="display:none;">
+                <td align="right">
+                    <label>客服电话:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="11" class="form-control" style="display:block;width:500px;" v-model="store.Phone" />
+                </td>
+
+            </tr>
+            <tr>
+                <td align="right"></td>
+                <td>
+                    <button type="button" class="btn btn-primary ml10" v-on:click="save()">
+                        保存
+                    </button>
+                </td>
+            </tr>
+
+        </table>
+
+
+
+
+    </div>
+ 
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg dd" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe" src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocationOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+
+</div>
+
+<script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+            store:@Html.Raw(JsonConvert.SerializeObject(Model)),
+        },
+        methods:{
+            /************************地图*****************************/
+            ChooseLocationOK: function () {
+                var that=this;
+                var addr=mapframe.window.document.getElementById("addr_cur").value;
+                var _location = mapframe.window.document.getElementById("poi_cur").value;
+                var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+                if (_location == "") {
+                    layer.msg("您还未选择地理位置！");
+                    return;
+                }
+                _location = _location.split(",");
+                that.store.Location=addr;
+                that.store.Lat = parseFloat(_location[0]);
+                that.store.Lng = parseFloat(_location[1]);
+               // _selMap.scale = parseInt(_zoom) || 15;
+
+                console.log(_location);
+                $("#ChooseLocationModal").modal("hide");
+            },
+            ChooseLocation:function(){
+                $("#ChooseLocationModal").modal("show");
+            },
+       
+            save:function(){
+                var that=this;
+
+                var ret = /^(\d{3,4}-)?\d{6,8}$/;
+                var ret2 = /^(((13[0-9]{1})|(15[0-9]{1})|(18[0-9]{1})|(17[0-9]{1}))+\d{8})$/;
+                //if (!ret.test(that.store.Phone)&&!ret2.test(that.store.Phone)) {
+                //    layer.msg("请填写正确的联系号码");
+                //    return;
+                //}
+                if(that.store.Location==null||that.store.Location==""||that.store.Location.length<=0){
+                    layer.msg("地址描述不能为空",{time:1000});
+                    return;
+                }
+
+         
+                $.post("/Qiye/OfficialWeb/SaveStore", {qiyeStore:that.store,appId:@Model.Aid},function(data){
+
+                    if(data&&data.isok){
+                        layer.msg(data.Msg,{time:1000});
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                    else{
+                        layer.msg(data.Msg,{time:1000});
+                    }
+
+                });
+            },
+         
+          
+           
+
+        }
+    });
+</script>

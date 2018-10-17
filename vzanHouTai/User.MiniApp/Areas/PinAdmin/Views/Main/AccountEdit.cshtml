@@ -1,0 +1,119 @@
+﻿
+@{
+    ViewBag.Title = "密码修改";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+}
+@model PinStore
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    系统管理
+    <span class="c-gray en">&gt;</span>
+    修改密码 
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="aid" value="@Model.aId" />
+        <input type="hidden" name="storeId" value="@Model.id" />
+        <input type="hidden" name="id" value="@Model.id" />
+        <input type="hidden" name="act" value="save" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        登陆用户名：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="loginName" placeholder="" disabled value="@Model.loginName" class="input-text" style="width: 250px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        登陆密码：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <span class="pos-r">
+                            <input type="password" id="password" name="password" maxlength="16" placeholder="请输入新密码" value="" class="input-text" style="width: 250px;">
+                            <div class="dish_m_tips">不填则不更新密码</div>
+                        </span>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        确认密码：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <span class="pos-r">
+                            <input type="password" name="repassword" maxlength="16" placeholder="请输入新密码" value="" class="input-text" style="width: 250px;">
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+
+            //表单验证
+            $("#form-article-add").validate({
+                rules: {
+                    password: {
+                        required: true,
+                        minlength: 6,
+                        maxlength:16,
+                    },
+                    repassword: {
+                        equalTo:"#password"
+                    }
+                },
+                onkeyup: false,
+                focusCleanup: false,
+                success: "valid",
+                submitHandler: function (form) {
+                    var l_index = layer.msg('数据更新中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, { icon: 0 });
+                            } else {
+                                layer.alert("修改成功，请重新登陆", { icon: 1 }, function (index) {
+                                    if (window.parent) {
+                                        window.parent.location.href = "/PinAdmin/main/Logout";
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+    </script>
+
+}

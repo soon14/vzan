@@ -1,0 +1,155 @@
+﻿
+@using Entity.MiniApp.Conf;
+@model List<AgentdepositLog>
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "消费记录";
+}
+
+@section styles{
+    <style>
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .width200 {width: 200px !important;display: inline-block !important;}
+        .width100 {width: 100px !important;display: inline-block !important;}
+        .datetimebox {float: none !important;}
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div id="app" hidden>
+            <div style="margin-left:17px;">
+                <div class="d-flex d-flex-center formsearch">
+                    <span>变更时间：</span>
+                    <input type="text" class="inputs form-control" onfocus="WdatePicker({maxDate:'#F{$dp.$D(\'endtime\')}',doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="starttime" id="starttime" placeholder="开始时间" v-model="postdata.starttime" style="display:inline-block;width:100px;"/>
+                    <input type="text" class="inputs form-control" onfocus="WdatePicker({minDate:'#F{$dp.$D(\'starttime\')}',doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="endtime" id="endtime" placeholder="结束时间" v-model="postdata.endtime"  style="display:inline-block;width:100px;"/>
+                    <span>变更类型：</span>
+                    <select v-model="postdata.type" class="form-control width100">
+                        <option value="-999">全部</option>
+                        <option value="13">开通</option>
+                        <option value="14">续费</option>
+                        <option value="15">充值</option>
+                    </select>
+                    <a href="#" v-on:click="Search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+                    <a href="#" v-on:click="ReSet()" class="btn btn-default ml10">重置</a>&nbsp;
+                </div>
+            </div>
+            <br />
+            <br />
+            <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+                <tr class="active">
+                    <th class="centertext">变更类型</th>
+                    <th class="centertext">变更前金额（元）</th>
+                    <th class="centertext">变更金额（元）</th>
+                    <th class="centertext">变更后金额（元）</th>
+                    <th class="centertext">变更时间</th>
+                    <th class="centertext">变更原因</th>
+                </tr>
+                <tr v-if="datalist!=null && datalist.length>0" v-for="(log,index) in datalist">
+                    <td >{{log.type==16?"开通":(log.type==14?"续费":"充值")}}</td>
+                    <td>{{log.showbeforeDeposit}}</td>
+                    <td>{{log.showcost}}</td>
+                    <td>{{log.showafterDeposit}}</td>
+                    <td>{{log.showaddtime}}</td>
+                    <td>{{log.costdetail}}</td>
+                </tr>
+                <tr v-if="datalist==null || datalist.length==0">
+                    <td colspan="7" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages"  style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                postdata: {
+                    act:"data",
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    name: "",
+                    starttime: "",
+                    endtime: "",
+                    type:-999,
+                },
+                isloading: false,
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Plat/ApplyApp/DepositLog", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.data;
+                        app.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Search:function()
+                {
+                    app.postdata.starttime = $("#starttime").val();
+                    app.postdata.endtime = $("#endtime").val();
+                        
+                    this.getdatalist();
+                },
+                ReSet:function(){
+                    app.postdata= {
+                    act:"data",
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    name: "",
+                    starttime: "",
+                    endtime: "",
+                    type:-999,
+                        }
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+    </script>
+}

@@ -1,0 +1,248 @@
+﻿@using System.Data
+@{
+    Layout = null;
+
+    string tpl = Utility.IO.Context.GetRequest("tpl", "enterprisepro");
+    int mode = Utility.IO.Context.GetRequestInt("mode", 7);
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <link rel="Bookmark" href="http://j.vzan.cc/dz/content/newhome/image/bitbug_favicon.ico">
+    <link rel="Shortcut Icon" href="http://j.vzan.cc/dz/content/newhome/image/bitbug_favicon.ico" />
+    <!--[if lt IE 9]>
+    <script src="~/Areas/DishAdmin/lib/html5shiv.js"></script>
+    <script src="~/Areas/DishAdmin/lib/respond.min.js"></script>
+    <![endif]-->
+    <link rel="stylesheet" type="text/css" href="/Areas/DishAdmin/static/h-ui/css/H-ui.min.css" />
+    <link rel="stylesheet" type="text/css" href="/Areas/DishAdmin/static/h-ui.admin/css/H-ui.admin.css" />
+    <link rel="stylesheet" type="text/css" href="/Areas/DishAdmin/lib/Hui-iconfont/1.0.8/iconfont.css" />
+    <link rel="stylesheet" type="text/css" href="/Areas/DishAdmin/static/h-ui.admin/skin/default/skin.css" id="skin" />
+    <link rel="stylesheet" type="text/css" href="/Areas/DishAdmin/static/h-ui.admin/css/style.css" />
+    <link href="/Areas/DishAdmin/css/dish_module.css" rel="stylesheet">
+    <title></title>
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+
+    <style>
+        .Validform_error, input.error, select.error { background-color: #fbe2e2; border-color: #c66161; color: #c00; }
+        .dish_m_tips { color: #aaa; width: 100%; display: block; margin-top: 5px; font-size: 12px; }
+        .show_iframe .loading { margin: 0 auto; }
+    </style>
+
+    <style type="text/css">
+        .four-grid { color: #ffffff; }
+        .four-agileits { background: #ff4a43; text-align: center; padding: 2em 0; }
+        .four-agileinfo { background: #22beef; padding: 2em 0; text-align: center; }
+        .four-w3ls { background: #a2d200; padding: 2em 0; text-align: center; }
+        .four-text h3 { font-size: 16px; }
+        .four-text h4 { font-size: 30px; }
+        .data-list { }
+        .data-list li { float: left; background: #f1f1f1; margin-right: 10px; padding: 10px 50px; }
+        .tplList label { padding-right: 10px; }
+        .tplList label input { display: inline-block; margin-right: 5px; }
+    </style>
+
+</head>
+<body>
+    <div class="page-container">
+        <div class="panel panel-default">
+            <div class="panel-header">交易统计</div>
+            <div class="panel-body">
+                <form method="post" class="search-form" action="">
+                    <input type="hidden" value="@(tpl)" />
+
+                    <div class="" style="text-align: right;">
+                        <table width="100%">
+                            <tr>
+                                <td align="left">
+                                    <div class="tplList">
+                                        <label><input type="checkbox" value="all" id="tplAll" checked />全部</label>
+                                        <label><input type="checkbox" value="pro" />专业版</label>
+                                        <label><input type="checkbox" value="dish" />智慧餐厅</label>
+                                        <label><input type="checkbox" value="food" />餐饮</label>
+                                        <label><input type="checkbox" value="store" />电商</label>
+                                        <label><input type="checkbox" value="pin" />拼享惠</label>
+                                        <label><input type="checkbox" value="platform" />平台小程序</label>
+                                        <label><input type="checkbox" value="mutistore" />多门店</label>
+                                    </div>
+
+                                </td>
+                                <td>
+                                    <input type="text" name="q_begin_time" id="q_begin_time" readonly placeholder="请选择开始日期" value="@ViewBag.stime" class="input-text" style="width: 150px;">
+                                    &nbsp;<input type="text" name="q_end_time" id="q_end_time" readonly placeholder="请选择结束日期" value="@ViewBag.etime" class="input-text" style="width: 150px;">
+                                    <button name="" id="search" class="btn btn-success" type="button"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+                                    <input type="button" value="最近7天" class="btn btn-success" id="oneweek" />
+                                    <input type="button" value="最近30天" class="btn btn-success" id="onemonth" />
+                                    <input type="button" value="最近1年" class="btn btn-success" id="oneyear" />
+
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </form>
+                @*<div class="form-inline">
+                        <a href="/mgr/charts?tpl=enterprisepro&mode=7" class="btn btn-primary">7天</a>
+                        <a href="/mgr/charts?tpl=enterprisepro&mode=30" class="btn btn-default">30天</a>
+                    </div>*@
+                @*<div id="data_goods" style="height: 600px;"></div>*@
+                <canvas id="myChart" style="width:100%;height:400px;"></canvas>
+                <div style="clear: both;"></div>
+            </div>
+        </div>
+    </div>
+    <!--全局js-->
+    <!--[if IE 6]>
+    <script src="~/Areas/DishAdmin/lib/DD_belatedPNG_0.0.8a-min.js" ></script>
+    <script>DD_belatedPNG.fix('*');</script>
+    <![endif]-->
+    <!--[if lt IE 9]>
+    <script src="~/Areas/DishAdmin/static/jquery-1.10.2.min.js"></script>
+    <![endif]-->
+    <!--[if gte IE 9]><!-->
+    <script src="/Areas/DishAdmin/static/jquery-2.0.3.min.js"></script>
+    <!--<![endif]-->
+    <script src="/Areas/DishAdmin/static/h-ui/js/H-ui.min.js"></script>
+    <script src="/Areas/DishAdmin/static/h-ui.admin/js/H-ui.admin.js"></script>
+
+    <!--插件-->
+    <script src="/Areas/DishAdmin/lib/layer/2.4/layer.js"></script>
+    <script src="/Areas/DishAdmin/lib/jquery.contextmenu/jquery.contextmenu.r2.js"></script>
+    <script src="/Areas/DishAdmin/lib/TimePicker/jquery-timepicker.js"></script>
+    <script src="/Areas/DishAdmin/lib/My97DatePicker/4.8/WdatePicker.js"></script>
+    <script src="/Areas/DishAdmin/lib/jquery.validation/1.14.0/jquery.validate.js"></script>
+    <script src="/Areas/DishAdmin/lib/jquery.validation/1.14.0/validate-methods.js"></script>
+    <script src="/Areas/DishAdmin/lib/jquery.validation/1.14.0/messages_zh.js"></script>
+    <!--页面自定义js-->
+    @*<script src="/Areas/DishAdmin/lib/echarts.common.js"></script>*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+    <script src="/Areas/DishAdmin/lib/laydate/laydate.js"></script>
+
+    <script type="text/javascript">
+
+
+        $(function () {
+
+            laydate.render({
+                elem: '#q_begin_time',
+                format: 'yyyy-MM-dd',
+                //type:'datetime',
+                event: 'focus',
+                //theme: 'molv'
+            });
+            laydate.render({
+                elem: '#q_end_time',
+                format: 'yyyy-MM-dd',
+                //type: 'datetime',
+                event: 'focus',
+                //theme: 'molv'
+            });
+
+
+
+        var _lineColors = [
+            { tid: 'all', color: "red" },
+            { tid: 'pro', color: "green" },
+            { tid: 'dish', color: "yellow" },
+            { tid: 'food', color: "blue" },
+            { tid: 'store', color: "gray" },
+            { tid: 'pin', color: "#36648B" },
+            { tid: 'platform', color: "#0000CD" },
+            { tid: 'mutistore', color: "#00CED1" },
+        ];
+
+        var config = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                title: {
+                    display: true,
+                    text: ''
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                    }],
+                    yAxes: [{
+                        display: true,
+                    }]
+                }
+            }
+        };
+        function searchData(tpl,stime,etime){
+            $.post("/mgr/charts",{act:'sel',tpl,stime,etime}).then(function(data){
+                config.data.labels = data.Labels;
+                        config.data.datasets = [];
+                        data.LinList.forEach(function (dataset) {
+                            layer.closeAll();
+                            var colorObj = _lineColors.filter(function (d) {
+                                return d.tid == dataset.TId;
+                            });
+                            colorObj = colorObj != undefined && colorObj.length > 0 ? colorObj : [{tid:-999,color:gray}]
+                            var line =
+                            {
+                                label: dataset.Name,
+                                backgroundColor: colorObj[0].color,
+                                borderColor: colorObj[0].color,
+                                fill: false,
+                                data: dataset.Datas,
+                            }
+                            config.data.datasets.push(line);
+                        });
+
+                window.myChart.update();
+
+            });
+        }
+
+            var ctx = document.getElementById("myChart").getContext('2d');
+            window.myChart = new Chart(ctx,config );
+
+            searchData('all','@(DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd 00:00:00"))','@(DateTime.Now.ToString("yyyy-MM-dd 23:59:59"))');
+
+
+            $(document).on("click","#search",function(){
+                var checked=$(".tplList :checkbox:checked");
+                var checkedValue=[];
+                checked.each(function(i,o){
+                    checkedValue.push($(o).val());
+                });
+                checkedValue=checkedValue.join(",");
+                console.log(checkedValue);
+                searchData(checkedValue,$("#q_begin_time").val(),$("#q_end_time").val());
+
+            }).on("click","#oneweek",function(){
+                $("#q_begin_time").val('@(DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd"))')
+                $("#q_end_time").val('@(DateTime.Now.ToString("yyyy-MM-dd"))')
+                $("#search").click();
+            }).on("click","#onemonth",function(){
+                $("#q_begin_time").val('@(DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd"))')
+                $("#q_end_time").val('@(DateTime.Now.ToString("yyyy-MM-dd"))')
+                $("#search").click();
+            }).on("click","#oneyear",function(){
+                $("#q_begin_time").val('@(DateTime.Now.AddYears(-1).ToString("yyyy-MM-dd"))')
+                $("#q_end_time").val('@(DateTime.Now.ToString("yyyy-MM-dd"))')
+                $("#search").click();
+            });
+        });
+
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,166 @@
+﻿@model Tuple<Entity.MiniApp.Tools.ReturnGoods, List<EntGoodsCart>>
+@{
+    //物流信息组件
+    ViewBag.Title = "退货详情";
+    Layout = "";
+    var returnInfo = Model.Item1;
+    var returnGoods = Model.Item2;
+
+    if(string.IsNullOrWhiteSpace(returnInfo.Remark))
+    {
+        returnInfo.Remark = "无";
+    }
+    string returnType = string.Empty;
+    if(returnInfo.ReturnType == (int)ReturnGoodsType.专业版退货退款)
+    {
+        returnType = "申请退货并退款";
+    }
+    if(returnInfo.ReturnType == (int)ReturnGoodsType.专业版退换货)
+    {
+        returnType = "申请退换货";
+    }
+    string picSizeExt = "@!300x300";
+    string[] pics = returnInfo.UploadPics.Split(new char[] { ',' , '，' },StringSplitOptions.RemoveEmptyEntries);
+}
+
+<head>
+    <link rel="stylesheet" href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=2" />
+    <script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <table lay-skin="nob" class="layui-table" style="margin: 0px;">
+            <tbody>
+                <tr>
+                    <td class="right"><span>申请时间：</span></td> 
+                    <td class="left">@returnInfo.AddTime.ToString()</td>
+                </tr>
+                <tr>
+                    <td class="right"><span>退货申请类型：</span></td> 
+                    <td class="left">
+                        <label>@(returnType)</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="right"><span>退货原因：</span></td> 
+                    <td class="left"><input type="text" class="input-sm form-control w200" value="@(returnInfo.Reason)" style="display: inline-block;" disabled="disabled"></td>
+                </tr>
+                <tr>
+                    <td class="right"><span>退货备注：</span></td> 
+                    <td class="left"><input type="text" class="input-sm form-control w200" value="@(returnInfo.Remark)" style="display: inline-block;" disabled="disabled"></td>
+                </tr>
+                <tr>
+                    <td class="right"><span>申请退货类型：</span></td>
+                    <td class="left">
+                        <label>@(returnType)</label>
+                    </td>
+                </tr>
+                @if (returnInfo.ReturnType == (int)ReturnGoodsType.专业版退货退款)
+                {
+                    <tr>
+                        <td class="right"><span>退款金额：</span></td>
+                        <td class="left">
+                            <label>￥@(returnInfo.ReturnAmount * 0.01)</label>
+                        </td>
+                    </tr>
+                }
+                <tr>
+                    <td class="right"><span>退货商品：</span></td>
+                    <td class="left">
+                        @foreach(var good in returnGoods)
+                        {
+                            <label>@(good.GoodName) X @(good.Count) @(good.SpecInfo.IsNullOrWhiteSpace() ? null : string.Format("（{0}）", good.SpecInfo))</label><br />
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td class="right"><span>退款凭证：</span></td>
+                    <td class="left">
+                        @if (pics.Length > 0)
+                        {
+                            <div class="pimg">
+                                @foreach (var pic in pics)
+                                {
+                                    <img src="@pic@(picSizeExt)" data-ext="@(picSizeExt)" onclick="viewFullPic('@pic')">
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <label>无上传图片</label>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+
+<script>
+    function viewFullPic(imgUrl) {
+        var parentWindow = this.window.parent;
+        var layIndex = parentWindow.layer.open({
+            //content: '<p><img src="' + imgUrl + '"></p>',
+            content: imgUrl,
+            type:2,
+            area: ['800px','800px'],
+            title: null,
+            btn: [],
+            shadeClose: true,
+            success: function () {
+                //setTimeout(function () { parentWindow.$('#layui-layer' + layIndex).css('width', ''); }, 1000);
+            }
+        });
+    }
+</script>
+
+<style>
+    #app{
+        padding:2rem
+    }
+
+    #app .right{
+        width:15rem;
+    }
+
+    .layui-form-switch {
+        width: 57px;
+        margin-top: 0px;
+    }
+
+    .layui-form {
+        padding: 1.4rem;
+    }
+
+    .layui-form-label {
+        width: auto;
+    }
+
+    .companyBtn {
+        padding-left: 0;
+        color: rgb(63, 164, 237);
+        cursor: pointer;
+    }
+
+    .layui-form-radio span {
+        display: none !important;
+    }
+
+    .layui-timeline {
+        margin-left: 1.4rem;
+        margin-top: 1.4rem;
+    }
+
+    .layui-input-block label {
+        font-size: 15px;
+    }
+
+    .layui-elem-quote {
+        margin-bottom: 0;
+    }
+</style>

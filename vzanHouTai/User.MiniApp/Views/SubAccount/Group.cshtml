@@ -1,0 +1,138 @@
+﻿@model Tuple<AuthGroup, List<NavMenu>>
+@{
+    ViewBag.Title = "Setting";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    AuthGroup group = Model.Item1 == null ? new AuthGroup() : Model.Item1;
+    List<NavMenu> menu = Model.Item2;
+}
+
+@section styles{
+    <style>
+        .layui-table th, .layui-table td {
+            text-align: center !important;
+        }
+
+        .layui-form-switch {
+            margin-top: 0px !important;
+            width: 56px !important;
+            line-height: 25px !important;
+            height: 25px !important;
+        }
+         .el-form-item .el-form-item__label { width: 90px !important; }  .el-input-group input { text-align: center; } 
+    </style>
+    <!-- 引入element-ui-组件库 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+}
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <a class="btn btn-danger radius" style="margin-left:0px;" href="/pin/admin/index?aid=@aid&act=add">返回</a>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list">
+
+            <div id="app" v-loading="Posting">
+                <el-form label-width="80px">
+                    <el-form-item label="名称：">
+                        <el-input v-model="Group.Name" maxlength="100" placeholder="请输入分组名称，如' 客服组 '" size="small" style="width:20%"></el-input>
+                    </el-form-item>
+                    <el-form-item label="管理菜单：">
+                        <el-select v-model="Navmenu"
+                                   multiple
+                                   filterable
+                                   allow-create
+                                   default-first-option
+                                   placeholder="请选择管理菜单">
+                            @if (menu != null)
+                            {
+                                foreach (NavMenu item in menu)
+                                {
+                                    <el-option v-bind:key="@item.Id"
+                                               V-bind:label="'@item.Name'"
+                                               v-bind:value="@item.Id">
+                                    </el-option>
+                                }
+                            }
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="备注：" style="margin-bottom:0">
+                        <el-input v-model="Group.Remark" maxlength="100" placeholder="选填" size="small" style="width:20%"></el-input>
+                    </el-form-item>
+                    <el-form-item label="&ensp;">
+                        <el-button @@click="save" type="primary" size="small">保存</el-button>
+                    </el-form-item>
+                </el-form>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+<script id="groupData" type="application/json">@Html.Raw(JsonConvert.SerializeObject(group))</script>
+<input id="appId" value="@aid" type="hidden"/>
+<input id="backUrl" value="/pin/admin/index?aid=@aid&act=add" type="hidden" />
+@section scripts{
+    <!-- 引入element-ui-组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script type="text/javascript">
+        Vue.config.silent = true;
+        $(function () {
+            groupData = JSON.parse($('#groupData').text());
+            aId = $('#appId').val();
+            backUrl = $('#backUrl').val()
+            buildApp(groupData, aId, backUrl);
+        })
+
+        function buildApp(group, aId, backUrl) {
+            var app = new Vue({
+                el: "#app",
+                data: {
+                    aId: aId,
+                    Group: groupData,
+                    Posting: false,
+                },
+                computed: {
+                    Navmenu: {
+                        get: function () {
+                            menu = [];
+                            if (this.Group.NavMenu) {
+                                menu = JSON.parse(this.Group.NavMenu).map(item => item.itemId);
+                            }
+                            return menu;
+                        },
+                        set: function (value) {
+                            menu = '';
+                            if (value.length > 0) {
+                                menu = JSON.stringify(value.map(item => { return { itemId: item }}));
+                            }
+                            this.Group.NavMenu = menu;
+                        }
+                    }
+                },
+                methods: {
+                    save: function () {
+                        var thisApp = this;
+                        thisApp.Posting = true;
+                        $.post('/SubAccount/UpdateGroup', {
+                            aId: thisApp.aId, updateGroup: thisApp.Group
+                        }).then(function (result) {
+                            if (!result.code) {
+                                layer.msg(result.msg);
+                                thisApp.Posting = false;
+                                return;
+                            }
+                            location.replace(backUrl)
+                        }).fail(function (result) {
+                            thisApp.Posting = false;
+                            layer.msg('网络异常');
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+}

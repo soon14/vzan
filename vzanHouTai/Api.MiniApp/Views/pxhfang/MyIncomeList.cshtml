@@ -1,0 +1,181 @@
+﻿@using Entity.MiniApp.Pin
+@model PinAgent
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="/Content/pxhfang/css/base.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/reset.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/normalize.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/fontcss.css">
+    <script src="http://j.vzan.cc/dz/content/newhome/lib/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <title>抽成列表</title>
+    <style>
+        .header { height: 36vw; background-image: url("http://i.vzan.cc/image/png/2018/7/14/105936b6c96cd868664d21b1adfb35c62abca0.png"); background-size: cover; padding-bottom: 2.6666666666666665vw; }
+
+        .user-img { width: 18.4vw; height: 18.4vw; border-radius: 9.2vw; border: 4rpx solid rgba(182, 182, 182, 1); }
+
+        .head-line { width: 0.26666666666666666vw; height: 8vw; background-color: #eee; }
+
+        .go-back { width: 17.866666666666667vw; line-height: 7.2vw; font-size: 3.7333333333333334vw; position: fixed; background: rgba(255, 255, 255, 0.2); top: 2.933333333333333vw; left: 4vw; border-radius: 3.6vw; color: white; padding-right: 1.3333333333333333vw; }
+                .level-css {            border: 0.13333333333333333vw solid #999;            color: #999;            text-align: center;        }
+                .grey-border {
+            border: 0.5333333333333333vw solid rgba(182, 182, 182, 1);
+        }
+    </style>
+    <script>
+
+
+    </script>
+</head>
+
+<body>
+    <div id='data'>
+        <div class="fc go-back" v-on:click='goBack()'>
+            <span class="dzicon icon-zhuanyebaniconkuozhan_leftarr t32 f-B"></span>
+            <div>返回</div>
+        </div>
+
+        <!-- header -->
+        <div class='header f-cc'>
+            <div class='fc user-img'>
+                <img src='@Model.userInfo.HeadImgUrl' mode='aspectFill' class='w130h130b grey-border'></img>
+            </div>
+            <span class='cfff t36'>@Model.userInfo.NickName</span>
+        </div>
+        <div class="h190 w690 f c bgcfff mb20 ml30" style="margin-top:-4vw">
+            <div class="f-cc w5005">
+                <span class="t54 f-B">{{count}}</span>
+                <span class="c666 t26 mt8" v-if="requestData.type==0">{{requestData.extractType==0?'代理数':'二级代理数'}}</span>
+                <span class="c666 t26 mt8" v-if="requestData.type==1">{{requestData.extractType==0?'商户数':'二级商户数'}}</span>
+            </div>
+            <div class="head-line"></div>
+            <div class="f-cc w5005">
+                <span class="t54 f-B">{{moneyProfit}}</span>
+                <span class="c666 t26 mt8">获得佣金</span>
+            </div>
+        </div>
+        <!-- list -->
+        <div v-for="item in list" class="bgcfff pl20">
+            <div class="f c h160 bobof0 pr20">
+                <img :src="item.headImg" class="w100h100b mr20">
+                <div class="fsb f1 l44">
+                    <div class="f-c">
+                        <div class="f">
+                            <span class="c333 t32 f-B">{{item.name}}</span>
+                            <div class="level-css t32 ml20 padl20" v-if="requestData.type==0">{{item.agentLevelName}}</div>
+                        </div>
+                        <span class="t24 c666">{{item.addtime}}加盟</span>
+                    </div>
+                    <div class="f-c">
+                        <span class="c333 t26">{{item.phone}}</span>
+                        <span class="t24 c666">
+                            抽成:
+                            <span class="cf0033">{{item.income}}</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</body>
+
+<script>
+    var Gajax = function (url, data, type, callback) { //请求方法
+        $.ajax({
+            type: type,
+            url: url,
+            data: data,
+            dataType: "json",
+            success: function (data) {
+                if (data.code == 1) {
+                    callback(data);
+                } else {
+                    alert(data.msg);
+                }
+            }
+        });
+    }
+    function GetIncomeList(data) {
+        var that = this;
+        Gajax("http://testwtapi.vzan.com/api/apiPin/GetIncomeList", data, 'GET', function (callback) {
+            that.data.count = callback.obj.count;
+            that.data.moneyProfit = callback.obj.sum;
+            if (data.isreachBottom == 0) {
+                that.data.list = callback.obj.list;
+                that.data.requestData.pageIndex++;
+            } else {
+                that.data.canLoadMore = true;
+                if (callback.obj.list.length > 0) {
+                    that.data.requestData.pageIndex++;
+                    that.data.list = that.data.list.concat(callback.obj.list)
+                }
+            }
+        })
+    }
+    var data = new Vue({
+        el: '#data',
+        data: {
+            canLoadMore: true,
+            count: 0,
+            moneyProfit: 0,
+            requestData: {
+                pageIndex: 1,
+                pageSize: 10,
+                type: 0, //0代理商 1商户
+                extractType: 0, //0一级代理商商户 1二级代理商商户
+                isreachBottom: 0,
+                utoken: '@ViewBag.utoken',
+            },
+            list: []
+        },
+        mounted() {
+            $(function () {
+                var url = location.search; //获取url中"?"符后的字串
+                var theRequest = new Object();
+                if (url.indexOf("?") != -1) {
+                    var str = url.substr(1);
+                    strs = str.split("&");
+                    for (var i = 0; i < strs.length; i++) {
+                        theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+                    }
+                }
+                data.requestData.type = theRequest.type;
+                data.requestData.extractType = theRequest.extractType;
+                data.requestData.isreachBottom = 0;
+                GetIncomeList(data.requestData);
+
+                $(window).scroll(function (e) {
+                    var sT = $(window).scrollTop();
+                    var tH = $(window).height();
+                    if (sT + 250 > tH * 0.60 && data.canLoadMore) {
+                        data.canLoadMore = false;
+                        data.requestData.isreachBottom = 1;
+                        GetIncomeList(data.requestData);
+                    }
+                })
+            })
+        },
+        methods: {
+            goBack: function () {
+                history.go(-1);
+               
+            }
+
+        }
+    });
+
+</script>
+
+</html>
+

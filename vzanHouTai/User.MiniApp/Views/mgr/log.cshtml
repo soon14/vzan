@@ -1,0 +1,166 @@
+﻿
+@model ViewModel<log4netsyslog>
+@{
+                /**/
+
+                Layout = null;
+
+                List<SelectListItem> hostList = new List<SelectListItem>() {
+new SelectListItem(){ Text="testwtapi.vzan.com",Value="testwtapi.vzan.com"},
+new SelectListItem(){ Text="testdz.vzan.com",Value="testdz.vzan.com"},
+new SelectListItem(){ Text="dz.vzan.com",Value="dz.vzan.com"},
+new SelectListItem(){ Text="wtapi.vzan.com",Value="wtapi.vzan.com"},
+new SelectListItem(){ Text="testdzchx.vzan.com",Value="testdzchx.vzan.com"},
+new SelectListItem(){ Text="testdzwx.vzan.com",Value="testdzwx.vzan.com"},
+new SelectListItem(){ Text="apiwx.vzan.com",Value="apiwx.vzan.com"},
+};
+
+                List<SelectListItem> levelList = new List<SelectListItem>() {
+
+new SelectListItem(){ Text="ERROR",Value="ERROR"},
+new SelectListItem(){ Text="INFO",Value="INFO"},
+};
+                string host = Utility.IO.Context.GetRequest("Host", "");
+                string level = Utility.IO.Context.GetRequest("Level", "");
+                SelectListItem def_host = hostList.Find(p => p.Value == host);
+                if (def_host != null)
+                {
+                    def_host.Selected = true;
+                }
+                SelectListItem def_level = hostList.Find(p => p.Value == level);
+                if (def_level != null)
+                {
+                    def_level.Selected = true;
+                }
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>日志</title>
+
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        .pager span { border: 1px solid #ddd; background-color: #fff; padding: 6px 12px; position: relative; display: inline-block; margin-left: -1px; }
+        .pager span:first-child { margin-left: 0; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+        .pager span:last-child { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+        .pager span.active { background-color: #337ab7; border-color: #337ab7; color: #fff; }
+        .pager span.active > a { background-color: #337ab7 !important; border: 0 !important; }
+        .pager .page-picker { padding: 0; }
+        .pager .page-picker > span { border: 0; margin-left: 1px; }
+        .pager .page-picker input { height: 20px; border: 1px solid #ccc; width: 40px; margin-left: 10px; }
+        #logDetailContent { background-color: #ffffcc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <table class="table">
+            <tr>
+                <td>
+                    <div>
+                        <form action="/mgr/log" method="get" name="logSearch">
+                            <div class="form-inline">
+                                @Html.DropDownList("Host", hostList, "全部站点", new { @class = "form-control" })
+                                @Html.DropDownList("Level", levelList, new { @class = "form-control" })
+                                @Html.TextBox("kw", "", new { @class = "form-control", placeholder = "关键词查询" })
+                                <input type="submit" class="btn btn-primary" value="查询" />
+                                <input type="button" class="btn btn-danger" value="只保留最近七天" id="btn-clearall" />
+                            </div>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <table class="table table-condensed">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>站点</th>
+                    <th>日志类别</th>
+                    <th>日志源</th>
+                    @*<th>详情</th>*@
+                    <th>记录时间</th>
+                    <th>操作</th>
+                </tr>
+                @foreach (log4netsyslog item in Model.DataList)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.Host</td>
+                        <td>@item.Level</td>
+                        <td>@item.Logger</td>
+                        @*<td>
+                                <div style="">
+                                    <pre>
+                                    @if (item.Level == "INFO")
+                                    {
+                                        @Html.Raw(item.MsgBody);
+                                    }
+                                    @if (item.Level == "ERROR")
+                                    {
+                                        @Html.Raw(item.MsgException);
+                                    }
+                                </pre>
+                                </div>
+                            </td>*@
+                        <td>@item.CreateDate</td>
+                        <td><a class="btn btn-sm btn-primary btn-log-detail" data-id="@item.Id">查看详情</a></td>
+                    </tr>
+                }
+            </thead>
+        </table>
+        <div class="pager">
+            @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+        </div>
+        <div class="modal fade" tabindex="-1" role="dialog" id="logDetailModal">
+            <div class="modal-dialog modal-lg" role="document" style="width:1300px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">日志详情</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            <pre id="logDetailContent"></pre>
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="@(WebSiteConfig.cdnurl)js/jquery-2.1.4.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/js/bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $(document)
+                .on("click", ".btn-log-detail", function () {
+                    var id = $(this).data("id");
+                    $.post("/mgr/logmgr", { act: "sel", id: id }, function (data) {
+                        $("#logDetailContent").html(data.msg);
+                        $("#logDetailModal").modal("show");
+                    });
+
+                })
+                .on("click", "#btn-clearall", function () {
+                    if (confirm("确定要删除吗")) {
+                        $.post("/mgr/logmgr", { act: "delall" }, function () {
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 1000);
+                        });
+                    }
+                })
+                .on("change", "#Level,#Host", function () {
+                    document.forms["logSearch"].submit();
+                });
+        });
+    </script>
+</body>
+</html>

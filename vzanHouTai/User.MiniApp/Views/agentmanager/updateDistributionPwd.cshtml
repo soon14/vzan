@@ -1,0 +1,147 @@
+﻿@using Entity.MiniApp.Conf
+@model  Distribution
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <meta charset="utf-8" />
+    <title>资料编辑</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="" name="author" />
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+    @*
+        <link href="@WebSiteConfig.SourceContent/content/??css/layer/layer.css" rel="stylesheet">*@
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    @*
+    <script src="@(WebSiteConfig.cdnurl)content/layer/layer.js"></script>*@
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+    <script src="//j.vzan.cc/fcontent/plugin/vue.min.js"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/agent/css/zzsc.css" rel="stylesheet" />
+    <style>
+        .userInfo {
+            width: 90%;
+            margin-top:50px;
+        }
+
+            .userInfo span {
+                color: red;
+            }
+
+            .userInfo td {
+                padding: 8px 5px;
+                width: 250px;
+                text-align: left;
+            }
+
+        .textname {
+            text-align: right !important;
+            width: 100px !important;
+        }
+
+        .userInfo input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            margin-left: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: montserrat;
+            color: #2C3E50;
+            font-size: 13px;
+        }
+
+        table.layui-form td {
+            padding: 7px 0px;
+        }
+
+    </style>
+</head>
+<body>
+    @if (Model != null)
+    {
+        <div id="editdiv">
+            <table class="userInfo">
+                <tr>
+                    <td class="textname">
+                        <span>*</span>请输入新密码：
+                    </td>
+                    <td>
+                        <input type="password" class="form-control" id="pwd" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="textname">
+                        <span>*</span>请再次输入密码：
+                    </td>
+                    <td>
+                        <input type="password" class="form-control" id="pwd_again" />
+                    </td>
+                </tr>
+
+            </table>
+            <div style="width:100%;text-align:center; margin-top:30px;">
+                <a href="javascript:;" class="layui-btn layui-btn-normal" onclick="saveInfo()">确认修改</a>
+                <a href="javascript:;" class="layui-btn layui-btn-primary" onclick="closewin()">取消</a>
+            </div>
+        </div>
+    }
+    <script>
+        layui.use('layer', function () {
+            var layer = layui.layer;
+        });  
+        function closewin() {
+            var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+            parent.layer.close(index); //再执行关闭
+        }
+        function saveInfo() {
+
+            var pwd = $("#pwd").val();
+            if (!(/^[a-zA-Z\d]+$/).test(pwd)) {
+                layer.msg("只能用数字或者字母作为密码");
+                return;
+            }
+            if (pwd.length < 6) {
+                layer.msg("密码长度不够，请输入至少6位密码");
+                return;
+            }
+            var pwd_again = $("#pwd_again").val();
+            if (pwd_again != pwd) {
+                layer.msg("两次密码不一致");
+                return;
+            }
+            if (pwd.length > 20) {
+                layer.msg("密码长度太长，请勿超过20字");
+                return;
+            }
+            var postdata = {
+                id:@Model.AgentId,
+                pwd: pwd,
+                pwd_again: pwd_again
+            }
+            var ind =layer.load(1);
+            $.post("/agentmanager/saveDistributionPwd", postdata, function (data) {
+                layer.close(ind);
+                layer.msg(data.Msg);
+                if (data.isok) {
+                    layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                        layer.load(1);
+                        closewin();//do something
+                    });
+                } else {
+                    layer.msg(data.Msg);
+                }
+            });
+
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+﻿@{
+    //小程序专业店铺二维码配置
+    ViewBag.Title = "模板选择";
+    Layout = "";
+}
+
+<link rel="stylesheet" href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=1" />
+<script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/js/vue.min.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+<style>
+    .ggtable tr, td {
+        border-top: none !important;
+    }
+    .choosemodel > li {float: left;text-align: center;width: 15rem;height: 22rem;margin: 15px 15px;border: solid 1px #E4E4E4;}
+    .choosebtn {border: solid 1px #63B503;width: 50%;text-align: center;margin: auto;height: 25px;border-radius: 25px;line-height: 25px;cursor:pointer;}
+    .choosebtn > a {color: #63B503;text-decoration-line: none;}
+    .graybtn {border: solid 1px #999999;width: 80%;text-align: center;margin: auto;height: 25px;border-radius: 25px;line-height: 25px;cursor:pointer;}
+    .graybtn > a {color: #999999;text-decoration-line: none;}
+    .shengjibtn {border: solid 1px #FF9933;width: 50%;text-align: center;margin: auto;height: 25px;border-radius: 25px;line-height: 25px;cursor:pointer;}
+    .shengjibtn > a {color: #FF9933;text-decoration-line: none;}
+    .bottombtnbox {text-align: center;position: fixed;bottom: 100px;left: 40%;}
+    .footbottombox{height: 50px;width: 97%;left: 0;background-color: #ffc;z-index: 9999;position: fixed;bottom: 0;text-align:center;}
+        /*.bottombtnbox > a {color: white;display: block;width: 80px;border-radius: 4px;height: 30px;line-height: 30px;background: -webkit-linear-gradient(0,#00D65B,#00F63B);text-decoration: none;cursor: pointer;margin: 0 auto;}*/
+    .nodatabox {text-align: center;height: 100%;}
+        .nodatabox > p {font-size: 15px;font-family: 黑体;color: gray;}
+</style>
+<div id="vuebox" v-cloak>
+    <div v-if="dataObj!=null && dataObj.TotalCount>0" >
+        <ul style="overflow:auto;height: 600px;" class="choosemodel">
+            <!--单页版-->
+            <li v-for="(item,index) in dataObj.DataList"  v-bind:style="item.CustommodelId>0?borderdata:''">
+                <div>
+                    <!--图标及名称状态-->
+                    <div>
+                        <div style="background-color: #F2F2F2;position:relative;height:15rem;">
+                            <img v-if="item.VersionId<3" v-bind:src="item.VersionIdImg" style="width:50%;height:50%;position:absolute;left:50%;"/>
+                            <img v-bind:src="item.ImgUrl" class="tpl-img" style="width:100%;height:15rem;">
+                        </div>
+                        <div style="margin: 10px auto;">
+                            <div style="width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{item.Name}}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <!--按钮-->
+                        <div class="shengjibtn" v-if="dataObj.AgentId>0 && dataObj.VersionId>item.VersionId" v-bind:style="{'background-color':(item.CustommodelId>0?'#63B503':'')}"  v-on:click="shengji(index)">
+                            <a>升级</a>
+                        </div>
+                        <div class="graybtn" v-else-if="dataObj.VersionId>item.VersionId" v-bind:style="{'background-color':(item.CustommodelId>0?'#63B503':'')}">
+                            <a>当前版本不支持</a>
+                        </div>
+                        <div class="choosebtn" v-else v-bind:style="{'background-color':(item.CustommodelId>0?'#63B503':'')}" v-on:click="chooseModel(index)">
+                            <a v-bind:style="{'color':(item.CustommodelId>0?'#fff !important':'')}">选择</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <div class="d-flex d-flex-center footbottombox">
+            <a v-on:click="nextclick()" class="btn btn-primary btn-lg" style="font-size: 12px;margin-top:5px;">下一步</a>
+            <a v-on:click="backdata()" class="btn btn-primary btn-lg" style="font-size: 12px;margin-top:5px;">还原</a>
+        </div>
+    </div>
+    <div class="nodatabox" v-else>
+        <img style="margin-top:5%;" src="@(WebSiteConfig.cdnurl)content/newhome/image/noTpl.png?@WebSiteConfig.cdnVersion">
+        <p>装修模板还未上线</p>
+    </div>
+</div>
+
+<script>
+    var _layer = parent.layer;
+    var _vdata = new Vue({
+        el: "#vuebox",
+        data: {
+            appId: @ViewBag.appId,
+            dataObj:{TotalCount:1},
+            pageIndex: 1,
+            pageSize:1000,
+            openconfigindex:0,
+            borderdata:{
+                'border':'solid 1px #63B503'
+            },
+            choosebtnstyle:{
+                'background-color':'#63B503',
+                'color':'#fff !important'
+            },
+            currentid:0,
+        },
+        watch: {
+            dataObj: {
+                handler: function (dataObj) {
+                    dataObj.DataList.forEach(function (o, i) {
+                        switch (o.VersionId) {
+                            case 2: o.VersionIdImg = "@(WebSiteConfig.cdnurl)content/newhome/image/choosemodel_a.png?@WebSiteConfig.cdnVersion"; break; //高级
+                            case 1: o.VersionIdImg = "@(WebSiteConfig.cdnurl)content/newhome/image/choosemodel_b.png?@WebSiteConfig.cdnVersion"; break; //尊享
+                            case 0: o.VersionIdImg = "@(WebSiteConfig.cdnurl)content/newhome/image/choosemodel_c.png?@WebSiteConfig.cdnVersion"; break; //旗舰
+                        }
+                    })
+                },
+                deep: true
+            }
+        },
+        methods: {
+            getDatalist: function () {
+                $.post("/config/GetCustomModelList", {appId:this.appId,pageIndex:this.pageIndex,pageSize:this.pageSize}, function (data) {
+                    if (!data.isok) {
+                        _layer.msg(data.Msg);
+                    } else {
+                        _vdata.dataObj = data.dataObj;
+                        window.parent.app["oldtemplateid"]=data.dataObj.ModelTemplateId;
+                        window.parent.app["templateid"]=data.dataObj.ModelTemplateId;
+
+                        _vdata.resetPage();
+                    }
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: _vdata.dataObj.TotalCount //数据总数，从服务端得到
+                        , curr: _vdata.pageIndex //当前页
+                        , limit: _vdata.pageSize
+                        , jump: function (obj, first) {
+                            _vdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                _vdata.getDatalist();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            chooseModel:function(index){
+                var data = _vdata.dataObj.DataList[index];
+                if(data.CustommodelId>0)
+                {
+                    data.CustommodelId = 0;
+                    window.parent.app["templateid"]=0;
+                }
+                else{
+                    _vdata.dataObj.DataList.forEach(function(o,i){
+                        o.CustommodelId=0;
+                    });
+                    data.CustommodelId = data.Id;
+                    _vdata.currentid =data.Id;
+                    window.parent.app["templateid"]=data.Id;
+                }
+            },
+            shengji:function(index){
+                var data = _vdata.dataObj.DataList[index];
+                $.ajax({
+                    type: "Post",
+                    url: "/config/UpGrade",
+                    data:{AId:_vdata.dataObj.AId,AgentId:_vdata.dataObj.AgentId},
+                    success: function (result) {
+                        window.open("/agentmanager/OpenTemplate");
+                    }
+                });
+            },
+            nextclick:function(){
+                if (window.parent.app["templateid"] <= 0) {
+                    return _layer.msg("请选择装修模板");
+                }
+                else if (window.parent.app["templateid"] != window.parent.app["oldtemplateid"])
+                {
+                    $.ajax({
+                        type: "Post",
+                        url: "/config/CopyTemplate",
+                        data:{appId:_vdata.appId,templateid:_vdata.currentid},
+                        success: function (data) {
+                            if (data.isok) {
+                                window.parent.app["oldtemplateid"] = window.parent.app["templateid"];
+                                parent.frames["PersonRenovation"].location.href="/enterprisepro/pageset?appId="+_vdata.appId+"&templateid="+_vdata.currentid+"&SouceFrom=TemplateDecoration#tab_page=PersonRenovation";
+                                parent.element.tabChange('settingTab', "PersonRenovation")
+                                _layer.close(_vdata.openconfigindex);
+                                _vdata.openconfigindex = 0;
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                        }
+                    });
+                    //_vdata.openconfigindex = _layer.confirm('更改模板将会替换原有的装修数据，是否确定？', {
+                    //    btn: ['确定', '取消'] //按钮
+                    //}, function () {
+                    //    $.ajax({
+                    //        type: "Post",
+                    //        url: "/config/CopyTemplate",
+                    //        data:{appId:_vdata.appId,templateid:_vdata.currentid},
+                    //        success: function (data) {
+                    //            if (data.isok) {
+                    //                window.parent.app["oldtemplateid"] = window.parent.app["templateid"];
+                    //                parent.frames["PersonRenovation"].location.reload()
+                    //                parent.element.tabChange('settingTab', "PersonRenovation")
+                    //                _layer.close(_vdata.openconfigindex);
+                    //                _vdata.openconfigindex = 0;
+                    //            }
+                    //            else {
+                    //                _layer.msg(data.Msg);
+                    //            }
+                    //        }
+                    //    });
+                    //}, function () {
+                    //});
+                }
+                else{
+                    parent.element.tabChange('settingTab', "PersonRenovation")
+                }
+            },
+            backdata:function(){
+                _vdata.openconfigindex = _layer.confirm('还原上一个版本的装修数据，操作不可逆，是否确定？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.ajax({
+                        type: "Post",
+                        url: "/config/BackTemplate",
+                        data:{AId:_vdata.appId},
+                        success: function (data) {
+                            if (data.isok) {
+                                parent.window.location.reload();
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                        }
+                    });
+                }, function () {
+                });
+            },
+        },
+        mounted: function () {
+            this.getDatalist();
+            $("#vuebox").show();
+        }
+    });
+</script>

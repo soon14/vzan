@@ -1,0 +1,1739 @@
+﻿@using Entity.MiniApp.Fds;
+@using User.MiniApp.comment
+@model FoodGoods
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "餐饮菜品管理";
+    List<object> imglist = (List<object>)ViewBag.CarouselList;
+    if (imglist == null)
+    {
+        imglist = new List<object>();
+    }
+    var freightIdArray = Model.FreightIds.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+    List<FoodFreightTemplate> FreightList = ViewBag.FreightList;
+
+    int goodtype = ViewBag.goodtype;
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/css/shopping-mall-backstage.css">
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/css/shopping-mall-shangpinguanli.css">
+<style>
+    .twxq-new-kuang { border: 1px solid #ccc; padding: 10px; margin-right: 10px; background: #fff; }
+
+    .twxq-edit-zhanshi { border: 2px dashed #fc7d7d; padding: 10px; min-height: 108px; position: relative; }
+
+    .spgl-bianji-bt { position: absolute; bottom: 0; right: 0; display: inline-block; background-color: rgba(0,0,0,0.3); color: #fff; padding: 0 5px; margin-left: 1px; font-size: 12px; }
+
+    .bz { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+    .spxqq-f p:first-child { font-size: 17px; }
+
+    .spxqq-f { text-align: center; margin-top: 17px; line-height: 25px; }
+    /*多规格增加样式*/
+    .fr { float: right; }
+    .fl { float: left; }
+    ul, li { list-style: none; }
+    .rel { position: relative; }
+
+    .new-spgg { margin-left: 0; display: inline-block; padding: 15px; background: #fff; }
+    .plus-pic-f { background: #fff; }
+    .spec_add { border-top: none; margin-top: -3px; }
+    .bg_spec { background-color: #3283fa; }
+    .sc-syzx-show1 table { border-collapse: collapse; width: 100%; }
+    .sc-syzx-show1 th, td { border: 1px solid #DDD !important; }
+    .noborder td { border: none !important; }
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<input name="appId" type="hidden" id="appId" value="@ViewBag.appId" />
+@Html.HiddenFor(m => m.Id, new { name = "Id" })
+@Html.HiddenFor(m => m.FoodId, new { name = "FoodId" })
+<input name="goods_spec_ids" type="hidden" id="goods_spec_ids" />
+<input type="hidden" value="@Model.AttrDetail" id="AttrDetail" />
+<input type="hidden" value="@Model.Inventory" id="tempInventory" />
+<input type="hidden" value="@Model.Stock" id="tempStock" />
+<input type="hidden" value="@Model.ImgUrl" id="ImgUrl" />
+<div>
+    <table class="table table-condensed table-hover cancel-table-td-border noborder">
+        <tr>
+            <td style="text-align: right;" width="30%">菜品图片：<label style="color: red">*</label></td>
+            <td class="CarouselList">
+                @Html.FileUploadFor("CarouselList", maxFiles: 1, initImageList: (List<object>)ViewBag.CarouselList, controllerWidth: 150, removeCallback: "removeAttachmentFunction")
+                <label class="forinputmassage">点击灰色区域选择上传图片 ( 300*300px )</label>
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">菜品标题：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.GoodsName, new { @class = "form-control width300", palcehlder = "1-40字", maxlength = "30", style = "width:300px;" })
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">菜品分类：<label style="color: red">*</label></td>
+            <td>
+                <select id="TypeId" class="form-control width400">
+                    <option value="0">请选择菜品分类</option>
+                    @foreach (var item in (List<FoodGoodsType>)ViewBag.GoodTypeList)
+                {
+                    <option value="@item.Id" @(Model.TypeId.Equals(item.Id.ToString()) ? "selected" : "")>@item.Name</option>
+            }
+                </select>
+                <input type="button" class="btn btn-primary width100" id="addGoodTypeInfo" value="新增菜品分类" />
+            </td>
+        </tr>
+        <tr class="labelTr" @(ViewBag.goodtype == (int)EntGoodsType.拼团产品 ? "hidden" : "")>
+            <td style="text-align: right;">
+                菜品标签：@*<label style="color: red">*</label>*@
+                <br />
+                (点击删除)
+            </td>
+
+            <td>
+                <div class="labelDiv" width="800px">
+                    @foreach (var x in ViewBag.LabelList)
+                {
+                    <div class="itemDiv" style="float:left" onclick="deleteLabel(this)">
+                        <input class="col-sm-2 btn btn-default " data-id="@x.Id" data-state="@x.State" maxlength="8" type="button" style="color:#108EE9;width:80px;background-color:white;border-color:#5e97fa; margin-bottom:8px;" value="@x.LabelName" onclick="check(this)" />
+                        @*<span style="color:red">x</span>*@
+                        <span>&nbsp; &nbsp;</span>
+                    </div>
+                    @*<span>@x</span>*@
+            }
+                </div>
+                @*<div class="panel-body ">
+
+                </div>*@
+                @*<div>
+                    最多可添加25个标签
+                </div>*@
+            </td>
+        </tr>
+        <tr @(ViewBag.goodtype == (int)EntGoodsType.拼团产品 ? "hidden" : "")>
+            <td></td>
+            <td>
+                <div width="800px">
+                    <input type="button" class="btn btn-primary width100 col-sm-2" id="addGoodLabelInfo" value="选择标签" />
+                    <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass" @*style="background-color:#5e97fa;"*@>
+                        <span class="glyphicon glyphicon-ok"></span>
+                        添加标签
+                    </a>
+                </div>
+            </td>
+        </tr>
+        <tr hidden>
+            <td style="text-align: right;">是否热销：<label style="color: red"></label></td>
+            <td>
+                <select id="IsHot" class="form-control width150">
+                    <option value="0" @(Model.IsHot == 0 ? "selected" : string.Empty)>否</option>
+                    <option value="1" @(Model.IsHot == 1 ? "selected" : string.Empty)>是</option>
+                </select>
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">添加菜品规格：</td>
+            <td>
+                <div class="sc-syzx-show1 new-spgg" id="specs">
+                    <div class="rel mt-spacing">
+                        <input id="plus_guige" value="添加规格项目" class="btn btn-success temp-btn-setting" @(Model.Id > 0 && ViewBag.goodtype == (int)EntGoodsType.拼团产品 ? "disabled" : "") />
+                        <span>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </span>
+
+                    </div>
+                    <!--规格与规格值-->
+                    @*<div style="display:@(goodtype==1 && Model.Id>0?"block":"none");height:100%;width:100%;position:absolute;z-index: 9999;opacity: 0.5;background-color: gray;top:0px;left:0px;">
+                    </div>*@
+                </div>
+            </td>
+        </tr>
+
+        <tr name="tr_active">
+            <td style="text-align: right;">排序：<label style="color: red">*</label></td>
+            <td>
+                <input name="sort" id="sort" value="@Model.Sort" class="form-control width400" />
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">@(goodtype == (int)EntGoodsType.拼团产品 ? "单买价" : "售卖价格")：<label style="color: red">*</label></td>
+            <td>
+                <input name="Price" id="Price" @(goodtype == (int)EntGoodsType.拼团产品 && Model.Id > 0 ? "disabled" : "") maxlength="7" placeholder="请输入售卖价格" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.Price == 0 ? "0" : (Model.Price*0.01).ToString("0.00"))" class="form-control width400" />
+            </td>
+        </tr>
+        <tr name="tr_active" hidden>
+            <td style="text-align: right;">菜品原价：</td>
+            <td>
+                <input name="OriginalPrice" id="OriginalPrice" maxlength="7" placeholder="请输入菜品原价" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="0.00" class="form-control width300" />
+                @*<input name="OriginalPrice" id="OriginalPrice" maxlength="7" placeholder="请输入菜品原价" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.OriginalPrice == 0 ? "0" : (Model.OriginalPrice*0.01).ToString("0.00"))" class="form-control width300" />*@
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">菜品总库存：<label style="color: red">*</label></td>
+            <td>
+                <input name="Inventory" id="Inventory" maxlength="7" placeholder="请输入菜品总库存" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.Inventory==0?"":Model.Inventory.ToString())" class="form-control width400" />
+            </td>
+        </tr>
+
+        @*start 拼团*@
+        @if (goodtype == (int)EntGoodsType.拼团产品)
+    {
+        <tr hidden>
+            <td style="text-align: right;" width="20%">外卖：<label style="color: red">*</label></td>
+            <td>
+                <input class="openTakeOutRadio" name="openTakeOutRadio" type="radio" value="1" @(Model.openTakeOut == 1 ? "checked" : "") /> 开启
+                <input class="openTakeOutRadio" name="openTakeOutRadio" type="radio" value="0" @(Model.openTakeOut == 0 ? "checked" : "") /> 关闭
+            </td>
+        </tr>
+        <tr hidden>
+            <td style="text-align: right;" width="20%">自助点餐：<label style="color: red">*</label></td>
+            <td>
+                <input class="openTheShopRadio" name="openTheShopRadio" type="radio" value="1" checked="checked" ) /> 开启
+                <input class="openTheShopRadio" name="openTheShopRadio" type="radio" value="0" /> 关闭
+            </td>
+        </tr>
+        <tr>
+            <td width="125" align="right" valign="top">拼团价：<label style="color: red">*</label></td>
+            <td align="left">
+                <input name="GroupPriceStr" id="GroupPriceStr" @(Model.Id > 0 ? "disabled" : "") value="@Model.EntGroups.GroupPriceStr" maxlength="7" placeholder="拼团价" class="form-control width400 inputdecimal" />
+            </td>
+        </tr>
+        <tr>
+            <td align="right" valign="top">原价：<label style="color: red">*</label></td>
+            <td align="left">
+
+                <input id="OriginalPriceStr" name="OriginalPriceStr" @(Model.Id > 0 ? "disabled" : "") value="@Model.EntGroups.OriginalPriceStr" maxlength="7" placeholder="原价" class="form-control width400 inputdecimal" />
+            </td>
+        </tr>
+        <tr>
+            <td align="right" valign="top">团长减价：<label style="color: red">*</label></td>
+            <td align="left">
+                <input name="HeadDeductStr" id="HeadDeductStr" maxlength="7" @(Model.Id > 0 ? "disabled" : "") value="@Model.EntGroups.HeadDeductStr" placeholder="团长减价" class="form-control width400 limitinput inputdecimal " />
+            </td>
+        </tr>
+        <tr>
+            <td align="right" valign="top">成团人数：<label style="color: red">*</label></td>
+            <td align="left">
+                <input type="text" maxlength="2" placeholder="成团人数" value="@Model.EntGroups.GroupSize" id="GroupSize" name="GroupSize" onkeyup="value = value.replace(/[^\d]/g, '')" class="form-control width400">
+            </td>
+        </tr>
+        <tr>
+            <td align="right" valign="top">每用户限购：<label style="color: red">*</label></td>
+            <td align="left">
+                <select class="form-control width400" id="LimitNum" name="LimitNum">
+                    <option value="0" @(Model.EntGroups.LimitNum == 0 ? "selected" : "")>不限</option>
+                    @for (var i = 1; i <= 20; i++)
+                {
+                    <option value="@i" @(Model.EntGroups.LimitNum == i ? "selected" : "")>@i</option>
+            }
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right" valign="top">初始化销售量：<label style="color: red">*</label></td>
+            <td align="left">
+                <input type="text" maxlength="9" placeholder="销售量" id="InitSaleCount" onkeyup="value = value.replace(/[^\d]/g, '')" value="@Model.EntGroups.InitSaleCount" class="form-control width400">
+                <span style="color:orange;">适量的初始化销售量可促进销售业绩</span>
+            </td>
+        </tr>
+}
+else
+{
+    <tr>
+        <td style="text-align: right;" width="20%">外卖：<label style="color: red">*</label></td>
+        <td>
+            <input class="openTakeOutRadio" name="openTakeOutRadio" type="radio" value="1" @(Model.openTakeOut == 1 ? "checked" : "") /> 开启
+            <input class="openTakeOutRadio" name="openTakeOutRadio" type="radio" value="0" @(Model.openTakeOut == 0 ? "checked" : "") /> 关闭
+        </td>
+    </tr>
+    @*<tr>
+        <td style="text-align: right;" width="20%">是否收取餐盒费：<label style="color: red">*</label></td>
+        <td>
+            <label><input class="openTakeOutRadio" name="isPackinRadio" type="radio" value="0" @(Model.isPackin == 0 ? "checked" : "") /> 否</label>
+            <label><input class="openTakeOutRadio" name="isPackinRadio" type="radio" value="1" @(Model.isPackin == 1 ? "checked" : "") /> 是</label>
+        </td>
+    </tr>*@
+    <tr>
+        <td style="text-align: right;" width="20%">自助点餐：<label style="color: red">*</label></td>
+        <td>
+            <input class="openTheShopRadio" name="openTheShopRadio" type="radio" value="1" @(Model.openTheShop == 1 ? "checked" : "") /> 开启
+            <input class="openTheShopRadio" name="openTheShopRadio" type="radio" value="0" @(Model.openTheShop == 0 ? "checked" : "") /> 关闭
+        </td>
+    </tr>
+}
+
+        @*end 拼团*@
+        <tr>
+            <td style="text-align: right;">菜品简介：@*<label style="color: red">*</label>*@</td>
+            <td class="DescImgList">
+                @Html.TextAreaFor(m => m.Introduction, new { @class = "form-control width500", style = "height:180px;", maxlength = 100 })
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <input type="button" class="btn btn-primary width100" id="btnSave" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal bs-example-modal-sm" id="editLabelModal" tabindex="-1" role="dialog" aria-labelledby="editLabelModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content" style="width:600px">
+            <div class="modal-header">
+                <span>设定标签</span>
+            </div>
+            <div class="modal-body text-center">
+
+            </div>
+
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="checkLabelComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!--添加规格值-->
+<ul class="clearfix bz tjgg-tk ggz_tk_js" style="display:none; left: -170px;height: 50px;z-index: 1500;width: 367px;">
+    <li class="fl" style="height: 200px;overflow-x:hidden;overflow-y:auto;">
+        <input class="bz click-turn" type="text" placeholder="添加规格值" maxlength="8">
+    </li>
+    <li class="fl m-left10">
+        <a class="blue-sure-bt" onclick="add_goods_gsp('',this)">确定</a>
+    </li>
+    <li class="fl m-left10">
+        <a class="cancel-bt">取消</a>
+    </li>
+    <span class="white-triangle" style="left: 180px;"></span>
+</ul>
+<!--添加规格弹框-->
+<ul id="plus_guige_tk" class="clearfix bz tjgg-tk" style="display: none;height: 50px;z-index: 1500;width: 367px">
+    <li class="fl" style="height: 200px;overflow-x:hidden;overflow-y:auto; ">
+        <input class="bz click-turn" type="text" placeholder="请输入规格" id="specf" maxlength="8">
+    </li>
+    <li class="fl m-left10">
+        <a class="blue-sure-bt" onclick="add_goods_spec('')">确定</a>
+    </li>
+    <li class="fl m-left10">
+        <a class="cancel-bt">取消</a>
+    </li>
+    <span class="white-triangle"></span>
+</ul>
+<script type="text/html" id="addlabel">
+    <span>新建标签名称：</span>
+    <input id='addlabelname' type="text" class="form-control" placeholder="名称最多8个字" value='' maxlength="8" />
+</script>
+<div style="border: solid 1px;z-index: 1000;position: absolute;left: 0%;top: 0%;width: 100%;height: 100%;background-color: rgba(25, 24, 24, 0.35);display:none;" id="cover_black"></div>
+@*<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>*@
+@*<script type="text/html" id="js_article_content">
+        @Html.Raw(Model.Description)
+    </script>*@
+@*添加菜品分类*@
+<script type="text/html" id="addoredita">
+    <span>新建分类名称：</span>
+    <input id='goodtypename' type="text" class="form-control" placeholder="名称少于8个字" value='' maxlength="8" />
+</script>
+<script>
+    //#region 公共
+    var _reg_price = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+    var _reg_count = new RegExp("^[0-9]*$");
+
+    function removeErrorBorder(data)
+    {
+        $(data).css('border','')
+        $(data).closest("td").find("p").remove();
+    }
+    function addErrorBorder(data,msg)
+    {
+        $(data).css('border','1px solid #b94a48')
+        $(data).parent().append("<p>"+msg+"</p>");
+        return false;
+    }
+    //校验输入值
+    function checkInputValue(data)
+    {
+        var flag = true;
+        var inputvalue = $(data).val();
+
+        //去除错误提示样式
+        removeErrorBorder(data);
+        //拼团价，原价，价格校验
+        if(data[0].name.indexOf("originalPrice")>=0 || data[0].name.indexOf("price")>=0 || data[0].name.indexOf("groupPrice")>=0){
+            if (inputvalue == null || inputvalue == undefined || inputvalue == '') {
+                //加上错误提示样式
+                flag = addErrorBorder(data,data[0].placeholder);
+            }
+            else if(!_reg_price.test(inputvalue))
+            {
+                //加上错误提示样式
+                flag = addErrorBorder(data,"只能输入小数后两位的正数");
+            }
+            else
+            {
+                var i = parseFloat(1000000);
+                inputvalue = parseFloat(inputvalue);
+                if(inputvalue>i || inputvalue<=0){
+                    //加上错误提示样式
+                    flag = addErrorBorder(data,"范围为0.01-1000000");
+                }
+            }
+        }else if(data[0].name.indexOf("count")>=0 ){//库存校验
+            if (inputvalue == null || inputvalue == undefined || inputvalue == '') {
+                //加上错误提示样式
+                flag = addErrorBorder(data,data[0].placeholder);
+            }
+            else if(!_reg_count.test(inputvalue))
+            {
+                //加上错误提示样式
+                flag = addErrorBorder(data,"库存只能是正整数");
+            }
+            else{
+                var num = parseInt(inputvalue);
+                if(num>9999){
+                    //加上错误提示样式
+                    flag = addErrorBorder(data,"规格库存最高为9999");
+                }
+            }
+        }
+
+        return flag;
+    }
+    //#endregion
+    function deleteLabel(x)
+    {
+        $(x).remove();
+    }
+
+    var StoreId = $("#StoreId").val();
+    $(function () {
+        var StoreId = $("#StoreId").val();
+
+        // #region 保存
+        $('#btnSave').on('click', function () {
+
+            var Id = $('#Id').val();
+            var appId = $("#appId").val();
+
+            var carouselAlert = false;
+            if ($('.CarouselList .dz-image-preview').length > 0) {
+                $('.CarouselList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        carouselAlert = true;
+                    }
+                });
+            }
+            if (carouselAlert) {
+                return layer.msg('轮播图上传失败 ! ').html();
+            }
+
+            var GoodsName = $('#GoodsName').val();
+            if (GoodsName.length === 0) return layer.msg("请填写菜品标题");
+            if (GoodsName.length > 30) {
+                return layer.msg("菜品标题最多30个字！");
+            }
+
+            var imgListAlert = false;
+            if ($('.DescImgList .dz-image-preview').length > 0) {
+                $('.DescImgList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        imgListAlert = true;
+                    }
+                });
+            }
+            if (imgListAlert) {
+                return layer.msg('详情图上传失败 ! ').html();
+            }
+
+            var Price = 0;
+            var OriginalPrice = 0;
+            var Inventory = $('#Inventory').val();
+            var Stock = $('#Inventory').val();
+            var Sort = $("#sort").val();
+            var needjudge = 0;
+            var bmoney = $('#Price').val();
+            if (bmoney.length === 0) return layer.msg("请输入售卖价格");
+            if (bmoney!="") {
+                var price_save = bmoney * 1000000 / 10000;
+                if (parseInt(price_save) <= 0) {
+                    layer.msg("售卖价格不能低于1分钱！");
+                    return false;
+                } else
+                    Price = price_save;
+                needjudge = 1;
+            }
+
+            if (!/^-?[0-9]\d*$/.test(Sort)) {
+                layer.msg("排序：请输入0~999999999之间的数字");
+                return false;
+            }
+            if (Sort < 0 || Sort > 999999999) {
+                layer.msg("排序：请输入0~999999999之间的数字");
+                return false;
+            }
+
+
+
+            var cmoney = $('#OriginalPrice').val();
+            if (cmoney.trim()=="") cmoney=0;
+            var price_save = cmoney * 1000000 / 10000;
+            OriginalPrice = price_save;
+            if (1 == needjudge && OriginalPrice!=0) {
+
+                if (parseInt(cmoney * 100) <= parseInt(bmoney * 100)) {
+                    layer.msg("菜品原价必须大于售卖价格！");
+                    return false;
+                }
+            }
+
+            var labels = ",";
+            $(".labelDiv input").each(function(i,x)
+            {
+                labels+=$(x).data("id")+",";
+            });
+
+            //菜品分类
+            var TypeId = $("#TypeId").val();
+            if (TypeId <= 0)
+            {
+                layer.msg('请选择菜品分类！');
+                return false;
+            }
+
+            //缩略图
+            var ImgUrl = $("#ImgUrl").val();
+            //轮播图
+            var ImgList = '';
+            var doimglist = $('input[name="CarouselList"]');
+            if(doimglist.length>0)
+            {
+                doimglist.each(function (i, n) {
+                    ImgList += '|' + $(n).val();
+                });
+                ImgUrl = doimglist[0].value;
+            }
+            else if(@imglist.Count<=0){
+                layer.msg('必须上传最少一张轮播图！');
+                return false;
+            }
+
+            var imgListAlert = false;
+            if ($('.DescImgList .dz-image-preview').length > 0) {
+                $('.DescImgList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        imgListAlert = true;
+                    }
+                });
+            }
+            if (imgListAlert) {
+                return layer.msg('详情图上传失败 ! ').html();
+            }
+
+            //编辑图
+            var DescImgList = '';
+            $('input[name="DescImgList"]').each(function (i, n) {
+                DescImgList += '|' + $(n).val();
+            });
+
+            var freightIds = "";
+            $(".checkbox-ickeck").each(function(){
+                if($(this).prop("checked")){
+                    freightIds+=$(this).val() +",";
+                }
+            });
+
+            var msg = "";
+            var minGroupPrice=1000000000;
+            var minOriginalPrice=1000000000;
+            //规格字符串，规格值校验
+            var AttrDetail="";
+            jQuery(".spec_price").each(function(index,data){
+                //原价
+                var dataoriginalPrice = $(this).closest("tr").find(".spec_originalPrice");
+                //拼团价
+                var datagroupPrice = $(this).closest("tr").find(".spec_groupPrice");
+                //价格
+                var dataprice = $(this);
+                //库存
+                var datacount = $(this).closest("tr").find(".spec_count");
+
+                if((@goodtype==1 && (!checkInputValue(dataoriginalPrice) || !checkInputValue(datagroupPrice))) || !checkInputValue(dataprice) || !checkInputValue(datacount))
+                {
+                    msg = '菜品多规格有误，请重新填写！'
+                    return false;
+                }
+
+                var id = dataprice.attr("gsp_ids");
+                var price = dataprice.val();
+                var count = datacount.val();
+                var originalPrice = dataoriginalPrice.val();
+                var groupPrice = datagroupPrice.val();
+                AttrDetail=id+","+count+","+price+","+originalPrice+","+groupPrice+";"+AttrDetail;
+
+                if(@goodtype==1)
+                {
+                    if(Number(originalPrice)<=Number(price))
+                    {
+                        msg = '原价要大于价格！';
+                        return false;
+                    }
+                    if(Number(price)<=Number(groupPrice))
+                    {
+                        msg = '价格要大于拼团价！';
+                        return false;
+                    }
+                    if(minGroupPrice>Number(groupPrice))
+                    {
+                        minGroupPrice = Number(groupPrice);
+                    }
+                    if(minOriginalPrice > Number(originalPrice))
+                    {
+                        minOriginalPrice = Number(originalPrice);
+                    }
+                }
+
+            });
+            jQuery("#AttrDetail").val(AttrDetail);
+            
+            if(msg.length>0)
+            {
+                return layer.msg(msg);
+            }
+
+            //总库存校验
+            var count = jQuery("#Inventory").val();
+            if (count == null || count == undefined || count == '' || count==0) {
+                layer.msg('请输入总库存！');
+                return false;
+            }else{
+                var reg = new RegExp("^[0-9]*$");
+                if(!reg.test(count)){
+                    layer.msg('库存只能是正整数！');
+                    return false;
+                }else{
+                    var num = parseFloat(count);
+                    if(num>1000000){
+                        layer.msg('库存最高为1000000！');
+                        return false;
+                    }
+                }
+            }
+
+            var IsHot=$("#IsHot").val();
+
+            var goods_spec_ids = "";
+            jQuery(".guige-zhi").each(function(index,data){
+                var spec_id = jQuery(this).find(".guige-zhi-close").attr("spec_id");
+                goods_spec_ids+=spec_id+",";
+            });
+            //规格值id
+            jQuery("#goods_spec_ids").val(goods_spec_ids);
+            //规格字符串
+            //var AttrDetail="";
+            //jQuery(".spec_price").each(function(index,data){
+            //    var id = jQuery(this).attr("gsp_ids");
+            //    var price = jQuery(this).val();
+            //    var count = jQuery(this).closest("tr").find(".spec_count").val();
+            //    var originalPrice = jQuery(this).closest("tr").find(".spec_originalPrice").val();
+            //    var groupPrice = jQuery(this).closest("tr").find(".spec_groupPrice").val();
+            //    AttrDetail=id+","+count+","+price+";"+AttrDetail;
+            //});
+            //jQuery("#AttrDetail").val(AttrDetail);
+
+            //视频
+            //var videopath = $("#videopath").val();
+            //var oldvid = $("#oldvedio").val();
+
+            //#region 拼团
+            var GroupPriceStr=Math.ceil($("#GroupPriceStr").val()*100);
+            var OriginalPriceStr=Math.ceil($("#OriginalPriceStr").val()*100);
+            var HeadDeductStr=Math.ceil($("#HeadDeductStr").val()*100);
+
+            var LimitNum = $("#LimitNum").val();
+            var GroupSize=$("#GroupSize").val();
+            var GroupPrice=0;
+            var HeadDeduct=0;
+            var entgroup = {};
+            minOriginalPrice = Math.ceil(minOriginalPrice*100);
+            minGroupPrice = Math.ceil(minGroupPrice*100);
+
+            if(@goodtype==1)
+            {
+                //如果没有选择规格
+                if (goods_spec_ids.length == 0) {
+                    if (Number(GroupPriceStr) <= 0) {
+                        layer.msg("请输入拼团价！");
+                        return;
+                    }
+                    if (Number(Price) <= 0) {
+                        layer.msg("请输入单买价！");
+                        return;
+                    }
+                    if (Number(OriginalPriceStr) <= 0) {
+                        layer.msg("请输入原价！");
+                        return;
+                    }
+
+                    if (Number(OriginalPriceStr) <= Number(Price)) {
+                        layer.msg("原价必须大于单买价！");
+                        return false;
+                    }
+                    if (Number(Price) <= Number(GroupPriceStr)) {
+                        layer.msg("单买价必须大于拼团价格！");
+                        return false;
+                    }
+                    if (Number(GroupPriceStr) <= Number(HeadDeductStr)) {
+                        layer.msg("团长减价必须小于拼团价！");
+                        return false;
+                    }
+
+                    GroupPrice = GroupPriceStr;
+                    minOriginalPrice = OriginalPriceStr;
+                }
+                else {
+                    if (Number(minGroupPrice) <= Number(HeadDeductStr)) {
+                        layer.msg("团长减价必须小于拼团价！");
+                        return false;
+                    }
+
+                    GroupPrice = minGroupPrice;
+                }
+
+                if(GroupSize<=0)
+                {
+                    layer.msg("请输入成团人数！");
+                    return;
+                }
+
+                HeadDeduct = HeadDeductStr;
+                entgroup = {HeadDeduct:HeadDeduct,GroupSize:GroupSize,OriginalPrice:minOriginalPrice,GroupPrice:GroupPrice,LimitNum:LimitNum,RId:@ViewBag.appId,Id:@Model.EntGroups.Id,InitSaleCount:$("#InitSaleCount").val()};
+            }
+
+            //#regionend
+
+            //简介
+            var Introduction = $('#Introduction').val();
+            //if (Introduction.length === 0) return AppTools.Alert("请填写菜品简介");
+
+            var openTakeOut =  $('input[name="openTakeOutRadio"]:checked').val();
+            var openTheShop = $('input[name="openTheShopRadio"]:checked').val();
+            var isPackin = $('input[name="isPackinRadio"]:checked').val();
+            
+            $.post('/foods/addFoodGoods',
+                {
+                    Id: Id,
+                    GoodsName: GoodsName,
+                    Price: Price,
+                    OriginalPrice: OriginalPrice,
+                    AttrDetail: AttrDetail,
+                    FoodId: FoodId,
+                    TypeId:TypeId,
+                    ImgUrl:ImgUrl,
+                    Inventory:Inventory,
+                    Stock: Stock,
+                    Sort: Sort,
+                    ImgList: ImgList,
+                    DescImgList: DescImgList,
+                    FreightIds:freightIds,
+                    //oldhvid:oldvid,
+                    //videopath:videopath,
+                    Introduction:Introduction,
+                    goods_spec_ids:goods_spec_ids,
+                    labelIdStr:labels,
+                    IsHot:IsHot,
+                    copy :  @(ViewBag.Copy),
+                    openTakeOut:openTakeOut,
+                    openTheShop:openTheShop,
+                    goodtype:@goodtype,
+                    EntGroups: entgroup,
+                    isPackin: isPackin,
+                },
+                function (result) {
+                    if (result.code > 0) {
+                        layer.msg('更新成功');
+                        $('#loadModal .modal-body').html(result.msg);
+                        setTimeout(function(){
+                            if(@goodtype==0)
+                            {
+                                window.location.href = "/foods/FoodGoodsList?appId=" + appId;
+                            }
+                            else
+                            {
+                                window.location.href = "/entgroups/MiniappStoreGroupsManager?appId="+appId+"&PageType=@ViewBag.PageType";
+                            }
+                        },2000);
+
+
+                    } else {
+                        layer.msg(result.msg);
+                    }
+                });
+        });
+        // #endregion
+    });
+
+    //新增菜品分类
+    $('#addGoodTypeInfo').on('click', function () {
+        var FoodId = $("#FoodId").val();
+        layer.open({
+            content: $("#addoredita").html(),
+            btn: ["保存", "取消"],
+            yes: function () {
+                //分类名称
+                var goodtypename = $("#goodtypename").val();
+                if(goodtypename=='')
+                {
+                    alert("请输分类名称！");
+                    return;
+                }
+
+                $.ajax({
+                    type: "Post",
+                    url: "/foods/AddFoodGoodType",
+                    data: { appId: @(ViewBag.appId), Name: goodtypename, FoodId: FoodId},
+                    success: function (data) {
+                        if (data.isok) {
+                            layer.msg("添加成功");
+                            $("#TypeId").append("<option value='"+data.newid+"'>"+goodtypename+"</option>");
+                            layer.closeAll();
+                        }
+                        else {
+                            alert(data.msg);
+                        }
+                    }
+                });
+            },
+            no: function () { layer.closeAll(); },
+            cancel: function () {
+                layer.closeAll();
+            }
+        });
+    });
+    // #endregion
+
+    // #region 删除图片
+    function removeFun(file) {
+        if (file) {
+            $.post('/CityPost/DeleteImg', { id: file.id }, function (result) {
+                if (!result.Success) {
+                    layer.msg(result.Msg);
+                }
+            });
+        }
+    }
+    // #endregion
+    function keyPress(ob) {
+        if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+            if (ob.t_value == undefined || ob.t_value.length == 1) {
+                ob.value = "";
+            }
+            else {
+                ob.value = ob.t_value;
+            }
+        }
+        else
+            ob.t_value = ob.value;
+    }
+    @*</script>
+<script type="text/javascript">*@
+    var FoodId = $('#FoodId').val();
+    $(function () {
+        var id = $("#Id").val();
+        //页面加载读取规格
+        if(id!=null && id.length>0){
+            jQuery.ajax({
+                type:'POST',
+                url:'/foods/FoodAttrSpec_detail',
+                data:{goods_id:id,goodtype:@goodtype},
+                dataType:"text",
+                success:function(data){
+                    jQuery(".spgl-spgg-table").remove();
+                    jQuery(".removespec").remove();
+                    jQuery("#specs").append(data);
+                    var rowspan1 = jQuery("input[name=rowspan1]").val();
+                    var rowspan2 = jQuery("input[name=rowspan2]").val();
+                    var rowspan3 = jQuery("input[name=rowspan3]").val();
+
+                    jQuery(".spec_td_value").each(function(index,data){
+                        var rows_value = jQuery(this).attr("id");
+                        var spec_value = jQuery(this).attr("rows");
+                        if(parseInt(rows_value)==parseInt(spec_value)){
+                            jQuery(this).remove();
+                        }
+                    });
+
+                    if(jQuery(".spec_count").length==0){
+                        jQuery("#Inventory").attr("disabled",false);
+                        
+                        if(@goodtype!=1)
+                        {
+                            jQuery("#Price").attr("disabled",false);
+                        }
+                    }else{
+                        jQuery("#Inventory").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').closest("li").find(".error-red-alert").remove();
+                        jQuery("#Price").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').parent().find(".error-red-alert").remove();
+                    }
+
+                }
+            });
+        }
+
+        //规格属性
+        $("#plus_guige").click(function(){
+            if($(".removespec").length>=3){
+                return layer.msg("最多只能添加3个规格");
+            }else{
+                var top = $(this).offset().top;
+                var left = $(this).offset().left+80;
+                var heigt = $(this).outerHeight();
+                top = top + heigt+10;
+                //需要减去头部蓝色高度
+                top=top-80;
+                var width = $('#plus_guige_tk').outerWidth();
+                left = left - width+180;
+                $('#plus_guige_tk').css('top',''+top+'px').css('left',''+left+'px');
+                $.ajax({
+                    type:'POST',
+                    url:'/foods/GetAttrByFoodId',
+                    data:{FoodId:FoodId},
+                    dataType:"json",
+                    success:function(data){
+                        if(data.datas.length>0){
+                            $(".spec_add").remove();
+                            $("#plus_guige").attr("style","border-bottom: none;");
+                            for (var i = 0; i < data.datas.length; i++) {
+                                $("#specf").parent().append('<input class="bz click-turn spec_add" type="text" style="border-top: none;" onclick="spec_add(this)" readonly="readonly" onmousemove="move_sepc(this)" onmouseout="out_spec(this)"  value="'+data.datas[i].AttrName+'" gs_id="'+data.datas[i].Id+'">');
+
+                            }
+                        }
+                        $("#specf").val('');
+                        $('#plus_guige_tk').show();
+                        $('#cover_black').show();
+                    }
+                });
+            }
+        });
+
+        $('.cancel-bt').click(function(){
+            $('#plus_guige_tk').hide();
+            $('#cover_black').hide();
+        });
+    });
+    //从数据库选择规格
+    function spec_add(data){
+        var name = $(data).val();
+        var id = $(data).attr("gs_id");
+        var flag = true;
+        $(".fr").each(function(index,data){
+            if(id==$(this).attr("gs_id")){
+                layer.msg("已经选择了相同的规格");
+                flag = false;
+            }
+        });
+        if(flag){
+            add_goods_spec(id);
+        }
+    }
+    //鼠标移上事件
+    function move_sepc(data){
+        $(data).addClass("bg_spec");
+    }
+    //鼠标移出事件
+    function out_spec(data){
+        $(data).removeClass("bg_spec");
+    }
+    //添加规格
+    function add_goods_spec(id){
+        var name = $("#specf").val();
+        var webPath = $("body").attr("webPath");
+        var flag = true;
+        if ((id == null || id == undefined || id == '')&&(name == null || name == undefined || name == '')) {
+            layer.msg("请输入规格名");
+            flag=false;
+        }
+        if(!id && name){
+            $.ajax({
+                type:'POST',
+                async:false,
+                url:'/foods/AddFoodAttr',
+                data:{FoodId:FoodId,AttrName:name},
+                dataType:"json",
+                success:function(data){
+                    if(!data.isok){
+                        layer.msg(data.msg);
+                        flag=false;
+                    }
+                }
+            });
+        }
+        if(flag){
+            $.ajax({
+                type:'POST',
+                async:false,
+                url:'/foods/FoodAttrSpec_detail',
+                data:{gs_id:id,AttrName:name,FoodId:FoodId,goodtype:@goodtype},
+                dataType:"text",
+                success:function(data){
+                    $("#specf").val('');
+                    $('#plus_guige_tk').hide();
+                    $('#cover_black').hide();
+                    $(".spgl-spgg-table").remove();
+                    $(".removespec").remove();
+                    $("#specs").append(data);
+                }
+            });
+        }
+    }
+
+    $(function () {
+        //点击批量设置价格和库存
+        $(document).on("click", ".batch_all_click", function () {
+            $("#bt_inp").show();
+            $("input[class=batch_all]").hide();
+            $("input[class=batch_all]").css('border','')
+            $("input[class=batch_all]").closest("td").find("p").remove();
+
+            var inputid = $(this)[0].id;
+            $("input[name="+inputid+"]").show();
+            $("input[name="+inputid+"]").val('');
+
+            $("#bt_btn").hide();
+        });
+        //$("#batch_cancel").click(function(){
+        $(document).on("click", "#batch_cancel", function () {
+            $("#bt_inp").hide();
+            $("#bt_btn").show();
+        });
+        //全局设置校验
+        $("input[name=batch_price]").blur(function(){
+            var data = $("input[name=batch_price]");
+            var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            var price = $(this).val();
+
+            $(this).css('border','')
+            $(this).closest("td").find("p").remove();
+            if (price == null || price == undefined || price == '') {
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>请输入价格</p>");
+                return;
+            }else if(!reg.test(price)){
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>只能输入小数后两位的正数</p>");
+                return;
+            }else{
+                var i = parseFloat(1000000);
+                price = parseFloat(price);
+                if(price>i || price<=0){
+                    $(this).css('border','1px solid #b94a48')
+                    $(this).parent().append("<p>范围为0.01-1000000</p>");
+
+                    return;
+                }
+            }
+        });
+        $("input[name=batch_count]").blur(function(){
+            var reg = new RegExp("^[0-9]*$");
+            var data = $("input[name=batch_count]");
+            var count = $(this).val();
+            $(this).css('border','')
+            $(this).closest("td").find("p").remove();
+            if (count == null || count == undefined || count == '') {
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>请输入库存</p>");
+                return;
+            }else if(!reg.test(count)){
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>库存只能是正整数</p>");
+
+                return;
+            }else{
+                var num = parseInt(count);
+                if(num>9999){
+                    $(this).css('border','1px solid #b94a48')
+                    $(this).parent().append("<p>规格库存最高为9999</p>");
+                    return;
+                }
+            }
+        });
+        //全局设置价格和库存
+        //$("#batch_save").click(function(){
+        $(document).on("click", "#batch_save", function () {
+            var flag = true;
+
+            var showobjlist = $("input[class=batch_all]");
+            var data = showobjlist.filter(function (_item) {
+                return $(showobjlist[_item]).is(":visible");
+            });
+
+            var inputvalue = $(data).val();
+            //校验输入值
+            flag = checkInputValue(data)
+
+            if(flag){
+                var name = data[0].name.replace("batch_","");
+                $(".spec_"+name).val(inputvalue);
+                $(".spec_"+name).css('border','');
+                $(".spec_"+name).parent().find("p").remove();
+
+                if(name=="price")
+                {
+                    $("#Price").val(inputvalue);
+                }
+                else if(name=="count")
+                {
+                    var total_count = $(".spec_"+name).length * inputvalue;
+                    $("#Inventory").val(total_count);
+                }
+            }
+
+
+            if(flag){
+                $("#bt_inp").hide();
+                $("#bt_btn").show();
+            }
+        });
+        //规格价格库存框点击效果
+        jQuery(".spgl-spgg-table input").focus(function(){
+            jQuery(this).css('border','1px solid #74b9ef')
+                    .css('box-shadow','0 0 3px #74b9ef');
+            jQuery(this).removeClass("input_error");
+            jQuery(this).parent().find("p").remove();
+        });
+        jQuery(".spgl-spgg-table input").blur(function(){
+            jQuery(this).css('border','1px solid #ccc')
+                    .css('box-shadow','none');
+        });
+
+        //规格值价格校验
+        //jQuery(".spec_price").blur(function(){
+        $(document).on("blur", ".spec_price", function () {
+            var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            var price = jQuery(this).val();
+            if (price == null || price == undefined || price == '') {
+                jQuery(this).css('border','1px solid #b94a48')
+
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_price\">请输入价格</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_price\">请输入价格</p>");
+                }
+                return;
+            }
+            if(!reg.test(price)){
+                jQuery(this).css('border','1px solid #b94a48')
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_price\">只能输入两位小数点的正数</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_price\">只能输入两位小数点的正数</p>");
+                }
+
+                jQuery(this).val("0.00");
+                return;
+            }else{
+                var i = parseFloat(1000000);
+                price = parseFloat(price);
+                if(price>i || price<=0){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").length<=0){
+                        jQuery(this).parent().append("<p class=\"errorspec_price\">合法范围为0.01-1000000</p>");
+                    }else{
+                        $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").remove();
+                        jQuery(this).parent().append("<p class=\"errorspec_price\">合法范围为0.01-1000000</p>");
+                    }
+
+
+                    jQuery(this).val("0.00");
+                    return;
+                }
+            }
+            var goods_price=0.00;
+            jQuery(".spec_price").each(function(index,data){
+                if(!index){
+                    goods_price=parseFloat(jQuery(this).val());
+                }else{
+                    if(jQuery(this).val()){
+                        if(parseFloat(jQuery(this).val())<parseFloat(goods_price)){
+                            goods_price=parseFloat(jQuery(this).val());
+                        }
+                    }
+                }
+            });
+            $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_price").remove();
+            jQuery(this).css('border','1px solid #e5e5e5')
+            jQuery("#Price").val(goods_price);
+        });
+        //拼团价校验
+        $(document).on("blur", ".spec_groupPrice", function () {
+            var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            var price = jQuery(this).val();
+            if (price == null || price == undefined || price == '') {
+                jQuery(this).css('border','1px solid #b94a48')
+
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_groupPrice\">请输入拼团价格</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_groupPrice\">请输入拼团价格</p>");
+                }
+                return;
+            }
+            if(!reg.test(price)){
+                jQuery(this).css('border','1px solid #b94a48')
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_groupPrice\">只能输入两位小数点的正数</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_groupPrice\">只能输入两位小数点的正数</p>");
+                }
+
+                jQuery(this).val("0.00");
+                return;
+            }else{
+                var i = parseFloat(1000000);
+                price = parseFloat(price);
+                if(price>i || price<=0){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").length<=0){
+                        jQuery(this).parent().append("<p class=\"errorspec_groupPrice\">合法范围为0.01-1000000</p>");
+                    }else{
+                        $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").remove();
+                        jQuery(this).parent().append("<p class=\"errorspec_groupPrice\">合法范围为0.01-1000000</p>");
+                    }
+
+
+                    jQuery(this).val("0.00");
+                    return;
+                }
+            }
+            var goods_price=0.00;
+            jQuery(".spec_groupPrice").each(function(index,data){
+                if(!index){
+                    goods_price=parseFloat(jQuery(this).val());
+                }else{
+                    if(jQuery(this).val()){
+                        if(parseFloat(jQuery(this).val())<parseFloat(goods_price)){
+                            goods_price=parseFloat(jQuery(this).val());
+                        }
+                    }
+                }
+            });
+            $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_groupPrice").remove();
+            jQuery(this).css('border','1px solid #e5e5e5')
+            jQuery("#groupPrice").val(goods_price);
+        });
+        //原价校验
+        $(document).on("blur", ".spec_originalPrice", function () {
+            var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            var price = jQuery(this).val();
+            if (price == null || price == undefined || price == '') {
+                jQuery(this).css('border','1px solid #b94a48')
+
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_originalPrice\">请输入原价</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_originalPrice\">请输入原价</p>");
+                }
+                return;
+            }
+            if(!reg.test(price)){
+                jQuery(this).css('border','1px solid #b94a48')
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_originalPrice\">只能输入两位小数点的正数</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_originalPrice\">只能输入两位小数点的正数</p>");
+                }
+
+                jQuery(this).val("0.00");
+                return;
+            }else{
+                var i = parseFloat(1000000);
+                price = parseFloat(price);
+                if(price>i || price<=0){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").length<=0){
+                        jQuery(this).parent().append("<p class=\"errorspec_originalPrice\">合法范围为0.01-1000000</p>");
+                    }else{
+                        $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").remove();
+                        jQuery(this).parent().append("<p class=\"errorspec_originalPrice\">合法范围为0.01-1000000</p>");
+                    }
+
+                    jQuery(this).val("0.00");
+                    return;
+                }
+            }
+            var goods_price=0.00;
+            jQuery(".spec_originalPrice").each(function(index,data){
+                if(!index){
+                    goods_price=parseFloat(jQuery(this).val());
+                }else{
+                    if(jQuery(this).val()){
+                        if(parseFloat(jQuery(this).val())<parseFloat(goods_price)){
+                            goods_price=parseFloat(jQuery(this).val());
+                        }
+                    }
+                }
+            });
+            $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_originalPrice").remove();
+            jQuery(this).css('border','1px solid #e5e5e5')
+            jQuery("#originalPrice").val(goods_price);
+        });
+        //库存校验
+        //jQuery(".spec_count").blur(function(){
+        $(document).on("blur", ".spec_count", function () {
+            var reg = new RegExp("^[0-9]*$");
+            var count = jQuery(this).val();
+            if (count == null || count == undefined || count == '') {
+                jQuery(this).css('border','1px solid #b94a48')
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_spec_count\">请输入库存</p>");
+                }else{
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_spec_count\">请输入库存</p>");
+                }
+                return;
+            }
+            if(!reg.test(count)){
+                jQuery(this).css('border','1px solid #b94a48')
+                if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").length<=0){
+                    jQuery(this).parent().append("<p class=\"errorspec_spec_count\">库存只能是正整数</p>");
+                }else{
+                    //$(".errorspec_spec_count").remove();
+                    $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").remove();
+                    jQuery(this).parent().append("<p class=\"errorspec_spec_count\">库存只能是正整数</p>");
+                }
+                jQuery(this).val("0");
+                return;
+            }else{
+                var num = parseInt(count);
+                if(num>9999){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    if($("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").length<=0){
+                        jQuery(this).parent().append("<p class=\"errorspec_spec_count\">规格库存最高为9999</p>");
+                    }else{
+                        $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").remove();
+                        jQuery(this).parent().append("<p class=\"errorspec_spec_count\">规格库存最高为9999</p>");
+                    }
+                    jQuery(this).val("0");
+                    return;
+                }
+            }
+            var Inventory=0;
+            jQuery(".spec_count").each(function(index,data){
+                if(jQuery(this).val()){
+                    Inventory=parseInt(jQuery(this).val())+parseInt(Inventory);
+                }
+            });
+            $("input[name="+ $(this).attr("name") +"]").parent().find(".errorspec_spec_count").remove();
+            jQuery(this).css('border','1px solid #e5e5e5')
+            jQuery("#Inventory").val(Inventory);
+
+        });
+        //打开规格值的弹出框
+        //jQuery(".gsps").click(function(){
+        $(document).on("click", ".gsps", function () {
+            var gs_id = jQuery(this).attr("gs_id");
+            var this_gsp = jQuery(this);
+            var top = jQuery(this).offset().top;
+            var left = jQuery(this).offset().left;
+            var heigt = jQuery(this).outerHeight();
+            top = top + heigt+10;
+            //需要减去头部蓝色高度
+            top=top-80;
+            var width = jQuery('.ggz_tk_js').outerWidth();
+            left = left - width+180;
+            jQuery('.ggz_tk_js').css('top',''+top+'px').css('left',''+left+'px');
+            jQuery('.ggz_tk_js').show();
+            jQuery('#cover_black').show();
+            jQuery("input[name=add_spec]").val(gs_id);
+            jQuery.ajax({
+                type:'POST',
+                url:'/foods/GetFoodSpecByAttrId',
+                dataType:"json",
+                data:{gs_id:gs_id},
+                success:function(data){
+                    jQuery(".ggz_tk_js").find("input").val('');
+                    jQuery('.ggz_tk_js').find('input').attr("style","");
+                    if(data.datas.length>0){
+                        jQuery(".spec_add").remove();
+                        jQuery('.ggz_tk_js').find('input').attr("style","border-bottom: none;");
+                        for (var i = 0; i < data.datas.length; i++) {
+                            jQuery('.ggz_tk_js').find('li').eq(0).append('<input class="bz click-turn spec_add" style="border-top: none;" type="text" onclick="gsp_add(this)" readonly="readonly" onmousemove="move_sepc(this)" onmouseout="out_spec(this)"  value="'+data.datas[i].SpecName+'" gsp_id="'+data.datas[i].Id+'">');
+                        }
+                    }
+                }
+            });
+        });
+        //删除规格
+        //jQuery(".fr").click(function(){
+        $(document).on("click", ".fr", function () {
+            var gs_id = jQuery(this).attr("gs_id");
+            //判断是否是第一规格
+            var image_checkbox = jQuery(this).closest("li").find(".hook-ggtp");
+            if(image_checkbox.length){
+                jQuery("input[name=spec_img_val0]").val('');
+                jQuery("input[name=spec_img_val1]").val('');
+                jQuery("input[name=spec_img_val2]").val('');
+                var checked = jQuery(".hook-ggtp").prop("checked");
+                if(checked){
+                    jQuery(".hook-ggtp").click();
+                }
+            }
+            remove_goods_gsp(gs_id,'');
+        });
+        //删除规格值
+        //jQuery(".guige-zhi-close").click(function(){
+        $(document).on("click", ".guige-zhi-close", function () {
+            var Id = $('#Id').val();
+            if((Id>0 && @ViewBag.goodtype == @((int)EntGoodsType.拼团产品)))
+            {
+                return;
+            }
+            //判断是否是第一规格
+            var image_checkbox = jQuery(this).closest("ul").find(".hook-ggtp");
+            var spec_id = jQuery(this).attr("spec_id");
+            remove_goods_gsp('',spec_id);
+        });
+
+        //取消关闭规格值弹框
+        //jQuery('.cancel-bt').click(function(){
+        $(document).on("click", ".cancel-bt", function () {
+            jQuery(".spec_add").remove();
+            jQuery(this).closest('.tjgg-tk').hide();
+        });
+    });
+    //从数据库选择规格值
+    function gsp_add(data){
+        var name = jQuery(data).val();
+        var id = jQuery(data).attr("gsp_id");
+        var flag = true;
+        jQuery(".guige-zhi-close").each(function(index,data){
+            if(id==jQuery(this).attr("spec_id")){
+                layer.msg("规格值不能相同");
+                flag=false;
+            }
+        });
+        if(flag){
+
+            add_goods_gsp(id,'');
+        }
+    }
+
+    //添加规格值
+    function add_goods_gsp(id,obj){
+        jQuery(".spec_add").remove();
+        var name = jQuery(obj).closest(".clearfix").find("input").val();
+        var gs_id =  jQuery("input[name=add_spec]").val();
+        var flag=true;
+        if ((id == null || id == undefined || id == '')&&(name == null || name == undefined || name == '')) {
+            layer.msg("请输入规格值名名称");
+            flag=false;
+        }
+
+        if(!id && name){
+            jQuery.ajax({
+                type:'POST',
+                async:false,
+                url:'/foods/AddFoodSpec',
+                data:{gs_id:gs_id,SpecName:name},
+                dataType:"json",
+                success:function(data){
+                    if(!data.isok){
+                        layer.msg(data.msg);
+                        flag=false;
+                    }
+                }
+            });
+        }
+        if(flag){
+            jQuery.ajax({
+                type:'POST',
+                async:false,
+                url:'/foods/FoodAttrSpec_detail',
+                data:{spec_id:id,SpecName:name,gs_id:gs_id,goodtype:@goodtype},
+                dataType:"text",
+                success:function(data){
+                    jQuery('.ggz_tk_js').hide();
+                    jQuery('#cover_black').hide();
+                    jQuery(".removespec").remove();
+                    jQuery(".spgl-spgg-table").remove();
+                    jQuery("#specs").append(data);
+                    jQuery("#Inventory").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').closest("li").find(".error-red-alert").remove();
+                    jQuery("#Price").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').parent().find(".error-red-alert").remove();
+                    if(@goodtype==1)
+                    {
+                        jQuery("#GroupPriceStr").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').parent().find(".error-red-alert").remove();
+                        jQuery("#OriginalPriceStr").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').parent().find(".error-red-alert").remove();
+                    }
+                }
+            });
+        }
+    }
+    //删除规格值
+    function remove_goods_gsp(id,spec_id){
+        jQuery.ajax({
+            type:'POST',
+            url:'/foods/FoodAttrSpec_detail',
+            data:{remove_gs_id:id,remove_spec_id:spec_id,goodtype:@goodtype},
+            dataType:"text",
+            success:function(data){
+                jQuery(".spgl-spgg-table").remove();
+                jQuery(".removespec").remove();
+                jQuery("#specs").append(data);
+                if(jQuery(".spec_count").length==0){
+                    jQuery("#Inventory").attr("disabled",false).css("background-color","");
+                    jQuery("#Price").attr("disabled",false).css("background-color","");
+                    if(@goodtype==1)
+                    {
+                        jQuery("#GroupPriceStr").attr("disabled",false).css("background-color","");
+                        jQuery("#OriginalPriceStr").attr("disabled",false).css("background-color","");
+                    }
+                }
+            }
+        });
+    }
+
+    $("#checkLabelComfirm").click(function()
+    {
+        var labelHtml = "";
+        var count = 0;
+        $('#editLabelModal .modal-body .itemDiv input').each(function(i,x)
+        {
+            if($(x).hasClass("active"))
+            {
+                //labelHtml += "<span>"+$(x).val()+"</span>";
+                labelHtml += '<div class="itemDiv" style="float:left" onclick="deleteLabel(this)">'
+                labelHtml +=   '<input class="col-sm-2 btn btn-default " data-id="'+ $(x).data("id") +'" maxlength="8" type="button" style="color:#108EE9;width:150px;background-color:white;border-color:#5e97fa; margin-bottom:8px;" value="'+ $(x).val() +'" onclick="check(this)" />'
+                @*<span style="color:red">x</span>*@
+                labelHtml +=  '<span>&nbsp; &nbsp;</span>'
+                labelHtml += ' </div>';
+                count ++;
+            }
+        });
+
+        if(count > 5)
+        {
+            alert("最多设定5个标签");
+            return;
+        }
+        $(".labelDiv").html(labelHtml);
+        $("#editLabelModal").modal('hide');
+    });
+
+    $("#addGoodLabelInfo").click(function()
+    {
+        var re = 0;
+        //$('#editLabelModal .modal-body').html("");
+        jQuery.ajax({
+            type:'POST',
+            url:'/foods/checkLabelCount',
+            data:{storeid:FoodId},
+            dataType:"json",
+            traditional:true,
+            async: false,
+            success:function(data){
+                if(!data.Success)
+                {
+                    layer.msg("未设定标签,请先添加！");
+                    re = 1;
+                }
+            }
+        });
+        if(re == 1) return;
+        var labels = [];
+        //labels.push(0);
+        //labels.push(0);
+        $(".labelTr .itemDiv input").each(function(i,x)
+        {
+            labels.push($(x).data("id"));
+        })
+
+        jQuery.ajax({
+            type:'POST',
+            url:'/foods/PartialLabelItemCheckForm',
+            data:{storeid:FoodId,"labelIds":labels},
+            dataType:"text",
+            traditional:true,
+            success:function(data){
+                //$(".modal-body").html(data);
+                $('#editLabelModal .modal-body').html(data);
+                $("#editLabelModal").modal('show');
+            }
+        });
+    });
+
+    function check(x)
+    {
+        if($(x).hasClass("active"))
+        {
+            $(x).removeClass("active");
+            $(x).css("background-color","White");
+            $(x).css("color","#108EE9");
+        }
+        else
+        {
+            $(x).addClass("active");
+            $(x).css("background-color","#108EE9");
+            $(x).css("color","White");
+        }
+    }
+    //新增菜品标签
+    $('#btnBatch_Pass').on('click', function () {
+        var FoodId = $("#FoodId").val();
+        var canadd = 1 ;
+        $.ajax({
+            type: "Post",
+            async: false,
+            url: "/foods/GetFoodLabelTypeCanAdd",
+            data:
+                {
+                    storeid: FoodId,
+                },
+            success: function (data) {
+                if (!data.isok) {
+                    layer.alert(data.msg);
+                    canadd = 0;
+                    //return;
+                    //layer.closeAll();
+                }
+            }
+        });
+        if(canadd == 0)
+        {
+            return;
+        }
+        layer.open({
+            content: $("#addlabel").html(),
+            btn: ["保存", "取消"],
+            yes: function () {
+                //分类名称
+                var goodtypename = $("#addlabelname").val();
+                if(goodtypename=='')
+                {
+                    alert("请输标签名称！");
+                    return;
+                }
+
+                $.ajax({
+                    type: "Post",
+                    url: "/foods/AddFoodLabel",
+                    data: { appId: @(ViewBag.appId), LabelName: goodtypename, FoodStoreId: FoodId},
+                    success: function (data) {
+                        if (data.isok) {
+                            alert("添加成功");
+                            //$("#TypeId").append("<option value='"+data.msg+"'>"+goodtypename+"</option>");
+                            layer.closeAll();
+                        }
+                        else {
+                            alert(data.msg);
+                        }
+                    }
+                });
+            },
+            no: function () { layer.closeAll(); },
+            cancel: function () {
+                layer.closeAll();
+            }
+        });
+    });
+    $('#btnAdd').on('click', function() {
+        //一修改名称
+        var itemid = $(this).data("itemid")
+        var _title = $("#nameVal").val().replace(/(^\s*)|(\s*$)/g, "");
+        if (_title == "") {
+            alert("请输入名称");
+            return;
+        }
+
+        $(this).attr('disabled', 'disabled');
+
+        $.ajax({
+            type: "Post",
+            url: "/foods/AddFoodLabel",
+            data:
+                {
+                    appId:@(ViewBag.appId),
+                    LabelName:_title,
+                    FoodStoreId:FoodId,
+                    Id:itemid,
+                    //LogImg: imgUrl,
+                },
+            success: function (data) {
+                if (data.isok) {
+                    layer.alert(data.msg, {closeBtn: 0 ,yes:function(){
+                        var html = '<div class="itemDiv">';
+                        html+=  '<input class="col-sm-2 form-control" data-id="'+ data.id +'" data-state="0" maxlength="8" type="text" value="'+ data.labelName +'" style="background-color:white;border-bottom-color:#5e97fa;width:80px" readonly />';
+                        html+=  '<span>&nbsp; &nbsp; &nbsp; &nbsp;</span>';
+                        html+=  '</div>';
+
+                        $("#minifoodlabelCheckForm").find(".itemDiv").eq(-1).append(html);
+                        alert.closeAll();
+                    }
+                    });
+                }
+                else {
+                    $("#btnAdd").removeAttr("disabled");
+                    layer.alert(data.msg);
+                }
+            }
+        });
+    });
+    // 删除图片
+    function removeAttachmentFunction(file) {
+        if(file.id!=undefined)
+        {
+            //$.post('/foods/DeleteImg', { id: file.id }, function (result) {});
+            layer.open({
+                title: '删除图片',
+                content: "删除后无法恢复，确定删除图片？",
+                btn: ["确定", "取消"],
+                yes: function () {
+                    $.post('/foods/DeleteImg', { id: file.id }, function (result) {
+                        if (!result.Success) {
+                            layer.msg(result.Msg);
+                        }
+                        window.location.reload();
+                    });
+                },
+                no: function () { layer.closeAll(); },
+                cancel: function () {
+                    layer.closeAll();
+                    window.location.reload();
+                }
+            });
+        }
+
+    }
+</script>

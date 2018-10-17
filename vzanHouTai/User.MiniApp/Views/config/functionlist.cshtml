@@ -1,0 +1,175 @@
+﻿@{
+    ViewBag.Title = "小程序编辑";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int type = Utility.IO.Context.GetRequestInt("type",0);
+}
+<style>
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #1aad19; background-color: #1aad19; }
+    input[type=checkbox] { margin: 0px; }
+    #app table.imswitch { margin: 51px 0px 10px 51px; }
+    .fk-box table { margin: 10px 0px 10px 51px; }
+    .btn-primary, .btn-primary:active, .btn-primary:focus { background-color: #1aad19; border-color: #1aad19; }
+    .btn-primary:hover, .btn-primary:active:hover { background-color: #34a123; border-color: #34a123; }
+    .frm_input_box { display: inline-block; position: relative; height: 36px; line-height: 30px; vertical-align: middle; width: 268px; font-size: 14px; padding-left: 15px; border: 1px solid #e7e7eb; box-shadow: none; -moz-box-shadow: none; -webkit-box-shadow: none; border-radius: 2px; -moz-border-radius: 2px; -webkit-border-radius: 2px; background-color: #fff; }
+    .frm_input_box input { border: none; line-height: 34px; width: 198px; }
+    .frm_input_box a { text-decoration: none; color: #777; margin-top: 3px; }
+    .setting-box { margin-left: 88px; }
+
+    iframe { border: 0px; }
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #63B503 !important; }
+    .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #63B503 !important; }
+    .table-striped > tbody > tr:nth-of-type(odd) { background-color: #F0F8FF; }
+    .page-content-wrapper .page-content {padding:0; padding-left:10px;}
+    .layui-tab { margin:0;}
+    .breadcrumb { margin:0;}
+    
+</style>
+<div class="layui-tab layui-tab-brief" lay-filter="settingTab">
+    <ul class="layui-tab-title">
+        @if (type == 22)
+        {
+            <li lay-id="Choosemodel">模板选择</li>
+        }
+        <li lay-id="PersonRenovation">个性化装修</li>
+        <li lay-id="PrePublish">预览发布</li>
+    </ul>
+    
+    <div class="layui-tab-content" id="app" v-cloak>
+        <!--#region 模板选择-->
+        @if (type == 22)
+        {
+            <div class="layui-tab-item">
+                <iframe style='width:100%;height:670px;background-color:white;' src='/config/choosemodellist?appId=@ViewBag.appId#tab_page=Choosemodel'></iframe>
+            </div>
+        }
+        <!--#endregion-->
+        <!--#region 个性化装修-->
+            <div class="layui-tab-item">
+                @if (type == 22)
+                {
+                    <iframe name="PersonRenovation" style='width:100%;height:670px;background-color:white;' src='/enterprisepro/pageset?appId=@ViewBag.appId&SouceFrom=TemplateDecoration#tab_page=PersonRenovation'></iframe>
+                }
+                else if (type == 12)
+                {
+                    <iframe name="PersonRenovation" style='width:100%;height:670px;background-color:white;' src='/enterprise/pageset?appId=@ViewBag.appId&SouceFrom=TemplateDecoration#tab_page=PersonRenovation'></iframe>
+                }
+                else if (type == 26)
+                {
+                    <iframe name="PersonRenovation" style='width:100%;height:670px;background-color:white;' src='/MultiStore/StoresManager/pageset?appId=@ViewBag.appId&SouceFrom=TemplateDecoration#tab_page=PersonRenovation&storeId=@ViewBag.storeId'></iframe>
+                }
+            </div>
+        <!--#endregion-->
+        <!--#region 预览发布-->
+        <div class="layui-tab-item">
+            <iframe style='width:100%;height:800px;background-color:white;' src='/config/MiniAppConfig?appId=@ViewBag.appId&SouceFrom=TemplateDecoration#tab_page=PrePublish'></iframe>
+        </div>
+        <!--#endregion-->
+    </div>
+</div>
+
+<script>
+    var element,layid;
+
+    var app = new Vue({
+        el: '#app',
+        data: {
+            templateid: 0,
+            oldtemplateid:0,
+            openconfigindex:0,
+            inilayboxid:'@ViewBag.layId',
+        },
+        methods: {
+            InitLayer: function () {
+                var that = this;
+                layui.use(['form','element'], function () {
+                    var form = layui.form;
+                    element = layui.element;
+
+                    //获取hash来切换选项卡，假设当前地址的hash为lay-id对应的值
+                    layid = location.hash.replace(/^#settingTab=/, '');
+                    //找不到路径则默认打开的标签页
+                    if(layid == undefined || layid == '')
+                    {
+                        if(app.inilayboxid!="")
+                        {
+                            layid = app.inilayboxid;
+                        }
+                        else{
+                            layid = 'Choosemodel';
+                        }
+                        
+                        location.hash = 'settingTab='+ layid;
+                    }
+                    element.tabChange('settingTab', layid);
+
+                    //监听Tab切换，以改变地址hash值
+                    element.on('tab(settingTab)', function () {
+                        if (this.getAttribute != undefined)
+                        {
+                            layid = this.getAttribute('lay-id');
+                            if (layid == "PersonRenovation"&&@(type)==22) {
+                                if (app.templateid <= 0) {
+                                    element.tabChange('settingTab', "Choosemodel")
+                                    return layer.msg("请选择装修模板");
+                                }
+                                else if (app.templateid != app.oldtemplateid)
+                                {
+                                    element.tabChange('settingTab', "Choosemodel")
+                                    $.ajax({
+                                        type: "Post",
+                                        url: "/config/CopyTemplate",
+                                        data: { appId: @ViewBag.appId, templateid: app.templateid },
+                                        success: function (data) {
+                                            if (data.isok) {
+                                                app.oldtemplateid = app.templateid;
+                                                parent.frames["PersonRenovation"].location.href="/enterprisepro/pageset?appId=@ViewBag.appId&templateid="+app.templateid+"&SouceFrom=TemplateDecoration#tab_page=PersonRenovation";
+                                                parent.element.tabChange('settingTab', "PersonRenovation")
+                                            }
+                                            else {
+                                                layer.msg(data.Msg);
+                                            }
+                                            layer.close(app.openconfigindex);
+                                            app.openconfigindex = 0;
+                                        }
+                                    });
+                                    @*app.openconfigindex = layer.confirm('更改模板将会替换原有的装修数据，是否确定？', {
+                                        btn: ['确定', '取消'] //按钮
+                                    }, function () {
+                                        $.ajax({
+                                            type: "Post",
+                                            url: "/config/CopyTemplate",
+                                            data: { appId: @ViewBag.appId, templateid: app.templateid },
+                                            success: function (data) {
+                                                if (data.isok) {
+                                                    app.oldtemplateid = app.templateid;
+                                                    parent.frames["PersonRenovation"].location.reload()
+                                                    parent.element.tabChange('settingTab', "PersonRenovation")
+                                                }
+                                                else {
+                                                    layer.msg(data.Msg);
+                                                }
+                                                layer.close(app.openconfigindex);
+                                                app.openconfigindex = 0;
+                                            }
+                                        });
+                                    }, function () {
+                                    });*@
+                                }
+                                else
+                                {
+                                    location.hash = 'settingTab=' + layid;
+                                }
+                            }
+                        }
+                        
+                    });
+                });
+            },
+        },
+        mounted: function(){
+            var that= this;
+            that.InitLayer();
+        }
+    })
+</script>

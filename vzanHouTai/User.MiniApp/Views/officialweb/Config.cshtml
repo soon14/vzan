@@ -1,0 +1,131 @@
+﻿@using Entity.MiniApp.Conf
+@using User.MiniApp.comment
+@model List<ConfParam>
+@{
+    ViewBag.Title = "配置";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 1;//1是行业版同城，用于母版页的左侧菜单区分
+}
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed cancel-table-td-border">
+    @*<tr>
+        <td style="width: 130px;">广告图</td>
+        <td>
+            @Html.FileUploadFor("ImgUrl", initImageList: (List<object>)ViewBag.ImgUrlList, controllerWidth: 113, removeCallback: "removeAttachmentFunction")
+            <label class="forinputmassage">点击灰色区域选择上传图片 ( 640*360px )</label>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <input type="button" class="btn btn-primary width100 savebtn" data-param="img" value="保存" />
+        </td>
+        <td>
+           
+        </td>
+    </tr>*@
+    <tr>
+        <td> </td>
+        <td>
+            <div>
+                <a style="color: red; font-size: 18px; font-weight: bold; text-decoration: underline;" target="_blank" href="https://vzan.com/t/d-23177576">小程序接入教程</a>
+            </div>
+        </td>
+    </tr>
+    @if (ViewBag.shouquan != 0)
+    {
+        <tr>
+            <td style="width: 130px;">小程序名称 : </td>
+            <td>
+                <div class="input-group width300">
+                    <input type="text" class="form-control" value="@ViewBag.XcxName" id="CName" name="CName" maxlength="20">
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 130px;">小程序广告图</td>
+            <td>
+                @Html.FileUploadFor("xcxImgUrl", initImageList: (List<object>)ViewBag.ImgUrlList, controllerWidth: 120, removeCallback: "removeAttachmentFunction")
+                <label class="forinputmassage">点击灰色区域选择上传图片 ( 400*600px )</label>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <div class="">
+                    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+                    <input type="button" class="btn btn-default width100" id="btnCancel" href="javascript:void(0);" value="取消" />
+                </div>
+            </td>
+        </tr>
+    }
+    else
+    {
+        <tr>
+            <td> </td>
+            <td>
+                <div>
+                    <a style="font-size: 18px;text-decoration:underline; " target="_blank" href="/config/MiniAppConfig?appId=@ViewBag.rappId&id=@ViewBag.rappId&type=@ViewBag.PageType">您暂未对小程序授权 , 请到 [ 小程序模板 ] ]进行授权</a>
+                </div>
+            </td>
+        </tr>
+    }
+</table>
+
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section script{
+    <script>
+        var imghave = "@ViewBag.ImgUrl";
+        $(function () {
+            $('#saveBtn').on('click', function () {
+                var imgArray = [];
+                var imgs = $('input[name="xcxImgUrl"]');
+                for (var j = 0; j < imgs.length; j++) {
+                    imgArray.push($(imgs[j]).val());
+                }
+                var ImgUrl = imgArray.join();
+                if (ImgUrl == "")
+                {
+                    ImgUrl = imghave;
+                }
+                var param = "img";
+                var appid = "@ViewBag.rappId";
+
+                //小程序名称
+                var nparam = "nparam";
+                var xcxname = $("#CName").val();
+                var data = [{ "Value": ImgUrl, "Param": "img" }, { "Value": xcxname, "Param": "nparam" }];
+                var datajson = JSON.stringify(data);
+
+                $.post('/officialweb/SaveConfig',
+                { id: appid, datajson: datajson }, function (result) {
+                    AppTools.Alert(result.msg);
+                    window.location.reload();
+                });
+                $(this).removeAttr('disabled');
+            });
+        })
+
+        function removeAttachmentFunction(file) {
+            imghave = "";
+        }
+    </script>
+}
+

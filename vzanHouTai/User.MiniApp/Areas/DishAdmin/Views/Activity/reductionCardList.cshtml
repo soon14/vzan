@@ -1,0 +1,162 @@
+﻿
+@{
+    ViewBag.Title = "社交立减金";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@model  ViewModel<Entity.MiniApp.Tools.Coupons>
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 活动管理 <span class="c-gray en">&gt;</span> 社交立减金 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="panel panel-default bg-1">
+        <div class="panel-body">
+            <div class="form-inline">
+                <span>立减金名称：</span>
+                <input id="couponname" type="text" class="input-text" value="@ViewBag.couponname" style="width:120px;">&nbsp;&nbsp;&nbsp;&nbsp;
+                <span>立减金状态：</span>
+                <select id="couponstate" class="input-text select" style="width:80px;">
+                    <option value="-1" @(ViewBag.couponstate == -1 ? "selected" : "")>全部</option>
+                    <option value="1" @(ViewBag.couponstate == 1 ? "selected" : "")>未开始</option>
+                    <option value="2" @(ViewBag.couponstate == 2 ? "selected" : "")>进行中</option>
+                    <option value="3" @(ViewBag.couponstate == 3 ? "selected" : "")>已结束</option>
+                    <option value="4" @(ViewBag.couponstate == 4 ? "selected" : "")>已失效</option>
+                    <option value="0" @(ViewBag.couponstate == 0 ? "selected" : "")>已关闭</option>
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;
+                <input id="" onclick="search()" type="button" class="btn btn-primary" value="搜索">
+                <a href="javascript:;" onclick="goods_add('添加立减金','/DishAdmin/Activity/ReductionCardEdit?aid=@(Model.aId)&storeid=@(Model.storeId)')" class="btn btn-success" id="btnBatch_Pass">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    添加立减金
+                </a>
+
+            </div>
+        </div>
+    </div>
+    <br />
+    <table class="table table-border table-bordered table-bg table-hover table-sort">
+        <thead>
+            <tr class="text-center">
+                <th>序号</th>
+                <th style="display:none;">ID</th>
+                <th>立减金名称</th>
+                <th>份数</th>
+                <th>每份个数</th>
+                <th>立减金价值</th>
+                <th>领取限制</th>
+                <th>已领取个数</th>
+                <th>有效期</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="bcontent">
+            @{
+                if (Model.DataList == null || Model.DataList.Count <= 0)
+                {
+                    <tr>
+                        <td colspan="10" style="text-align: center;">没有数据</td>
+                    </tr>
+                }
+                else
+                {
+                    int i = 1;
+                    foreach (var item in Model.DataList)
+                    {
+                        <tr>
+                            <td width="3%"><label>@(i++)</label> </td>
+                            <td style="display:none;">@item.Id</td>
+                            <td width="5%">@item.CouponName</td>
+                            <td width="5%">@item.CreateNum</td>
+                            <td width="5%">@item.SatisfyNum</td>
+                            <td width="5%">@(item.MoneyStr + (item.CouponWay == 0 ? "" : "折"))<br />@(item.LimitMoney > 0 ? "最低消费 " + item.LimitMoneyStr : "")</td>
+                            <td width="5%">@(item.LimitReceive > 0 ? "一人" + item.LimitReceive + "张" : "不限张")<br />@("库存:" + item.RemNum)</td>
+                            <td width="5%">@(item.PersonNum + "/" + item.CouponNum)</td>
+                            <td width="6%">@Html.Raw(item.ValType == 0 ? (item.StartUseTimeStr + " <br/>至<br/>" + item.EndUseTimeStr) : item.ValType == 1 ? "领到券次日开始" + item.ValDay + "天内有效" : "领到券当日开始" + item.ValDay + "天内有效")</td>
+                            <td width="5%">@item.StateStr</td>
+                            <td width="10%" style="text-align:left;">
+                                @if (item.State == (int)CouponState.已失效)
+                                {
+                                    <label style="color:#808080">已失效</label>
+                                }
+                                else
+                                {
+                                    <a href="javascript:;" onclick="goods_add('编辑立减金','/DishAdmin/Activity/ReductionCardEdit?aid=@(Model.aId)&storeid=@(Model.storeId)&id=@item.Id')" class="btn btn-xs btn-primary" style="margin-top:5px;">
+                                        <span class="glyphicon glyphicon-pencil"></span>
+                                        编辑
+                                    </a>
+                                    <a href="javascript:Returnpay(@item.Id);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                        使失效
+                                    </a>
+                                    if (item.State == (int)CouponState.已关闭)
+                                    {
+                                        <a href="javascript:ChangeState(@item.Id,@((int)CouponState.已开启),@item.StoreId);" class="btn btn-info btn-xs" style="margin-top:5px;">
+                                            <span class="glyphicon glyphicon-eye-open"></span>
+                                            开启
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="javascript:ChangeState(@item.Id,@((int)CouponState.已关闭),@item.StoreId);" class="btn btn-danger btn-xs" style="margin-top:5px;">
+                                            <span class="glyphicon glyphicon-eye-close"></span>
+                                            关闭
+                                        </a>
+                                    }
+
+                                }
+                            </td>
+                        </tr>
+                    }
+
+                }
+            }
+        </tbody>
+    </table>
+    <ul class="page" style="height: 0; line-height: 0; padding-top: 12px; text-align:right;">
+        共@(Model.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+    </ul>
+</div>
+
+<script>
+    function goods_add(title, url) {
+        var index = layer.open({
+            type: 2,
+            title: title,
+            content: url
+        });
+        layer.full(index);
+    }
+    function search() {
+        var name = $.trim($("#couponname").val());
+        var state = $("#couponstate").val();
+        var url = "/DishAdmin/Activity/reductionCardList?aId=@Model.aId&storeId=@Model.storeId&name=" + name + "&state=" + state;
+        window.location.href = url;
+    }
+    function ChangeState(id, state,storeId) {
+        var layerIndex = layer.load(2);
+        $.post("/coupons/OpenOrClose", { id: id, state: state, appId: '@Model.aId', storeId: storeId }, function (data) {
+            layer.close(layerIndex);
+            console.log(data.msg);
+            layer.msg(data.msg, { isOutAnim: false, time: 1000 }, function () {
+                if (data.isok) {
+                    window.location.reload();
+                }
+            });
+
+        });
+    }
+    function Returnpay(id) {
+        if(confirm("确定让这组立减金失效？"))
+        {
+            $.ajax({
+                type: "post",
+                url: "/coupons/DeleteCoupons",
+                data: { id: id, appId: '@Model.aId' },
+                success: function (data) {
+                    alert(data.msg);
+                    if (data.isok) {
+                        window.location.reload();
+                    }
+                }
+            })
+        }
+    }
+</script>

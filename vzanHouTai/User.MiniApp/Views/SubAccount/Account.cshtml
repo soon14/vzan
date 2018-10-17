@@ -1,0 +1,142 @@
+﻿@model Tuple<AuthRole, List<AuthGroup>>
+@{
+    ViewBag.Title = "Setting";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    AuthRole role = Model.Item1 == null ? new AuthRole() : Model.Item1;
+    List<AuthGroup> group = Model.Item2;
+    if (role != null)
+    {
+        role.Password = string.Empty;
+    }
+}
+
+@section styles{
+    <style>
+        .layui-table th, .layui-table td {
+            text-align: center !important;
+        }
+
+        .layui-form-switch {
+            margin-top: 0px !important;
+            width: 56px !important;
+            line-height: 25px !important;
+            height: 25px !important;
+        }
+
+        .el-form-item .el-form-item__label {
+            width: 90px !important;
+        }
+
+        .el-input-group input {
+            text-align: center;
+        }
+    </style>
+    <!-- 引入element-ui-组件库 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+}
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <a class="btn btn-danger radius" style="margin-left:0px;" href="/pin/admin/index?aid=@aid&act=add">返回</a>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list">
+
+            <div id="app" v-loading="Posting">
+                <el-form label-width="80px">
+                    <el-form-item label="名称：">
+                        <el-input v-model="Role.Name" maxlength="100" placeholder="请输入员工名称，如' 张XX '" size="small" style="width:20%"></el-input>
+                    </el-form-item>
+                    <el-form-item label="所属分组：">
+                        <el-select v-model="Role.GroupId"
+                                   placeholder="请选择分组">
+                            @if (group != null)
+                            {
+                                foreach (AuthGroup item in group)
+                                {
+                                    <el-option v-bind:key="@item.Id"
+                                               V-bind:label="'@item.Name'"
+                                               v-bind:value="@item.Id">
+                                    </el-option>
+                                }
+                            }
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="登录名：">
+                        <el-input v-bind:disabled="Role.Id > 0" v-model="Role.LoginName" maxlength="100" placeholder="请输入登陆用户名" size="small" style="width:20%"></el-input>
+                    </el-form-item>
+                    <el-form-item label="密码：">
+                        <el-input v-model="Role.Password" v-bind:disabled="!IsChangePwd && Role.Id > 0" maxlength="100" placeholder="默认密码'123456'" size="small" style="width:20%">
+                            <el-button v-if="Role.Id > 0" @@click="IsChangePwd = true" slot="append" icon="el-icon-edit">修改密码</el-button>
+                        </el-input>
+                        @*<el-input v-bind:disabled="!IsChangePwd && Role.Id > 0" maxlength="100" placeholder="默认密码'123456'" size="small" style="width:20%"></el-input>*@
+                    </el-form-item>
+                    <el-form-item label="备注：" style="margin-bottom:0">
+                        <el-input v-model="Role.Remark" maxlength="100" placeholder="选填" size="small" style="width:20%"></el-input>
+                    </el-form-item>
+                    <el-form-item label="&ensp;">
+                        <el-button @@click="save" type="primary" size="small">保存</el-button>
+                    </el-form-item>
+                </el-form>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+<input id="appId" value="@aid" type="hidden" />
+<input id="backUrl" value="/pin/admin/index?aid=@aid&act=add" type="hidden" />
+<script id="roleData" type="application/json">
+    @Html.Raw(JsonConvert.SerializeObject(role))
+</script>
+
+@section scripts{
+    <!-- 引入element-ui-组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script type="text/javascript">
+        Vue.config.silent = true;
+        $(function () {
+            roleData = JSON.parse($('#roleData').text());
+            aId = $('#appId').val();
+            backUrl = $('#backUrl').val()
+            buildApp(roleData, aId, backUrl);
+        })
+
+        function buildApp(roleData, aId, backUrl) {
+            var app = new Vue({
+                el: "#app",
+                data: {
+                    aId: aId,
+                    Role: roleData,
+                    Posting: false,
+                    IsChangePwd: false,
+                },
+                methods: {
+                    save: function () {
+                        var thisApp = this;
+                        thisApp.Posting = true;
+                        $.post('/SubAccount/UpdateRole', {
+                            aId: thisApp.aId, updateRole: thisApp.Role, isChangePwd : thisApp.IsChangePwd
+                        }).then(function (result) {
+                            if (!result.code) {
+                                layer.msg(result.msg);
+                                thisApp.Posting = false;
+                                return;
+                            }
+                            location.replace(backUrl)
+                        }).fail(function (result) {
+                            thisApp.Posting = false;
+                            layer.msg('网络异常');
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+}
+
+

@@ -1,0 +1,171 @@
+﻿@using Entity.MiniApp.PlatChild
+@model ViewModel<PlatChildGoodsUnit>
+@{
+
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (appid <= 0)
+    {
+        appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    }
+}
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、单位名称不能超过10个字，且不能重复</p>
+            <p>2、删除单位不会影响使用了此单位的产品</p>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="50">ID</th>
+                        <th>单位名称</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list">
+                        <td align="center">{{item.Id}}</td>
+                        <td>{{item.Name}}</td>
+                   
+                        <td>
+                            <a v-on:click="del(index)" class="btn btn-default ml10"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                            <a v-on:click="edit(index)" class="btn btn-primary ml10"> 编辑 </a>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+        <div>
+            <button class="btn btn-primary ml10" id="btnBatch_Pass" v-on:click="addNew">
+                <span class="glyphicon glyphicon-plus"></span>
+                新增单位
+            </button>
+
+        
+        </div>
+    </div>
+
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        产品单位
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td><span>单位名称：</span></td>
+                            <td><input maxlength="10" placeholder="单位名称" v-model="edititem.Name" type="text" class="form-control"></td>
+                        </tr>
+                       
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary ml10" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+        var item = {
+            Id:0,
+            Name: "",
+            Aid:@appid,
+            State: 1,
+            Sort:99,
+        };
+
+        var app = new Vue({
+            el: "#app",
+            data: {
+                edititem:JSON.parse(JSON.stringify(item)),
+                editid:0,
+                list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+            },
+            coumputed:{
+                totalcount:function(){
+                    return this.list.length;
+                }
+            },
+            mounted: function () {
+                console.log("mounted");
+            },
+            methods: {
+                addNew: function () {
+
+                    $('#addModal').modal('show');
+                    this.editid = 0;
+                },
+                save: function () {
+                    var that=this;
+                    var _typename=$.trim(that.edititem.Name);
+                    if(_typename.length==0||_typename.length>10){
+                        layer.msg("单位名称不能为空，且不能超过10个字",{time:1000});
+                        return;
+                    }
+                    $.post("/PlatChild/Store/Punit",{model:that.edititem,aid:@appid},function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                $('#addModal').modal('hide');
+                                layer.msg(data.Msg, { time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            }
+                            else{
+                                layer.msg(data.Msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.Msg,{time:1000});
+                        }
+                    });
+                },
+             
+                edit:function(index){
+                    $('#addModal').modal('show');
+                    this.edititem=JSON.parse(JSON.stringify(this.list[index]));
+                },
+                del:function(index){
+                    var that=this;
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该单位么？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/PlatChild/Store/punit",{act:"del",id:that.list[index].Id,aid:item.Aid})
+                            .then(function(data){
+                                console.log(data);
+                                if(typeof data=="object"){
+                                    if (data.isok) {
+                                        layer.msg(data.Msg, { time: 1000 });
+                                        that.list.splice(index,1);
+                                    }
+                                    else{
+                                        layer.alert(data.Msg);
+                                    }
+                                }
+                                else{
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                }
+            }
+        });
+</script>

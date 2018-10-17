@@ -1,0 +1,92 @@
+﻿@using Entity.MiniApp.Plat;
+@model  PlatMyCard
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+}
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <meta charset="utf-8" />
+    <title>预约设置</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="" name="author" />
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+    <script src="//j.vzan.cc/fcontent/plugin/vue.min.js"></script>
+    <style>
+       
+    </style>
+</head>
+<body>
+    <div id="vbox" style="width:100%; height:auto; " hidden>
+        <table class="table" style="margin: auto 30px;width:90%;">
+            <tr>
+                <td colspan="4"><div>|<span style="font-weight: bold;"> 固定信息栏</span></div></td>
+            </tr>
+            <tr>
+                <td>客户姓名</td>
+                <td><input style="width:200px;" placeholder="可输入中英字符" maxlength="50"/></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>手机号码</td>
+                <td><input style="width:200px;" placeholder="可输入11位数字" maxlength="11"/></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>预约时间</td>
+                <td><input style="width:200px;" placeholder=""/></td>
+                <td>
+                    <div class="layui-form">
+                        <input type="checkbox" lay-skin="switch" lay-text="是|否" v-model="">
+                    </div>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+    <script src="@(WebSiteConfig.cdnurl)content/agent/js/jquery.easing.min.js"></script>
+    <script>
+        var current_fs, next_fs, previous_fs; //fieldsets
+        var left, opacity, scale, form; //fieldset properties which we will animate
+
+        var vm = new Vue({
+            el: "#vbox",
+            data: {
+                platcardmodel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+                isloading: false
+            },
+            methods: {
+                //初始化switch按钮
+                InitLayer: function () {
+                    layui.use(['form'], function () {
+                        //开关按钮
+                        form = layui.form;
+                        form.on('switch', function (data) {
+                            app.changCanSaveMoneyFunctionData.canSaveMoneyFunction = data.elem.checked;
+                            app.datainfo.State=data.elem.checked?1:0;
+                        });
+                    });
+                },
+                savefictitiouscount:function(){
+                    $.post("/Plat/MyCard/SaveFictitiousCount", { aid:vm.platcardmodel.AId,id: vm.platcardmodel.Id,fictitiouscount:vm.platcardmodel.FictitiousCount }, function (data) {
+                        layer.msg(data.Msg);
+                    });
+                },
+            },
+            created: function () {
+                $("#vbox").show();
+                this.InitLayer();
+            }
+        })
+    </script>
+</body>
+</html>

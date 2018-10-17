@@ -1,0 +1,257 @@
+﻿
+@{
+    ViewBag.Title = "AgentManager";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content animated fadeInUp" id="app" v-cloak>
+        <div class="search-area">
+            <div class="row">
+                <div class="col-sm-3 col-lg-2 col-xs-6">用户昵称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.nickname" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">手机号码：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.phone" /></div>
+            </div>
+            <div class="row" style="margin-top:18px;">
+                <div class="col-sm-3 col-lg-2 col-xs-6">父级代理昵称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.fnickName" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">父级代理手机：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.fphone" /></div>
+                <div class="col-sm-3 col-lg-3 col-xs-3">
+                    <a href="javascript:;" class="btn btn-sm  btn-primary radius" v-on:click="searchList()"> <i class="fa fa-search"></i> 搜索</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5 style="margin-top:7px;">代理列表</h5>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isAgent==0&&postdata.isBiaogan==0?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetAllList()">所有代理</a>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isAgent!=0?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetAgentList()">申请中的代理</a>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isBiaogan==2?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetBiaoganList(0)">已通过的代理</a>
+
+
+                    <span>总数：{{recordCount}}</span>
+                </div>
+                <div class="ibox-content xcx-list">
+                    <table class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th width="40">父级代理</th>
+                                <th>用户昵称</th>
+                                <th style="text-align: center;">手机号码</th>
+                                <th style="text-align: center;">状态</th>
+                                <th>入驻日期</th>
+                                <th>入驻费</th>
+                                <th width="260">操作</th>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(store,index) in list">
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr v-if="list.length<=0">
+                                <td colspan="16" align="center">查无数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="postdata.pageSize<recordCount"></div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+@section styles{
+    <style>
+        .table-condensed th, .table-condensed td { text-align: center; }
+        .search-area { background: rgba(252, 248, 227, 1); padding: 19px 12px; margin-bottom: 1px; }
+    </style>
+}
+@section scripts{
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                list: [],
+                recordCount: 0,
+                postdata:{
+                    pageIndex: 1,
+                    pageSize: 10,
+                    aid:@aid,
+                    isAgent: 0,
+                    storeName: '',
+                    phone: '',
+                    nickName: '',
+                    isBiaogan: 0,
+                    fnickName: '',
+                    fphone:'',
+                }
+            },
+            methods: {
+                GetList: function () {
+                    var that = this;
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Admin/GetAgentList", that.postdata, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code==1) {
+                            that.list = data.obj.list;
+                            that.recordCount = data.obj.recordCount;
+                            that.resetPage();
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                },
+                resetPage: function () {
+                    var that = this;
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: that.recordCount //数据总数，从服务端得到
+                            , curr: that.postdata.pageIndex //当前页
+                            , limit: that.postdata.pageSize
+                            , jump: function (obj, first) {
+                                that.postdata.pageIndex = obj.curr;
+                                //首次执行
+                                if (!first) {
+                                    that.GetList();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Del: function (index,state) {
+                    var that = this;
+                    layer.confirm('是否确定要删除店铺：'+that.list[index].storeName+'？', {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        var layerIndex = layer.load(2);
+                        $.post("/Pin/Config/DelStore", { aid: that.postdata.aid, id: that.list[index].id }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.msg);
+                            if (data.code==1) {
+                                that.list.splice(index, 1);
+                            }
+
+                        })
+                    });
+                },
+                setAgent: function (index, state) {
+                    var that = this;
+                    if (state == 0) {
+                        layer.confirm("是否确认要取消" + that.list[index].nickName + "的代理身份？", { btn: ['确定', '取消'] }, function () {
+                            var layerIndex = layer.load(2);
+                            $.post("/Pin/Config/SetAgent", { aid: that.postdata.aid, userid: that.list[index].userId, state: state }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.msg);
+                                if (data.code == 1) {
+                                    that.GetList();
+                                }
+
+                            })
+                        });
+                    } else {
+                        var layerIndex = layer.load(2);
+                        $.post("/Pin/Config/SetAgent", { aid: that.postdata.aid, userid: that.list[index].userId, state: state }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.msg);
+                            if (data.code == 1) {
+                                that.GetList();
+                            }
+
+                        })
+                    }
+
+                },
+                setBiaoGan: function (index, state) {
+                    var that = this;
+                    if (state == -1) {
+                        layer.confirm("是否取消" + that.list[index].storeName + "为标杆店铺?", { btn: ['确定', '取消'] }, function () {
+                            var layerIndex = layer.load(2);
+                            $.post("/Pin/Config/SetBiaoGan", { aid: that.postdata.aid, sId: that.list[index].id, state: state }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.msg);
+                                if (data.code == 1) {
+                                    that.GetList();
+                                }
+
+                            })
+                        })
+                    } else {
+                        var layerIndex = layer.load(2);
+                        $.post("/Pin/Config/SetBiaoGan", { aid: that.postdata.aid, sId: that.list[index].id, state: state }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.msg);
+                            if (data.code == 1) {
+                                that.GetList();
+                            }
+
+                        })
+                    }
+                },
+                InitLayer: function () {
+
+                },
+                entermanage: function (id,aid) {
+                    $.post("/Pin/Config/EnterStoreManage", { aid: aid, id: id }).then(function (result) {
+                        if (result.code == 1) {
+                            var host = window.location.host;
+                            var domain = "";
+                            if (host.indexOf('vzan.com') != -1) {
+                                domain = ".vzan.com";
+                            }
+                            else if (host.indexOf('xiaochengxu.com') != -1) {
+                                domain = ".xiaochengxu.com.cn";
+                            }
+                            $.cookie('dzPinAdmin', result.msg, { expires: 7, path: '/', domain: domain });
+
+                            setTimeout(function () {
+                                window.parent.open("/PinAdmin/main/index?aId=" + aid + "&storeId=" + id,"_blank");
+                            }, 10);
+                        }
+                    });
+                },
+                GetAllList: function () {
+                    var that = this;
+                    that.postdata.isAgent = 0;
+                    that.postdata.isBiaogan = 0;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+                GetAgentList: function () {
+                    var that = this;
+                    that.postdata.isAgent = 1;
+                    that.postdata.isBiaogan = 0;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+                GetBiaoganList: function (state) {
+                    var that = this;
+                    that.postdata.isAgent = 0;
+                    that.postdata.isBiaogan = state;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+                searchList: function () {
+                    var that = this;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+
+            },
+            mounted: function () {
+                var that = this;
+                that.GetList();
+            }
+        })
+    </script>
+}

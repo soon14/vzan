@@ -1,0 +1,255 @@
+﻿
+@model ViewModel<EntUserForm>
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "自定义表单";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("appId", 0);
+    string start = Utility.IO.Context.GetRequest("start", "");
+    string end = Utility.IO.Context.GetRequest("end", "");
+    int state = Utility.IO.Context.GetRequestInt("state", -999);
+}
+
+
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+<style>
+    .formsearch > input { margin-left: 10px; }
+    .detail_title { color: #4a86e8; font-size: 16px; margin-bottom: 10px; }
+    #detail li { padding:6px 11px; }
+    .btn { margin: 5px; }
+</style>
+<div id="app" class="container-fluid">
+
+    <div>
+        <div class="d-flex d-flex-center">
+            <div style="margin-right:10px;">
+                <a href="/@(dirName)/appform?appId=@(aid)" class="btn btn-link">查看全部</a>
+            </div>
+            <form method="get" action="/@(dirName)/appform">
+                <div class="d-flex d-flex-center formsearch">
+                    <input type="hidden" name="act" value="search" />
+                    <input type="hidden" name="appId" value="@(aid)" />
+                    从：
+                    <div class="input-daterange input-group" id="datepicker" style="width:400px;">
+                        <input type="text" class="input-sm form-control" name="start" value="@(start)" />
+                        <span class="input-group-addon">到</span>
+                        <input type="text" class="input-sm form-control" name="end" value="@(end)" />
+                    </div>
+                    <select class="form-control" style="width:100px;margin-left:10px;" name="state">
+                        <option value="-999">全部</option>
+                        <option value="1" @(state==1?"selected":"")>未处理</option>
+                        <option value="2" @(state==2?"selected":"")>已处理</option>
+                    </select>
+                    <input type="submit" class="btn btn-primary" value="查询" />
+                    @if (!string.IsNullOrEmpty(start) && !string.IsNullOrEmpty(end) && Model.DataList.Count > 0)
+                    {
+                        <a href="/@(dirName)/appformexport?act=range&appid=@(aid)&start=@(start)&end=@(end)&state=@state" target="_blank" class="btn btn-primary ml10" id="exportSearch">导出查询</a>
+                    }
+                    @if (Model.DataList.Count > 0)
+                    {
+                        <a href="/@(dirName)/appformexport?act=all&appid=@(aid)" target="_blank" class="btn btn-primary ml10" id="exportAll">导出全部</a>
+                    }
+
+                    <a style="display:none;" target="_blank" class="btn btn-primary ml10" id="exportSel">导出选择</a>
+                </div>
+            </form>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="50">选择</th>
+                        <th width="100">表单名称</th>
+                        <th width="100">二维码名称</th>
+                        <th width="300">表单详情</th>
+                        <th width="180">操作人备注</th>
+                        <th width="100">提交时间</th>
+                        <th width="60">处理状态</th>
+                        <th width="120">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int index = 0; index < Model.DataList.Count; index++)
+                    {
+                        var item = Model.DataList[index];
+                        <tr>
+                            <td align="center"><input type="checkbox" value="@(item.id)" class="item_sel" /></td>
+                            <td>@(item.comename)</td>
+                            <td>@(item.StoreCodeName)</td>
+                            <td><div class="word-break">@(item.formdatajson.Replace("{", "").Replace("}", "").Replace("\"", ""))</div></td>
+                            <td>@item.formremark.operationremark</td>
+                            <td>@(item.addtime)</td>
+                            <td>@(item.state==1?"未处理":item.state==2?"已处理":"未知状态")</td>
+                            <td>
+                                <a class="del btn btn-danger nobr" data-id="@(item.id)">删除</a>
+                                <a class="edit btn btn-primary" data-id="@(item.id)" onclick="EditForm(@index)">处理</a>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+            @if (Model.DataList.Count == 0)
+            {
+                <div class="ui-block-no-data">
+                    暂无数据
+                </div>
+            }
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        自定义表单处理
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div style=" margin-bottom:20px;">
+                        <input type="hidden" id="formId"/>
+                        <div class="detail_title">表单详情</div>
+                        <ul id="detail">
+                           
+                        </ul>
+                        <div style="clear:both"></div>
+                    </div>
+                    <div>
+                        <div class="detail_title">信息处理</div>
+                        <table style="margin:0;">
+                            <tr>
+                                <td>处理状态:</td>
+                                <td>
+                                    <label><input type="radio" value="2"  name="state" />已处理</label>&nbsp;&nbsp;
+                                    <label><input type="radio" value="1" name="state" />未处理</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>操作人备注：</td>
+                                <td><textarea style=" max-width: 462px; max-height: 134px; min-width: 462px; min-height: 134px; padding:5px; border-radius:5px;"placeholder="备注内容不超过100字" id="remark"></textarea></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary"onclick="UpdateState()">
+                        提交更改
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+
+
+    <script>
+        var aid =@aid;
+        var exportUrl = "/@(dirName)/appformexport?act=sel&appid=@(aid)";
+        $(function () {
+            $(document)
+                .on("click", ".del", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该记录吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/@(dirName)/appform", { act: "del", id: pid, appId: aid })
+                                .then(function (data) {
+                                    console.log(data);
+                                    if (typeof data == "object") {
+                                        if (data.isok) {
+                                            layer.msg("删除成功", { time: 1000 });
+                                            window.location.reload();
+                                        }
+                                        else {
+                                            layer.alert(data.msg);
+                                        }
+                                    }
+                                    else {
+                                        layer.alert(data);
+                                    }
+                                });
+
+                        }
+                    })
+                })
+                .on("click", ".item_sel", function (e) {
+                    var selItems = $(".item_sel:checked");
+                    if (selItems.length > 0) {
+                        var ids_array = [];
+                        var ids = $.each(selItems, function (index, item) {
+                            ids_array.push($(item).val());
+                        });
+                        var url = exportUrl + "&ids=" + ids_array.join(",");
+                        $("#exportSel").show().attr("href", url);
+
+                    }
+                    else {
+                        $("#exportSel").hide().removeAttr("href");
+                    }
+                });
+
+            $('.input-daterange').datepicker({
+                format: "yyyy-mm-dd",
+                language: "zh-CN",
+                //autoclose: true,
+                todayHighlight: true
+            });
+        });
+        function EditForm(index) {
+            var list =@Html.Raw(JsonConvert.SerializeObject(Model.DataList));
+            var form = list[index];
+            var detail = form.formdatajson.replace(/{/g, "").replace(/}/g, "").replace(/"/g, "");
+
+            var items = detail.split(',');
+            var detailContent = '';
+            $.each(items, function (i, v) {
+                detailContent +='<li><p style="word-wrap:break-word">'+v+'<br/></p></li>'
+            });
+            $("#detail").html(detailContent);
+            $("input[name='state'][value='" + form.state + "']").attr("checked", true);
+            $("#remark").val(form.formremark.operationremark);
+            $("#formId").val(form.id);
+            //页面层
+            $('#myModal').modal('show')
+        }
+        function UpdateState() {
+            var remark = $("#remark").val();
+            var formId = $("#formId").val();
+            var state = $("input[name='state']:checked").val();
+            if (remark.length > 100) {
+                    layer.msg("备注内容不能超过100字");
+                    return;
+                }
+                var layindex = layer.load(1)
+                $.post("/@(dirName)/saveyyForm", {appid:'@aid',formId, state,remark}, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.Msg, {
+                        time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                    } ,function () {
+                        if (data.isok) {
+                            $('#myModal').modal('hide');
+                            window.location.reload();
+                        }
+                    });
+                })
+        }
+    </script>
+</div>

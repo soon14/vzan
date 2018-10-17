@@ -1,0 +1,218 @@
+﻿@using Entity.MiniApp.Fds; 
+@using Entity.MiniApp.Conf;
+@model List<TemplateMsg>
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "小程序模板消息";
+}
+
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+    <tr class="text-center">
+        <th>模板消息名称</th>
+        <th>关键词</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><label>@(item.TitleName)</label> </td>
+                <td>@(item.ColNumsRemark)</td>
+                <td>
+                    @(item.openState == 1 ? "已启用" : "已停用")
+                </td>
+                <td>
+                    @*<a style="margin-top: 5px;" href="javascrip:;" data-attrid="@(item.Id)" data-itemid="0" data-name="" class="btn btn-primary btn-xs temp-btn-settingSpec">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        添加属性
+                    </a>*@
+                    <a style="margin-top: 5px;" href="#" data-itemid="@(item.Id)" data-name ="@(item.TitleName)" data-src="@item.egUrl" data-state="@item.openState" onclick="showForm(this)" >
+                        查看
+                    </a>
+                    @switch (item.openState)
+                    {
+                        case 0:
+                            <a href="#" data-itemid="@(item.Id)" data-name ="@(item.TitleName)" onclick="startTempMsg(this)">
+                                启用
+                            </a>
+                            break;
+                        case 1:
+                            <a href="#" data-itemid="@(item.Id)" data-name ="@(item.TitleName)"  onclick="stopTempMsg(this)">
+                                停用
+                            </a>
+                            break;
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<script type="text/html" id="id_attrtitle">
+    <span>确定要{#function#}[{#name#}]吗？</span>
+</script>
+
+<script>
+    //var FoodId =@(ViewBag.FoodId);s
+    function showForm(x)
+    {
+        var $this = $(x);
+        var title = "";
+        var itemid = $this.attr("data-itemid");
+
+        //var content = "<div style = 'margin-left:15px;width:380px;hight:420px;'><img src='" + $(x).data("src") + "' /></div>";
+        var content = "<div style = 'margin-left:15px;'><img src='" + $(x).data("src") + "' /></div>";
+        var buttonName = "启用模板";
+        var state = $(x).data("state");
+        if(state == 1)
+        {
+            var buttonName = "停用模板";
+        }
+        layer.open({
+            title: title,
+            content: content,
+            area: ['380px', '480px'],
+            btn: [ buttonName, "取消"],
+            yes: function () {
+                if(state == 1)
+                {
+                    stop(itemid);
+                }
+                else
+                {
+                    start(itemid);
+                }
+                layer.closeAll();
+            },
+            //no: function () { layer.closeAll(); },
+            cancel: function () {
+                layer.closeAll();
+            }
+        });
+    }
+
+
+    function start(itemid)
+    {
+        $.ajax({
+            type: "Post",
+            url: "/foods/startTmg",
+            data:
+                {
+                    appId:@(ViewBag.appId),
+                    TempMsgId: itemid
+                },
+            success: function (data) {
+                if (data.isok) {
+                    layer.alert(data.msg);
+                    window.location.reload();
+                }
+                else {
+                    layer.alert(data.msg);
+                }
+            }
+        });
+    }
+
+    function stop(itemid)
+    {
+        $.ajax({
+            type: "Post",
+            url: "/foods/stopTmg",
+            data:
+                {
+                    appId:@(ViewBag.appId),
+                    TempMsgId: itemid
+                },
+            success: function (data) {
+                if (data.isok) {
+                    layer.alert(data.msg);
+                    window.location.reload();
+                }
+                else {
+                    layer.alert(data.msg);
+                }
+            }
+        });
+    }
+
+    function startTempMsg(x)
+    {
+        var $thisobj = $(x);
+        var title = $thisobj.attr("data-name");
+        var itemid = $thisobj.attr("data-itemid");
+        //弹框
+        layer.open({
+            title: "",
+            content: $("#id_attrtitle").html().replace("{#function#}","启用").replace("{#name#}",title),
+            btn: ["保存", "取消"],
+            yes: function () {
+                $.ajax({
+                    type: "Post",
+                    url: "/foods/startTmg",
+                    data:
+                        {
+                            appId:@(ViewBag.appId),
+                            TempMsgId: itemid
+                        },
+                    success: function (data) {
+                        if (data.isok) {
+                            layer.alert(data.msg);
+                            window.location.reload();
+                        }
+                        else {
+                            layer.alert(data.msg);
+                        }
+                    }
+                });
+            },
+            no: function () { layer.closeAll(); },
+            cancel: function () {
+                layer.closeAll();
+            }
+        })
+    }
+
+
+    function stopTempMsg(x)
+    {
+        var $thisobj = $(x);
+        var title = $thisobj.attr("data-name");
+        var itemid = $thisobj.attr("data-itemid");
+        //弹框
+        layer.open({
+            title: "",
+            content: $("#id_attrtitle").html().replace("{#function#}","停用").replace("{#name#}",title),
+            btn: ["保存", "取消"],
+            yes: function () {
+                $.ajax({
+                    type: "Post",
+                    url: "/foods/stopTmg",
+                    data:
+                        {
+                            appId:@(ViewBag.appId),
+                            TempMsgId: itemid
+                        },
+                    success: function (data) {
+                        if (data.isok) {
+                            layer.alert(data.msg);
+                            window.location.reload();
+                        }
+                        else {
+                            layer.alert(data.msg);
+                        }
+                    }
+                });
+            },
+            no: function () { layer.closeAll(); },
+            cancel: function () {
+                layer.closeAll();
+            }
+        })
+    }
+    //});
+</script>

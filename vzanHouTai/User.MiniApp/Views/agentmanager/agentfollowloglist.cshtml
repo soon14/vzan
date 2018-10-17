@@ -1,0 +1,273 @@
+﻿@using Entity.MiniApp
+@model ViewModel<AgentFollowLog>
+@{
+    ViewBag.Title = "跟进记录";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+
+<style>
+    .page-wrapper {
+        min-width: 1800px;
+    }
+
+    #page div {
+        text-align: center;
+    }
+
+    .page-content {
+        min-width: 1400px;
+    }
+
+    #customList {
+        width: 100%;
+        margin: 0 auto;
+    }
+
+        #customList table.layui-table {
+            text-align: center;
+        }
+
+            #customList table.layui-table th, #customList table.layui-table td {
+                font-family: 'Microsoft YaHei';
+                font-weight: 400;
+                font-style: normal;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            #customList table.layui-table th {
+                height: 50px;
+            }
+
+            #customList table.layui-table a {
+                color: #108EE9;
+                margin: 0 15px;
+            }
+
+    .caozuo li {
+        float: left;
+    }
+
+    .more {
+        display: block;
+        position: relative;
+    }
+
+    .dropdown-menu {
+        min-width: 0px;
+        font-size: 12px;
+    }
+
+        .dropdown-menu a {
+            margin: 0px !important;
+            font-size: 12px;
+        }
+
+    #search_box {
+        margin-top: 10px; /*margin-bottom: 30px;*/
+        height: 120px;
+    }
+
+        #search_box ul li {
+            float: left;
+            line-height: 38px;
+        }
+
+            #search_box ul li input {
+                width: 50%;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #search_box ul li span {
+                float: left;
+                color: #404040;
+            }
+
+        #search_box ul.tamplate li {
+            min-width: 100px;
+            text-align: center;
+            width: auto;
+            margin: 10px 10px;
+            font-size: 12px;
+        }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus {
+                text-decoration: none;
+                color: #fff;
+            }
+
+            #search_box ul.tamplate li a {
+                padding: 0 18px;
+                color: #777;
+            }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus {
+                    text-decoration: none;
+                }
+
+    .search_btn {
+        width: 100%;
+        height: 45px;
+        float: left;
+        margin: 15px 0px;
+    }
+
+        .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus {
+            text-decoration: none;
+            outline: -webkit-focus-ring-color;
+        }
+
+    a.layui-btn-normal:focus {
+        color: #fff;
+    }
+
+    .search_btn a.layui-btn-primary:focus {
+        color: #555;
+    }
+
+    .search_btn a.layui-btn-primary:hover {
+        background-color: #eee;
+        border-color: #C9C9C9;
+    }
+
+    .layui-tab-title .layui-this:after {
+        height: 40px;
+    }
+</style>
+
+<div id="customList">
+    <a href="javascript:;" onclick="AddAgentFollowLog()" class="layui-btn layui-btn-normal" style="margin-right:15px;">+添加记录</a>
+    <a href="/agentmanager/agentdistributionuser?agentqrcodeid=@ViewBag.AgentQrcodeId" class="layui-btn layui-btn-primary" style="margin-right:15px;">返回</a>
+    <table class="layui-table" lay-skin="line" style="width:100%;">
+        <colgroup>
+            <col width="2%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>编号</th>
+                <th>记录</th>
+                <th>记录时间</th>
+                <th>跟进业务员</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        @if (Model != null && Model.DataList != null && Model.DataList.Count > 0)
+        {
+            for (int i = 0; i < Model.DataList.Count; i++)
+            {
+                <tr>
+                    <td>@Model.DataList[i].Id</td>
+                    <td>@Html.Raw(Model.DataList[i].Desc)</td>
+                    <td>@Model.DataList[i].AddTimeStr</td>
+                    <td>@Model.DataList[i].Writer</td>
+                    <td>
+                        <a href="#" onclick="DeleQrcode('@Model.DataList[i].Id')" style="color:red;">删除</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7">暂无数据</td>
+            </tr>
+        }
+    </table>
+
+    <div class="page" style="margin-top:60px;">
+        @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+    </div>
+
+    <div id="editcode" hidden>
+        <div style='margin-top: 20px;margin-left: 20px;'>
+            <span style="float:left;">备注：</span>
+            <textarea class='form-control' style='display: inline-block;width: 250px;height:100px;' type='text' id='tempdesc' maxlength="500"></textarea>
+        </div>
+    </div>
+</div>
+<script>
+    var currenteditid = 0;
+    var _layer = parent.layer;
+    function AddAgentFollowLog() {
+        _layer.open({
+            type:1,
+            zIndex:999999,
+            title: "添加记录",
+            shade: 0.3,
+            area: ['350px', '230px'], //宽高
+            content: $("#editcode").html().replace('tempdesc','desc'),//this.adddiv(),
+            btn:["确定","取消"],
+            end: function () {
+                currenteditid=0;
+            },
+            yes:function(){
+                if(currenteditid>0)
+                {
+                    return;
+                }
+                var desc = window.parent.document.getElementById("desc").value;//$("#nameVal").val();
+                if (desc == undefined || desc.length <= 0) {
+                    return _layer.msg("请输入备注");
+                }
+                
+                //Base64加密
+                var b = new Base64();
+                desc = b.encode(desc);
+                currenteditid = _layer.load(1);
+                $.ajax({
+                    type: "Post",
+                    url: "/agentmanager/SaveAgentFollowLog",
+                    data:
+                        {
+                            desc:desc,
+                            agentdistributionrid:@ViewBag.AgentDistributionRid,
+                        },
+                    success: function (data) {
+                        if (data.isok) {
+                            _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                _layer.load(1);
+                                window.parent.location.reload();
+                            });
+                        }
+                        else {
+                            _layer.msg(data.Msg);
+                            _layer.close(currenteditid);
+                        }
+                    }
+                });
+            },
+        });
+    }
+    function DeleQrcode(id) {
+        _layer.confirm('你确定要删除该跟进记录？', {
+            btn: ['确定', '取消'] //按钮
+        }, function () {
+            $.ajax({
+                type: "Post",
+                url: "/agentmanager/DelAgentFollowLog",
+                data: { id: id, agentdistributionrid:@ViewBag.AgentDistributionRid},
+                    success: function (data) {
+                    if (data.isok) {
+                        _layer.msg("删除成功", { anim: 0, time: 1000 }, function () {
+                            _layer.load(1);
+                            window.parent.location.reload();
+                        });
+                    }
+                    else {
+                        _layer.msg("删除失败");
+                    }
+                }
+            });
+        }, function () {
+        });
+    }
+</script>

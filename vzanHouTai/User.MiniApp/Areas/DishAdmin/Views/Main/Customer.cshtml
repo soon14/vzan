@@ -1,0 +1,212 @@
+﻿@model ViewModel<DishQueueUp>
+@{
+    ViewBag.Title = "Customer";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+    List<DishQueue> queues = ViewBag.DishQueueList;
+}
+
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 店内管理 <span class="c-gray en">&gt;</span> 客人队列 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="Huialert Huialert-success" style="margin-top: 10px;">
+        提示：排队数据在每日凌晨会自动被清空
+    </div>
+    <div class="text-c" hidden>
+        @foreach (DishQueue item in queues)
+        {
+            <input type="button" class="btn btn-secondary" name="btn_confirmall" value="@(item.q_name)(叫号)" onclick="queue_jiaohao(@item.id)">
+        }
+    </div>
+    <div class="alert alert-warning" style="margin-top:10px;">
+        <input type="button" class="btn btn-secondary" name="btn_confirmall" value="排队中" onclick="order_action_do('/DishAdmin/Main/Customer?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId&state=0')">
+        <input type="button" class="btn btn-danger" name="btn_payall" value="已入号" onclick="order_action_do('/DishAdmin/Main/Customer?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId&state=1')">
+        <input type="button" class="btn btn-success" name="btn_finishall" value="已取消" onclick="order_action_do('/DishAdmin/Main/Customer?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId&state=2')">
+        <input type="button" class="btn btn-default" name="btn_cancelall" value="已过号" onclick="order_action_do('/DishAdmin/Main/Customer?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId&state=3')">
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="100">号码</th>
+                    <th width="200">状态</th>
+                    <th width="100">是否已通知</th>
+                    <th width="100">电话</th>
+                    <th width="100">客人数量</th>
+                    <th width="100">排队时间</th>
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DishQueueUp item in Model.DataList)
+                {
+                    <tr class="text-c">
+                        <td>@(item.q_haoma)</td>
+                        <td>
+                            @switch (item.state)
+                            {
+                                case (int)DishEnums.QueueUpEnums.排队中:
+                                    <input type="button" class="btn btn-secondary" name="btn_confirmall" value="排队中">
+                                    break;
+                                case (int)DishEnums.QueueUpEnums.已入号:
+                                    <input type="button" class="btn btn-danger" name="btn_payall" value="已入号">
+                                    break;
+                                case (int)DishEnums.QueueUpEnums.已取消:
+                                    <input type="button" class="btn btn-success" name="btn_finishall" value="已取消">
+                                    break;
+                                case (int)DishEnums.QueueUpEnums.已过号:
+                                    <input type="button" class="btn btn-default" name="btn_cancelall" value="已过号">
+                                    break;
+                                default:
+
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <span class='label @(item.q_is_tongzhi==1?"label-success":"label-default") radius'>@(item.q_is_tongzhi == 1 ? "已通知":"未通知")</span>
+                        </td>
+                        <td>@(item.q_phone)</td>
+                        <td>@(item.q_renshu)</td>
+                        <td>@(item.q_addtime.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                        <td>
+                            <a style="text-decoration:none" class="btn btn-success radius size-MINI" onclick="change_status(@item.id)" title="操作"><i class="Hui-iconfont"></i> 操作</a>
+                            <a style="text-decoration:none" class="btn btn-danger radius size-MINI" onclick="del_queueUp(@item.id)" href="#" title="删除"><i class="Hui-iconfont"></i> 删除</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="page">  </div>
+    </div>
+</div>
+
+<div id="choose-category" style="padding: 15px 30px;display: none;">
+    <select name="table_id" class="select" id="status_val">
+        <option value="999" selected disabled>更新状态</option>
+        <option value="0">队列中</option>
+        <option value="1">已入号</option>
+        <option value="2">已取消</option>
+        <option value="3">已过号</option>
+    </select>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        function category_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(add_index);
+        }
+        function category_edit(title, url) {
+            var edit_index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(edit_index);
+        }
+        function order_action_do(url) {
+            window.location.href = url;
+        }
+        function queue_jiaohao(queueId) {
+            var l_index = layer.msg('叫号中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "Post",
+                url: "/DishAdmin/Main/DishQueueUpEdit?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId",
+                data: { id:queueId,act:"call" },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+        function change_status(id) {
+            layer.open({
+                type: 1, title: '更新排队状态', zIndex: 9998,
+                btn: ['确定', '取消'],
+                content: $("#choose-category"),
+                yes: function () {
+                    var layer_t_id = layer.msg('操作中', { icon: 16, shade: 0.5, zIndex: 9999 });
+                    var t_val = $("#status_val").val();
+                    if (t_val == 999)
+                    {
+                        return false;
+                    }
+
+                    $.ajax({
+                        type: "Post",
+                        url: "/DishAdmin/Main/DishQueueUpEdit?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId",
+                        data: {id:id, state: t_val,act:"save",editCols:"state" },
+                        dataType: "json",
+                        success: function (data) {
+                            layer.close(layer_t_id);
+                            if (data.code == 1) {
+                                layer.msg(data.msg);
+                                window.location.reload();
+                            } else {
+                                layer.msg(data.msg);
+                                return false;
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                        }
+                    });
+                }
+            });
+        }
+
+        function del_queueUp(id) {
+            layer.open({
+                type: 1, title: '删除排号', zIndex: 9998,
+                btn: ['确定', '取消'],
+                content: "确定要删除该排号吗?",
+                yes: function () {
+                    var layer_t_id = layer.msg('操作中', { icon: 16, shade: 0.5, zIndex: 9999 });
+                    var t_val = $("#status_val").val();
+                    if (t_val == 999) {
+                        return false;
+                    }
+
+                    $.ajax({
+                        type: "Post",
+                        url: "/DishAdmin/Main/DishQueueUpEdit?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId",
+                        data: { id:id,act:"del" },
+                        dataType: "json",
+                        success: function (data) {
+                            layer.close(layer_t_id);
+                            if (data.code == 1) {
+                                layer.msg(data.msg);
+                                window.location.reload();
+                            } else {
+                                layer.msg(data.msg);
+                                return false;
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+
+}

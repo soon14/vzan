@@ -1,0 +1,195 @@
+﻿@using Entity.MiniApp.PlatChild
+@model ViewModel<PlatChildSpecification>
+@{
+
+    ViewBag.Title = "产品类别";
+    Layout = "~/Areas/PlatChild/Views/Shared/_LayoutAdmin.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (appid <= 0)
+    {
+        appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    }
+
+    int fid = Utility.IO.Context.GetRequestInt("fid", 0);
+
+}
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        @if (fid != 0)
+        {
+            <a href="ProductSKUMgr?aid=@(appid)" class="btn btn-primary ml10"><i class="glyphicon glyphicon-chevron-left"></i> 返回规格列表</a>
+        }
+
+        <div class="alert alert-warning alert-dismissible mt10" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、规格名称不能超过20个字，且不能重复</p>
+            <p>2、规格总数不能超过200个，每个规格下面的规格值数不能超过200个</p>
+            <p>3、产品规格/规格值若已关联了至少一个产品，则该规格/规格值不可删除</p>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th width="100">ID</th>
+                        <th>@(fid == 0 ? "规格名称" : "规格值名称")</th>
+                     
+                        <th width="300">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list">
+                        <td>{{item.Id}}</td>
+                        <td>{{item.Name}}</td>
+                       
+                        <td>
+                            <a v-on:click="del(index)" class="btn btn-default ml10"><i class="glyphicon glyphicon-trash"></i> 删除 </a>&nbsp;&nbsp;&nbsp;
+                            @if (fid == 0)
+                            {
+                                <a class="btn btn-primary ml10" v-bind:href="'ProductSKUMgr?aid=@(appid)&fid='+item.Id"><i class="glyphicon glyphicon-eye-open"></i> 查看规格值</a>
+                            }
+                            <button v-on:click="edit(index)" class="btn btn-primary ml10"><i class="glyphicon glyphicon-pencil"></i> 编辑 </button>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+        <div>
+            <button class="btn btn-primary ml10" id="btnBatch_Pass" v-on:click="addNew">
+                <span class="glyphicon glyphicon-plus"></span>
+                @if (fid == 0)
+                {
+                    <text>新增规格</text>
+                }
+                else
+                {
+                    <text>新增规格值</text>
+                }
+            </button>
+        </div>
+    </div>
+
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        @(fid == 0 ? "规格名称" : "规格值")
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td><span>@(fid == 0 ? "规格名称" : "规格值")：</span></td>
+                            <td><input maxlength="20" placeholder="@(fid == 0 ? "规格名称" : "规格值")" id="nameVal" v-model="edititem.Name" type="text" class="form-control"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary ml10" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    var item = {
+        id:0,
+        Name: "",
+        ParentId:@fid,
+        Sort:99,
+        Aid:@appid,
+        State:1,
+    };
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            edititem:JSON.parse(JSON.stringify(item)),
+            editid:0,
+            list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+        },
+        coumputed:{
+            totalcount:function(){
+                var that=this;
+                return that.list.length;
+            }
+        },
+        mounted: function () {
+            console.log("mounted");
+        },
+        methods: {
+            addNew: function () {
+                var that=this;
+                if (that.list.length >= 200){
+                    layer.alert("无法新增规格！您已添加了200个产品规格，已达到上限，请编辑已有的分类或删除部分规格后再进行新增。");
+                    return;
+                }
+                $('#addModal').modal('show');
+                that.editid = 0;
+            },
+            save: function () {
+                var that=this;
+                var _typename=$.trim(that.edititem.Name);
+                if(_typename.length==0||_typename.length>20){
+                    layer.msg("规格名称不能为空，且不能超过20个字",{time:1000});
+                    return;
+                }
+                $.post("/PlatChild/Store/SaveProductSKU", {model:that.edititem,aid:@appid},function(data){
+
+                    if(data.isok){
+                        $('#addModal').modal('hide');
+                        layer.msg(data.Msg,{time:1000});
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+
+                });
+            },
+            edit:function(index){
+                var that=this;
+                $('#addModal').modal('show');
+                this.edititem=JSON.parse(JSON.stringify(that.list[index]));
+            },
+            del:function(index){
+                var that=this;
+                layer.open({
+                    title: "删除确认",
+                    content: "确定要删除该规格么？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+
+                        $.post("/PlatChild/Store/SaveProductSKU",{act:"del",id:that.list[index].Id,aid:@appid},function(data){
+                            if(data.isok){
+                                $('#addModal').modal('hide');
+                                layer.msg(data.Msg,{time:1000});
+                                that.list.splice(index,1);
+                                window.setTimeout(function(){
+                                    window.location.reload();
+                                },2000);
+                            }
+                            else{
+                                layer.msg(data.Msg,{time:1000});
+                            }
+
+                        });
+
+
+
+                    }
+                })
+            }
+        }
+    });
+</script>

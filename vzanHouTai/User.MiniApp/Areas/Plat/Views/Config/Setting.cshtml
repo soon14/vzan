@@ -1,0 +1,658 @@
+﻿@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+}
+@model Entity.MiniApp.Plat.PlatConfig
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+    .layui-laypage span { background-color: #ffffff; }
+    /*.add { color: #337ab7; }*/
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+    <div id="app_Conf" v-cloak>
+
+        <div>
+            <div class="form-title">平台首页广告图设置（限5张）<a href="javascript:;" v-on:click="add(0)" class="add btn btn-primary ml10">+新增广告</a></div>
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">图片</th>
+                    <th class="centertext">跳转功能</th>
+                    <th class="centertext">跳转目标</th>
+                    <th class="centertext">排序</th>
+                    <th class="centertext">新增时间</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in platConfigADImgList">
+                    <td class="centertext">
+                        <div class="adImg">
+                            <img v-bind:src="item.ADImg" alt="图片跑丢了" width="50" height="50" />
+                        </div>
+                    </td>
+                    <td class="centertext nowrap">
+                        <span v-if="item.ADImgType==0">店铺</span>
+                        <span v-else-if="item.ADImgType==1">帖子</span>
+                        <span v-else-if="item.ADImgType==2">小程序</span>
+                        <span v-else="item.ADImgType==-1">不跳转</span>
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.ObjName}}
+                    </td>
+
+                    <td class="centertext" v-on:click.stop="showEditSort(item.ConfigType,index)">
+                        <span v-show="!item.IsShowEditSort">{{item.SortNumber}}</span>
+                        <div v-show="item.IsShowEditSort" style="display:inline-block;">
+                            <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " />
+                            <a href="javascript:;" class="btn btn-primary ml10" v-on:click="saveSort(item.ConfigType,index)">保存</a>
+
+                        </div>
+
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.AddTimeStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="delPlatConfig(item.Id)">删除</a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div>
+            <div class="form-title">推荐商家设置（限12家）<a href="javascript:;" v-on:click="add(1)" class="add btn btn-primary ml10">+新增推荐商家</a></div>
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">店铺名称</th>
+                    <th class="centertext">排序</th>
+                    <th class="centertext">新增时间</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in platConfigTjStoreList">
+                    <td class="centertext nowrap">
+                        {{item.ObjName}}
+                    </td>
+                    <td class="centertext" v-on:click.stop="showEditSort(item.ConfigType,index)">
+                        <span v-show="!item.IsShowEditSort">{{item.SortNumber}}</span>
+                        <div v-show="item.IsShowEditSort" style="display:inline-block;">
+                            <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " />
+                            <a href="javascript:;" class="btn btn-primary ml10 savesort" v-on:click="saveSort(item.ConfigType,index)">保存</a>
+
+                        </div>
+
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.AddTimeStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="delPlatConfig(item.Id)">删除</a>
+
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div>
+            <div class="form-title">置顶商家设置（限30家）<a href="javascript:;" v-on:click="add(2)" class="add btn btn-primary ml10">+新增置顶商家</a></div>
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">店铺名称</th>
+                    <th class="centertext">排序</th>
+                    <th class="centertext">新增时间</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in platConfigTopStoreList">
+                    <td class="centertext nowrap">
+                        {{item.ObjName}}
+                    </td>
+                    <td class="centertext" v-on:click.stop="showEditSort(item.ConfigType,index)">
+                        <span v-show="!item.IsShowEditSort">{{item.SortNumber}}</span>
+                        <div v-show="item.IsShowEditSort" style="display:inline-block;">
+                            <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " />
+                            <a href="javascript:;" class="btn btn-primary ml10 savesort" v-on:click="saveSort(item.ConfigType,index)">保存</a>
+
+                        </div>
+
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.AddTimeStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="delPlatConfig(item.Id)">删除</a>
+
+                    </td>
+                </tr>
+
+            </table>
+
+
+
+        </div>
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            设置
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div v-if="platConfigInfo.ConfigType==0">
+                                    <div class="pimg">
+                                        <img style="height:150px;width:150px;" v-bind:src="platConfigInfo.ADImg" v-if="platConfigInfo.ADImg!=''&&platConfigInfo.ADImg!=null" v-on:click="UploadImg(0)" />
+                                        <div class="plus-button" v-on:click="UploadImg(0)" v-else>
+                                            <div class="s-image-uploader-wrapper">
+                                                <div>
+                                                    <div class="plus">+</div>
+                                                    <div class="plus-label">上传广告图片</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <b class="warn">建议尺寸：750x400</b>
+                                </div>
+                                <div class="search">
+                                    <div class="form-inline">
+                                        <div class="form-group" style="margin-left:0px;">
+                                            <div>
+                                                <div style="display:inline-block;" v-if="platConfigInfo.ConfigType==0">
+
+                                                    <label>
+                                                        <input type="radio" name="ADImgType" value="0" v-model="platConfigInfo.ADImgType" v-on:click="getData()" />跳转店铺
+                                                    </label>
+                                                    <label>
+                                                        <input type="radio" name="ADImgType" value="1" v-model="platConfigInfo.ADImgType" v-on:click="getData()" />跳转动态
+                                                    </label>
+                                                    <label>
+                                                        <input type="radio" name="ADImgType" value="2" v-model="platConfigInfo.ADImgType" v-on:click="getData()" />跳转到小程序
+                                                    </label>
+                                                    <label>
+                                                        <input type="radio" name="ADImgType" value="-1" v-model="platConfigInfo.ADImgType" v-on:click="getData()" />不跳转
+                                                    </label>
+                                                </div>
+                                                <input v-if="platConfigInfo.ADImgType!=-1&&platConfigInfo.ADImgType!=2" type="text" name="storeOwnerPhone" class="form-control" value="" placeholder="输入会员账号" v-model="postdata.userPhone" />
+                                                <a v-if="platConfigInfo.ADImgType!=-1&&platConfigInfo.ADImgType!=2" href="#" class="btn btn-primary ml10" style="margin-left:10px" v-on:click="search()">查询</a>
+                                            </div>
+
+                                        </div>
+
+
+
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:20px;">
+                                    <table class="table table-bordered viplevel ml_19" v-if="platConfigInfo.ConfigType==0&&platConfigInfo.ADImgType==1">
+                                        <tr class="active">
+                                            <th class="centertext">选择</th>
+                                            <th class="centertext">动态信息</th>
+                                            <th class="centertext">联系号码</th>
+                                        </tr>
+                                        <tr v-for="(item,index) in platMsgList">
+                                            <td class="centertext nowrap">
+                                                <label>
+                                                    <input type="radio" name="ObjId" :value="item.Id" v-model="platConfigInfo.ObjId" />{{item.Id}}
+                                                </label>
+                                            </td>
+
+
+
+                                            <td class="centertext nowrap">
+                                                {{item.MsgDetail}}
+                                            </td>
+                                            <td class="centertext nowrap">
+                                                {{item.Phone}}
+                                            </td>
+
+                                        </tr>
+
+                                    </table>
+                                    <table class="table table-bordered viplevel ml_19" v-else-if="platConfigInfo.ADImgType==0">
+                                        <tr class="active">
+                                            <th class="centertext">选择</th>
+                                            <th class="centertext">店铺名称</th>
+                                            <th class="centertext">会员账号</th>
+                                        </tr>
+                                        <tr v-for="(item,index) in platStoreList">
+                                            <td class="centertext nowrap">
+                                                <label v-if="item.MyCardId>0">
+                                                    <input type="radio" name="ObjId" :value="item.MyCardId" v-model="platConfigInfo.ObjId" v-on:click="savePlatConfigInfoType(0)" />{{item.MyCardId}}
+                                                </label>
+                                                <label v-else>
+                                                    <input type="radio" name="ObjId" :value="item.StoreId" v-model="platConfigInfo.ObjId" v-on:click="savePlatConfigInfoType(1)" />{{item.StoreId}}
+                                                </label>
+                                            </td>
+                                            <td class="centertext nowrap">
+                                                {{item.StoreName}}
+                                            </td>
+                                            <td class="centertext nowrap">
+                                                {{item.StoreOwnerPhone}}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <div id="pages" v-if="platConfigInfo.ADImgType!=-1&&platConfigInfo.ADImgType!=2" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>postdata.pageSize"></div>
+                                    <div v-if="platConfigInfo.ConfigType==0&&platConfigInfo.ADImgType==2">
+                                        <input  type="text" name="appId" class="form-control" value="" placeholder="输入跳转的小程序appId" v-model="platConfigInfo.Name" />
+                                    </div>
+
+                                </div>
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <a class="btn btn-default ml10" data-dismiss="modal">
+                            取消
+                        </a>
+                        <a class="btn btn-primary ml10" v-on:click="saveInfo()">
+                            确认
+                        </a>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+        <!-- #region 上传图片弹窗 -->
+        <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="border:0px;">
+                        <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                    </div>
+                    <div class="modal-body" style="min-height:500px;padding:0px;">
+                        <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- #endregion -->
+    </div>
+</div>
+
+<script>
+
+    var mask;
+
+    var ids;
+    var chk_value =[];
+
+    var app = new Vue({
+        el: "#app_Conf",
+        data: {
+            platConfigInfo: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model)),
+            editIndex: 0,
+            isloading: false,
+            platConfigADImgList: [],
+            platConfigTjStoreList:[],
+            platConfigTopStoreList:[],
+            platStoreList:[],
+            platMsgList:[],
+            recordCount: 0,
+            postdata: {
+                aid:@ViewBag.appId,
+                keyMsg:"",
+                pageIndex: 1,
+                pageSize: 5,
+                isTop:-1,
+                isFromStore:0,
+                userPhone:""
+            },
+            curADImgPath:""
+           
+        },
+        watch:{
+            curADImgPath:function(){
+                var that=this;
+                that.platConfigInfo.ADImg=that.curADImgPath;
+            }
+        },
+        methods: {
+            SavePlatRemark:function(){
+                var that=this;
+                //if(that.platRemarkModel.ADImg==""){
+                //    layer.msg('公告不能为空');
+                //    return;
+                //}
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Config/SavePlatRemark',
+                    data: {id:that.platRemarkModel.Id,platRemark:that.platRemarkModel.ADImg,objId:that.platRemarkModel.ObjId,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            savePlatConfigInfoType:function(platConfigInfoType){
+                var that = this;
+                that.platConfigInfo.isStoreID=platConfigInfoType;
+            },
+            saveSort:function(configType,index){
+                var that=this;
+                var id,sortNumber;
+                switch(configType){
+                    case 0://广告图
+                        id=that.platConfigADImgList[index].Id;
+                        sortNumber=that.platConfigADImgList[index].SortNumber;
+                        break;
+                    case 1://推荐商家
+                        id=that.platConfigTjStoreList[index].Id;
+                        sortNumber=that.platConfigTjStoreList[index].SortNumber;
+
+                        break;
+                    case 2://置顶商家
+                        id=that.platConfigTopStoreList[index].Id;
+                        sortNumber=that.platConfigTopStoreList[index].SortNumber;
+
+                        break;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Config/UpdateConfig',
+                    data: {id:id,sortNumber:sortNumber,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            showEditSort:function(configType,index){
+                var that=this;
+
+                switch(configType){
+                    case 0://广告图
+                        that.platConfigADImgList[index].IsShowEditSort=true;
+                        break;
+                    case 1://推荐商家
+                        that.platConfigTjStoreList[index].IsShowEditSort=true;
+                        break;
+                    case 2://置顶商家
+                        that.platConfigTopStoreList[index].IsShowEditSort=true;
+                        break;
+                }
+
+            },
+            getData:function(){
+                var that=this;
+                that.postdata.pageIndex=1;
+                that.postdata.userPhone="";
+                if(that.platConfigInfo.ADImgType==1){
+                    //获取帖子
+                    that.getMsgList();
+
+                }else if(that.platConfigInfo.ADImgType==0){
+                    //获取店铺数据
+                    that.getStoreList();
+                }
+            },
+            getStoreList:function(){
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Store/GetStoreList", that.postdata, function (data) {
+                    layer.close(index);
+                    that.platStoreList = data.dataObj.list;
+                    that.recordCount = data.dataObj.totalCount;
+                    that.resetPage();
+                })
+
+            },
+            getMsgList:function(){
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Msg/getMsg", that.postdata, function (data) {
+                    layer.close(index);
+                    that.platMsgList = data.dataObj.list;
+                    that.recordCount = data.dataObj.totalCount;
+                    that.resetPage();
+                })
+
+            },
+            delPlatConfig:function(id){
+                //删除
+                var that=this;
+                layer.open({
+                    content: '确定要删除?'
+                 ,btn: ['确认', '取消']
+                 ,yes: function(index, layero){
+                     $.ajax({
+                         type: 'POST',
+                         url: '/Plat/Config/UpdateConfig',
+                         data: {id:id,actionType:-1,appId:@ViewBag.appId},
+                         dataType: 'json',
+                         success: function (data) {
+                             layer.msg(data.Msg);
+                             if (data.isok) {
+
+                                 window.setTimeout(function(){
+                                     window.location.reload();
+                                 },2000);
+                             }
+                         },
+                         error: function (data) {
+                             layer.msg('与服务器通讯错误');
+                         }
+                     });
+                 }
+                 ,btn2: function(index, layero){
+
+                     // layer.msg("点击取消");
+                 }
+                });
+            },
+
+            search:function(){
+                var that=this;
+                that.postdata.pageIndex=1;
+                if(that.platConfigInfo.ADImgType==1){
+                    //获取帖子
+                    that.getMsgList();
+
+                }else{
+                    //获取店铺数据
+                    that.getStoreList();
+                }
+            },
+
+            //添加编辑窗口
+            add: function (ConfigType) {
+                var that=this;
+                that.platConfigInfo.ConfigType=ConfigType;
+                that.platConfigInfo.ADImgType=0;
+                that.getData();
+                $('#myModal').modal('show');
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+
+                                if(that.platConfigInfo.ADImgType==1){
+                                    //获取帖子
+                                    that.getMsgList();
+
+                                }else{
+                                    //获取店铺数据
+                                    that.getStoreList();
+                                }
+
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+
+            
+            getPlatConfigList: function (configType) {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Config/GetSettingList", {appId:@ViewBag.appId,configType:configType}, function (data) {
+                    layer.close(index);
+                    switch(configType){
+                        case 0://广告图
+                            that.platConfigADImgList = data.dataObj.list;
+                            break;
+                        case 1://推荐商家
+                            that.platConfigTjStoreList = data.dataObj.list;
+                            break;
+                        case 2://置顶商家
+                            that.platConfigTopStoreList = data.dataObj.list;
+                            break;
+                    
+                    }
+                })
+            },
+
+            //保存
+            saveInfo: function () {
+                var that=this;
+                if(that.platConfigInfo.ADImgType!=-1&&that.platConfigInfo.ADImgType!=2&&that.platConfigInfo.ObjId<=0){
+                    layer.msg("请先选择店铺或者动态");
+                    return;
+                }
+
+                if(that.platConfigInfo.ADImgType==2&&that.platConfigInfo.ConfigType==0){
+
+                    if(that.platConfigInfo.Name==""){
+                        layer.msg("请填写需要跳转的小程序appId");
+                        return;
+                    }
+                   
+                }
+
+
+                if(that.platConfigInfo.ConfigType==0&&(that.platConfigInfo.ADImg==null||that.platConfigInfo.ADImg=='')){
+                    layer.msg("请上传广告图");
+                    return;
+                }
+
+                if(that.platConfigInfo.ConfigType==1){
+                    //推荐商家
+                    var that=this;
+                    var index= that.platConfigTjStoreList.findIndex(x=>x.ObjId==that.platConfigInfo.ObjId);
+                    if(index>-1){
+                        layer.msg("该商家已经被推荐，请重新选择");
+                        return;
+                    }
+                }
+
+                if(that.platConfigInfo.ConfigType==2){
+                    //置顶商家
+                    var that=this;
+                    var index= that.platConfigTopStoreList.findIndex(x=>x.ObjId==that.platConfigInfo.ObjId);
+                    if(index>-1){
+                        layer.msg("该商家已经被置顶，请重新选择");
+                        return;
+                    }
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Config/SaveConfig',
+                    data: {platConfig:that.platConfigInfo,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+     
+            UploadImg: function () {
+                var that=this;
+                var framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=0&maxImgSize=1&objKey=curADImgPath&objType=1&remainCount=1&imgWidth=800&imgHeight=400";
+                $("#uploadFrame").attr("src",framSrc);
+                $("#addModal_UploadImg").modal('show');
+            }
+        },created:function(){
+            var that=this;
+            that.getPlatConfigList(0);
+            that.getPlatConfigList(1);
+            that.getPlatConfigList(2);
+           
+        }
+    });
+</script>

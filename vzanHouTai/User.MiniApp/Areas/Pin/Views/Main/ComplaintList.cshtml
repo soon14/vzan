@@ -1,0 +1,317 @@
+﻿@{
+    ViewBag.Title = "ComplaintList";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+}
+@model ViewModel<PinComplaint>
+<body class="gray-bg">
+    <div id="app" v-cloak>
+        <div class="wrapper wrapper-content animated fadeInUp">
+            <div class="search-area">
+                <form>
+                    <input type="hidden" name="aid" value="@ViewBag.aid" />
+                    <div class="row">
+                        <div class="col-sm-3 col-lg-2 col-xs-6">订单号：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" name="outTradeNo" value="@ViewBag.outTradeNo" /></div>
+                        <div class="col-sm-3 col-lg-2 col-xs-6">店铺：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" name="storeName" value="@ViewBag.storeName" /></div>
+                        <div class="col-sm-3 col-lg-2 col-xs-6">投诉人：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" name="userName" value="@ViewBag.userName" /></div>
+                        <div class="col-sm-3 col-lg-2 col-xs-6">
+                            订单状态：
+                            <select class="form-control" style="width:120px; display:inline-block;margin:0 8px;" name="orderState">
+                                <option value="-999" @(ViewBag.orderState == -999 ? "selected" : "")>全部</option>
+                                <option value="4" @(ViewBag.orderState == 4 ? "selected" : "")>交易成功</option>
+                                <option value="3" @(ViewBag.orderState == 3 ? "selected" : "")>待自取</option>
+                                <option value="2" @(ViewBag.orderState == 2 ? "selected" : "")>待收货</option>
+                                <option value="1" @(ViewBag.orderState == 1 ? "selected" : "")>待发货</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:18px;">
+                        <div class="col-sm-3 col-lg-2 col-xs-3">店铺Id：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" name="sId" value="@ViewBag.storeId" /></div>
+                        <div class="col-sm-5 col-lg-4 col-xs-6">
+                            下单时间：
+                            <input type="text" id="startDate" name="startDate" class="startDate form-control" placeholder="开始日期" value="@ViewBag.startDate" data-date readonly style="width:120px; display:inline-block;margin:0 8px;" />
+                            至
+                            <input type="text" id="endDate" name="endDate" class="endDate form-control" placeholder="结束日期" value="@ViewBag.endDate" data-date readonly style="width:120px; display:inline-block;margin:0 8px;" />
+                        </div>
+                        <div class="col-sm-4 col-lg-3 col-xs-3">
+                            <button class="btn btn-primary radius" type="submit"> <i class="fa fa-search"></i> 搜索</button>
+                            <button class="btn btn-default radius" type="button" v-on:click="refresh()"> <i class="fa fa-refresh"></i> 重置</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="ibox-title">
+                        <h5 style="margin-top:7px;">申诉列表</h5>
+                    </div>
+                    <div class="ibox-content xcx-list">
+                        <table class="table table-hover table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>选择</th>
+                                    <th>ID</th>
+                                    <th>订单号</th>
+                                    <th>订单状态</th>
+                                    <th>下单时间</th>
+                                    <th>投诉时间</th>
+                                    <th>投诉状态</th>
+                                    <th>投诉人</th>
+                                    <th>联系电话</th>
+                                    <th>店铺名(Id)</th>
+                                    <th>问题说明</th>
+
+                                    <th>操作</th>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.DataList != null && Model.DataList.Count > 0)
+                                {
+                                    var index = 0;
+                                    foreach (var item in Model.DataList)
+                                    {
+                                        <tr>
+                                            <td><input type="checkbox" name="item" lay-skin="primary"></td>
+                                            <td>@item.id</td>
+                                            <td>@item.orderOutTradeNo</td>
+                                            <td>@item.order.stateStr</td>
+                                            <td>@item.order.paytimeStr</td>
+                                            <td>@item.addTimeStr</td>
+                                            <td>@item.stateStr</td>
+                                            <td>@item.userInfo.NickName</td>
+                                            <td>@item.phone</td>
+                                            <td>@item.store.storeName (Id:@item.store.id)</td>
+                                            <td width="250">@(string.IsNullOrEmpty(item.content) ? "——" : item.content)</td>
+                                            <td>
+                                                <a href="javascript:;" class="btn btn-sm btn-primary radius" style="margin:3px 8px;" v-on:click="OpenComplaintDetail(@index)">处理</a>
+                                                <a href="javascript:;" class="btn btn-sm btn-outline btn-default radius" style="margin:3px 8px;" v-on:click="OpenOrderDetail(@index)">订单详情</a>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="11" align="center">查无数据</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (Model.TotalCount > Model.PageSize)
+                        {
+                            <div class="page">
+                                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        @if (Model != null && Model.DataList != null && Model.DataList.Count > 0)
+        {
+            <!-- 投诉详情 -->
+            <div class="modal fade" id="complaintDetail" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">投诉处理</h4>
+                        </div>
+                        <div class="modal-body">
+                            <table>
+                                <tr>
+                                    <td width="70"><label>订单号：</label></td>
+                                    <td>{{list[index].orderOutTradeNo}}<a href="javascript:;" style="margin-left: 43px; text-decoration: underline; color: #3eb94e;" v-on:click="OpenOrderDetail(index)">订单详情</a></td>
+                                </tr>
+                                <tr>
+                                    <td><label>订单状态：</label></td>
+                                    <td>{{list[index].order.stateStr}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>投诉人：</label></td>
+                                    <td>{{list[index].userInfo.NickName}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>投诉店铺：</label></td>
+                                    <td>{{list[index].store.storeName}}<a :href="'/Pin/main/ComplaintList?aid=@ViewBag.aid&sId='+list[index].store.id" style="margin-left: 43px; text-decoration: underline; color: #3eb94e;">该店投诉历史</a></td>
+                                </tr>
+                            </table>
+                            <!--分割线-->
+                            <hr style="filter: alpha(opacity=100,finishopacity=0,style=3)" width="100%" color="#6f5499" size="3" />
+                            <table width="100%">
+                                <tr>
+                                    <td width="70"><label>问题说明：</label></td>
+                                    <td>{{list[index].content}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>图片说明：</label></td>
+                                    <td>
+                                        <ul>
+                                            <li style="width:30%;margin:1%; float:left;" v-for="pic in list[index].picList"><img :src="pic" width="100%" /></li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label>协调记录：</label></td>
+                                    <td><textarea v-model="list[index].record" class="form-control" rows="5" style=" resize:none;"></textarea></td>
+                                </tr>
+                                <tr>
+                                    <td><label>处理结果：</label></td>
+                                    <td><input type="text" v-model="list[index].result" class="form-control" /></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="modal-footer" style="text-align:center;">
+                            <button type="button" class="btn btn-primary" v-on:click="SaveRecord()">保存协调记录</button>
+                            <button type="button" class="btn btn-primary" v-on:click="SendResult()">发送处理结果</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">返回</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 订单详情-->
+            <div class="modal fade" id="orderDetail" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">订单详情</h4>
+                        </div>
+                        <div class="modal-body">
+                            <table>
+                                <tr>
+                                    <td width="70"><label>订单号：</label></td>
+                                    <td>{{list[index].orderOutTradeNo}}</td>
+                                    <td width="70"><label>订单状态：</label></td>
+                                    <td>{{list[index].order.stateStr}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>支付状态：</label></td>
+                                    <td>{{list[index].order.payStateStr}}</td>
+                                    <td><label>拼团状态：</label></td>
+                                    <td>{{list[index].order.groupInfo.stateStr}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>所属店铺：</label></td>
+                                    <td>{{list[index].store.storeName}}</td>
+                                    <td><label>店铺电话：</label></td>
+                                    <td>{{list[index].store.phone}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>收货人：</label></td>
+                                    <td>{{list[index].order.consignee}}</td>
+                                    <td><label>收货电话：</label></td>
+                                    <td>{{list[index].order.phone}}</td>
+                                </tr>
+                                <tr>
+                                    <td><label>配送店址：</label></td>
+                                    <td>{{list[index].order.address}}</td>
+                                    <td><label>买家备注：</label></td>
+                                    <td>{{list[index].order.buyerRemark}}</td>
+                                </tr>
+                            </table>
+                            <!--分割线-->
+                            <hr style="filter: alpha(opacity=100,finishopacity=0,style=3)" width="100%" color="#6f5499" size="3" />
+                            <table>
+                                <tr>
+                                    <th style="width:200px;"><label>购买商品</label></th>
+                                    <th style="width:80px;"><label>单价</label></th>
+                                    <th style="width:80px;"><label>数量</label></th>
+                                    <th style="width:80px;"><label>实付金额</label></th>
+                                    <th style="width:80px;"><label>返现金额</label></th>
+                                </tr>
+                                <tr>
+                                    <td style="padding:5px;">
+                                        {{list[index].order.goodsPhotoModel.name}}
+                                        <span style="color:rgb(255, 0, 0);" v-if="list[index].order.specificationPhotoModel!=null">{{list[index].order.specificationPhotoModel.name}}</span>
+                                    </td>
+                                    <td v-if="list[index].order.specificationPhotoModel!=null">{{list[index].order.specificationPhotoModel.priceStr}}</td>
+                                    <td v-else>{{list[index].order.priceStr}}</td>
+                                    <td>{{list[index].order.count}}</td>
+                                    <td>{{list[index].order.moneyStr}}</td>
+                                    <td>{{list[index].order.returnMoneyStr}}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="modal-footer" style="text-align:center;">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</body>
+@section styles{
+    <style>
+        .table-condensed th, .table-condensed td { text-align: center; }
+        .search-area { background: rgba(252, 248, 227, 1); padding: 19px 12px; margin-bottom: 1px; }
+        #complaintDetail table td { padding: 8px 0; }
+    </style>
+}
+
+@section scripts{
+    <script>
+        var list=@Html.Raw(JsonConvert.SerializeObject(Model.DataList));
+        var app = new Vue({
+            el: "#app",
+            data: {
+                index: 0,
+                list: list
+            },
+            methods: {
+                OpenComplaintDetail: function (index) {
+                    var that = this;
+                    that.index = index;
+                    $("#complaintDetail").modal("show");
+                },
+                refresh: function () {
+                    $(".search-area input[type='text']").val('');
+                    $(".search-area select").val(-999);
+                },
+                OpenOrderDetail: function (index) {
+                    var that = this;
+                    that.index = index;
+                    $("#orderDetail").modal("show");
+                },
+                SaveRecord: function () {
+                    var that = this;
+                    var item = that.list[that.index];
+                    var layerIndex = layer.load(2);
+
+                    $.post("/pin/main/SaveComplaintRecord", { aid:@ViewBag.aid, id: item.id, record: item.record }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { anim: 0,time:700}, function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            layer.msg(data.msg);
+                        }
+
+                    })
+                },
+                SendResult: function () {
+                    var that = this;
+                    var item = that.list[that.index];
+                    if (item.result.length > 100) {
+                        layer.msg("处理结果不能超过100字");
+                        return;
+                    }
+                    var layerIndex = layer.load(2);
+                    $.post("/pin/main/SendComplaintResult", { aid:@ViewBag.aid, id: item.id, resultMsg: item.result }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { anim: 0, time: 700 }, function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                }
+            }
+
+        })
+    </script>
+}

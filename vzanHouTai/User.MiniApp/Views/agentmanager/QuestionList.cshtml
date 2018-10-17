@@ -1,0 +1,198 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "咨询表单";
+    ViewBag.PageType = -1;
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+</style>
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">起止时间：</label>
+                    <input type="text" class="input-sm form-control time" id="questionTime" style="width:250px;" readonly />
+                </div>
+                <a href="#" class="btn btn-primary ml10" v-on:click="Search()">搜索</a>&nbsp;
+                <a href="#" class="btn btn-info ml10" v-on:click="exPort()" v-if="questionList!=null && questionList.length>0">导出</a>&nbsp;
+                <a href="#" class="btn btn-default ml10" v-on:click="resetSearch()">重置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered ml_19">
+                <tr class="active">
+                    <th class="centertext">序号</th>
+                    <th class="centertext">手机</th>
+                    <th class="centertext">姓名</th>
+                    <th class="centertext">咨询内容</th>
+                    <th class="centertext">提交时间</th>
+                </tr>
+                <tr v-for="(item,index) in questionList">
+                    <td class="centertext">
+                        <label>
+                            <input type="checkbox" name="ck" v-on:click="ckSave(item.id)" />{{index+1}}
+                        </label>
+                    </td>
+                    <td class="centertext">{{item.telephone}}</td>
+                    <td class="centertext" style="width:10%;">{{item.userName}}</td>
+                    <td class="centertext" style="width:40%;">{{item.question}}</td>
+                    <td class="centertext">{{item.addTimeStr}}</td>
+
+                </tr>
+                <tr v-if="questionList==null || questionList.length==0">
+                    <td colspan="5">暂无数据</td>
+                </tr>
+
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="questionRecordCount>0"></div>
+        </div>
+
+    </div>
+
+
+
+
+</div>
+
+<script>
+ 
+    var chk_value = [];
+    var app = new Vue({
+        el: "#app",
+        data: {
+            questionRecordCount: 0,
+            questionList: [],
+
+            postdata: {
+                pageIndex: 1,
+                pageSize: 10,
+                startDate: "",
+                endDate: ""
+            },
+
+            isloading: false,
+            startIndex:0
+        },
+        methods: {
+            InitLayer: function () {
+                var that = this;
+                //绑定lay
+                layui.use(['laydate'], function () {
+                    var $ = layui.jquery,
+
+                    //时间选择器
+                    laydate = layui.laydate;
+
+                    laydate.render({
+                        elem: '#questionTime', //指定元素
+                        theme: 'grid',
+                        range: '~',
+                        value: '',
+                        done: function (value, date, endDate) {
+                            $("#questionTime").val(value);
+                            that.postdata.startDate = (date.year + "-" + date.month + "-" + date.date);
+                            that.postdata.endDate = (endDate.year + "-" + endDate.month + "-" + endDate.date);
+                        }
+                    });
+                });
+            },
+
+            getQuestionList: function () {
+                var that = this;
+                if (that.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                that.isloading = true;
+                var index = layer.load(1);
+                $.post("/agentmanager/GetListGetQuestion", that.postdata, function (data) {
+                    layer.close(index);
+                    that.isloading = false;
+                    if (data.isok) {
+                        that.questionRecordCount = data.model.RecordCount;
+                        that.questionList = data.model.List;
+                        that.resetPage();
+                    }
+                })
+            },
+            resetPage: function (/*issearch*/) {
+                var that = this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.questionRecordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit: that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getQuestionList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function () {
+                var that = this;
+                that.getQuestionList();
+            },
+            resetSearch: function () {
+                window.location.reload();
+            },
+            exPort: function () {
+                var that = this;
+                var params;
+                params = serialize(that.postdata);
+                window.location.href = '/agentmanager/ExPortQuestion?ids='+chk_value+"&" + params;
+            },
+            ckSave: function (id) {
+                for (var i = 0; i < chk_value.length; i++) {
+                    if (id === chk_value[i]) {
+                        chk_value.splice(i, 1);
+                        return;
+                    }
+                }
+                return chk_value.push(id);
+            }
+        },
+        created: function () {
+            var that = this;
+            that.InitLayer();
+            that.getQuestionList();
+        }
+    });
+
+
+
+
+
+
+
+
+    serialize = function (obj, prefix) {
+        var str = [], p;
+        for (p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
+                str.push((v !== null && typeof v === "object") ?
+                  serialize(v, k) :
+                  encodeURIComponent(k) + "=" + encodeURIComponent(v));
+            }
+        }
+        return str.join("&");
+    }
+</script>

@@ -1,0 +1,639 @@
+﻿@using User.MiniApp.comment
+@using Entity.MiniApp.Stores
+@using User.MiniApp.Model
+@model Store
+@{
+    //小程序商城店铺配置
+    ViewBag.Title = "门店信息";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-timepicker/css/bootstrap-timepicker.min.css" rel="stylesheet" />
+
+<style>
+    .edui-modal {
+        margin-top: 150px;
+    }
+
+    .twxq-new-kuang {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-right: 10px;
+        background: #fff;
+    }
+
+    .twxq-edit-zhanshi {
+        border: 2px dashed #fc7d7d;
+        padding: 10px;
+        min-height: 108px;
+        position: relative;
+    }
+
+    .spgl-bianji-bt {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: inline-block;
+        background-color: rgba(0,0,0,0.3);
+        color: #fff;
+        padding: 0 5px;
+        margin-left: 1px;
+        font-size: 12px;
+    }
+
+    .bz {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .spxqq-f p:first-child {
+        font-size: 17px;
+    }
+
+    .spxqq-f {
+        text-align: center;
+        margin-top: 17px;
+        line-height: 25px;
+    }
+
+    #label_1 {
+        color: white;
+        display: none;
+    }
+
+    .checkKey {
+        background-color: coral;
+        color: white !important;
+        border-color: transparent;
+    }
+
+    .noCheckKey {
+        background-color: white;
+        border-color: black;
+        color: black;
+    }
+
+    .dropzone.dz-clickable {
+        width: 360px !important;
+    }
+
+    #ui_img_logo {
+        width: 100px;
+        height: 100px;
+    }
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+@Html.HiddenFor(m => m.Id)
+@Html.HiddenFor(m => m.appId)
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            @if (ViewBag.shouquan != 0)
+            {
+                <tr>
+                    <td style="text-align: right;" width="20%">小程序名称 : </td>
+                    <td>
+                        <div class="input-group width300">
+                            <input type="text" class="form-control" value="@ViewBag.XcxName" id="CName" name="CName" maxlength="20">
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td style="text-align: right;" width="20%"> </td>
+                    <td>
+                        <div>
+                            <a style="font-size: 18px;text-decoration:underline; " target="_blank" href="/config/MiniAppConfig?appId=@ViewBag.appId&id=@ViewBag.appId&type=6">您暂未对小程序授权 , 请到 [ 小程序模板 ] ]进行授权</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+
+            <tr>
+                <td style="text-align: right;" width="20%">店铺名称<label style="color: red">*</label></td>
+                <td>@Html.TextBoxFor(m => m.name, new { @class = "form-control width400", @id = "ui_txt_name" })</td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">Logo<label style="color: red">*</label></td>
+                <td>
+
+                    <img src="@Model.logo" id="ui_img_logo" />
+
+                    <input type="hidden" id="ui_txt_logo" name="logo" value="@Model.logo" />
+                    <input type="button" class="btn btn-default width100" id="browse_file_img" value="上传Logo" />
+                    <button id="start_upload_img" type="button" style="display: none;">开始上传</button>
+
+                </td>
+            </tr>
+
+            @*<tr>
+                <td style="text-align: right;" width="20%">店铺名称<label style="color: red">*</label></td>
+                <td>@Html.TextBoxFor(m => m.name, new { @class = "form-control width400", @id = "ui_txt_name" })</td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">Logo<label style="color: red">*</label></td>
+                <td>
+
+                    <img src="@Model.logo" id="ui_img_logo" />
+
+                    <input type="hidden" id="ui_txt_logo" name="logo" value="@Model.logo" />
+                    <input type="button" class="btn btn-default width100" id="browse_file_img" value="上传Logo" />
+                    <button id="start_upload_img" type="button" style="display: none;">开始上传</button>
+
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">营业时间<label style="color: red">*</label></td>
+                <td>
+                    <input type="hidden" value="@Model.businesstimes" id="ui_txt_businesstimes" />
+                    <div>
+                        @{
+                            var businesstimes = (BusinessTimes)ViewBag.BusinessTimes;
+
+                        }
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="0" name="week" @(businesstimes.Weeks.Contains(0)?"checked":"")> 周一
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="1" name="week" @(businesstimes.Weeks.Contains(1)?"checked":"")> 周二
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="2" name="week" @(businesstimes.Weeks.Contains(2)?"checked":"")> 周三
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="3" name="week" @(businesstimes.Weeks.Contains(3)?"checked":"")> 周四
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="4" name="week" @(businesstimes.Weeks.Contains(4)?"checked":"")> 周五
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="5" name="week" @(businesstimes.Weeks.Contains(5)?"checked":"")> 周六
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" value="6" name="week" @(businesstimes.Weeks.Contains(6)?"checked":"")> 周日
+                        </label>
+                    </div>
+                    <div class="col-md-2" style="display: -webkit-inline-box; padding-left: 0px">
+                        <div class="input-group">
+                            <input type="text" id="startTime" name="startTime"
+                                   readonly="readonly" class="form-control timepicker timepicker-default" placeholder="从" value="@businesstimes.StartTime">
+                            <span class="input-group-btn">
+                                <button class="btn default" type="button">
+                                    <i class="fa fa-clock-o"></i>
+                                </button>
+                            </span>
+                        </div>
+
+                    </div>
+                    <div class="col-md-2">
+                        <div class="input-group">
+                            <input type="text" id="endTime" name="endTime"
+                                   readonly="readonly" class="form-control timepicker timepicker-default" placeholder="到" value="@businesstimes.EndTime">
+                            <span class="input-group-btn">
+                                <button class="btn default" type="button">
+                                    <i class="fa fa-clock-o"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </td>
+            </tr>*@
+            <tr>
+                <td style="text-align: right;" width="20%"><p class="model_right_t_font">轮播图片<label style="color: red">*</label></p></td>
+                <td class="CarouselList">
+                    @Html.FileUploadFor("CarouselList", maxFiles: 9, initImageList: (List<object>)ViewBag.CarouselList, controllerWidth: 360, removeCallback: "removeAttachmentFunction")
+                    <label class="forinputmassage">点击灰色区域选择上传图片 ( 建议上传750*350px，大小不超过1M，格式为jpg或png的图片 )</label>
+                </td>
+                <td></td>
+            </tr>
+
+            <tr>
+                <td style="text-align: right;" width="20%">所属区域<label style="color: red">*</label></td>
+                <td>
+                    <div class="form-inline">
+                        @Html.DropDownList("ddProvince", (List<SelectListItem>)ViewBag.ProvinceList, new { @class = "form-control width130" })
+                        @if (Model.CityCode > 0)
+                        {
+                            @Html.DropDownList("ddArea", (List<SelectListItem>)ViewBag.CityList, new { @class = "form-control width130" })
+                        }
+                        else
+                        {
+                            @Html.DropDownList("ddArea", (List<SelectListItem>)ViewBag.CityList, "选择城市", new { @class = "form-control width130" })
+                        }
+                        @if (Model.AreaCode > 0)
+                        {
+                            @Html.DropDownList("ddRegion", (List<SelectListItem>)ViewBag.AreaList, new { @class = "form-control width130" })
+                        }
+                        else
+                        {
+                            @Html.DropDownList("ddRegion", (List<SelectListItem>)ViewBag.AreaList, "选择区域", new { @class = "form-control width130" })
+                        }
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">详细地址<label style="color: red">*</label></td>
+                <td>@Html.TextBoxFor(m => m.Address, new { @class = "form-control width400" })</td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">联系方式<label style="color: red">*</label></td>
+                <td>@Html.TextBoxFor(m => m.TelePhone, new { @class = "form-control width400" })</td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">店铺公告</td>
+                <td>@Html.TextAreaFor(m => m.notice, new { @class = "form-control width400" })</td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div class="col-md-offset-2">
+    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+    <input type="button" class="btn btn-default width100" onclick="self.location=document.referrer;" value="返回" />
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-timepicker/js/bootstrap-timepicker.min.js"></script>
+@section script{
+    <script>
+        //function checkTel(tel)
+        //{
+        //    var mobile = /^1[3|5|8]\d{9}$/ , phone = /^0\d{2,3}-?\d{7,8}$/;
+        //    return mobile.test(tel) || phone.test(tel);
+        //}
+        var uploader,
+            uploaderToken,
+            filePath,
+            $ui_img_logo = $('#ui_img_logo'),
+            $ui_txt_logo = $('#ui_txt_logo'),
+            $ui_txt_name = $('#ui_txt_name'),
+            $ui_txt_businesstimes = $('#ui_txt_businesstimes'),
+            $ui_txt_startTime = $('#startTime'),
+            $ui_txt_endTime = $('#endTime');
+        $(function() {
+
+
+            $('#startTime').timepicker({
+                minuteStep: 1,
+                secondStep: 5,
+                showInputs: false,
+                showSeconds: true,
+                showMeridian: false
+            });
+            $("#endTime").timepicker({
+                minuteStep: 1,
+                secondStep: 5,
+                showInputs: false,
+                showSeconds: true,
+                showMeridian: false
+            });
+          
+            // #region 保存
+            $('#saveBtn').click(function() {
+                if (@ViewBag.shouquan != 0) {
+                    if ($('#CName').val().length < 1) {
+                        AppTools.Alert("小程序名称");
+                        return;
+                    }
+                }
+
+                if ($ui_txt_name.val().length === 0) {
+                    return AppTools.Alert('请填写店铺名称 ! ');
+                }
+                if ($ui_txt_logo.val().length === 0) {
+                    return AppTools.Alert('请上传店铺Logo ! ');
+                }
+
+                var uiWeeks = $('input[name="week"]');
+                var businesstimes = {
+                    weeks: [],
+                    startTime:'',
+                    endTime:''
+                };
+
+                $.each(uiWeeks,
+                    function(i, d) {
+                        d.checked && businesstimes.weeks.push(d.value);
+                    });
+                businesstimes.startTime = $('#startTime').val();
+                businesstimes.endTime = $('#endTime').val();
+                $('#ui_txt_businesstimes').val(JSON.stringify(businesstimes));
+
+                if ($('.CarouselList .dz-image-preview').length === 0) {
+                    return AppTools.Alert('请上传店铺轮播图 ! ');
+                }
+
+                if ($('#ddProvince').val().length < 1) {
+                    AppTools.Alert("请选择省份");
+                    return;
+                }
+                var aa = $('#ddArea').val();
+                if ($('#ddArea').val() == "选择城市") {
+                    AppTools.Alert("请选择城市");
+                    return;
+                }
+                if ($('#ddRegion').val() == "选择区域") {
+                    AppTools.Alert("请选择区域");
+                    return;
+                }
+
+                if ($('#Address').val() == "") {
+                    AppTools.Alert("请输入详细地址");
+                    return;
+                }
+                if ($('#Address').val().length > 50) {
+                    AppTools.Alert("详细地址最多输入50字");
+                    return;
+                }
+                if ($('#TelePhone').val().length < 1) {
+                    AppTools.Alert("请输入联系方式");
+                    return;
+                }
+                var reg = new RegExp("^[0-9]*$");
+                if (!reg.test($('#TelePhone').val()) || $('#TelePhone').val().length > 20) {
+                    AppTools.Alert("请输入正确的 座机/手机号码");
+                    return;
+                }
+
+
+                $('#saveBtn').attr('disabled', "true");
+                $('#loadModal').modal('show');
+
+                saveStore();
+            });
+
+            function saveStore() {
+                var appId = $('#appId').val();
+                var Id = $('#Id').val();
+                //轮播图
+                var ImgList = '';
+                $('input[name="CarouselList"]').each(function(i, n) {
+                    ImgList += '|' + $(n).val();
+                });
+
+                //小程序名称
+                var nparam = "nparam";
+                var xcxname = $("#CName").val();
+                var data = [{ "Value": xcxname, "Param": nparam }];
+                var datajson = JSON.stringify(data);
+
+                var TelePhone = $("#TelePhone").val();
+                var Address = $("#Address").val();
+                var Province = $("#ddProvince").val();
+                var CityCode = $("#ddArea").val();
+                var AreaCode = $("#ddRegion").val();
+                var logo = $ui_txt_logo.val();
+                var name = $ui_txt_name.val();
+                var businesstimes = $ui_txt_businesstimes.val();
+                var notice = $('#notice').val();
+                $.post('/stores/IndexAddOrEdit',
+                    {
+                        Id: Id,
+                        appId: appId,
+                        Province: Province,
+                        CityCode: CityCode,
+                        AreaCode: AreaCode,
+                        TelePhone: TelePhone,
+                        Address: Address,
+                        ImgList: ImgList,
+                        datajson: datajson,
+                        rid: @ViewBag.appId,
+                        logo: logo,
+                        name: name,
+                        //businesstimes:businesstimes,
+                        notice:notice
+                    },
+                    function(data) {
+                        $('#saveBtn').removeAttr('disabled');
+                        $('#loadModal').modal('hide');
+                        AppTools.Alert(data.Message);
+                    });
+            }
+            // #endregion
+        });
+
+        // #region 省市级联
+        $('#ddProvince').change(function () {
+            var areaCode = $(this).val();
+            $.get('/stores/GetRegionJsonList?parentCode=' + areaCode,
+                function (data) {
+                    if (data.length > 0) {
+                        $('#ddArea option').remove();
+                        $('#ddArea').append('<option>选择城市</option>');
+                        $('#ddRegion option').remove();
+                        $('#ddRegion').append('<option>选择区域</option>');
+                        for (var i = 0; i < data.length; i++) {
+                            var isSelected = "";
+                            if (data[i].Selected) {
+                                isSelected = "selected='selected'";
+                            }
+                            var option = "<option value='" + data[i].Value + "' " + isSelected + ">" + data[i].Text + "</option>";
+                            $("#ddArea").append(option);
+                        }
+                        $('#ddArea').change();
+                    }
+                });
+        });
+        $('#ddArea').change(function () {
+            var areaCode = $(this).val();
+            $.get('/stores/GetRegionJsonList?parentCode=' + areaCode,
+                function (data) {
+                    if (data.length > 0) {
+                        $('#ddRegion option').remove();
+                        $('#ddRegion').append('<option>选择区域</option>');
+                        for (var i = 0; i < data.length; i++) {
+                            var isSelected = "";
+                            if (data[i].Selected) {
+                                isSelected = "selected='selected'";
+                            }
+                            var option = "<option value='" + data[i].Value + "' " + isSelected + ">" + data[i].Text + "</option>";
+                            $("#ddRegion").append(option);
+                        }
+                        $('#ddRegion').change();
+                    }
+                });
+        });
+        // #endregion
+
+        // #region 删除图片
+        function removeAttachmentFunction(file) {
+            $.get('/stores/DeleteImg?id=' + file.id,
+                        function (data) {
+                            if (!data.Success) {
+                                AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                                return e.ee;
+                            }
+                        });
+            //if (file && file.id) {
+            //    if (confirm("删除后不可恢复，确认删除吗？")) {
+            //        // 删除Logo
+
+            //    }
+            //}
+        }
+        // #endregion
+        function initUploader() {
+          
+            if (uploader) {
+                uploader.destroy();
+            }
+            uploader = new plupload.Uploader({
+                browse_button: 'browse_file_img',
+                url: 'http://oss.aliyuncs.com',
+                flash_swf_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                silverlight_xap_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                filters: {
+                    mime_types: [
+                        {
+                            title: "图片文件",
+                            extensions: "jpg,jpeg,gif,png"
+                        }
+                    ]
+                },
+                multi_selection:false
+            });
+
+            uploader.init();
+
+            uploader.bind('FilesAdded',function(uploader,files){
+                $('#start_upload_img').click();
+            });
+
+            uploader.bind('BeforeUpload',function(uploader,file){
+                var fileName = file.name;
+                var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                var fileSize = file.size / 1024 / 1024;
+                var flag = true;
+                if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                    layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                    flag = false;
+                }
+                if (fileSize > 5) {
+                    layer.msg('文件最大支持 5Mb');
+                    flag = false;
+
+                }
+                if (!flag) {
+                    initUploader();
+                    return false;
+                }
+                uploaderToken.key += '.' + ext;
+                filePath +='.'+ext;
+                uploader.setOption(uploaderToken);
+            });
+            uploader.bind('UploadProgress', function (uploader, file) {
+
+            });
+            uploader.bind('UploadComplete', function (d, f, e) {
+
+                $ui_img_logo.attr('src', filePath).show();
+                $ui_txt_logo.val(filePath);
+            });
+
+            document.getElementById('start_upload_img').onclick = function() {
+                $.get('/upload/initupload', {
+                    type: 'img'
+                }).then(function (data) {
+                    var fp = data.dir + data.key;
+                    filePath = data.host+'/'+fp;
+                    var multipartParams = {
+                        'key': fp,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    uploaderToken = multipartParams;
+                    uploader.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+
+                    uploader.start();
+
+
+
+
+                }).fail(function (data) {
+                    console.log(data);
+                });
+                //uploader.start();
+            }
+
+
+
+
+
+
+        }
+
+        initUploader();
+    </script>
+}

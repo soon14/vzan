@@ -1,0 +1,89 @@
+﻿
+@{
+    ViewBag.Title = "CardLog";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@model ViewModel<DishCardAccountLog>
+@section styles{
+    <style>
+        .shop-preview { position: fixed; padding: 0 15px; bottom: 0; left: 0; z-index: 100; width: 100%; padding: 10px; background-color: #fcf8e3; border-color: #faebcc; }
+        .icheckbox-blue { position: relative; }
+        .btn-group { font-size: 12px; }
+        .btn-group { font-size: 12px; }
+        .page span { background: #5eb95e; }
+    </style>
+
+}
+
+<div class="page-container">
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="60">金额</th>
+                    <th width="60">类型</th>
+                    <th width="60">备注</th>
+                    <th width="60">时间</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td>@item.account_money</td>
+                            <td>@(item.account_type == 1 ? "充值" : "消费")</td>
+                            <td>@item.account_info</td>
+                            <td>@item.add_time.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </tr>
+                    }
+                </tbody>
+            }
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+<div style="width: 100%;display: block;height: 30px;">&nbsp;</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $('.text-c input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            })
+        });
+        $(function () {
+            //搜索功能
+            $("#search").click(function () {
+                layer.msg('搜索中', {
+                    icon: 16,
+                    shade: 0.5
+                });
+                var url = "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_card/memberlist.html";
+                var cate_id = $("#g_keywords").val();
+                if (url.indexOf('?') > 0) {
+                    url += '&keywords=' + cate_id;
+                } else {
+                    url += '?keywords=' + cate_id;
+                }
+                window.location.href = url;
+            });
+
+            //回车自动提交
+            $('.search-form').find('input').keyup(function (event) {
+                if (event.keyCode === 13) {
+                    $("#search").click();
+                }
+            });
+        })
+    </script>
+
+}

@@ -1,0 +1,774 @@
+﻿@using Entity.MiniApp.ViewModel
+@using Entity.MiniApp;
+@model ConfigViewModel
+@{
+    ViewBag.Title = "小程序管理";
+
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.tid = Model.XcxTemplate == null ? 0 : Model.XcxTemplate.Id;
+}
+<style>
+    
+    table th {
+        text-align: center;
+    }
+    td {
+        word-break: break-all;
+        word-wrap: break-word;
+    }
+
+    table tr td, th {
+        vertical-align: middle;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    .td_templateinfo_leftcss {
+        width: 100px;
+        text-align: right;
+    }
+    #tableNo td {
+        text-align: center;
+    }
+</style>
+<script src="@(WebSiteConfig.cdnurl)js/dowlodimg/canvas2image.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/dowlodimg/jquery.base64.js"></script>
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed cancel-table-td-border">
+    @if (Model.Openconfig != null)
+    {
+        <tr>
+            <td style="width: 180px;text-align:right;">小程序名称：</td>
+            <td>
+                <div class="input-group width300">
+                    @Model.Openconfig.nick_name
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 180px;text-align:right;">小程序AppId：</td>
+            <td>
+                <div class="input-group width300">
+                    @Model.Openconfig.appid
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">小程序认证：</td>
+            <td>
+                <label>@Enum.GetName(typeof(XcxMiniAppAuthoType), Model.Openconfig.verify_type_info)</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">模板名称：</td>
+            <td>
+                @if (Model.XcxTemplate != null)
+                {
+                    <label>@Model.XcxTemplate.TName</label>
+                    <a style="" id="clicktemplate">查看模板详情</a>
+                }
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">发布状态：</td>
+            <td>
+                @if (Model.UserXcxTemplate != null)
+                {
+                    <input type="hidden" id="uid" value="@Model.UserXcxTemplate.Id" />
+                    <label>@Enum.GetName(typeof(XcxTypeEnum), Model.UserXcxTemplate.State)</label>
+                    <a style="" id="clickfabuinfo">查看发布详情</a>
+                    @*if (Model.UserXcxTemplate.State == 3)
+                        {
+                            <a style="" id="clickfabuinfo">查看发布详情</a>
+                        }*@
+                }
+                else
+                {
+                    <label>未发布</label>
+                }
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">提交时间：</td>
+            <td>
+                @if (Model.UserXcxTemplate != null)
+                {
+                    <label>@Model.UserXcxTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")</label>
+                }
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">外卖二维码：</td>
+            <td>
+                @if (Model.miniappqrcode != null)
+                {
+                    <img src="@Model.miniappqrcode" style="width:50px;height:50px;" />
+                    <a style="" id="clicklockbigimg">查看大图</a>
+                    <a id="downLoad" href="@Model.miniappqrcode" target="_blank" download="filename.jpg">下载图片</a>
+                }
+
+
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">
+                桌台二维码：
+            </td>
+            <td>
+                <a href="#" onclick="addTablesNo()" >+新增桌台号</a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+
+            </td>
+            <td>
+                <table id="tableNo" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <th width="20px">
+                            <input id="checkAll" type="checkbox" />
+                        </th>
+                        <th width="80px">
+                            桌台号
+                        </th>
+                        <th width="280px">
+                            桌台二维码
+                        </th>
+                    </tr>
+                    @foreach (Entity.MiniApp.Fds.FoodTable x in ViewBag.TablesNoList)
+                    {
+                        <tr>
+                            <td width="20px">
+                                <input id="checkthis" data-id="@x.Scene" type="checkbox" />
+                            </td>
+                            <td width="80px">
+                                @x.Scene
+                            </td>
+                            <td width="280px">
+                                @if (Model.miniappqrcode != null)
+                                {
+                                    <img src="@x.ImgUrl" style="width:50px;height:50px;" />
+                                    <a style="" data-url="@x.ImgUrl" class="clicklockbigimg">查看大图</a>
+                                    <a href="@x.ImgUrl" target="_blank" download="filename.jpg">下载图片</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </td>
+        </tr>
+
+
+        <tr>
+            <td style="text-align:right;">微信体验号：</td>
+            <td>
+                <input id="tester" type="text" class="width300" value="" />
+                <br />
+                <input type="button" class="btn btn-primary width100" id="savetester" value="设置体验者" />
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align:right;">小程序秘钥：</td>
+            <td>
+
+                @if (Model.UserXcxTemplate != null && Model.paycenter != null)
+                {
+                    <input id="appstr" type="text" class="width300" value="@Model.UserXcxTemplate.Appsr" />
+                }
+                else
+                {
+                    <input id="appstr" type="text" class="width300" value="" />
+                }
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">小程序商户号：</td>
+            <td>
+
+                @if (Model.UserXcxTemplate != null && Model.paycenter != null)
+                {
+                    <input id="mc_id" type="text" class="width300" value="@Model.paycenter.Mch_id" />
+                }
+                else
+                {
+                    <input id="mc_id" type="text" class="width300" value="" />
+                }
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">商户号秘钥：</td>
+            <td>
+
+                @if (Model.UserXcxTemplate != null && Model.paycenter != null)
+                {
+                    <input id="mc_key" type="text" class="width300" value="@Model.paycenter.Key" />
+                    <br />
+                    <input type="button" class="btn btn-primary width100" id="saveappstr" value="保存" />
+                }
+                else
+                {
+                    <input id="mc_key" type="text" class="width300" value="" />
+                }
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">request合法域名：</td>
+            <td>
+                <input id="requesthost" type="text" class="width300" value="" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">socket合法域名：</td>
+            <td>
+                <input id="sockethost" type="text" class="width300" value="" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">uploadFile合法域名：</td>
+            <td>
+                <input id="uploadFilehost" type="text" class="width300" value="" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align:right;">downloadFile合法域名：</td>
+            <td>
+                <input id="downloadFilehost" type="text" class="width300" value="" />
+                <br />
+                <input type="button" class="btn btn-primary width100" id="saveapphost" value="配置服务器" />
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <div class="">
+                    <input type="button" class="btn btn-primary width150" id="gettestqrcode" value="获取体验二维码" />
+                    <input type="button" class="btn btn-default width100" id="commit" value="发布小程序" />
+                    <input type="button" class="btn btn-default width100" id="delbangding" value="解除绑定" />
+                    @*<a  target="_blank" class="btn  btn-default width100" href="@Model.AuthodUrl">重新授权</a>*@
+                </div>
+            </td>
+        </tr>
+    }
+    else
+    {
+        <tr>
+            <td> </td>
+            <td>
+                <div>
+                    你还没进行小程序授权，请先进行授权
+                </div>
+                <div>
+                    <a style="font-size: 18px;
+    background-color: #108EE9;
+    border-radius: 5px;
+    height: 50px;
+    display: block;
+    color: #fff;
+    line-height: 50px;
+    width: 300px;
+    text-align: center;
+        margin-top: 10px;
+    margin-bottom: 10px;" target="_blank" href="@Model.AuthodUrl">我已有小程序账号，马上去授权</a>
+                </div>
+                <div>
+                    <a style="font-size: 18px;color: #4BA1D8; " target="_blank" href="https://mp.weixin.qq.com/debug/wxadoc/introduction/#注册小程序帐号">我还没有小程序账号，如何申请？</a>
+                </div>
+                <div style=" margin-top:10px;">
+                    <a style="font-size: 18px;color: #4BA1D8;" target="_blank" href="https://mp.weixin.qq.com/debug/wxadoc/introduction/#小程序申请微信认证">我已有小程序，如何认证？</a>
+                </div>
+                <div style=" margin-top:10px;">
+                    <a style="font-size: 18px;color: #4BA1D8; margin-top:20px;" target="_blank" href="https://mp.weixin.qq.com/debug/wxadoc/introduction/#小程序申请微信支付">我已有认证小程序账号，如何申请微信支付？</a>
+                </div>
+                <div style="margin-top:20px;">
+                    <div>温馨提示：</div>
+                    <div>1. 您的小程序必须<i style="color:red;">认证后</i>才能使用<i style="color:red;">微信支付</i>。</div>
+                </div>
+            </td>
+        </tr>
+    }
+</table>
+<canvas id="drawing" style="display:none;"></canvas>
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal bs-example-modal-sm" id="templateinfoModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>小程序模板详情</h4>
+            </div>
+            <div class="modal-body text-center">
+                @if (Model.XcxTemplate != null)
+                {
+                    <table class="tr-highlight">
+                        <tr>
+                            <td class="text-right width100">模板名称：</td>
+                            <td class="text-left width150">@Model.XcxTemplate.TName</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right width100">模板ID：</td>
+                            <td class="text-left">@Model.XcxTemplate.TId</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right width100">版本：</td>
+                            <td class="text-left">@Model.XcxTemplate.Version</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right width100">服务类目：</td>
+                            <td class="text-left">@Model.XcxTemplate.First_class - @Model.XcxTemplate.Second_class</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right width100">简介：</td>
+                            <td class="text-left">@Model.XcxTemplate.Desc</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right width100">添加时间：</td>
+                            <td class="text-left">@Model.XcxTemplate.AddTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right width100">修改时间：</td>
+                            <td class="text-left">@Model.XcxTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </tr>
+                    </table>
+                }
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetemplateinfo">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal bs-example-modal-sm" id="fabuinfoModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>小程序发布详情</h4>
+            </div>
+            <div class="modal-body text-center">
+                @if (Model.UserXcxTemplate != null)
+                {
+                    if (Model.UserXcxTemplate.State == 3)
+                    {
+                        <table class="tr-highlight">
+                            <tr>
+                                <td class="text-right width150">发布模板名称：</td>
+                                <td class="text-left width200">@Model.UserXcxTemplate.TName</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right">发布的版本：</td>
+                                <td class="text-left">@Model.UserXcxTemplate.Version</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right">小程序appID：</td>
+                                <td class="text-left">@Model.UserXcxTemplate.AppId</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right">小程序秘钥：</td>
+                                <td class="text-left">@Model.UserXcxTemplate.Appsr</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right">审核时间：</td>
+                                <td class="text-left">@Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                            <tr>
+                                <td class="text-right">发布时间：</td>
+                                <td class="text-left">@Model.UserXcxTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            </tr>
+                        </table>
+                    }
+                    else
+                    {
+                        <label>@Model.UserXcxTemplate.Reason</label>
+                    }
+                }
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closefabuinfo">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal bs-example-modal-sm" id="testqrcodModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>图片</h4>
+            </div>
+            <div class="modal-body text-center">
+                <img id="testqrcodeimg" style="" src="" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetestqrcode">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    添加桌台号
+                </h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-add">
+                    <tr>
+                        <td><span>桌台号：</span></td>
+                        <td><input maxlength="8" placeholder="桌台号 1-99999" id="nameVal" type="text" class="form-control" value=""></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section script{
+    <script>
+        var imghave = "@ViewBag.isshouquan";
+        $(function () {
+
+            //保存秘钥,商户号，商户秘钥
+            $('#saveappstr').on('click', function () {
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                var uid = $("#uid").val();
+                if(appstr.trim()=="")
+                {
+                    alert("请输入小程序秘钥");
+                    return;
+                }
+                if(mc_id.trim()=="")
+                {
+                    alert("请输入小程序商户号");
+                    return;
+                }
+                if(mc_key.trim()=="")
+                {
+                    alert("请输入商户秘钥");
+                    return;
+                }
+                $.post('/foods/SaveMiniappBaseInfo',
+                { Id: @ViewBag.Id, appstr: appstr,uid:uid,mc_id:mc_id,mc_key:mc_key }, function (result) {
+                    AppTools.Alert(result.msg);
+                });
+
+                @*var requesthost = $("#requesthost").val();
+                var sockethost = $("#sockethost").val();
+                var uploadFilehost = $("#uploadFilehost").val();
+                var downloadFilehost = $("#downloadFilehost").val();
+                $.post('/stores/UpdateServerHost',
+               { Id: @ViewBag.Id,requesthost:requesthost,sockethost:sockethost,uploadFilehost:uploadFilehost,downloadFilehost:downloadFilehost}, function (result) {
+                   AppTools.Alert(result.msg);
+               });*@
+            });
+            //配置服务器地址
+            $('#saveapphost').on('click', function () {
+                var requesthost = $("#requesthost").val();
+                var sockethost = $("#sockethost").val();
+                var uploadFilehost = $("#uploadFilehost").val();
+                var downloadFilehost = $("#downloadFilehost").val();
+                $.post('/foods/UpdateServerHost',
+               { Id: @ViewBag.Id,requesthost:requesthost,sockethost:sockethost,uploadFilehost:uploadFilehost,downloadFilehost:downloadFilehost}, function (result) {
+                   AppTools.Alert(result.msg);
+               });
+            });
+
+            //模板详情
+            $('#clicktemplate').on('click', function () {
+                $("#templateinfoModal").show();
+            });
+            $('#closetemplateinfo').on('click', function () {
+                $("#templateinfoModal").hide();
+            });
+
+            //查看大图
+            $('#clicklockbigimg').on('click', function () {
+                $("#testqrcodeimg").attr("src", '@Model.miniappqrcode');
+                $("#testqrcodModal").show();
+            });
+            //查看大图
+            $('.clicklockbigimg').on('click', function () {
+                $("#testqrcodeimg").attr("src", $(this).data("url"));
+                $("#testqrcodModal").show();
+            });
+            //下载图片
+            $('#dowloadimg').on('click', function () {
+
+                $.get('/foods/Dowloadfile',
+                { dataurl: '@Model.miniappqrcode'}, function (result) {
+                    var drawing=document.getElementById("drawing");
+                    //确定浏览器支持<canvas>元素
+                    if(drawing.getContext){
+                        //取得绘图上下文对象的引用，“2d”是取得2D上下文对象f
+                        var context=drawing.getContext("2d");
+                        //显示图像
+                        var image=document.createElement("img");
+                        image.src="data:image/jpeg;base64,"+result.obj;
+                        drawing.width = image.width;
+                        drawing.height = image.height;
+                        context.drawImage(image,0,0);
+                        //下载图片到本地
+                        Canvas2Image.saveAsJPEG(drawing); // 这将会提示用户保存JPG图片
+                    }
+                });
+            });
+            //服务器地址
+            getserverhost()
+
+            function convertBase64UrlToBlob(urlData,type){
+                var bytes=window.atob(urlData.split(',')[1]);        //去掉url的头，并转换为byte
+                //处理异常,将ascii码小于0的转换为大于0
+                var ab = new ArrayBuffer(bytes.length);
+                var ia = new Uint8Array(ab);
+                for (var i = 0; i < bytes.length; i++) {
+                    ia[i] = bytes.charCodeAt(i);
+                }
+                return new Blob( [ab] , {type : 'image/'+type});
+            }
+
+
+            //发布详情
+            $('#clickfabuinfo').on('click', function () {
+                $("#fabuinfoModal").show();
+            });
+            $('#closefabuinfo').on('click', function () {
+                $("#fabuinfoModal").hide();
+            });
+
+            //设置体验者
+            $('#savetester').on('click', function () {
+                var tester = $("#tester").val();
+                if(tester.trim()=='')
+                {
+                    alert("请输入微信号")
+                    return;
+                }
+                $.post('/foods/SetWxTester',
+                { Id: @ViewBag.Id, tester: tester}, function (result) {
+                    AppTools.Alert(result.msg);
+                    if(result.isok>0)
+                    {
+                        window.location.reload();
+                    }
+                });
+            });
+
+            //获取体验二维码
+            $('#gettestqrcode').on('click', function () {
+                var tid = '@ViewBag.tid';
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(appstr.trim()=="")
+                {
+                    alert("请输入小程序秘钥");
+                    return;
+                }
+                if(mc_id.trim()=="")
+                {
+                    alert("请输入小程序商户号");
+                    return;
+                }
+                if(mc_key.trim()=="")
+                {
+                    alert("请输入商户秘钥");
+                    return;
+                }
+                $.post('/foods/GettestQrcode',
+                { Id: @ViewBag.Id,tid:tid,appsr:appstr,mc_id:mc_id,mc_key:mc_key }, function (result) {
+
+                    if(result.isok>0)
+                    {
+                        $("#testqrcodModal").show();
+                        $("#testqrcodeimg").attr("src", "data:image/jpeg;base64," + result.imgdata);
+                    }
+                    else{
+                        AppTools.Alert(result.msg);
+                    }
+                });
+            });
+            $('#closetestqrcode').on('click', function () {
+                $("#testqrcodModal").hide();
+            });
+
+            //发布小程序
+            $('#commit').on('click', function () {
+                var tid = '@ViewBag.tid';
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(appstr.trim()=="")
+                {
+                    alert("请输入小程序秘钥");
+                    return;
+                }
+                if(mc_id.trim()=="")
+                {
+                    alert("请输入小程序商户号");
+                    return;
+                }
+                if(mc_key.trim()=="")
+                {
+                    alert("请输入商户秘钥");
+                    return;
+                }
+                $.post('/foods/UploadCodenew',
+                { Id: @ViewBag.Id,tid:tid,appsr:appstr,mc_id:mc_id,mc_key:mc_key}, function (result) {
+                    AppTools.Alert(result.msg);
+                    if(result.isok>0)
+                    {
+                        window.location.reload();
+                    }
+
+                });
+            });
+
+
+            //解绑
+            $('#delbangding').on('click', function () {
+                var r=confirm("确定解绑该小程序？")
+                if(r)
+                {
+                    $.post('/foods/DelBangding',
+                { Id: @ViewBag.Id}, function (result) {
+                    AppTools.Alert(result.msg);
+                    if(result.isok>0)
+                    {
+                        window.location.reload();
+                    }
+
+                });
+                }
+
+            });
+
+        })
+
+        function DownLoadReportIMG(imgPathURL) {
+            //如果隐藏IFRAME不存在，则添加
+            if (!document.getElementById("IframeReportImg"))
+                $('<iframe style="display:none;" id="IframeReportImg" name="IframeReportImg" onload="DoSaveAsIMG();" width="0" height="0" src="about:blank"></iframe>').appendTo("body");
+            if (document.all.IframeReportImg.src != imgPathURL) {
+                //加载图片
+                document.all.IframeReportImg.src = imgPathURL;
+            }
+            else {
+                //图片直接另存为
+                DoSaveAsIMG();
+            }
+        }
+        function DoSaveAsIMG() {
+            if (document.all.IframeReportImg.src != "about:blank")
+                window.frames["IframeReportImg"].document.execCommand("SaveAs");
+        }
+        //判断是否为ie浏览器
+        function browserIsIe() {
+            if (!!window.ActiveXObject || "ActiveXObject" in window)
+                return true;
+            else
+                return false;
+        }
+
+        //获取服务器地址
+        function getserverhost() {
+            $.get('/foods/GetServerHostAddress',
+            { Id:@ViewBag.Id}, function (result) {
+                if(result.isok>0 && result.data!=null && result.data.host!=null)
+                {
+                    $("#requesthost").val(result.data.host.requestdomain.join());
+                    $("#sockethost").val(result.data.host.wsrequestdomain.join());
+                    $("#uploadFilehost").val(result.data.host.uploaddomain.join());
+                    $("#downloadFilehost").val(result.data.host.downloaddomain.join());
+                }
+
+            })
+        }
+
+        function addTablesNo()
+        {
+            $("#nameVal").val("");
+            $('#addModal').modal('show');
+        }
+        $('#btnAdd').on('click', function() {
+            //一修改名称
+            var itemid = $("#nameVal").val();
+            if (itemid == "") {
+                alert("请输入桌台号");
+                return;
+            }
+            var reg = /^[0-9]+$/ ;
+            if(!reg.test(itemid))
+            {
+                alert("请输入1~99999的整数");
+                return;
+            }
+            if(itemid < 1 || itemid > 99999)
+            {
+                alert("请输入1~99999的整数");
+                return;
+            }
+
+            $(this).attr('disabled', 'disabled');
+
+            $.ajax({
+                type: "Post",
+                url: "/foods/addTables",
+                data:
+                    {
+                        appId:@(ViewBag.appId),
+                        tablesNo:itemid,
+                        //LogImg: imgUrl,
+                    },
+                success: function (data) {
+                    if (data.isok) {
+                        layer.alert(data.msg, {closeBtn: 0 ,yes:function(){
+                            window.location.reload();
+                        }
+                        });
+
+
+                    }
+                    else {
+                        $("#btnAdd").removeAttr("disabled");
+                        layer.alert(data.msg);
+                    }
+                }
+            });
+        });
+
+
+    </script>
+}
+

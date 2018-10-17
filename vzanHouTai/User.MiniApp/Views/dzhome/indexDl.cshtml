@@ -1,0 +1,447 @@
+﻿@model AgentWebSiteInfo
+@{
+    Layout = null;
+    bool videoSwitch = false;
+    if (Model.pageMsgConfigModel != null)
+    {
+        videoSwitch = Model.pageMsgConfigModel.videoSwitch;
+    }
+    string AccountId = Core.MiniApp.Utils.GetBuildCookieId("dz_UserCookieNew").ToString();// CookieHelper.GetCookie("dz_UserCookieNew");
+    Entity.MiniApp.User.Account account = AccountBLL.SingleModel.GetModel(string.Format("id='{0}'", AccountId));
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    @{
+        if (Model.seoConfigModel != null)
+        {
+            <title>@Model.seoConfigModel.companyName</title>
+            <meta name="keywords" content="@Model.seoConfigModel.keyWords" />
+            <meta name="description" content="@Model.seoConfigModel.description" />
+        }
+        else
+        {
+            <title>小未程序</title>
+            <meta name="keywords" content="小未程序,代理商网站" />
+            <meta name="description" content="小未程序代理商网站" />
+        }
+    }
+    @if (Model.seoConfigModel != null && Model.seoConfigModel.iconImg != null)
+    {
+        <link rel="shortcut icon" rel="image/x-icon" href="@Model.seoConfigModel.iconImg" />
+    }
+    else
+    {
+        <link rel="shortcut icon" type="image/x-icon" href="@(WebSiteConfig.cdnurl)content/newhome/image/indexDl/bitbug_favicon.ico">
+    }
+    <!-- 开发版 -->
+    <link href="@(WebSiteConfig.cdnurl)content/newhome/lib/swiper.min.css" rel="stylesheet" />
+    <link href="@(WebSiteConfig.cdnurl)content/newhome/css/dzbase.css?@(WebSiteConfig.cdnVersion)" rel="stylesheet" />
+    <link href="@(WebSiteConfig.cdnurl)content/newhome/css/indexDl.css?@(WebSiteConfig.cdnVersion)" rel="stylesheet" />
+    <style>
+        .nav-btn { width: 100px!important; height: 40px!important; min-width: initial; color: #23cd81!important; line-height: 40px!important;border-radius:5px;}
+        .nav-btn.on { background-color: #23cd81!important;color:#fff!important; }
+        .nav-btn:hover { background-color: #23cd81!important;color:#fff!important; }
+    </style>
+</head>
+<body>
+    <div class="indexDl-container" id="indexDl" v-cloak>
+        <nav id="nav" class="nav f fc">
+            <div class="nav-logo f fc">
+                @if (Model.seoConfigModel != null)
+                {
+                    <img src="@Model.seoConfigModel.logo" style="height:50px;width:auto;background-color:transparent;" />
+                }
+
+            </div>
+            <ul class="nav-list f fc">
+                <li class="f fc">
+                    <a class="lis" href="javascript:;" data-index="0">首页</a>
+                </li>
+                <li class="nav-product f fv fc">
+                    <a class="" href="javascript:;">产品中心</a>
+                    <div class="product f fv fc ">
+                        <a class="lis" href="javascript:;" data-index="1">小程序模板市场</a>
+                        <a class="lis" href="javascript:;" data-index="2">行业解决方案</a>
+                    </div>
+                </li>
+                <li class="f fc">
+                    <a class="lis" href="javascript:;" data-index="3">产品案例</a>
+                </li>
+                <li class="f fc">
+                    <a class="lis" href="javascript:;" data-index="4">关于我们</a>
+                </li>
+                <li class="f fc">
+                    <a class="lis" href="javascript:;" data-index="5">联系我们</a>
+                </li>
+                @if (account == null)
+                {
+                    <li class="f fc">
+
+                        <div class="f fc fc-m">
+                            <a class="nav-btn on" href="/dzhome/login" data-index="6" >登陆</a>
+                        </div>
+
+                        <a href="javascript:;" class="lis" style="width: auto; min-width: initial; padding: 0px 10px;"></a>
+
+                        <div class="f fc fc-m">
+                            <a class="nav-btn" href="/dzhome/wxReg" data-index="7">注册</a>
+                        </div>
+                    </li>
+                }
+                else
+                {
+                    <li class="f fc">
+                        <div class="f fc fc-h">
+                            <a class="nav-btn on" href="/dzhome/casetemplate" data-index="8">管理中心</a>
+                        </div>
+
+                        <a class="lis" href="javascript:;" style="width:auto;min-width:initial;padding:0 10px;"></a>
+
+                        <div class="f fc fc-h">
+                            <a id="exit" class="nav-btn" href="javascript:;" data-index="9" >退出</a>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </nav>
+        <div id="bannerSwiper" class="swiper-box swiper-container">
+            <div class="swiper-wrapper">
+                @{
+                    if (Model.pageMsgConfigModel != null)
+                    {
+                        if (Model.pageMsgConfigModel.bannerImgs != null && !string.IsNullOrEmpty(Model.pageMsgConfigModel.bannerImgs))
+                        {
+                            List<string> listImg = Model.pageMsgConfigModel.bannerImgs.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                            foreach (string item in listImg)
+                            {
+                                <div class="swiper-slide">
+                                    <img class="banner-img" src="@Utility.ImgHelper.ResizeImg(item, 1920, 640)" />
+                                </div>
+                            }
+                        }
+                    }
+
+                }
+
+
+            </div>
+            <div class="swiper-button-prev swiper-button-white"></div>
+            <div class="swiper-button-next swiper-button-white"></div>
+            <div class="swiper-pagination"></div>
+        </div>
+        <div class="merit">
+            <div class="merit-list f fc fj">
+                <div class="merit-item f fc fj" v-for="item in merit">
+                    <div class="merit-text">
+                        <h3>{{item.title}}</h3>
+                        <p>{{item.text}}</p>
+                    </div>
+                    <div class="merit-img">
+                        <img v-lazy="item.iconSrc" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @{
+            if (videoSwitch)
+            {
+
+
+                <div class="video-area">
+                    <div class="section-title">
+                        <h2>小程序改变一切</h2>
+                        <p>视频是迄今为止最深度的小程序解读</p>
+                    </div>
+                    <div class="video-box ">
+                        <video type="video/mp4" controls="controls" style="width:100%;height: 100%;" v-bind:src="videoUrl" autoplay></video>
+                        <div class="video-masking f fc fc-h" v-if="videoUrl==''">
+                            <img class="video-play" src="@(WebSiteConfig.cdnurl)content/newhome/image/video-play.png" v-on:click="playVideo" />
+                        </div>
+                    </div>
+                    <p class="text">速耐心看完！可能删除！</p>
+                </div>
+
+            }
+        }
+        <div id="templateMaket" class="template-maket">
+            <div class="section-title">
+                <h2>小程序模板市场</h2>
+                <p>{{dlsData.companyName}}为各种商业应用场景提供海量模板</p>
+            </div>
+            <div class="template-content f fc">
+                <ul class="versions-list">
+                    <li v-for="(versions,index) in templateMaket" v-on:click="getTpDetails(index)" v-bind:class="{select:templateNum==index}">{{versions.name}}</li>
+                </ul>
+                <div class="versions-details f fv ">
+                    <div class="intro">
+                        <h4>{{templateMaket[templateNum].name}}</h4>
+                        <p>{{templateMaket[templateNum].text}}</p>
+                    </div>
+                    <div class="funtion">
+                        <h4>版本功能</h4>
+                        <ul class="funtion-list f fc">
+                            <li v-for="func in templateMaket[templateNum].func">
+                                <span class="function-icon" v-bind:style="{backgroundPosition:func.icon}"></span>
+                                <p>{{func.text}}</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="solution" class="solution f fc">
+            <div class="solution-details">
+                <div class="details-content">
+                    <div class="details-title">
+                        <h4>{{solution[solutionNum].name}}</h4>
+                        <p>{{solution[solutionNum].text}}</p>
+                    </div>
+                    <div class="func">
+                        <h4>功能列表</h4>
+                        <ul class="func-list f fc fw">
+                            <li v-for="func in solution[solutionNum].func">
+                                <i></i>
+                                <span>{{func}}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="case">
+                        <h4>案例展示</h4>
+                        <ul class="case-list f fc" v-if="solutionCase.length>0">
+                            <li v-for="tpCase in solutionCase"  v-lazy:background-image="tpCase.CoverUrl">
+                                <div class="case-item f fc fc-h">
+                                    <img v-bind:src="tpCase.QrCodeUrl" />
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="case-none" v-if="solutionCase.length===0">
+                            暂无案例
+                        </div> 
+                    </div>
+                </div>
+            </div>
+            <div class="solution-list">
+                <div class="solution-title">
+                    <h2>行业解决方案</h2>
+                    <p>{{dlsData.companyName}}为各种商业应用场景提供小程序解决方案</p>
+                </div>
+                <ul class="solution-list-content f fc fw">
+                    <li class="f fv fc" v-for="(item,index) in solution" v-on:click="getSolutionDetails(index)" v-bind:class="{'select':solutionNum==index}">
+                        <i v-bind:style="{backgroundPosition:solutionNum==index?item.icon[1]:item.icon[0]}"></i>
+                        <span>{{item.name}}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div id="productCase" class="product-case">
+            <div class="section-title">
+                <h2>产品案例</h2>
+                @{
+                    if (Model.seoConfigModel != null)
+                    {
+                        string str = string.Format("他们都选择{0}小程序", Model.seoConfigModel.companyName);
+
+                        <p>@str</p>
+
+                    }
+                }
+
+            </div>
+            <ul class="label-list f fc fc-h tc" >
+                <li v-for="(label,index) in caseLabel" v-on:click="getProductDetails(index)" v-bind:class="{'activelabel':pdCaseLabelNum==index}" v-bind:data-id="label.id">{{label.TName}}</li>
+            </ul>
+            <div class="product-list f fv fj">
+                <ul class="list-area f fw">
+                    <li v-for="(caseItem,index) in productCase.caseList">
+                        <div class="product-item">
+                            <div class="item-img" v-lazy:background-image="caseItem.CoverUrl">
+                                <div class="item-code-box f fc fc-h">
+                                    <div class="item-code f fc fc-h">
+                                        <img v-bind:src="caseItem.QrCodeUrl" />
+                                    </div>
+                                </div>
+                            </div>
+                            <p>{{caseItem.CaseName}}</p>
+                        </div>
+                    </li>
+                </ul>
+                <div v-show="productCase.showWarnText" class="f fv fc-h tc"style="min-height:5.48rem;">
+                    <p class="warn">{{productCase.warnText}}</p>
+                    <p class="warn">请切换查看其他版本优秀案例</p>
+                </div>
+
+                <div class="btn-next f fc fc-h" v-on:click="getMoreCase" v-show="productCase.warn"><i class="icon-next"></i><span>换一批</span></div>
+            </div>
+        </div>
+        <div class="about">
+            <img src="@(WebSiteConfig.cdnurl)content/newhome/image/indexDl/about-bg.png" style="display:block;width:100%;" />
+            @{
+                if (Model.pageMsgConfigModel != null)
+                {
+                    List<CustomModel> listCustomModel = Model.pageMsgConfigModel.listCustomModel;
+                    if (Model.pageMsgConfigModel.listCustomModel != null && Model.pageMsgConfigModel.listCustomModel.Count > 0)
+                    {
+                        <div id="aboutUs" class="about-us">
+                            <div id="aboutSwiper" class="about-swiper swiper-container">
+                                <div class="swiper-wrapper">
+
+                                    @foreach (var aboutItem in listCustomModel)
+                                    {
+                                        <div class="about-slide swiper-slide ">
+                                            <div class="section-title">
+                                                <h2>@aboutItem.modelName</h2>
+                                                <p>@aboutItem.modelDescription</p>
+                                            </div>
+                                            <div class="about-slide-content f fc">
+                                                <div style="height:100%;">
+                                                    <img src="@Utility.ImgHelper.ResizeImg(aboutItem.modelBanners, 572, 408)" />
+                                                </div>
+                                                <div class="about-text">
+                                                    @*<h3>XX科技有限公司</h3>*@
+                                                    <p>@aboutItem.modelContent</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+
+
+
+                                </div>
+                                <div class="swiper-button-prev swiper-button-white about-prev"></div>
+                                <div class="swiper-button-next swiper-button-white about-next"></div>
+                                <div class="swiper-pagination"></div>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            <div id="contactUs" class="contact-us">
+                <div class="section-title">
+                    <h2>联系我们</h2>
+                    <p>欢迎留下您的意见和咨询</p>
+                </div>
+                <div class="contact-us-content f">
+                    <ul class="us-msg">
+                        <li class="f">
+                            <i class="icon-phone"></i>
+                            <div class="msg-details f fv fc-h">
+                                <h5>联系电话</h5>
+                                @{
+                                    if (Model.pageMsgConfigModel != null)
+                                    {
+                                        <p>@Model.pageMsgConfigModel.telephone</p>
+                                    }
+                                }
+
+                            </div>
+                        </li>
+                        <li class="f">
+                            <i class="icon-mall"></i>
+                            <div class="msg-details f fv fc-h">
+                                <h5>联系邮箱</h5>
+                                @{
+                                    if (Model.pageMsgConfigModel != null)
+                                    {
+                                        <p>@Model.pageMsgConfigModel.email</p>
+                                    }
+                                }
+                            </div>
+                        </li>
+                        <li class="f">
+                            <i class="icon-addr"></i>
+                            <div class="msg-details f fv fc-h">
+                                <h5>联系地址</h5>
+                                @{
+                                    if (Model.pageMsgConfigModel != null)
+                                    {
+                                        <p>@Model.pageMsgConfigModel.address</p>
+                                    }
+                                }
+                            </div>
+                        </li>
+                    </ul>
+                    <div class="form-area">
+                        <div class="form-box f fj">
+                            <div class="form-item f fv">
+                                <p class="form-name">姓名</p>
+                                <input type="text" placeholder="输入您的姓名" v-model="information.name" />
+                            </div>
+                            <div class="form-item f fv">
+                                <p class="form-name">电话</p>
+                                <input type="text" placeholder="输入您的电话" v-model="information.phone" />
+                            </div>
+                        </div>
+                        <div class="area-item ">
+                            <p class="form-name">咨询内容</p>
+                            <div class="f fc">
+                                <textarea placeholder="输入您要咨询的内容" v-model="information.content"></textarea>
+                                <span class="btn-consult" v-on:click="submitInformation">立即咨询</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="footer">
+            @{
+                if (Model.seoConfigModel != null)
+                {
+
+                    <p>@Model.seoConfigModel.companyName 版权所有 <a href="http://www.miitbeian.gov.cn/" target="_blank" style="color:#fff;">@Model.seoConfigModel.ICPNumber</a></p>
+                }
+            }
+
+        </footer>
+    </div>
+    <script src="http://j.vzan.cc/dz//js/??jquery.min.js,jquery.cookie.js,vue.min.js"></script>
+
+    <script src="@(WebSiteConfig.cdnurl)content/newhome/lib/vue-lazyload.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/newhome/lib/swiper.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/newhome/lib/layer-v3.1.0/layer/layer.js"></script>
+    @*<script src="@(WebSiteConfig.cdnurl)content/newhome/lib/??vue.js,vue-lazyload.js,jquery.min.js,swiper.min.js"></script>
+        <script src="@(WebSiteConfig.cdnurl)content/newhome/lib/layer-v3.1.0/layer/layer.js"></script>*@
+
+    <script>
+        var userAccountId = "@Model.userAccountId";
+        $(function () {
+            $(document).on("click", "#exit", function () {
+                if (confirm("确定退出当前用户")) {
+                    //var url = window.location.host;
+                    //var domain = ".vzan.com";
+                    //if (url == "www.xiaochengxu.com.cn") {
+                    //    domain = '.xiaochengxu.com.cn';
+                    //}
+                    var url = window.location.host;
+                    var domain = "";
+                    if (url.indexOf("www.") != -1) {
+                        domain = url.replace("www.", ".");
+                    }
+                    else {
+                        domain = "." + url;
+                    }
+
+                    $.cookie("dz_UserCookieNew", "00000000-0000-0000-0000-000000000000", {
+                        expires: 7,
+                        path: '/',
+                        domain: domain
+                    });
+                    $.cookie("agent_UserCookieNew", "00000000-0000-0000-0000-000000000000", {
+                        expires: 7,
+                        path: '/',
+                        domain: domain
+                    });
+                    window.location.href = "/dzhome/logout";
+                }
+            });
+
+        });
+    </script>
+    <script src="@(WebSiteConfig.cdnurl)content/newhome/js/indexDl.js?@(WebSiteConfig.cdnVersion)"></script>
+</body>
+</html>

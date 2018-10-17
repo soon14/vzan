@@ -1,0 +1,528 @@
+﻿@using Entity.MiniApp.Conf
+@model Moduls
+@{
+    ViewBag.Title = "企业智推版";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+
+<link href="/content/newhome/css/dzbase.css?2018-3-27" rel="stylesheet" />
+
+<style>
+    .i_Posters {
+        height: 25%;
+        margin-bottom: 2px;
+        border-radius: 5px;
+    }
+
+        .i_Posters > div {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+            box-shadow: 0 0 2px #ccc;
+        }
+
+    .DelPoster {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+    }
+
+        .DelPoster .glyphicon-remove {
+            font-size: 14px;
+            color: #ccc;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 100%;
+        }
+
+    .plus-button {
+        box-shadow: none !important;
+        border: 2px dashed #aaa;
+        color: #888;
+        cursor: pointer;
+        text-align: center;
+        height: 120px;
+        transition: all .2s cubic-bezier(.7,0,.3,1);
+        width: 120px;
+    }
+
+        .plus-button .plus {
+            font-size: 100px;
+            line-height: 1;
+            font-weight: 700;
+            margin-top: -10px;
+        }
+
+    .plus-label {
+        font-size: 14px;
+        position: relative;
+        text-align: center;
+        top: -2px;
+    }
+
+        td {border-top:none !important;}
+    .warn {color:red;}
+</style>
+
+<link href="~/Content/plugin/cropper/cropper.min.css" rel="stylesheet" />
+<link href="~/Content/plugin/cropper/font-awesome.min.css" rel="stylesheet" />
+
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff" id="app" v-cloak>
+    <div>
+        <table class="table" style="margin-top:10px;">
+            <tr>
+                <td align="right" style="width:6%;">
+                    <label>标题:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" maxlength="40" placeholder="不超过40个汉字" style="display:block;width:500px;" v-model="datainfo.Title" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><label>图片:<span class="warn">*</span></label></td>
+                <td>
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+                            <div style="position:relative;" v-for="(item,index) in BottomImgUrl">
+                                <img :src="item" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(1,0)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)" v-if="BottomImgUrl.length<=0">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>排序:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input class="form-control" style="display:block;width:200px;" maxlength="6" onkeyup="value=value.replace(/[^\d]/g,'') " v-model="datainfo.Sort"/>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>视频:</label>
+                </td>
+                <td align="left">
+                    <div class="head">视频</div>
+                    <div class="unit">
+                        <label class="unit-head">视频类型：</label>
+                        <div class="set_goodshowtype">
+                            <label for="video_type_neturl">
+                                <input id="video_type_neturl" type="radio" value="0" v-model="videotype" /> 网络地址
+                            </label>
+                            <label for="video_type_src">
+                                <input id="video_type_src" type="radio" value="1" v-model="videotype" /> 本地上传
+                            </label>
+                        </div>
+                        <div v-if="videotype=='0'">
+                            <input type="text" v-model="videourl" class="form-control" style="width:500px;" placeholder="请输入视频网络地址" />
+                            <div class="warn f12">
+                                注意：只支持.mp4
+                            </div>
+                        </div>
+                        <div v-show="videotype=='1'">
+                            <div class="d-flex d-flex-center" v-if="uploader.tempFilePath!=''&& uploader.tempFilePath!=null">
+                                <a class="flex txtbr" v-bind:href="uploader.tempFilePath" target="_blank">{{uploader.tempFilePath}}</a>
+                                <i class="glyphicon glyphicon-remove" v-on:click.stop="uploader.tempFilePath=''"></i>
+                            </div>
+                            <button type="button" class="btn btn-primary mt10 useupload mutipartupload" id="uploadVideo" v-on:click="pickVideo($event)">
+                                <i class="layui-icon">&#xe67c;</i>上传视频
+                            </button>
+                            <div class="warn f12">
+                                注意：只支持.mp4
+                            </div>
+                            <div style="display:none;">
+                                <input type="file" id="pcfileUploadVideo" name="pcfileUploadVideo" v-on:change="uploadVideo()" accept=".mp4"/>
+                            </div>
+
+                            <div style="display: none;">
+                                <button id="browse_file_video">上传视频</button>
+                                <button id="start_upload_video" v-on:click="uploadFile('video',$event)">开始上传</button>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>概述:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <textarea class="form-control" style="display:block;width:500px;height:50px;" v-model="datainfo.Content2"></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>简介:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <div id="editor" style="width:500px;height:360px;"></div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"></td>
+                <td>
+                    <button type="button" class="btn btn-primary ml10" v-on:click="save()">
+                        保存
+                    </button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+
+</div>
+<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.Content)
+</script>
+<script>
+        $(function () {
+            //#region 在线富文本编辑器
+            var ue = UE.getEditor('editor', {
+                toolbars: [
+                    ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                    ['paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain'],
+                    ['simpleupload', 'insertimage']
+                ],
+                imageUrl: "/Upload/Image?cityid=" + localStorage.cityInfoId,
+                autoHeight: false
+            });
+            //对编辑器的操作最好在编辑器ready之后再做
+            ue.ready(function () {
+                if ($("#js_article_content").html() != "") {
+                    var vHtml = $("#js_article_content").html();
+                    ue.setContent(vHtml);
+                }
+            });
+            //当富文本框内容发生改变时,展示框也要发生改变
+            ue.addListener('selectionchange', function (editor) {
+                if (ue.hasContents()) {
+                    jQuery(".spgl-bianji-bt").siblings().remove();
+                    jQuery(".spgl-bianji-bt").before(ue.getContent());
+                } else {
+                    var html = '<div class="spxqq-f"><p>内容</p><p>可自由编辑</p></div><a class="spgl-bianji-bt">编辑</a>'
+                    jQuery('.twxq-edit-zhanshi').html(html);
+                }
+            });
+            //#endregion
+        });
+</script>
+<script>
+    var BottomImgUrl=@Html.Raw(JsonConvert.SerializeObject(string.IsNullOrEmpty(Model.ImgUrl)?new List<string>():new List<string>() { Model.ImgUrl }));
+    var comeditor=null;
+    var tempdatainfo = @Html.Raw(JsonConvert.SerializeObject(Model));
+    var MAX_VIDEO_SIZE = 20;//视频上传最大值（单位M）
+    var app = new Vue({
+        el: "#app",
+        data: {
+            datainfo:tempdatainfo,
+            comeditor:null,
+            BottomImgUrl:BottomImgUrl,
+            uploadImgType:0,
+            videotype:tempdatainfo.VideoType,
+            videourl:tempdatainfo.VideoType==0?tempdatainfo.VideoUrl:'',
+            uploader: {
+                uploading:false,
+                tempFilePath: tempdatainfo.VideoType==0?"":tempdatainfo.VideoUrl,
+                video: {
+                    instalce: null,
+                    filePath: '',
+                    element: null
+                }
+            },
+        },
+        mounted: function () {
+            var that=this;
+            if ($(".edui-container").length == 0) {
+                //that.comeditor.destroy();
+                that.BuildEditor();
+            }
+
+            this.initUploader('video');
+        },
+        created:function(){
+
+        },
+        methods:{
+            save:function(){
+                var that=this;
+                if(that.datainfo.Title==null||that.datainfo.Title==""||that.datainfo.Title.length<=0){
+                    layer.msg("标题不能为空",{time:1000});
+                    return;
+                }
+
+                if(that.datainfo.Content2==null||that.datainfo.Content2==""||that.datainfo.Content2.length<=0){
+                    layer.msg("概述不能为空",{time:1000});
+                    return;
+                }
+
+                that.datainfo.Content=comeditor.getContent();
+                if(that.datainfo.Content==null||that.datainfo.Content==""||that.datainfo.Content.length<=0){
+                    layer.msg("简介不能为空",{time:1000});
+                    return;
+                }
+
+                if(that.BottomImgUrl==null||that.BottomImgUrl.length<=0){
+                    layer.msg("请上传图片",{time:1000});
+                    return;
+                }
+
+                //视频
+                that.datainfo.VideoType=that.videotype;
+                if(that.datainfo.VideoType==0)
+                {
+                    that.datainfo.VideoUrl = that.videourl
+                }
+                else
+                {
+                    that.datainfo.VideoUrl = that.uploader.tempFilePath;
+                }
+
+                that.datainfo.ImgUrl=that.BottomImgUrl[0];
+
+                if(that.uploader.uploading)
+                {
+                    layer.confirm("视频还在上传中，现在保存将会丢失视频，是否确定？", {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        layer.closeAll();
+                        that.saveData();
+                    });
+                }
+                else{
+                    that.saveData();
+                }
+            },
+            saveData:function(){
+                $.post("/Qiye/OfficialWeb/AddOrEditCompanyNews", {act:"save",model:app.datainfo,aid:@ViewBag.appId},function(data){
+                    if(data&&data.isok){
+                        layer.msg(data.Msg,{time:1000});
+                        window.setTimeout(function(){
+                            window.location.href="/Qiye/OfficialWeb/CompanyNews?aid=@ViewBag.appId";
+                        },2000);
+                    }
+                    else{
+                        layer.msg(data.Msg,{time:1000});
+                    }
+                });
+            },
+            BuildEditor: function () {
+                var that = this;
+
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image?cityid=" + @ViewBag.appId,
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.datainfo.Content);
+                });
+                //comeditor.addListener("contentChange", function () {
+                //    console.log("change");
+                //    if (comeditor != null) {
+                //        that.datainfo.Content=comeditor.getContent();
+                //    }
+                //});
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=5;
+                var remainCount=0;
+                if(that.uploadImgType==0){
+                    //表示轮播图
+
+                    if(that.Banners.length>=maxCount){
+                        layer.msg("轮播图最多5张");
+                        return;
+                    }
+                    remainCount=maxCount-that.Banners.length;
+                    framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=1&maxImgSize=1&objKey=Banners&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }else{
+                    maxCount=1;
+                    remainCount=maxCount-that.BottomImgUrl.length;
+                    if(that.BottomImgUrl.length>=maxCount){
+                        layer.msg("店铺图最多10张");
+                        return;
+                    }
+                    framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=0&maxImgSize=1&objKey=BottomImgUrl&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+            },
+            clearImg:function(type,index){
+                var that = this;
+                if(type==0){
+                    //表示店铺轮播图
+                    if(that.Banners.length>0){
+                        that.Banners.splice(index,1);
+                    }
+
+                    that.datainfo.Banners=that.Banners.join(",");
+
+                }else{
+                    //表示店铺大图
+                    that.datainfo.BottomImgUrl="";
+
+                    //表示店铺大图
+                    if(that.BottomImgUrl.length>0){
+                        that.BottomImgUrl.splice(index,1);
+                    }
+                }
+            },
+            pickVideo: function ( e) {
+                if(app.uploader.uploading)
+                {
+                    return;
+                }
+                app.uploader.uploading = true;
+                if (!e.target.classList.contains('layui-icon')) {
+                    this.uploader.video.element = e.target;
+                } else {
+                    this.uploader.video.element = e.target.parentElement;
+                }
+                $('#browse_file_video').click();
+            },
+            uploadFile: function (type) {
+                var that = this;
+                $.get('/upload/initupload', {
+                    type: type
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+                    that.uploader[type].filePath = data.host + '/' + filePath;
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    that.uploader.token = multipartParams;
+                    that.uploader[type].instance.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+                    that.uploader[type].instance.start();
+                }).fail(function (data) {
+                });
+
+            },
+            initUploader: function (type) {
+                var that = this;
+                var options = {
+                    browse_button: 'browse_file_' + type,
+                    url: 'http://oss.aliyuncs.com',
+                    flash_swf_url: 'http://j.vzan.cc/dz/content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                    silverlight_xap_url: 'http://j.vzan.cc/dz/content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                    filters: {
+                        mime_types: [ {title: "视频文件",extensions: "mp4,m3u8",}]},//只允许上传图片和zip文件
+                        multi_selection: false
+                };
+                //如果还有当前类型的上传组件实例的话则先把其销毁
+                if (that.uploader[type].instance) {
+                    console.log('destroy uploader :' + type);
+                    that.uploader[type].instance.destroy();
+                }
+                that.uploader[type].instance = new plupload.Uploader(options);
+
+                that.uploader[type].instance.init();
+
+                that.uploader[type].instance.bind('BeforeUpload', function (d, f) {
+                    //取到文件后缀名
+                    var fileName = f.name;
+                    var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                    //转成Mb
+                    var fileSize = f.size / 1024 / 1024;
+                    var flag = true;
+                    if ('mp4'!=ext) {
+                        layer.msg('请上传正确的视频格式文件，后缀名可为：mp4,m3u8');
+                        flag = false;
+                    }
+                    if (fileSize > MAX_VIDEO_SIZE) {
+                        layer.msg('文件最大支持 ' + MAX_VIDEO_SIZE + 'Mb');
+                        flag = false;
+                    }
+                    //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                    if (!flag) {
+                        that.initUploader(type);
+                    }
+
+                    that.uploader.token.key += '.' + ext;
+                    that.uploader[type].instance.setOption(that.uploader.token);
+                });
+
+                that.uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                    $('#start_upload_' + type).click();
+                });
+                that.uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+
+                    that.uploader[type].element.innerHTML = '上传进度 - ' + file.percent + "%";
+                });
+                that.uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+                    that.uploader[type].element.innerHTML = getBtnHTML(type);
+                    //console.log(that.uploader.filePath);
+                    var fileName = f[0].name;
+                    var fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                    var filePath = that.uploader[type].filePath + '.' + fileExt;
+                    that.uploader.tempFilePath = filePath;
+                    that.uploader.uploading=false;
+                    //上传完成后重新初始上传组件
+                    that.initUploader(type);
+
+                });
+                //获取上传按钮源HTML
+                function getBtnHTML(type) {
+                    switch (type) {
+                        case 'img':
+                            return '<i class="layui-icon">&#xe67c;</i>上传图片'
+                        case 'video':
+                            return '<i class="layui-icon">&#xe67c;</i>上传视频'
+                        case 'audio':
+                            return '<i class="layui-icon">&#xe67c;</i>上传音频'
+                        default:
+                            return '';
+                    }
+                }
+            },
+        }
+    });
+</script>

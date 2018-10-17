@@ -1,0 +1,132 @@
+﻿@{
+    ViewBag.appId = Utility.IO.Context.GetRequestInt("appId", 0);
+    ViewBag.appName = "专业版";
+
+    int appId = ViewBag.appId;
+    string pageTitle = ViewBag.Title;
+    string templateName = Enum.GetName(typeof(TmpType), ViewBag.PageType);
+
+    //专业模板的专属版本后缀
+    int? versionId = ViewBag.versionId;
+    if (versionId.HasValue)
+    {
+        string versionName = string.Empty;
+        Dictionary<int, string> version = new Dictionary<int, string> { { 0, "旗舰版" }, { 1, "尊享版" }, { 2, "高级版" }, { 3, "基础版" } };
+        version.TryGetValue(versionId.Value, out versionName);
+        templateName = templateName.Replace("专业版", "专业") + versionName;
+    }
+
+    //登陆授权信息
+    AuthInfo authInfo = ViewBag.authInfo;
+    if (authInfo == null || authInfo.AllMenu == null || authInfo.AllMenu == null)
+    {
+        return;
+    }
+
+    //授权访问菜单
+    List<NavMenu> menus = menus = authInfo.AllMenu.FindAll(findItem => authInfo.AuthMenu.Exists(authItem => authItem.ItemId == findItem.Id)).OrderBy(x=>x.Sort).ToList();
+    //阿拉丁统计开关
+    if (!WebSiteConfig.UseALaDing)
+    {
+        menus.RemoveAll(item => item.Type == (int)NavMenus.阿拉丁统计);
+    }
+}
+
+@helper RenderMenu(List<NavMenu> renderMenu, List<NavMenu> allMenu, int appId)
+{
+    <ul class="sub-menu">
+        @foreach (var item in renderMenu)
+        {
+            bool isHasLeaf = allMenu.Exists(findItem => findItem.ParentId == item.Id);
+            <li class="nav-item start">
+                <a href="@item.Url?appId=@appId&pageType=@((int)TmpType.小程序专业模板)@item.AppendPara" class="nav-link @(isHasLeaf ? "nav-toggle" : null)">
+                    @Html.Raw(item.Icon)
+                    <span class="title" data-leaf="@(item.ParentId > 0 ? 1 : 0)" data-id="@item.Id">@item.Name</span>
+                    @if (isHasLeaf)
+                    {
+                        //显示折叠箭头
+                        <span class="selected"></span>
+                        <span class="arrow"></span>
+                    }
+                </a>
+                @RenderMenu(allMenu.FindAll(findItem => findItem.ParentId == item.Id), allMenu, appId)
+            </li>
+        }
+    </ul>
+}
+
+<div class="page-sidebar-wrapper">
+    <div class="page-sidebar navbar-collapse collapse">
+        <ul class="page-sidebar-menu  page-header-fixed page-sidebar-menu-light" data-keep-expanded="false" data-auto-scroll="true" data-slide-speed="200" style="padding-top: 20px">
+            <li class="nav-item start open">
+
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="glyphicon glyphicon-home"></i>
+                    <span class="title">@templateName</span>
+                    <span class="selected"></span>
+                    <span class="arrow"></span>
+                </a>
+
+                @RenderMenu(menus.FindAll(findItem => findItem.ParentId == 0), menus, appId)
+
+            </li>
+        </ul>
+    </div>
+</div>
+
+@if (authInfo.MasterAccess)
+{
+    <script id="loginEntry" type="text/html">
+        @*<div class="btn-backstage" style="display: block;margin-right:5px">
+            <a href="/SubAccount/Login?appId=@appId" class="fp-font-white">子账号登陆</a>
+        </div>*@
+    </script>
+
+}
+else
+{
+    <style>.btn-backstage, #touxiang, #editphone, #sysmsg, #exit{display:none !important}</style>
+    <script id="loginEntry" type="text/html">
+        <a id="logout" onclick="logout()" href="javascript:;" class="setting f fc" title="退出"><img src="//j.vzan.cc/dz/content/newhome/image/setting.png" style="margin: 0 auto ;"></a>
+    </script>
+    <script type="text/javascript" async>
+        function logout() {
+            var domain = "";
+            var url = window.location.host;
+            if (url.indexOf("www.") != -1) {
+                domain = url.replace("www.", ".");
+            }
+            else {
+                domain = "." + url;
+            }
+            $.cookie("dz_UserCookieNew", "00000000-0000-0000-0000-000000000000", {
+                expires: 7,
+                path: '/',
+                domain: domain
+            });
+            $.cookie("adminAuth", "x", {
+                expires: 7,
+                path: '/',
+                domain: domain
+            });
+            window.location.href = "/subAccount/login?appId=@appId";
+        }
+    </script>
+}
+
+<script type="text/javascript" async>
+    $(function () {
+        //默认显示折叠菜单
+        $('.sub-menu').eq(0).css('display', 'block');
+        var pageTitle = $('title').text();
+        var currMenuItem = Array.from($('span[class="title"]')).find(menu => pageTitle.indexOf($(menu).text()) > -1);
+        console.log([pageTitle, currMenuItem]);
+        if (currMenuItem) {
+            //展开折叠菜单
+            if ($(currMenuItem).data('leaf')) { $(currMenuItem).closest('ul').parent().find('a').click(); }
+            $(currMenuItem.parentNode.parentNode).attr('class', 'nav-item active');
+        }
+        //登陆入口
+        $('.personal').prepend($('#loginEntry').html());
+    });
+</script>

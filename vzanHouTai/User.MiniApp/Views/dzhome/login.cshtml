@@ -1,0 +1,248 @@
+﻿@{
+    Layout = null;
+    string domain = Request.Url.Host;
+
+    HashSet<string> customUrl = new HashSet<string>();
+    customUrl.Add("www.xiaochengxu.com.cn");
+    customUrl.Add("www.weilai.tj.cn");
+    customUrl.Add("yunzhangkeji.xin");
+    customUrl.Add("www.chuandada.cn");
+    customUrl.Add("www.ecarry.cn");
+    customUrl.Add("www.mushikeji.cn");
+    customUrl.Add("wx.xcx118.com");
+    customUrl.Add("www.xiaochengxucn.com");
+    customUrl.Add("wei.xiaochengxu.com.cn");
+    customUrl.Add("xiaochengxufuwushang.com");
+    customUrl.Add("um2.xiaochengxu.com.cn");
+    customUrl.Add("www.3tiy.com");
+    customUrl.Add("www.0398.cn");
+    customUrl.Add("www.weixiaocheng.net");
+    customUrl.Add("www.nxhzkj.cn");
+    customUrl.Add("ltxcx.cn");
+    customUrl.Add("www.xiaochengxucn.com");
+    customUrl.Add("www.ybxiaochengxu.com");
+    customUrl.Add("www.wzxingzan.com");
+    customUrl.Add("app.zhisencode.com");
+    customUrl.Add("www.henanzhuchuang.com");
+    customUrl.Add("login.zhisencode.com");
+    customUrl.Add("www.datangmolin.cn");
+    customUrl.Add("road66.net");
+    customUrl.Add("xiao.0398.cn");
+    customUrl.Add("www.hongzhuchuanmei.com");
+    customUrl.Add("www.qzzywl.com");
+    customUrl.Add("www.zsjcwh.com");
+    customUrl.Add("www.wd116.com");
+    customUrl.Add("www.wanhaoyun.cn");
+    customUrl.Add("youguo.xiaochengxu.com.cn");
+    customUrl.Add("www.laizankeji.com");
+    customUrl.Add("www.hotfruits.top");
+    customUrl.Add("www.road66.net");
+    customUrl.Add("www.msxiaochengxu.com");
+    customUrl.Add("www.officejd.com");
+    customUrl.Add("www.paqianghu666.com");
+    customUrl.Add("www.sdmengzhu.com");
+    customUrl.Add("www.haopingtech.com");
+    customUrl.Add("www.guamikj.com");
+    customUrl.Add("fyxlwl.com");
+    customUrl.Add("www.fyxlkj.com");
+    customUrl.Add("www.xiaochengxuok.com");
+    customUrl.Add("www.zhilangkj.com");
+    customUrl.Add("www.ltxcx.cn");
+    customUrl.Add("www.xyinfotech.cn");
+    customUrl.Add("weixin.yuxiangwlkj.com");
+    customUrl.Add("miniapp.rongying.net");
+    customUrl.Add("dianzankj.com");
+    customUrl.Add("gaoxinte.cc");
+    customUrl.Add("www.mxxiaochengxu.com");
+    customUrl.Add("www.quanxingxcx.cn");
+    customUrl.Add("www.qingmokeji.com");
+    customUrl.Add("www.phxcx.net");
+    customUrl.Add("www.wanlian.red");
+    customUrl.Add("www.yaosenkeji.com.cn");
+    customUrl.Add("www.aoboxcx.cn");
+    customUrl.Add("www.118xcx.com");
+    customUrl.Add("www.wanlian.red");
+    customUrl.Add("www.man-gan.com");
+    customUrl.Add("www.xuantengnet.com");
+    customUrl.Add("www.dianlanwl.com");
+    customUrl.Add("www.zzenchina.com");
+    customUrl.Add("tongxiekeji.com");
+    customUrl.Add("www.jwxcx.com.cn");
+    customUrl.Add("www.0411xiaochengxu.com");
+    customUrl.Add("www.huizan8.com");
+    customUrl.Add("www.boss88799.com");
+    customUrl.Add("www.xzan.net");
+    customUrl.Add("www.tongxiekeji.com");
+    customUrl.Add("www.591xiaochengxu.com");
+    customUrl.Add("www.zimeiguikeji.com");
+    customUrl.Add("www.yfdxcx.com");
+    customUrl.Add("www.九美.com");
+    customUrl.Add("www.xn--sjq221j.com");
+    customUrl.Add("www.yuanxinjt.com");
+
+    if (WebSiteConfig.Environment == "dev")
+    {
+        customUrl.Add("localdz.vzan.com");
+        customUrl.Add("testdzwx.vzan.com");
+        customUrl.Add("testdz.vzan.com");
+        customUrl.Add("testdzchx.vzan.com");
+    }
+
+    if (domain.Contains("xn--"))
+    {
+        System.Globalization.IdnMapping idn = new System.Globalization.IdnMapping();
+
+        domain = idn.GetUnicode(domain);
+    }
+    domain = domain.GetUnicodeDomain();
+    if (!customUrl.Contains(domain))
+    {
+        Response.Redirect("http://www.xiaochengxu.com.cn/dzhome/login");
+    }
+
+
+    if (domain.Contains(WebSiteConfig.DzWebSiteDomainExt))
+    {
+        //表示二级域名
+        domain = domain.Replace(WebSiteConfig.DzWebSiteDomainExt, "");
+    }
+    AgentWebSiteInfo agentWebSiteInfo = AgentWebSiteInfoBLL.SingleModel.GetModelByDomian(domain);
+    SeoConfigModel seoConfig = new SeoConfigModel();
+    if (agentWebSiteInfo != null && !string.IsNullOrEmpty(agentWebSiteInfo.seoConfig))
+    {
+        seoConfig = JsonConvert.DeserializeObject<SeoConfigModel>(agentWebSiteInfo.seoConfig);
+    }
+
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>登录</title>
+    @if (seoConfig != null && !string.IsNullOrEmpty(seoConfig.iconImg))
+    {
+        <link rel="shortcut icon" href="@seoConfig.iconImg" />
+    }
+    else
+    {
+        <link rel="shortcut icon" type="image/x-icon" href="@(WebSiteConfig.cdnurl)content/newhome/image/bitbug_favicon.ico">
+    }
+    <link href="@(WebSiteConfig.cdnurl)content/css/dzbase.css" rel="stylesheet" />
+    @*<link href="@(WebSiteConfig.cdnurl)content/newhome/css/base.css" rel="stylesheet" />*@
+    <link href="@(WebSiteConfig.cdnurl)content/newhome/lib/animate.css" rel="stylesheet" />
+    <link href="@(WebSiteConfig.cdnurl)content/newhome/css/login.css?@(WebSiteConfig.cdnVersion)" rel="stylesheet" /> <!-- 上线版 -->
+</head>
+<body id="bodykey" style="display:none;overflow:hidden">
+    <div class="loginbg-container">
+        @*<img src="@(WebSiteConfig.cdnurl)content/newhome/image/login.png" style="width:100%;"/>*@
+        @if (seoConfig != null && !string.IsNullOrEmpty(seoConfig.logo))
+        {
+            <a href="/" style="display:inline-block;padding:25px;">
+                <img src="@(seoConfig.logo)" style="max-height:100px;"/>
+            </a>
+        }
+        else
+        {
+            <a href="javascript:;" style="display:inline-block;padding:25px;">
+                <img src="@(WebSiteConfig.cdnurl)content/newhome/image/login-logo.png" />
+            </a>
+        }
+        <input type="hidden" id="sessid" value="@Session["qrcodekey"]" />
+
+        <input type="hidden" value="@ViewBag.Method" id="method" />
+        @*<canvas id="canvas" class="canvas"></canvas>
+        <div class="login-box f fc fv" id="login-box" style="position: absolute;top: 1px;margin: 15% 35%;display: block;">*@
+        <div class="login-box f fc fv" id="login-box">
+            <header class="login-title f fc fc-h">
+                <div id="login-num" class="login-font-blue title-line f fc fc-h">账户登录</div>
+                <div id="login-qrcode" class="f fc fc-h">扫码登录</div>
+            </header>
+            <ul class="login-list f fv fc">
+                <li class="details f fv fc" id="num">
+                    <div class="warning f fc fc-h">
+                        <p class="warning-text" id="warning" style="opacity:0;">请输入账户名和密码！</p>
+                    </div>
+                    <div class="input">
+                        <span class="text-position login-font-gray icon-self f fc-h fc">账号：</span>
+                        <input type="text" name="phone" id="user_name" placeholder="请输入账号/已验证手机号" class="self" value="@(ViewBag.userName)" />
+                    </div>
+                    <div class="input">
+                        <span class="text-position login-font-gray icon-psw f fc-h fc">密码：</span>
+                        <input type="password" name="psw" id="user_pwd" maxlength="20" placeholder="请输入密码" class="psw" value="@(ViewBag.passWord)" />
+                    </div>
+                    <a href="/dzhome/findpsw" class="login-font-blue forget-psw f fc">忘记密码?</a>
+                    <div class="btn-confirm " id="login">登录</div>
+                    <a href="/dzhome/wxReg" class="login-font-blue no-number">我还没有账号，立即免费注册</a>
+                </li>
+                <li class="qrcode" id="qrcode">
+                    <div class="f fc fv">
+                        <div style="width:130px;height:130px;background-color:skyblue;">
+                            <img src="/QrCode/GetQrCode?code=@Session["qrcodekey"]" alt="" style="width: 100%;height: 100%;" />
+                        </div>
+                        <p style="padding-top:9px; font-size:0.875rem;" class="login-font-gray">微信扫描二维码登录</p>
+                        <a style="padding-top:20px;font-size:0.875rem;" class="login-font-blue" href="/dzhome/wxReg">我还没有账号，立即免费注册</a>
+                    </div>
+                </li>
+            </ul>
+
+        </div>
+
+
+        <script>
+        window.onload = function () {
+            document.body.style.display = "block";
+
+            var accountid = '@ViewBag.AccountId';
+            var masterAuth = '@ViewBag.MasterAuth';
+            if (accountid.length > 0)
+            {
+                var url = window.location.host;
+                var domain = "";
+                if (url.indexOf("www.") != -1) {
+                    domain = url.replace("www.", ".");
+                }
+                else {
+                    domain = "." + url;
+                }
+
+                $.cookie("agent_UserCookieNew", "00000000-0000-0000-0000-000000000000", {
+                    expires: 7,
+                    path: '/',
+                    domain: domain
+                });
+                $.cookie("dz_UserCookieNew", accountid, {
+                    expires: 7,
+                    path: '/',
+                    domain: domain
+                });
+                //$.cookie("masterAuth", accountid, {
+                //    expires: 7,
+                //    path: '/',
+                //    domain: domain
+                //});
+
+                $.cookie("masterAuth", masterAuth, {
+                    expires: 7,
+                    path: '/',
+                    domain: domain
+                });
+                window.location.href = "/dzhome/casetemplate";
+            }
+        }
+        </script>
+        <script src="@(WebSiteConfig.cdnurl)content/newhome/lib/jquery.min.js"></script>
+        <script src="@(WebSiteConfig.cdnurl)js/jquery.cookie.js"></script>
+        @if (WebSiteConfig.Environment == "dev")
+        {
+            <script type="text/javascript" src="/Content/newhome/js/login.js?v4" charset="utf-8"></script>     <!-- 开发版 -->
+        }
+        else
+        {
+            <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/newhome/js/login.js?v4" charset="utf-8"></script> <!-- 上线版 -->
+        }
+    </div>
+
+</body>
+</html>

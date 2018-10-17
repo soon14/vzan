@@ -1,0 +1,169 @@
+﻿@{
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+    ViewBag.Title = "小程序动态";
+
+}
+@section cssSection{
+    @*<link href="@(WebSiteConfig.cdnurl)content/newhome/css/news.css" rel="stylesheet" />*@
+}
+
+
+<!--内容-->
+<div id="news" class="news-wrap f fv fc" v-cloak>
+    @*id="news_content"*@
+    <div class="content_img">
+        <img v-bind:src="headerInfo[para.type].imgUrl" />
+        <h1 id="content_title">{{headerInfo[para.type].title}}</h1>
+    </div>
+    <section class="news-container">
+        <ul class="newsoption-list f fc fw">
+            <li v-for="(label,index) in headerInfo" v-bind:class="{'newsline':index==para.type}" v-on:click="selectNews(index)" v-if="para.type!=2&&index<2">{{label.title}}</li>
+            @*<li id="deepth" v-bind:class="{'newsline':para.type=='1'}" v-on:click="getMoreDeep()">深度观点</li>*@
+        </ul>
+        <div id="firstPage" class="news-list f fv fc">
+            <div class="news_item f" v-for="item in para.list">
+                <img class="news-img" v-bind:src="item.ImgPath" />
+                <div class="news_content ">
+                    <a v-bind:href="getnewsurl(item)" target="_blank">
+                        <h3 class="fz-28 c-333">{{item.Title}}</h3>
+                        <p class="line line3 c-999">{{item.Introduce}}</p>
+                        <span class="c-ccc">{{time}}</span>
+                    </a>
+                    @*<h3><a v-bind:href="getnewsurl(item)" target="_blank">{{item.Title}}</a></h3>
+                        <p><a v-bind:href="getnewsurl(item)" target="_blank">{{item.Introduce}}</a></p>*@
+                </div>
+            </div>
+            <div class="btn-more mgy40" v-on:click="getMore()">查看更多</div>
+        </div>
+    </section>
+</div>
+<!--内容-->
+
+@section script{
+    <script>
+        var hash = window.location.hash
+        //console.log(hash)
+        var vm = new Vue({
+            el: "#news",
+            data: {
+                time: "",
+                url: hash,
+                loadMore: false,
+                headerInfo: [
+                    { title: "新闻动态", imgUrl: "@(WebSiteConfig.cdnurl)content/newhome/image/news_bg.png" },
+                    { title: "深度观点", imgUrl: "@(WebSiteConfig.cdnurl)content/newhome/image/news_bg1.png" },
+                    { title: "拼享惠动态", imgUrl: "@(WebSiteConfig.cdnurl)content/newhome/image/news_bg2.png" },
+                ],
+                para: {
+                    pageIndex: 1,
+                    pageSize: 3,
+                    type: 0,
+                    list: [],
+                },
+            },
+            //初始化
+            mounted: function () {
+                //var that = this;
+                this.getNews();
+            },
+            methods: {
+                //选择加载
+                getNews() {
+                    switch (this.url) {
+                        case "#newsth":
+                            this.selectNews(0);
+                            break;
+                        case "#deepth":
+                            this.selectNews(1);
+                            break;
+                        case "#pxh":
+                            this.selectNews(2);
+                            break;
+                    }
+                    //if (this.url == "#newsth") {
+                    //    this.getMoreNews()
+                    //} else if (this.url == "#deepth") {
+                    //    this.getMoreDeep()
+                    //}
+                },
+                selectNews: function (i) {
+                    console.log(i);
+                    this.para.pageIndex = 1;
+                    this.para.list = []
+                    this.para.type = i;
+                    this.getList();
+                },
+                //加载更多
+                getMore: function () {
+                    this.loadMore = true;
+                    this.para.pageIndex++;
+                    this.getList();
+                },
+                getList: function (fun) {
+                    var that = this
+                    var newsLoad = layer.load(2);
+                    $.post("https://wtApi.vzan.com/apiMiniAppGw/NewsList", this.para, function (data) {
+                        layer.close(newsLoad);
+                        $(".content_btn_box").css("opacity", "1");
+                        if (data.isok == true) {
+                            if (data.obj != undefined && data.obj != null && data.obj.length > 0) {
+                                that.time = data_string(data.obj[0].addtime) + "-" + time_string(data.obj[0].addtime)
+                                if (that.loadMore == false) {
+                                    that.para.list = data.obj
+                                } else {
+                                    that.para.list = that.para.list.concat(data.obj)
+                                }
+
+                                for (var i = 0; i < that.para.list.length; i++) {
+
+                                    if (that.para.list[i].ImgPath == '' && that.para.type == 0) {
+                                        that.para.list[i].ImgPath = '@(WebSiteConfig.cdnurl)content/newhome/image/news_no.jpg'
+
+                                    }
+                                    else if (that.para.list[i].ImgPath == '' && that.para.type == 1) {
+                                        that.para.list[i].ImgPath = '@(WebSiteConfig.cdnurl)content/newhome/image/deep_no.jpg'
+                                    }
+                                    else {
+                                        that.para.list[i].ImgPath = that.para.list[i].ImgPath
+                                    }
+                                }
+
+                            } else {
+                                layer.msg("没有更多了");
+                                return;
+                            }
+
+                        }
+                    })
+                },
+                //判断是否有地址，无则跳转内置网页
+                getnewsurl: function (newsitem) {
+                    return newsitem.NewsURL == "" ? "/dzhome/more_detail/" + newsitem.Id : newsitem.NewsURL;
+                },
+
+
+            }
+        })
+
+        function data_string(str) {
+            var d = eval('new ' + str.substr(1, str.length - 2));
+            var ar_date = [d.getFullYear(), d.getMonth() + 1];
+            for (var i = 0; i < ar_date.length; i++) ar_date[i] = dFormat(ar_date[i]);
+            return ar_date.join('-');
+
+            function dFormat(i) { return i < 10 ? "0" + i.toString() : i; }
+        }
+        function time_string(str) {
+            var d = eval('new ' + str.substr(1, str.length - 2));
+            var ar_date = [d.getDate()];
+            for (var i = 0; i < ar_date.length; i++) ar_date[i] = dFormat(ar_date[i]);
+            return ar_date.join('-');
+
+            function dFormat(i) { return i < 10 ? "0" + i.toString() : i; }
+        }
+
+
+
+    </script>
+}
+

@@ -1,0 +1,253 @@
+﻿@{
+    ViewBag.Title = "案例管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+
+<style>
+    #search_box {
+        margin-top: 10px;
+        /*margin-bottom: 30px;*/
+        height: 40px;
+    }
+
+        #search_box ul li {
+            float: left;
+            width: 16%;
+            line-height: 38px;
+        }
+
+            #search_box ul li input {
+                width: 140px;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #search_box ul li span {
+                float: left;
+                color: #404040;
+            }
+
+        #search_box ul.tamplate li {
+            min-width: 100px;
+            text-align: center;
+            width: auto;
+            margin: 10px 10px;
+            font-size: 12px;
+        }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus {
+                text-decoration: none;
+                color: #fff;
+            }
+
+            #search_box ul.tamplate li a {
+                padding: 0 18px;
+                color: #777;
+            }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus {
+                    text-decoration: none;
+                }
+
+    .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus {
+        text-decoration: none;
+        outline: -webkit-focus-ring-color;
+    }
+
+    a.layui-btn-normal:focus {
+        color: #fff;
+    }
+
+    .search_btn a.layui-btn-primary:focus {
+        color: #555;
+    }
+
+    .search_btn a.layui-btn-primary:hover {
+        background-color: #eee;
+        border-color: #C9C9C9;
+    }
+
+    .layui-table td, .layui-table th {
+        text-align: center;
+    }
+
+    .imgwidth{width:50px;height:50px;}
+</style>
+
+<div id="agentinfoCase" hidden>
+    <div id="search_box">
+        <ul style="width:100%">
+            <li style="width: 20%;">
+                <span>案例类型：</span>
+                <select v-model="postdata.tid" class="form-control" style="width: 220px; margin-left:5px; text-align:center;   float: left;">
+                    <option value="-999">全部</option>
+                    <option v-for="(typeinfo,index) in Xcxlist" v-bind:value="typeinfo.Id">{{typeinfo.TName}}</option>
+                </select>
+            </li>
+
+            <li style="width: 20%;">
+                <span>案例名称：</span>
+                <input type="text" v-model="postdata.name" class="form-control" />
+            </li>
+            <li>
+                <div class="search_btn">
+                    <a href="javascript:;" v-on:click="Search()" class="layui-btn layui-btn-normal" style="margin-right:15px;">搜索</a>
+                    <a href="javascript:;" v-on:click="resetSearch()" class="layui-btn layui-btn-primary">清除</a>
+                    <a href="javascript:;" v-on:click="AddOrEdite(0)" class="layui-btn layui-btn-primary">添加</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <table class="layui-table" lay-skin="line">
+        <colgroup>
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="25%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>案例类型</th>
+                <th>案例名称</th>
+                <th>案例标签</th>
+                <th>案例图片</th>
+                <th>小程序二维码</th>
+                <th>排序</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tr v-if="dataList!=null && dataList.length>0" v-for="(item,index) in dataList">
+            <td>{{item.TName}}</td>
+            <td>{{item.CaseName}}</td>
+            <td>{{item.TagNames}}</td>
+            <td><img v-bind:src="item.CoverUrl" class="imgwidth"/></td>
+            <td><img v-bind:src="item.QrCodeUrl" class="imgwidth" /></td>
+            <td>{{item.Sort}}</td>
+            <td>{{item.StateStr}}</td>
+            <td>
+                <a href="javascript:;" v-on:click="AddOrEdite(item.Id)">编辑</a>
+                <a href="javascript:;" v-if="item.State==0" v-on:click="UpdateState(item.Id,1)">上架</a>
+                <a href="javascript:;" v-if="item.State==1" v-on:click="UpdateState(item.Id,0)">下架</a>
+                <a href="javascript:;" v-on:click="UpdateState(item.Id,-1)">删除</a>
+            </td>
+        </tr>
+        <tr v-if="dataList==null || dataList.length==0">
+            <td colspan="8">暂无数据</td>
+        </tr>
+
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+</div>
+<script>
+    var element;
+    var vm = new Vue({
+        el: "#agentinfoCase",
+        data: {
+            recordCount: 0,
+            postdata: {
+                pageIndex: 1,
+                pageSize: 12,
+                tid: -999,
+                name:"",
+            },
+            Xcxlist:[],
+            dataList:[],
+            isloading: false
+        },
+        methods: {
+            GetDataList: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                $.post("/agentmanager/GetAgentinfoCaseList", this.postdata, function (data) {
+                    vm.isloading = false;
+                    if (!data.isok) {
+                        layer.msg("数据异常");
+                        return;
+                    } else {
+                        vm.recordCount = data.dataObj.count;
+                        vm.dataList = data.dataObj.list;
+                        vm.resetPage();
+                    }
+                })
+            },
+            getXcxlist: function () {
+                $.post("/agentmanager/GetCaseXcxTemplate", function (data) {
+                    vm.Xcxlist = data.dataObj;
+                });
+            },
+            resetPage: function (/*issearch*/) {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: vm.recordCount //数据总数，从服务端得到
+                        , curr: vm.postdata.pageIndex //当前页
+                        , limit: vm.postdata.pagesize
+                        , jump: function (obj, first) {
+                            console.log(obj.limit); //得到每页显示的条数
+                            vm.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                vm.GetDataList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            AddOrEdite: function (id) {
+                window.location.href = "/agentmanager/AddOrEditeCase?id="+id;
+            },
+            UpdateState: function (id,state) {
+                var msg = "确定下架该标签？";
+                if(state==1)
+                {
+                    msg = "确定上架该标签？";
+                }
+                else if(state==-1)
+                {
+                    msg = "确定删除该标签？";
+                }
+
+                layer.confirm(msg, {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.post("/agentmanager/UpdateAgentCaseState", { id: id, state: state }, function (data) {
+                        layer.closeAll();
+                        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            vm.GetDataList();
+                        });
+                    });
+                }, function () {
+                });
+            },
+            Search: function () {
+                this.pageIndex = 1;
+                this.GetDataList();
+            },
+            resetSearch: function () {
+                this.postdata.tid = -999;
+                this.postdata.name = "";
+            },
+        },
+        created: function (index) {
+            $("#agentinfoCase").show();
+            this.getXcxlist();
+            this.GetDataList();
+        }
+
+    })
+</script>

@@ -1,0 +1,170 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/Dish/Views/Shared/_LayoutAdmin.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aId", 0);
+}
+
+
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content animated fadeInUp" id="app" v-cloak>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5>轮播图管理</h5>
+                </div>
+                <div class="ibox-content xcx-list">
+                    <div class="xcx-list">
+                        <div class="row m-b-sm m-t-sm">
+                            <div class="col-md-1 text-right" style="width: auto;">
+                                <a href="/Dish/Swiper/Edit?aid=@aid" class="btn btn-primary">
+                                    <i class="fa fa-plus"></i> 新增
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center;">ID</th>
+                                <th style="text-align: center;">标题名称</th>
+                                <th>图片</th>
+                                <th>链接地址</th>
+                                <th>是否显示</th>
+                                <th>排序</th>
+                                <th>操作</th>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(pic,index) in list">
+                                <td align="center">{{pic.Id}}</td>
+                                <td align="center">{{pic.title}}</td>
+                                <td><img :src="pic.img" width="50px"></td>
+                                <td>{{pic.url_fmt}}</td>
+                                <td>
+                                    <input type="checkbox" v-bind:checked="pic.is_show==1" v-on:click="IsShow(index)" />
+                                </td>
+                                <td>{{pic.is_order}}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a :href="'/Dish/Swiper/Edit?aid=@aid&id='+pic.Id" class="btn btn-outline btn-default">
+                                            <i class="fa fa-edit"></i> 编辑
+                                        </a>
+                                        <a href="javascript:;" class="btn btn-outline btn-default confirm" v-on:click="Del(index)">
+                                            <i class="fa fa-trash"></i> 删除
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+@section styles{
+    <style>
+        .table-condensed th, .table-condensed td { text-align: center; }
+    </style>
+}
+@section scripts{
+    
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                list: [],
+                recordCount: 10,
+                postdata:{
+                    pageIndex: 1,
+                    pageSize: 10,
+                    aid:@aid,
+                }
+            },
+            methods: {
+                GetList: function () {
+                    var that = this;
+                    var layerIndex = layer.load(2);
+                    $.post("/Dish/Swiper/GetPictures", this.postdata, function (data) {
+                        layer.close(layerIndex);
+                        if (data.isok) {
+                            that.list = data.dataObj.list;
+                            that.recordCount = data.dataObj.recordCount;
+                            that.resetPage();
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                },
+                resetPage: function () {
+                    var that = this;
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: that.recordCount //数据总数，从服务端得到
+                            , curr: that.postdata.pageIndex //当前页
+                            , limit: that.postdata.pageSize
+                            , jump: function (obj, first) {
+                                that.postdata.pageIndex = obj.curr;
+                                //首次执行
+                                if (!first) {
+                                    that.GetList();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Del: function (index) {
+                    var that = this;
+                    layer.confirm('是否确定要删除标题为‘' + that.list[index].title +'’的轮播图？', {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        var layerIndex = layer.load(2);
+                        $.post("/Dish/Swiper/DelPicture", { aid: that.postdata.aid, pid: that.list[index].Id }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.Msg);
+                            if (data.isok) {
+                                that.list.splice(index, 1);
+                            }
+
+                        })
+                    });
+                },
+                IsShow: function (index) {
+                    var that = this;
+                    var picture = that.list[index];
+                    switch (picture.is_show)//切换是否显示
+                    {
+                        case 0:
+                            picture.is_show = 1;
+                            break;
+                        case 1:
+                            picture.is_show = 0;
+                            break;
+                    }
+                    var layerIndex = layer.load(2);
+                    $.post("/Dish/swiper/ShowPicture", { aid: that.postdata.aid, id: picture.Id, is_show: picture.is_show }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.Msg);
+                    })
+                },
+                InitLayer: function () {
+
+                }
+            },
+            mounted: function () {
+                var that = this;
+                that.GetList();
+            }
+        })
+    </script>
+}

@@ -1,0 +1,240 @@
+﻿@using Entity.MiniApp.Qiye
+@model ViewModel<QiyeGoodsLabel>
+@{
+    ViewBag.Title = "产品标签";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (appid <= 0)
+    {
+        appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    }
+
+
+
+
+}
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、标签名称不能超过10个字，且不能重复</p>
+            <p>2、标签总数不能超过100个</p>
+            <p>3、产品标签若已关联了至少一个产品，则该标签不可删除</p>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="50">ID</th>
+                        <th>标签名称</th>
+                        <th width="200">排序</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list">
+                        <td align="center">{{item.Id}}</td>
+                        <td>{{item.Name}}</td>
+                        <td v-on:click.stop="showeditsort(index,0)">
+                            <div v-show="!item.Sel">{{item.Sort}}</div>
+                            <div v-show="item.Sel">
+                                <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.Editsort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" />
+                                <a v-on:click="savesort(index)" class="btn btn-primary ml10">保存</a>
+                                <a v-on:click.stop="showeditsort(index,-1)" class="btn btn-default ml10">关闭</a>
+                            </div>
+                        </td>
+                        <td>
+                            <a v-on:click="del(index)" class="btn btn-default ml10"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                            <a v-on:click="edit(index)" class="btn btn-primary ml10"> 编辑 </a>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+        <div>
+
+            <button class="btn btn-primary ml10" id="btnBatch_Pass" v-on:click="addNew">
+                <span class="glyphicon glyphicon-plus"></span>
+                新增标签
+            </button>
+
+            <button class="btn btn-primary ml10" v-on:click="savesort(-1)">
+                批量改排序
+            </button>
+        </div>
+    </div>
+
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        产品标签
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td><span>标签名称：</span></td>
+                            <td><input maxlength="10" placeholder="标签名称" id="nameVal" v-model="edititem.Name" type="text" class="form-control"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary ml10" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+        var item = {
+            Id:0,
+            Name: "",
+            Aid:@appid,
+            State:1,
+        };
+
+        var app = new Vue({
+            el: "#app",
+            data: {
+                edititem:JSON.parse(JSON.stringify(item)),
+                editid:0,
+                list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+                sortList:[]
+            },
+            coumputed:{
+                totalcount:function(){
+                    var that=this;
+                    return that.list.length;
+                }
+            },
+            mounted: function () {
+                console.log("mounted");
+            },
+            methods: {
+                addNew: function () {
+                    var that=this;
+                    if(that.list.length>=25){
+                        layer.alert("无法新增标签！您已添加了25个标签分类，已达到上限，请编辑已有的标签或删除部分标签后再进行新增。");
+                        return;
+                    }
+                    $('#addModal').modal('show');
+                    that.editid = 0;
+                },
+                save: function () {
+                    var that=this;
+                    var _typename=$.trim(that.edititem.Name);
+                    if(_typename.length==0||_typename.length>10){
+                        layer.msg("标签名称不能为空，且不能超过10个字",{time:1000});
+                        return;
+                    }
+                    $.post("/Qiye/OfficialWeb/SaveProductLabel", $.extend(that.edititem,{appId:item.Aid}),function(data){
+
+                            if(data.isok){
+                                $('#addModal').modal('hide');
+                                layer.msg(data.Msg,{time:1000});
+
+                                window.setTimeout(function(){
+                                    window.location.reload();
+                                },2000);
+                            }
+                            else{
+                                layer.msg(data.Msg,{time:1000});
+                            }
+
+                    });
+                },
+                //保存排序
+                savesort: function (index) {
+                    var that=this;
+                    //批量保存排序
+                    if(that.sortList.length<=0){
+                        layer.msg('请先编辑需要排序的标签');
+                        return;
+                    }
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '/Qiye/OfficialWeb/SaveProductLabelSort',
+                        data: {list:that.sortList,aid:@appid},
+                        dataType: 'json',
+                        success: function (data) {
+                            layer.msg(data.Msg);
+                            if (data.isok) {
+
+                                window.setTimeout(function(){
+                                    window.location.reload();
+                                },2000);
+                            }
+                        },
+                        error: function (data) {
+                            layer.msg('与服务器通讯错误');
+                        }
+                    });
+                },
+                //显示排序编辑
+                showeditsort: function (index,state) {
+                    var that=this;
+
+                    var curSortItem=that.list[index];
+                    that.list[index].Editsort=that.list[index].Sort;
+                    curSortItem.Sel=true;
+
+                    if(that.sortList.length>0){
+                        var curIndex=that.sortList.findIndex(x=>x.Id==curSortItem.Id);
+                        if(curIndex>-1){
+                            //表示存在了则直接替换
+                            that.sortList[curIndex]=curSortItem;
+                            return;
+                        }
+                    }
+
+                    that.sortList.push(curSortItem);
+
+                },
+                edit:function(index){
+                    $('#addModal').modal('show');
+                    this.edititem=JSON.parse(JSON.stringify(this.list[index]));
+                },
+                del:function(index){
+                    var that=this;
+                    var delList=[];
+                    delList.push(that.list[index]);
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该标签么？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.ajax({
+                                type: 'POST',
+                                url: '/Qiye/OfficialWeb/SaveProductLabelSort',
+                                data: {list:delList,aid:@appid,actionType:1},
+                                dataType: 'json',
+                                success: function (data) {
+                                    layer.msg(data.Msg);
+                                    if (data.isok) {
+
+                                        window.setTimeout(function(){
+                                            window.location.reload();
+                                        },2000);
+                                    }
+                                },
+                                error: function (data) {
+                                    layer.msg('与服务器通讯错误');
+                                }
+                            });
+
+                        }
+                    })
+                }
+            }
+        });
+</script>

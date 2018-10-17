@@ -1,0 +1,228 @@
+﻿@using Entity.MiniApp
+@model ViewModel<AgentCaseBack>
+@{
+    ViewBag.Title = "返款记录";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 2;
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+
+<style>
+    .page-wrapper {
+        min-width: 1800px;
+    }
+
+    #page div {
+        text-align: center;
+    }
+
+    .page-content {
+        min-width: 1400px;
+    }
+
+    #customList {
+        width: 100%;
+        margin: 0 auto;
+    }
+
+        #customList table.layui-table {
+            text-align: center;
+        }
+
+            #customList table.layui-table th, #customList table.layui-table td {
+                font-family: 'Microsoft YaHei';
+                font-weight: 400;
+                font-style: normal;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            #customList table.layui-table th {
+                height: 50px;
+            }
+
+            #customList table.layui-table a {
+                color: #108EE9;
+                margin: 0 15px;
+            }
+
+    .caozuo li {
+        float: left;
+    }
+
+    .more {
+        display: block;
+        position: relative;
+    }
+
+    .dropdown-menu {
+        min-width: 0px;
+        font-size: 12px;
+    }
+
+        .dropdown-menu a {
+            margin: 0px !important;
+            font-size: 12px;
+        }
+
+    #search_box {
+        margin-top: 10px; /*margin-bottom: 30px;*/
+        height: 120px;
+    }
+
+        #search_box ul li {
+            float: left;
+            line-height: 38px;
+        }
+
+            #search_box ul li input {
+                width: 50%;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #search_box ul li span {
+                float: left;
+                color: #404040;
+            }
+
+        #search_box ul.tamplate li {
+            min-width: 100px;
+            text-align: center;
+            width: auto;
+            margin: 10px 10px;
+            font-size: 12px;
+        }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus {
+                text-decoration: none;
+                color: #fff;
+            }
+
+            #search_box ul.tamplate li a {
+                padding: 0 18px;
+                color: #777;
+            }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus {
+                    text-decoration: none;
+                }
+
+    .search_btn {
+        width: 100%;
+        height: 45px;
+        float: left;
+        margin: 15px 0px;
+    }
+
+        .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus {
+            text-decoration: none;
+            outline: -webkit-focus-ring-color;
+        }
+
+    a.layui-btn-normal:focus {
+        color: #fff;
+    }
+
+    .search_btn a.layui-btn-primary:focus {
+        color: #555;
+    }
+
+    .search_btn a.layui-btn-primary:hover {
+        background-color: #eee;
+        border-color: #C9C9C9;
+    }
+
+    .layui-tab-title .layui-this:after {
+        height: 40px;
+    }
+</style>
+
+<div id="customList">
+    <div id="search_box">
+        <ul style="width:100%">
+            <li>
+                <span>创建日期：</span>
+                <input type="text" class="inputs form-control" style="width:40%;" onfocus="WdatePicker({doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="begintime" id="starttime" placeholder="开始时间" value="@ViewBag.starttime" />
+                <input type="text" class="inputs form-control" style="width:40%;" onfocus="WdatePicker({doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="endtime" id="endtime" placeholder="结束时间" value="@ViewBag.endtime" />
+            </li>
+            <li hidden>
+                <span>跟进状态：</span>
+                <select class="form-control" style="width: 92px; margin-left:5px;    float: left;">
+                    <option value="999">全部</option>
+                    <option value="0">代理跟进</option>
+                    <option value="1">小未跟进</option>
+                </select>
+            </li>
+        </ul>
+        <div class="search_btn">
+            <a href="javascript:;" onclick="Search()" class="layui-btn layui-btn-normal" style="margin-right:15px;">搜索</a>
+        </div>
+    </div>
+
+    <table class="layui-table" lay-skin="line" style="width:100%;">
+        <colgroup>
+            <col width="15%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+            <col width="15%">
+            <col width="5%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>分销来源</th>
+                <th>银行账号</th>
+                <th>支付宝账号</th>
+                <th>备注</th>
+                <th>返款凭证</th>
+                <th>创建时间</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        @if (Model != null && Model.DataList != null && Model.DataList.Count > 0)
+        {
+            for (int i = 0; i < Model.DataList.Count; i++)
+            {
+                <tr>
+                    <td>@(Model.DataList[i].SourceFrom)</td>
+                    <td>@Model.DataList[i].BankAccount</td>
+                    <td>@Model.DataList[i].AlipayAccount</td>
+                    <td>@Model.DataList[i].Desc</td>
+                    <td>
+                        @if (Model.DataList[i].State == 3)
+                        {
+                            <img src="@Model.DataList[i].CaseBackImgUrl" style="width:50px;height:50px;" />
+                        }
+                    </td>
+                    <td>@Model.DataList[i].AddTimeStr</td>
+                    <td>@Model.DataList[i].StateStr</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="10">暂无数据</td>
+            </tr>
+        }
+    </table>
+
+    <div class="page" style="margin-top:60px;">
+        @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+    </div>
+</div>
+
+<div id="editcode" hidden>
+    <div style='margin-top: 20px;margin-left: 20px;'>
+        <span style="float:left;">备注：</span>
+        <textarea class='form-control' style='display: inline-block;width: 250px;height:100px;' type='text' id='tempdesc' maxlength="500"></textarea>
+    </div>
+</div>
+<script>
+    function Search() {
+        location.href = "/customerdistribution/customercasebacklist?pageIndex=@Model.PageIndex&pageSize=@Model.PageSize&starttime=" + $("#starttime").val() + "&endtime=" + $("#endtime").val();
+    }
+</script>

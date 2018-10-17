@@ -1,0 +1,124 @@
+﻿@using BLL.MiniApp;
+@using User.MiniApp.Areas.Pin.Models;
+@model ViewModel<PayRecordModel>
+
+@{
+    ViewBag.Title = "流水对账";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    string storePhone = Utility.IO.Context.GetRequest("storePhone", "");
+    string payUserPhone = Utility.IO.Context.GetRequest("payUserPhone", "");
+    int recordType = Utility.IO.Context.GetRequestInt("recordType", 0);
+    string transaction_id = Utility.IO.Context.GetRequest("transaction_id", "");
+    string out_trade_no = Utility.IO.Context.GetRequest("out_trade_no", "");
+}
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+
+                    <form method="get" action="?">
+                        <input type="hidden" name="aid" value="@(Model.aId)" />
+                        <select class="form-control" name="recordType" style="display:inline-block;width:150px;">
+                            <option value="0" @(recordType == 0 ? "selected='selected'" : "")>全部资金类型</option>
+                            <option value="1" @(recordType == 1 ? "selected='selected'" : "")>代理入住费</option>
+                            <option value="2" @(recordType == 2 ? "selected='selected'" : "")>商品交易</option>
+                        </select>
+
+                        店铺电话：<input type="text" name="storePhone" value="@(storePhone)" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" />
+                        支付用户电话<input type="text" name="payUserPhone" value="@(payUserPhone)" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" />
+                        <input type="text" placeholder="微信支付订单号" name="transaction_id" value="@(transaction_id)" class="form-control" style="width:300px;display:inline-block;" />
+                        <input type="text" placeholder="商户订单号" name="out_trade_no" value="@(out_trade_no)" class="form-control" style="width:280px;display:inline-block;" />
+
+                        <input type="submit" value="搜索" class="btn btn-sm  btn-primary radius" />
+                        <span>总数：@(Model.TotalCount)</span>
+
+                    </form>
+                </div>
+                <div class="ibox-content xcx-list">
+                    <table class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th>微信支付订单号</th>
+                                <th>商户订单号</th>
+                                <th>支付时间</th>
+                                <th>支付金额(元)</th>
+                                <th width="280">购买产品</th>
+                                <th>父级代理</th>
+                                <th>
+                                    用户昵称 <br />
+                                    电话
+                                </th>
+                                <th>备注</th>
+                                <th>收款店铺 <br /> 店主 / 店铺电话</th>
+                                <th>操作</th>
+
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.DataList.Count > 0)
+                            {
+                                foreach (var item in Model.DataList)
+                                {
+                                    <tr>
+                                        <td>@(item.transaction_id)</td>
+                                        <td>@(item.out_trade_no)</td>
+                                        <td>@(item.time_end)</td>
+                                        <td>@(item.total_fee / 100d)</td>
+                                        <td>
+                                            @if (item.OrderType == 0)
+                                            {
+                                                if (item.OrderGoods != null)
+                                                {
+                                                    <a target="_blank" href="/Pin/Product/GoodInfo?aId=@(item.OrderGoods.aId)&id=@(item.OrderGoods.id)">
+                                                        <img src="@(item.OrderGoods.img)" width="50" height="50" align="left" />
+
+                                                        <span>@(item.OrderGoods.name)</span>
+
+                                                    </a>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>入驻会员</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.ParentAgentUser != null)
+                                            {
+                                                <a target="_blank" href="?aid=@(Model.aId)&recordType=1&parentAgentId=@(item.ParentAgentUser.Id)">
+                                                    <img src="@(item.ParentAgentUser.HeadImgUrl)" width="50" height="50" align="left" />
+                                                    <span>@(item.ParentAgentUser.NickName)</span>
+                                                </a>
+                                            }
+                                        </td>
+                                        <td>
+                                            @(item.PayUserName) <br /> @(item.PayUserPhone)
+                                        </td>
+                                        <td>@(item.ShowNote)</td>
+                                        <td>
+                                            @(item.StoreName) <br /> @(item.StoreUserName) / @(item.StoreUserPhone)
+                                        </td>
+                                        <td> <a target="_blank" href="?aid=@(Model.aId)&recordType=1&parentAgentId=@(item.PayUserId)">查看下级</a> </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                    <div class="page">
+                        @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+@section styles{
+    <style>
+    </style>
+}
+@section scripts{
+
+
+}

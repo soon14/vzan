@@ -1,0 +1,260 @@
+﻿@model ViewModel<EntGoodLabel>
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "产品标签";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int labelSwtich = ViewBag.labelSwtich;
+}
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、标签名称不能超过10个字，且不能重复</p>
+            <p>2、标签总数不能超过100个</p>
+            <p>3、产品标签若已关联了至少一个产品，则该标签不可删除</p>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="70" align="center">ID</th>
+                        <th>标签名称</th>
+                        <th width="200">排序</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list">
+                        <td align="center">{{item.id}}</td>
+                        <td>{{item.name}}</td>
+                        <td v-on:click.stop="showeditsort(index,0)">
+                            <div v-show="!item.sel">{{item.sort}}</div>
+                            <div v-show="item.sel">
+                                <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.editsort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2"/>
+                                <a v-on:click="savesort(index)" class="btn btn-primary btn-xs">保存</a>
+                                <a v-on:click.stop="showeditsort(index,-1)" class="btn btn-danger btn-xs">关闭</a>
+                            </div>
+                        </td>
+                        <td>
+                            <a v-on:click="del(index)" class="btn btn-sm btn-danger"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                            <a v-on:click="edit(index)" class="btn btn-sm btn-primary"> 编辑 </a>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+        <div>
+            @{
+                if (Model.PageType == 22 && labelSwtich == 1)
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" disabled="disabled" title="请升级更高版本">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增标签
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" v-on:click="addNew">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增标签
+                    </button>
+                }
+            }
+          
+
+            <button class="btn btn-success" v-on:click="savesort(-1)">
+                批量改排序
+            </button>
+        </div>
+    </div>
+
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        产品标签
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td><span>标签名称：</span></td>
+                            <td><input maxlength="10" placeholder="标签名称" id="nameVal" v-model="edititem.name" type="text" class="form-control"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+<script>
+        var item = {
+            id:0,
+            name: "",
+            aid:@Utility.IO.Context.GetRequestInt("appId",0),
+            state:1,
+        };
+
+        var app = new Vue({
+            el: "#app",
+            data: {
+                edititem:JSON.parse(JSON.stringify(item)),
+                editid:0,
+                list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+            },
+            coumputed:{
+                totalcount:function(){
+                    return this.list.length;
+                }
+            },
+            mounted: function () {
+                console.log("mounted");
+            },
+            methods: {
+                addNew: function () {
+                    if(this.list.length>=100){
+                        layer.alert("无法新增标签！您已添加了100个标签分类，已达到上限，请编辑已有的标签或删除部分标签后再进行新增。");
+                        return;
+                    }
+                    $('#addModal').modal('show');
+                    this.editid = 0;
+                },
+                save: function () {
+                    var that=this;
+                    var _typename=$.trim(that.edititem.name);
+                    if(_typename.length==0||_typename.length>10){
+                        layer.msg("标签名称不能为空，且不能超过10个字",{time:1000});
+                        return;
+                    }
+                    $.post("/@(dirName)/plabel", $.extend(that.edititem,{appId:item.aid}),function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                $('#addModal').modal('hide');
+                                layer.msg("保存成功",{time:1000});
+
+                                window.location.reload();
+                            }
+                            else{
+                                layer.msg(data.msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    });
+                },
+                //保存排序
+                savesort: function (index) {
+                    var aid = @Utility.IO.Context.GetRequestInt("appId", 0);
+                    var data = [];
+                    var iserro = false;
+                    if(index<0)
+                    {
+                        app.list.forEach(function(value,index){
+                            if(value.editsort.length<=0)
+                            {
+                                iserro = true;
+                                return;
+                            }
+                            if(value.sel && value.editsort!=value.sort)
+                            {
+                                data[data.length]={id:value.id,sort:value.editsort};
+                            }
+                        });
+                    }
+                    else{
+                        if(app.list[index].editsort.length<=0)
+                        {
+                            iserro = true;
+                        }
+                        data[data.length]={id:app.list[index].id,sort:app.list[index].editsort};
+                    }
+
+                    if(iserro)
+                    {
+                        layer.msg("请输入排序值",{time:1000});
+                        return;
+                    }
+
+                    if(data.length<=0)
+                    {
+                        layer.msg("保存成功",{time:1000},function(){
+                            window.location.reload();
+                        });
+
+                        return;
+                    }
+
+                    var datajson = JSON.stringify(data);
+
+                    $.post("/@(dirName)/updatesort", {appId:aid,datajson:datajson,type:2},function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                layer.msg("保存成功",{time:1000},function(){
+                                    window.location.reload();
+                                });
+                            }
+                            else{
+                                layer.msg(data.msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    });
+                },
+                //显示排序编辑
+                showeditsort: function (index,state) {
+                    app.list[index].sel = state>=0;
+                },
+                edit:function(index){
+                    $('#addModal').modal('show');
+                    this.edititem=JSON.parse(JSON.stringify(this.list[index]));
+                },
+                del:function(index){
+                    var that=this;
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该标签么？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/@(dirName)/plabel",{act:"del",id:that.list[index].id,appId:item.aid})
+                            .then(function(data){
+                                console.log(data);
+                                if(typeof data=="object"){
+                                    if(data.isok){
+                                        layer.msg("删除成功",{time:1000});
+                                        that.list.splice(index,1);
+                                    }
+                                    else{
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else{
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                }
+            }
+        });
+</script>

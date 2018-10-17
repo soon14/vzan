@@ -1,0 +1,893 @@
+﻿@using Entity.MiniApp
+@model Agentinfo
+@{
+    ViewBag.Title = "客户管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+    ViewBag.level = Model.userLevel;
+    int tempplatetype = (int)TmpType.小程序多门店模板;
+}
+<link href="@(WebSiteConfig.SourceContent)/content/datepicker/skin/default/datepicker.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.SourceContent)/content/datepicker/WdatePicker.js"></script>
+
+<style>
+    .page-wrapper {
+        min-width: 1800px;
+    }
+
+    #page div {
+        text-align: center;
+    }
+
+    .page-content {
+        min-width: 1400px;
+    }
+
+    #customList {
+        width: 100%;
+        margin: 0 auto;
+    }
+
+        #customList table.layui-table {
+            text-align: center;
+        }
+
+            #customList table.layui-table th, #customList table.layui-table td {
+                font-family: 'Microsoft YaHei';
+                font-weight: 400;
+                font-style: normal;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            #customList table.layui-table th {
+                height: 50px;
+            }
+
+            #customList table.layui-table a {
+                color: #108EE9;
+                margin: 0 15px;
+            }
+
+    .caozuo li {
+        float: left;
+    }
+
+    .more {
+        display: block;
+        position: relative;
+    }
+
+    .dropdown-menu {
+        min-width: 0px;
+        font-size: 12px;
+    }
+
+        .dropdown-menu a {
+            margin: 0px !important;
+            font-size: 12px;
+        }
+
+    #search_box {
+        margin-top: 10px; /*margin-bottom: 30px;*/
+        height: 120px;
+    }
+
+        #search_box ul li {
+            float: left;
+            line-height: 38px;
+        }
+
+            #search_box ul li input {
+                width: 50%;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #search_box ul li span {
+                float: left;
+                color: #404040;
+            }
+
+        #search_box ul.tamplate li {
+            min-width: 100px;
+            text-align: center;
+            width: auto;
+            margin: 10px 10px;
+            font-size: 12px;
+        }
+
+            #search_box ul.tamplate li a.active, #search_box ul.tamplate li a.active:focus {
+                text-decoration: none;
+                color: #fff;
+            }
+
+            #search_box ul.tamplate li a {
+                padding: 0 18px;
+                color: #777;
+            }
+
+                #search_box ul.tamplate li a:hover, #search_box ul.tamplate li a:focus {
+                    text-decoration: none;
+                }
+
+    .search_btn {
+        width: 100%;
+        height: 45px;
+        float: left;
+        margin: 15px 0px;
+    }
+
+        .search_btn a:hover, .search_btn a:focus, .add_btn:hover, .add_btn:focus {
+            text-decoration: none;
+            outline: -webkit-focus-ring-color;
+        }
+
+    a.layui-btn-normal:focus {
+        color: #fff;
+    }
+
+    .search_btn a.layui-btn-primary:focus {
+        color: #555;
+    }
+
+    .search_btn a.layui-btn-primary:hover {
+        background-color: #eee;
+        border-color: #C9C9C9;
+    }
+
+    .layui-tab-title .layui-this:after {
+        height: 40px;
+    }
+
+    /*.userInfo { margin: 20px 87px; }
+
+    .userInfo span { color: red; }
+
+    .userInfo td { padding: 8px 5px; width: 250px; }
+
+    .textname { text-align: right; width: 100px !important; }
+    .width140 {width:140px;}
+    .inlineblock {display: inline-block;}*/
+</style>
+
+<div id="customList" hidden>
+    <div id="search_box">
+        <ul style="width:100%">
+            <li>
+                <span>客户账号：</span>
+                <input type="text" v-model="postdata.loginname" class="form-control" />
+            </li>
+            <li>
+                <span>客户名称：</span>
+                <input type="text" v-model="postdata.username" class="form-control" />
+            </li>
+            <li>
+                <span>创建日期：</span>
+                <input type="text" class="inputs form-control" style="width:40%;" onfocus="WdatePicker({doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="begintime" id="begintime" placeholder="开始时间" v-model="postdata.starttime" />
+                <input type="text" class="inputs form-control" style="width:40%;" onfocus="WdatePicker({doubleCalendar:true,dateFmt:'yyyy-MM-dd'})" name="endtime" id="endtime" placeholder="结束时间" v-model="postdata.endtime" />
+            </li>
+            <li>
+                <span>状态：</span>
+                <select v-model="postdata.state" class="form-control" style="width: 92px; margin-left:5px;    float: left;">
+                    <option value="0">全部</option>
+                    <option value="1">正常</option>
+                    <option value="-1">已停用</option>
+                </select>
+            </li>
+        </ul>
+        <table style="width:100%; float:left;">
+            <tr style="height:45px;">
+                <td width="95">已开通模板：</td>
+                <td>
+                    <ul class="tamplate" v-if="Xcxlist!=null && Xcxlist.length>0">
+                        <li v-for="(xcxInfo,index) in Xcxlist"><a href="javascript:;" v-bind:class="{'layui-btn layui-btn-small layui-btn-normal active':Isselected(xcxInfo.Id)}" v-on:click="choose(index)">{{xcxInfo.TName}}</a></li>
+                    </ul>
+                </td>
+            </tr>
+            @*<span style="float:left; line-height:38px; margin-right: 10px;">已开通模板</span>
+                <ul class="tamplate" v-if="Xcxlist!=null && Xcxlist.length>0">
+                    <li v-for="(xcxInfo,index) in Xcxlist"><a href="javascript:;" v-bind:class="{'layui-btn layui-btn-normal active':$.inArray(xcxInfo.Id, selectTid)>-1}" v-on:click="choose(index)">{{xcxInfo.TName}}</a></li>
+                    <li v-for="(xcxInfo,index) in Xcxlist"><a href="javascript:;" v-bind:class="{'layui-btn layui-btn-normal active':$.inArray(xcxInfo.Id, selectTid)>-1}" v-on:click="choose(index)">{{xcxInfo.TName}}</a></li>
+                   <li><a href="javascript:;" class="layui-btn layui-btn-normal">企业展示</a></li>
+                    <li><a href="javascript:;" class="layui-btn layui-btn-normal">自助预约</a></li>
+                    <li><a href="javascript:;">模板4</a></li>
+                    <li><a href="javascript:;">模板5</a></li>
+                    <li><a href="javascript:;">模板</a></li>
+                        </ul>*@
+        </table>
+        <div class="search_btn">
+            <a href="javascript:;" v-on:click="Search(true)" class="layui-btn layui-btn-normal" style="margin-right:15px;">搜索</a>
+            <a href="javascript:;" v-on:click="resetSearch()" class="layui-btn layui-btn-primary">清除</a>
+        </div>
+    </div>
+
+    <table class="layui-table" lay-skin="line" style="width:100%;">
+        <colgroup>
+            <col width="5%">
+            <col width="7%">
+            <col width="15%">
+            <col width="10%">
+            <col width="10%">
+            <col width="10%">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>客户账号</th>
+                <th>客户名称</th>
+                @*<th>绑定手机号</th>*@
+                <th>已开通模板</th>
+                @*<th>模板总费用（元）</th>*@
+                <th>创建时间</th>
+                <th>账号状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tr v-if="userlist!=null && userlist.length>0" v-for="(user,index) in userlist">
+            <td>{{user.LoginId}}</td>
+            <td>{{user.username}}</td>
+            @*<td>{{user.phone}}</td>*@
+            <td>{{user.templates}}</td>
+            @*<td>{{(user.Totalcost*100)/10000}}</td>*@
+            <td>{{user.addtimeTostring}}</td>
+            <td style="color:green" v-if="user.state==1">正常</td>
+            <td style="color:red" v-else-if="user.state==-1">已停用</td>
+            <td style="color:gray" v-else>未知状态</td>
+            <td>
+                <ul class="caozuo">
+                    @if (ViewBag.level == 0)
+                    {
+                    <li><a href="javascript:;" v-on:click="addqrcode(index)">生成推广码</a></li>
+                    }
+                    <li><a href="javascript:;" v-on:click="opentemplatelist(index,'newtemplate')">开通新模板</a></li>
+
+                    <li><a v-on:click="AgentCommandCookie('/agentmanager/TurnToMiniApp?id='+user.id,'dz_UserCookieNew',user.id)">管理小程序</a></li>
+                    <li class="more">
+                        <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown">
+                            更多
+                            <i class="glyphicon glyphicon-menu-down"></i>
+                        </a>
+                        <i class="icon-angle-down"></i>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:;" v-on:click="changePwd(index)">修改密码</a></li>
+                            <li><a href="javascript:;" v-on:click="openEditpage(index,'')">修改资料</a></li>
+                            <li><a href="javascript:;" v-on:click="openEditpage(index,'newtemplate')">查看开通详情</a></li>
+                            <li>
+                                <a href="javascript:;" style="color:red" v-if="user.state==1" v-on:click="updateState(index)">停用账号</a>
+                                <a href="javascript:;" style="color:green" v-else v-on:click="updateState(index)">启动账号</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr v-if="userlist==null || userlist.length==0">
+            <td colspan="7">暂无数据</td>
+        </tr>
+
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+    <a href="javascript:;" v-on:click="openAddpage()" class="layui-btn layui-btn-normal add_btn" style="margin-right:15px;">+创建新客户</a>
+    @*<div id="Qrcode" hidden>
+            <input type="hidden" id="sessid" value="@Session["qrcodekey"]" />
+            <img src="/QrCode/GetQrCode?code=@Session["qrcodekey"]" alt="" style="border: 8px solid #fff;" />
+            <p>微信扫描二维码登录</p>
+        </div>*@
+    <!--编辑页面-->
+    <!-- 模态框（Modal） -->
+    <div class="modal fade" id="opentemplatedesc" tabindex="-1" role="dialog" style="z-index:9999999999" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">开通详情</h4>
+                </div>
+                <div class="modal-body">
+                    <table style="margin:10px;width:90%;" v-if="currenttemplate!=null">
+                        <tr>
+                            <td>
+                                <div>
+                                    模板名称：<i>{{currenttemplate.tname}}</i>
+                                </div>
+                                @*<div>
+                                        客户名称：<i>{{currenttemplate.username}}</i>
+                                    </div>*@
+                                <div v-if="currenttemplate.type==26">
+                                    模板总费用（元）：<i>{{currenttemplate.scount}}家门店以内（包括总店）{{currenttemplate.price/100}}元，每增加一家门店收取{{currenttemplate.sprice/100}}元</i>
+                                </div>
+                                <div v-else>
+                                    模板总费用（元）：<i>{{currenttemplate.price/100}}</i>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 开通模板模态框（Modal） -->
+    <div class="modal fade" id="opentemplate" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">开通新模板</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped table-bordered" style="margin:10px;width:90%;">
+                        <tr>
+                            <td></td>
+                            <td>
+                                模板名称
+                            </td>
+                            <td>
+                                有效期（年）
+                            </td>
+                            <td>
+                                购买数量
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr v-for="(xcxinfo,index) in templateList">
+                            <td v-on:click="seltemplate(index,$event)" style="line-height: 34px;">
+                                <input type="checkbox" name="template" v-bind:id="'t_'+xcxinfo.Id" />
+                            </td>
+                            <td style="line-height: 34px;">
+                                <label v-bind:title="xcxinfo.TName" v-on:click="selecttemplate(xcxinfo)">{{xcxinfo.TName.length>7?xcxinfo.TName.substring(0, 7)+"...":xcxinfo.TName}}</label>
+                            </td>
+                            <td style="line-height: 34px;">
+                                <input type="number" v-model="xcxinfo.year" class="form-control" maxlength="2" style="width:80px;float:left;margin-right:5px;" />
+                                <label> 年</label>
+                            </td>
+                            <td>
+                                <input type="number" v-model="xcxinfo.buycount" class="form-control" maxlength="2" style="width:80px;" />
+                            </td>
+                            <td>
+                                <div v-if="xcxinfo.Type==@((int)TmpType.小程序专业模板)">
+                                    <select v-model="industrselect" class="form-control">
+                                        <option v-for="option in industroptions" v-bind:value="option.value">
+                                            {{ option.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div v-if="xcxinfo.Type==@tempplatetype || xcxinfo.Type==@((int)TmpType.小程序餐饮多门店模板) || xcxinfo.Type==@((int)TmpType.智慧餐厅)|| xcxinfo.Type==@((int)TmpType.企业智推版)">
+                                    {{xcxinfo.Type==56?"员工数量":"门店数量"}}<input type="number" v-model="xcxinfo.SCount" class="form-control" maxlength="3" style="width:80px;display: inline-block;" />
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="color:#FF6600;font-size:12px;">
+                        <div>温馨提示：</div>
+                        <div>1.模板费用=模板单价*有效期（年）*购买数量</div>
+                    </div>
+                </div>
+                <div class="modal-footer text-center">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-info" v-on:click="addcustomer()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var element;
+    var _layer = parent.layer;
+    var vm = new Vue({
+        el: "#customList",
+        data: {
+            agentinfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            recordCount: 0,
+            userlist: [],
+            Xcxlist: [],
+            selectTid: [],
+            templateList: [],
+            industrselect:3,
+            selArry: [],
+            accountid: '',
+            username: '',
+            limiteSCount:0,
+            fmSCount:0, //餐饮多门店门店最小数量限制
+            postdata: {
+                pageIndex: 1,
+                pagesize: 12,
+                loginname: '',
+                username: '',
+                state: 0,
+                starttime: '',
+                endtime: '',
+                tids: ''
+            },
+            currenttemplate: {
+                tname: '',
+                username: '',
+                price: 0,
+                sprice: 0,
+                scount: 0,
+                zscount:0,
+                zsprice:0,
+                type:0,
+            },
+            industroptions: @Html.Raw(JsonConvert.DeserializeObject(ViewBag.listXqrVersion)),
+            customer: null,
+            isloading: false
+        },
+        watch: {
+            templateList: {
+                handler: function (nums) {
+                    nums.forEach(function (o, i) {
+                        //开通模板年限
+                        if (o.year <= 0) {
+                            o.year = 1;
+                        }
+                        if (o.year.toString().indexOf('.') >= 0) {
+                            o.year = Math.floor(o.year.toString());
+                        }
+
+                        //开通模板数量
+                        if (o.buycount <= 0) {
+                            o.buycount = 1;
+                        }
+                        if (o.buycount.toString().indexOf('.') >= 0) {
+                            o.buycount = Math.floor(o.buycount.toString());
+                        }
+
+                        //开通多店铺时输入开通分店数量
+                        if((o.Type ==  @tempplatetype || o.Type == @((int)TmpType.小程序餐饮多门店模板)|| o.Type == @((int)TmpType.智慧餐厅)|| o.Type == @((int)TmpType.企业智推版)))
+                        {
+                            if(o.SCount <= o.MinCount)
+                            {
+                                o.SCount = o.MinCount>0?o.MinCount:1;
+                            }
+                        }
+
+                        @*//开通多店铺时输入开通分店数量
+                        if (o.Type ==  @tempplatetype &&  o.SCount <= vm.limiteSCount) {
+                            o.SCount = vm.limiteSCount>0?vm.limiteSCount:1;
+                        }
+                        //开通餐饮多店铺时输入开通分店数量
+                        if((o.Type == @((int)TmpType.小程序餐饮多门店模板) || o.Type == @((int)TmpType.智慧餐厅)) && o.SCount <= vm.fmSCount)
+                        {
+                            o.SCount = vm.fmSCount>0?vm.fmSCount:1;
+                        }*@
+
+                        if (o.SCount > 999)
+                        {
+                            o.SCount = 999;
+                        }
+                        if (o.SCount.toString().indexOf('.') >= 0) {
+                            o.SCount = Math.floor(o.SCount.toString());
+                        }
+                    })
+                },
+                deep: true
+            }
+        },
+        methods: {
+            getuserlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                $.post("/agentmanager/GetUserList", this.postdata, function (data) {
+                    vm.isloading = false;
+                    if (!data.isok) {
+                        console.log(data.Msg);
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        vm.recordCount = data.dataObj.recordCount;
+                        vm.userlist = data.dataObj.customerList;
+                        console.log(data.dataObj.customerList);
+                        vm.resetPage();
+                        //vm.resetPage();
+                    }
+                })
+            },
+            resetPage: function (/*issearch*/) {
+                //if (issearch) this.pageIndex = 1;
+                //console.log(issearch);
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    //console.log(laypage)
+                    laypage.render({
+                        elem: 'pages'
+                        , count: vm.recordCount //数据总数，从服务端得到
+                        , curr: vm.postdata.pageIndex //当前页
+                        , limit: vm.postdata.pagesize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            vm.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                vm.getuserlist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function () {
+                this.pageIndex = 1;
+                this.postdata.starttime = $("#begintime").val();
+                this.postdata.endtime = $("#endtime").val();
+                this.getuserlist();
+            },
+            getXcxlist: function () {
+                $.post("/agentmanager/GetXcxTemplate", function (data) {
+                    //console.log(data);
+                    vm.Xcxlist = data.dataObj;
+                });
+            },
+            choose: function (index) {
+                if ($.inArray(this.Xcxlist[index].Id, this.selectTid) > -1) {
+                    this.selectTid.splice($.inArray(this.Xcxlist[index].Id, this.selectTid), 1);
+                } else {
+                    this.selectTid.push(this.Xcxlist[index].Id);
+                }
+                this.postdata.tids = this.selectTid.join(',');
+            },
+            resetSearch: function () {
+                this.postdata.loginname = '';
+                this.postdata.username = '';
+                this.postdata.state = 0;
+                this.postdata.starttime = '';
+                this.postdata.endtime = '';
+                this.postdata.tids = '';
+                this.selectTid = [];
+            },
+            openAddpage: function () {
+                layer.open({
+                    type: 2,
+                    title: '创建新客户',
+                    shade: 0.8,
+                    area: ['650px', '658px'],
+                    content: '/agentmanager/CustomerCreate' //iframe的url
+                });
+            },
+            //获取模板列表
+            gettemplate: function () {
+                $.post("/agentmanager/GetXcxTemplate", { accountid: this.accountid }, function (data) {
+
+                    vm.templateList = data.dataObj;
+                    //第一次开通多店铺限制的分店最小数量
+                    //var manystore = data.dataObj.find(f=>f.Type == @tempplatetype );
+                    //vm.limiteSCount = manystore!=undefined?manystore.SCount:0;
+
+                    //var manystore_food = data.dataObj.find(f=>f.Type == @((int)TmpType.小程序餐饮多门店模板));
+                    //vm.fmSCount = manystore_food!=undefined?manystore_food.SCount:0;
+                    //var manystore_zh = data.dataObj.find(f=>f.Type == @((int)TmpType.智慧餐厅));
+                    //vm.zhSCount = manystore_zh!=undefined?manystore_zh.SCount:0;
+                });
+            },
+            //选择模板
+            seltemplate: function (index, e) {
+                //console.log(e.target);
+                if ($.inArray(this.templateList[index], this.selArry) > -1) {
+                    this.selArry.splice($.inArray(this.templateList[index], this.selArry), 1);
+                    $("#t_" + this.templateList[index].Id).prop("checked", false);
+                } else {
+                    this.selArry.push(this.templateList[index]);
+                    $("#t_" + this.templateList[index].Id).prop("checked", true);
+                }
+            },
+            //选择有效期
+            selectchange: function (index, e) {
+                //console.log(e.target);
+                if (e.currentTarget.value == "") {
+                    this.templateList[index].year = 1;
+                }
+                else {
+                    if (e.currentTarget.value < 0) {
+                        this.templateList[index].year = 1;
+                    }
+                    else {
+                        this.templateList[index].year = e.currentTarget.value;
+                    }
+
+                }
+            },
+            opentemplatelist: function (index) {
+                vm.accountid = vm.userlist[index].useraccountid;
+                vm.username = vm.userlist[index].username;
+                $("#opentemplate").modal("show");
+            },
+            openEditpage: function (index, type) {
+                layer.open({
+                    type: 2,
+                    title: "修改客户资料",
+                    shade: [0.8, '#000'],
+                    // skin: 'layui-layer-rim', //加上边框
+                    area: ['650px', '608px'], //宽高
+                    content: '/agentmanager/CustomerEdit?id=' + this.userlist[index].id + '&type=' + type
+                })
+            },
+            updateState: function (index) {
+                var tips;
+                var state = this.userlist[index].state;
+                var id = this.userlist[index].id;
+                if (state == 1) {
+                    tips = "是否确定要停用此客户?";
+                    state = -1;
+                } else {
+                    tips = "是否确定要开启此客户?";
+                    state = 1;
+                }
+                layer.confirm(tips, {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.post("/agentmanager/updatestate", { state: state, id: id }, function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+                            vm.userlist[index].state = state;
+                        }
+                    })
+                });
+            },
+            changePwd: function (index) {
+                var id = this.userlist[index].id;
+                layer.open({
+                    type: 2,
+                    title: "修改密码",
+                    //shade: 0,
+                    shade: [0.8, '#000'],
+                    // skin: 'layui-layer-rim', //加上边框
+                    area: ['650px', '350px'], //宽高
+                    content: '/agentmanager/updatePwd?id=' + id
+                });
+
+            },
+            chargeMiniapp: function (index) {
+                var id = this.userlist[index].id;
+                var ind = layer.load(1);
+
+                $.post("/agentmanager/TurnToMiniApp", { id: id }, function (data) {
+                    layer.close(ind);
+                    if (data.isok) {
+                        $("#op").click();
+                        layer.msg("已在新标签页打开");
+                    } else {
+                        layer.msg(data.Msg);
+                    }
+                })
+
+            },
+            AgentCommandCookie:function (gourl,key,id) {
+                CommandCookie(gourl,key,id,1);
+            },
+            Isselected: function (index) {
+                return $.inArray(index, this.selectTid) > -1;
+            },
+            selecttemplate: function (xcxinfo) {
+                var that=this;
+                if(xcxinfo.Type==22){
+                    //如果是专业版重新请求计算价格
+                    var curPostData={
+                        versionId:that.industrselect,
+                        templateType:xcxinfo.Type
+                    }
+                    $.ajax({
+                        type : "post",
+                        url : "/agentmanager/GetXcxTemplate",
+                        data : curPostData,
+                        async : false,
+                        success : function(data){
+                            if (data.isok) {
+
+                                vm.currenttemplate.tname = xcxinfo.TName+"["+data.dataObj.VersionName+"]";
+                                vm.currenttemplate.price = (data.dataObj.VersionPrice*xcxinfo.buycount*xcxinfo.year).toFixed(2);
+                                vm.currenttemplate.type = xcxinfo.Type;
+
+                            } else {
+                                layer.msg("数据异常");
+                                return;
+                            }
+                        }
+                    });
+
+                }else{
+                    vm.currenttemplate.tname = xcxinfo.TName;
+                    vm.currenttemplate.price = xcxinfo.Price*xcxinfo.buycount*xcxinfo.year;
+                    vm.currenttemplate.type = xcxinfo.Type;
+                    vm.currenttemplate.sprice = xcxinfo.SPrice;
+                    vm.currenttemplate.scount = xcxinfo.SCount;
+                }
+
+
+
+                $("#opentemplatedesc").modal("show");
+            },
+            //开通模板
+            addcustomer: function () {
+                var tids = [];
+                var years = [];
+                var buycount = [];
+                var scount = 0;
+                var zscount=0;
+                $.each(this.selArry, function (i, obj) {
+                    //tids.push(obj.Id);
+                    //years.push(obj.year);
+                    //buycount.push(obj.buycount);
+                    obj.storecount = obj.SCount;
+
+                    if((obj.Type == @((int)TmpType.小程序专业模板)))
+                    {
+                        obj.VersionId=this.industrselect;
+                    }
+                    @*if((obj.Type==@tempplatetype || obj.Type == @((int)TmpType.小程序餐饮多门店模板)))
+                    {
+                        scount=obj.SCount;
+                    }
+                    if((obj.Type == @((int)TmpType.智慧餐厅)))
+                    {
+                        zscount = obj.SCount;
+                    }*@
+
+                });
+
+                var postdata = {
+                    username:this.username,
+                    useraccountid: this.accountid,
+                    //tids: tids.join(','),//开通模板
+                    //years: years.join(','),//开通年限
+                    industr: this.industrselect,//选择行业
+                    //buycount: buycount.join(','),//购买数量
+                    //scount:scount,//多门店的分店数量
+                    //zscount:zscount,//智慧餐厅门店数量
+                    xcxtemplates:this.selArry
+                }
+                if (this.selArry == undefined || this.selArry.length <= 0)
+                {
+                    layer.msg("请选择要开通的模板");
+                    return;
+                }
+
+                var msg = this.SubmitMsg(this.selArry);
+                var openwindowindex =layer.confirm(msg, {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    if(msg.indexOf("余额不足")>-1)
+                    {
+                        layer.close(openwindowindex);
+                        return ;
+                    }
+
+                    console.log(postdata);
+                    if (this.isloading) {
+                        layer.msg("正在处理中,请勿重复操作");
+                        return;
+                    }
+                    this.isloading = true;
+
+                    $.post("/agentmanager/AddCustomerV3", postdata, function (data) {
+                        vm.isloading = false;
+                        if (data.isok) {
+                            layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                layer.load(1);
+                                window.parent.location.reload();//do something
+                            });
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                }, function () {
+
+                });
+            },
+
+            SubmitMsg:function(selArry){
+                var that=this;
+                var msgs = [];
+                var sumprice = 0;
+                msgs[msgs.length] = "<div>余额："+(vm.agentinfo.deposit*0.01).toFixed(2)+"元</div>";
+                msgs[msgs.length] = "<div>开通详情：</div>";
+                $.each(selArry, function (i, obj) {
+                    if((obj.Type==@tempplatetype || obj.Type==@((int)TmpType.小程序餐饮多门店模板)|| obj.Type==@((int)TmpType.智慧餐厅)|| obj.Type==@((int)TmpType.企业智推版)))
+                    {
+                        //msgs[msgs.length] = "<div>名称："+obj.TName+"，费用："+(obj.Price*0.01*obj.buycount*obj.year+((obj.SCount-vm.limiteSCount)*obj.SPrice*0.01)).toFixed(2)+"元，数量："+obj.buycount+"</div>";
+                        //sumprice+=parseInt(obj.Price*obj.buycount*obj.year)+(obj.SCount-vm.limiteSCount)*obj.SPrice;
+
+                        msgs[msgs.length] = "<div>名称："+obj.TName+"，费用："+(obj.Price*0.01*obj.buycount*obj.year+((obj.SCount-obj.MinCount)*obj.SPrice*0.01*obj.buycount)).toFixed(2)+"元，数量："+obj.buycount+"</div>";
+                        sumprice+=parseInt(obj.Price*obj.buycount*obj.year)+(obj.SCount-obj.MinCount)*obj.SPrice*obj.buycount;
+                    }
+                        @*else if((obj.Type==@((int)TmpType.智慧餐厅)))
+                    {
+                        msgs[msgs.length] = "<div>名称："+obj.TName+"，费用："+(obj.Price*0.01*obj.buycount*obj.year+((obj.SCount-vm.zhSCount)*obj.SPrice*0.01*obj.buycount)).toFixed(2)+"元，数量："+obj.buycount+"</div>";
+                        sumprice+=parseInt(obj.Price*obj.buycount*obj.year)+(obj.SCount-vm.zhSCount)*obj.SPrice*obj.buycount;
+                }*@
+                    else{
+                        if(obj.Type==22){
+                            //如果是专业版重新请求计算价格
+                            var curPostData={
+                                versionId:that.industrselect,
+                                templateType:obj.Type
+                            }
+
+                            $.ajax({
+                                type : "post",
+                                url : "/agentmanager/GetXcxTemplate",
+                                data : curPostData,
+                                async : false,
+                                success : function(data){
+                                    if (data.isok) {
+                                        msgs[msgs.length] = "<div>名称："+obj.TName+"["+data.dataObj.VersionName+"]，费用："+(data.dataObj.VersionPrice*0.01*obj.buycount*obj.year).toFixed(2)+"元，数量："+obj.buycount+",有效期:"+obj.year+"年</div>";
+                                        sumprice+=parseInt(data.dataObj.VersionPrice*obj.buycount*obj.year);
+                                    } else {
+                                        layer.msg("数据异常");
+                                        return;
+                                    }
+                                }
+                            });
+                        }else{
+                            msgs[msgs.length] = "<div>名称："+obj.TName+"，费用："+(obj.Price*0.01*obj.buycount*obj.year).toFixed(2)+"元，数量："+obj.buycount+",有效期:"+obj.year+"年</div>";
+                            sumprice+=parseInt(obj.Price*obj.buycount*obj.year);
+                        }
+                    }
+                });
+                if(parseInt(vm.agentinfo.deposit)<sumprice)
+                {
+                    msgs = [];
+                    msgs[msgs.length] = "<div>余额不足</div>";
+                    msgs[msgs.length] = "<div>余额："+(vm.agentinfo.deposit*0.01).toFixed(2)+"元</div>";
+                    msgs[msgs.length] = "<div>开通总费用："+(sumprice*0.01).toFixed(2)+"元</div>";
+                    msgs[msgs.length] = "<div>还差："+((sumprice-parseInt(vm.agentinfo.deposit))*0.01).toFixed(2)+"元</div>";
+                }
+                else{
+                    //msgs[msgs.length] = "<div>余额："+(vm.agentinfo.deposit*0.01).toFixed(2)+"元</div>";
+                    msgs[msgs.length] = "<div>开通总费用："+(sumprice*0.01).toFixed(2)+"元</div>";
+                    msgs[msgs.length] = "<div>扣费后余额："+((parseInt(vm.agentinfo.deposit)-sumprice)*0.01).toFixed(2)+"元</div>";
+                    msgs[msgs.length] = "<div>是否开通？</div>";
+                }
+                return msgs.join("");
+            },
+            addqrcode:function(index)
+            {
+                _layer.confirm('你确定要为该用户生成专属二维码？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+
+                    var qrcodename = vm.userlist[index].LoginId;
+                    var customerloginid = vm.userlist[index].LoginId;
+                    $.ajax({
+                        type: "Post",
+                        url: "/agentmanager/AddAgentQrCode",
+                        data:
+                            {
+                                qrcodename: qrcodename,
+                                customerloginid:customerloginid,
+                                type:1,
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                _layer.msg("添加成功", { anim: 0, time: 1000 }, function () {
+                                    window.parent.location.reload();
+                                });
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                        }
+                    });
+                }, function () {
+                });
+            },
+        },
+        created: function (index) {
+            $("#customList").show();
+            this.getXcxlist();
+            this.getuserlist();
+            this.gettemplate();
+        }
+
+    })
+</script>

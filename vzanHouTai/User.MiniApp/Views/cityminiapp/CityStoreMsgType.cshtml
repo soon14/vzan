@@ -1,0 +1,752 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 49;
+    ViewBag.Title = "分类管理";
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; cursor: pointer; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .pslideimgs { display: inline-block; }
+    .materialsItem { display: inline-block; margin-left: 5px; margin-top: 10px; cursor: pointer; width: 100px; height: 100px; }
+        .materialsItem img:hover { border: dashed 1px #ccc }
+        .materialsItem img { width: 100%; height: 100%; }
+    .edit{color:cornflowerblue;}
+    .del{color:red;}
+    .tipSpan{color:#ccc;margin-left:5px;}
+</style>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<div style="height:100%;" class="form-horizontal set-form-content">
+
+    <div id="app_type" v-cloak>
+
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <label for="plist-pname">分类名称：</label>
+                    <input type="text" name="msgTypeName" class="form-control" id="msgTypeName" value="" />
+                </div>
+
+                <div style="display:inline-block;margin-left:10px;">
+                    <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                    <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                    <a href="#" class="btn btn-info ml10" v-on:click="addedit()">新增分类</a>
+                </div>
+
+            </div>
+        </div>
+        <div role="alert" class="alert alert-warning alert-dismissible" style="margin-top:20px;color:#FF9800;background-color:#fff5e0;border-color:#fff5e0;"> <p>提示：</p> <p>1、分类名称不能超过5个字，且不能重复</p> <p>2、分类若已关联了至少一个信息，则该分类不可删除</p></div>
+        <table class="table table-bordered viplevel ml_19">
+            <tr class="active">
+                <th class="centertext">序号</th>
+                <th class="centertext">分类图</th>
+                <th class="centertext">分类名称</th>
+                <th class="centertext">排序</th>
+                <th class="centertext">新增时间</th>
+                <th class="centertext">更新时间</th>
+                <th class="centertext">操作</th>
+            </tr>
+            <tr v-for="(item,index) in msgTypelist">
+                <td class="centertext">
+                    <label>
+                        <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                    </label>
+                </td>
+                <td class="centertext">
+                    <div class="msgTypeImg">
+                        <img v-bind:src="item.materialPath" alt="图片跑丢了" width="50" height="50" />
+                    </div>
+                </td>
+                <td class="centertext">
+                    {{item.name}}
+                </td>
+                <td class="centertext" v-on:click.stop="showEditSort(index)">
+                    <span v-show="!item.isShowEditSort">{{item.sortNumber}}</span>
+                    <input type="text" v-show="item.isShowEditSort" class="form-control" style="width:50px;display:inline-block;" v-model="item.sortNumber" onkeyup="value=value.replace(/[^\d]/g,'') "/>
+                   
+                </td>
+                <td class="centertext">
+                    {{item.addTimeStr}}
+                </td>
+                <td class="centertext">
+                    {{item.updateTimeStr}}
+                </td>
+                <td class="centertext">
+                    <a href="javascript:void(0)" class="edit" v-on:click="addedit(index)">编辑</a>
+                    <a href="javascript:void(0)" class="del" v-on:click="delMsgType(item.Id)">删除</a>
+                </td>
+            </tr>
+            
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+        <div class="ml_19">
+            <button class="btn btn-info" v-on:click="saveBatch()">
+                批量改排序
+            </button>
+            <button class="btn btn-danger" v-on:click="delMsgType(-1)">
+                批量删除
+            </button>
+        </div>
+
+
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            分类编辑
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+                                    <div>
+                                        <span>分类名称：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="分类名称" v-model="msgTypeInfo.name" />
+                                    </div>
+                                    
+                                    <div style="margin-top:5px;">
+                                        <span>分类图标：<span style="color:red;">*</span></span><img v-if="msgTypeInfo.materialPath==''" style="margin-left:5px;width:55px;height:55px;" src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180308/97259ef92d7c45c3af657077e734f186.png" /><img v-bind:src="msgTypeInfo.materialPath" v-else style="width:55px;height:55px;margin-left:5px;" />
+                                        <a href="#" class="btn btn-info ml10" v-on:click="UploadImg()">上传图标</a>
+                                        <span style="margin-left:20px;color:#649be1;cursor:pointer;" v-on:click="selectMaterials()">从图标库里选择</span>
+                                    </div>
+                                    <div style="margin-top:5px;">
+                                        <span>排序字段：</span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="排序字段,整数越大越靠前" v-model="msgTypeInfo.sortNumber" /><span class="tipSpan">排序字段,整数越大越靠前</span>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+
+        <div class="modal fade" id="Materials" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content" style="min-height:500px;">
+
+                    <div class="modal-body ">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+                            <ul class="layui-tab-title">
+                                <li class="tab_element layui-this" lay-id="tab_element_1" v-on:click="Tab(@ViewBag.appId)">本地文件</li>
+                                <li class="tab_element" lay-id="tab_element_2" v-on:click="Tab(-1)">系统素材库</li>
+                            </ul>
+                            <div class="layui-tab-content">
+                                <div class="layui-tab-item layui-show">
+                                    <div class="materialsItem" v-for="(item,index) in materials">
+                                        <img v-bind:src="item.materialPath" v-on:click="choiceMaterial(item.materialPath)" />
+                                    </div>
+                                    <div v-if="materials==null || materials.length==0">
+                                        <p>没有数据</p>
+                                    </div>
+                                </div>
+                                <div class="layui-tab-item">
+                                    <div class="materialsItem" v-for="(item,index) in materials">
+                                        <img v-bind:src="item.materialPath" v-on:click="choiceMaterial(item.materialPath)" />
+                                    </div>
+                                    <div v-if="materials==null || materials.length==0">
+                                        <p>没有数据</p>
+                                    </div>
+
+                                </div>
+                                <div id="pagesMaterial" style="text-align: center;margin-top: 0.5rem;" v-show="materialsRecordCount>0"></div>
+
+                            </div>
+                        </div>
+
+
+
+                    </div>
+
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+        <div style="display: none;">
+            <button id="browse_file_img">上传图片</button>
+            <button id="start_upload_img" v-on:click="uploadFile('img')">开始上传</button>
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script>
+    layui.use('element', function(){
+        var $ = layui.jquery
+        ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+    });
+
+
+
+    var mask;
+    var MAX_IMG_SIZE = 1, MAX_AUDIO_SIZE = 10, MAX_VIDEO_SIZE = 20;
+    var uploader = {
+        img: {
+            filePath: ''
+        },
+        video: {
+            filePath: ''
+        },
+        audio: {
+            filePath: ''
+        }
+    };
+
+    var ids;
+    var chk_value =[];
+    var msgTypeItem= {
+        Id:0,
+        aid:@ViewBag.appId,
+        name:"",
+        sortNumber:0,
+        materialPath:""
+    };
+    var app = new Vue({
+        el: "#app_type",
+        data: {
+            msgTypeInfo: JSON.parse(JSON.stringify(msgTypeItem)),
+            editIndex: 0,
+            isloading: false,
+            recordCount: 0,
+            materialsRecordCount: 0,
+            materials:[],
+            msgTypelist: [],
+            sortMsgTypeList:[],
+            postdata: {
+                appId:@Html.Raw(ViewBag.appId),
+                typeName:"",
+                pageIndex: 1,
+                pageSize: 10
+            },
+            materialsPostData: {
+                pageIndex: 1,
+                pageSize: 20,
+                appId:@ViewBag.appId
+                }
+
+
+        },
+        mounted: function () {
+            var that = this;
+            that.initUploader('img');
+        },
+        methods: {
+            delMsgType:function(id){
+                //删除
+                var that=this;
+                if(id==-1){
+                    //表示批量删除
+                    if(chk_value.length<=0){
+                        layer.msg("请先选择需要删除的类别");
+                        return;
+                    }
+                }else{
+                    chk_value.push(id);
+                }
+
+                ids= chk_value.join(",");
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/delMsgTypes',
+                    data: {ids:ids,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+            saveBatch:function(){
+                var that=this;
+                //批量保存排序
+                if(that.sortMsgTypeList.length<=0){
+                    layer.msg('请先编辑需要排序的分类');
+                    return;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/saveMsgTypeSort',
+                    data: {list:that.sortMsgTypeList },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            showEditSort:function(index){
+                var that=this;
+                var curSortMsgType=that.msgTypelist[index];
+                curSortMsgType.isShowEditSort=true;
+                if(that.sortMsgTypeList.length>0){
+                    var curIndex=that.sortMsgTypeList.findIndex(x=>x.Id==curSortMsgType.Id);
+                    if(curIndex>-1){
+                        //表示存在了则直接替换
+                        that.sortMsgTypeList[curIndex]=curSortMsgType;
+                        return;
+                    }
+                }
+
+                    that.sortMsgTypeList.push(curSortMsgType);
+            },
+            search:function(){
+                var that=this;
+                that.postdata.typeName=$("#msgTypeName").val();
+                that.getMsgTypeList();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+            choiceMaterial:function(materialPath){
+                var that=this;
+                that.msgTypeInfo.materialPath=materialPath;
+                $('#Materials').modal('hide');
+            },
+            Tab:function(appId){
+                var that=this;
+                that.materialsPostData.pageIndex=1;
+                that.getMaterials(appId);
+            },
+
+            //添加编辑窗口
+            addedit: function (index) {
+                var that=this;
+                that.editIndex = index;
+                if (typeof (index) != "undefined") {//编辑
+
+                    that.msgTypeInfo = JSON.parse(JSON.stringify(that.msgTypelist[index]));
+
+                } else {
+                    that.msgTypeInfo = JSON.parse(JSON.stringify(msgTypeItem));
+                }
+                $('#myModal').modal('show')
+            },
+            //获取分类列表
+            getMsgTypeList: function () {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/cityminiapp/getMsgTypes", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.msgTypelist = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                that.sortMsgTypeList=[];//翻页后清空 之前编辑了排序的数据
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getMsgTypeList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //素材库列表分页
+            resetPageMaterials: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pagesMaterial'
+                        , count: that.materialsRecordCount //数据总数，从服务端得到
+                        , curr: that.materialsPostData.pageIndex //当前页
+                        , limit:that.materialsPostData.pageSize
+                        , jump: function (obj, first) {
+                            that.materialsPostData.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getMaterials(@ViewBag.appId);
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //保存分类
+            saveInfo: function () {
+                var that=this;
+                if(that.msgTypeInfo.name==''||that.msgTypeInfo.name.length>5){
+                    layer.msg('类别名称不能为空或者不能大于5个字符');
+                    return;
+                }
+                if(that.msgTypeInfo.materialPath==''){
+                    layer.msg('图标不能为空');
+                    return;
+                }
+                
+                var ok=false;
+                //判断类别是否存在
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/msgTypeNameIsExist',
+                    data: {appId:@ViewBag.appId,msgTypeName:that.msgTypeInfo.name,Id:that.msgTypeInfo.Id },
+                    dataType: 'json',
+                    success: function (data) {
+                       
+                        if (!data.isok) {
+                            layer.msg(data.Msg); 
+                        }else{
+                            ok=true;
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                }).then(function(){
+                    if(ok){
+                        $.ajax({
+                            type: 'POST',
+                            url: '/cityminiapp/saveMsgType',
+                            data: {city_StoreMsgType:that.msgTypeInfo },
+                            dataType: 'json',
+                            success: function (data) {
+                                layer.msg(data.Msg);
+                                if (data.isok) {
+
+                                    window.setTimeout(function(){
+                                        window.location.reload();
+                                    },2000);
+                                }
+                            },
+                            error: function (data) {
+                                layer.msg('与服务器通讯错误');
+                            }
+                        });   
+                    }
+                    
+                    
+                });
+
+
+
+              
+
+
+
+            },UploadImg: function () {
+                var that=this;
+                $('#browse_file_img').click();
+            },addCity_Materials:function(materialPath){
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/addCity_Materials',
+                    data: {appId:@ViewBag.appId,materialPath:materialPath },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+            },
+            selectMaterials:function(){
+                var that=this;
+                $("#Materials .layui-this").removeClass("layui-this");
+                $($(".layui-tab-title li")[0]).addClass("layui-this");
+                //选择素材
+                $('#Materials').modal('show');
+                //请求素材库
+                that.Tab(@ViewBag.appId);
+
+
+            },getMaterials:function(appId){
+                var that=this;
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                that.materialsPostData.appId=appId;
+                var index = layer.load(1);
+                $.post("/cityminiapp/getMaterials", that.materialsPostData, function (data) {
+                    layer.close(index);
+                    that.materialsRecordCount = data.dataObj.totalCount;
+                    that.materials = data.dataObj.list;
+                    that.resetPageMaterials();
+                });
+            },
+            initUploader: function (type) {
+                var that = this;
+                var options = {
+                    browse_button: 'browse_file_' + type,
+                    url: 'http://oss.aliyuncs.com',
+                    flash_swf_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                    silverlight_xap_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                    filters: {
+
+                    },
+                    multi_selection: false
+
+                };
+                switch (type) {
+                    case 'img':
+
+                        options.filters = {
+
+                            mime_types: [
+                                {
+                                    title: "图片文件",
+                                    extensions: "jpg,jpeg,gif,png"
+                                },
+                            ],
+                            //max_file_size: '5mb'
+                        }
+                        break;
+                    case 'video':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "视频文件",
+                                    extensions: "mp4,m3u8",
+                                },
+                            ],
+                            //max_file_size: '20mb'
+                        }
+
+                        break;
+                    case 'audio':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "音频文件",
+                                    extensions: "mp3",
+                                },
+                            ],
+                            //max_file_size: '10mb'
+                        }
+
+
+                        break;
+                }
+                //如果还有当前类型的上传组件实例的话则先把其销毁
+                if (uploader[type].instance) {
+                    console.log('destroy uploader :' + type);
+                    uploader[type].instance.destroy();
+                }
+                uploader[type].instance = new plupload.Uploader(options);
+
+                uploader[type].instance.init();
+
+                uploader[type].instance.bind('BeforeUpload', function (d, f) {
+
+
+                    //取到文件后缀名
+
+                    var fileName = f.name;
+                    var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                    //转成Mb
+                    var fileSize = f.size / 1024 / 1024;
+                    var flag = true;
+
+                    switch (type) {
+                        case 'img':
+                            if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                                layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                                flag = false;
+                            }
+                            if (fileSize > MAX_IMG_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_IMG_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'audio':
+                            if (!['mp3'].contains(ext)) {
+                                layer.msg('请上传正确的音频格式文件，后缀名可为：mp3');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_AUDIO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_AUDIO_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'video':
+                            if (!['mp4', 'm3u8'].contains(ext)) {
+                                layer.msg('请上传正确的视频格式文件，后缀名可为：mp4,m3u8');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_VIDEO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_VIDEO_SIZE + 'Mb');
+                                flag = false;
+                            }
+                            break;
+                    }
+                    //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                    if (!flag) {
+                        that.initUploader(type);
+                    }
+
+                    uploader.token.key += '.' + ext;
+                    uploader[type].instance.setOption(uploader.token);
+
+                });
+
+                uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                    $('#start_upload_' + type).click();
+                });
+                uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+
+                    mask = layer.load(0, {
+                        content: file.percent + "%", shade: [0.8, '#393D49'],
+
+                        success: function (layero) {
+                            layero.find('.layui-layer-content').css('color', 'white').css('font-size', '2rem').css('background', 'none');
+                        }
+                    });
+                });
+                uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+
+
+                    layer.close(mask);
+                    var fileName = f[0].name;
+                    var fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                    var filePath = uploader[type].filePath + '.' + fileExt;
+
+                    that.msgTypeInfo.materialPath=filePath;
+                    that.addCity_Materials(filePath);
+                    //上传完成后重新初始上传组件
+                    that.initUploader(type);
+
+                });
+
+            },
+            uploadFile: function (type) {
+                //   var that = this;
+                $.get('/upload/initupload', {
+                    type: type
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+                    uploader[type].filePath = data.host + '/' + filePath;
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    uploader.token = multipartParams;
+                    uploader[type].instance.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+                    uploader[type].instance.start();
+                })
+
+            }
+        },created:function(){
+            var that=this;
+             that.getMsgTypeList();
+        }
+    });
+</script>

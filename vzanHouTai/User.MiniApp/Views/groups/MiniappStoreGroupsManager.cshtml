@@ -1,0 +1,314 @@
+﻿@using Entity.MiniApp;
+@model  List<Entity.MiniApp.Tools.Groups>
+@{
+    ViewBag.Title = "团购";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int JoingroupSwtich = ViewBag.JoingroupSwtich;
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        @if (ViewBag.StoreId == 0)
+        {
+            <div class="form-inline">
+                @*<span>店铺名称：</span>
+                <input id="iptTitle" type="text" class="form-control">*@
+                <span>状态：</span>
+                <select id="ddlState" class="form-control">
+                    <option value="10">全部</option>
+                    @foreach (var item in ViewBag.State)
+                    {
+                        <option value="@item[1]">@item[0]</option>
+                    }
+                </select>
+                <input id="" onclick="shreach()" type="button" class="btn btn-primary" value="搜索">
+                <input id="" onclick="batchEditList()" type="button" class="btn btn-primary" value="批量通过">
+                <input id="" onclick="batchdeleteList()" type="button" class="btn btn-danger" value="批量删除">
+                <input id="" onclick="shreach_delete()" type="button" class="btn btn-danger" value="回收站">
+            </div>
+        }
+        else
+        {
+            if (ViewBag.PageType == 22 && JoingroupSwtich == 1)
+            {
+                <a href="#" class="btn btn-success" id="notUse" title="请升级到更高版本">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    添加团购
+                </a>
+            }
+            else
+            {
+                <a href="/groups/AddOrEdit?appId=@ViewBag.appId&PageType=@ViewBag.PageType&sgid=0&storeId=@ViewBag.StoreId" class="btn btn-success" id="btnBatch_Pass">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    添加团购
+                </a>
+            }
+
+
+        }
+    </div>
+</div>
+
+<table class="table table-condensed table-hover cancel-table-td-border " style="width:800px;display:none;">
+   
+</table>
+
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th><input type="checkbox" class="checkbox-ickeck selectAll" id="ckbAll"><label for="ckbAll">全选</label></th>
+        @*<th>店铺</th>*@
+        <th>团购名称</th>
+        <th>有效时间</th>
+        @*<th>使用截止时间</th>*@
+        <th>团购价格</th>
+        <th>单买价格</th>
+        <th>原价</th>
+        <th>发布时间</th>
+        <th>小程序页面路径</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="3%"><input type="checkbox" id="ckbitem@(item.Id)" class="checkbox-ickeck" storeId="@(item.StoreId)" value="@(item.Id)"><label for="ckbitem@(item.Id)">@(i++)</label> </td>
+                @*<td width="8%">@(item.StoreName)</td>*@
+                <td width="8%">@(item.GroupName)</td>
+                <td width="13%">@(item.ValidDateStart.ToString("yyyy-MM-dd HH:mm")) 至 @(item.ValidDateEnd.ToString("yyyy-MM-dd HH:mm"))</td>
+                @*<td width="13%">@(item.UserDateEnd.ToString("yyyy-MM-dd HH:mm"))</td>*@
+                <td width="4%">@((float.Parse(item.DiscountPrice.ToString()) / 100))</td>
+                <td width="4%">@((float.Parse(item.UnitPrice.ToString()) / 100))</td>
+                <td width="4%">@((float.Parse(item.OriginalPrice.ToString()) / 100))</td>
+                <td width="8%">@(item.CreateDate)</td>
+                <td width="10%">/pages/group/group?id=@(item.Id)</td>
+                <td width="4%">
+                    @if (item.State == (int)MiniappState.通过 && item.ValidDateEnd < DateTime.Now)
+                    {
+                        @(item.ValidDateEnd < DateTime.Now ? Html.Raw("已失效") : Html.Raw(""))
+                    }
+                    else
+                    {
+                        @(Enum.GetName(typeof(MiniappState), item.State))
+                    }
+                </td>
+                <td width="12%">
+                    @if (item.State == (int)MiniappState.待审核)
+                    {
+                        <a href="javascript:editchecked(@item.Id,@item.StoreId);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            通过
+                        </a>
+                        <a href="javascript:Delete(@item.Id,@item.StoreId);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            删除
+                        </a>
+                    }
+                    else if (item.State == (int)MiniappState.删除)
+                    {
+                        <a href="javascript:editchecked(@item.Id,@item.StoreId);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            启用
+                        </a>
+                    }
+                    else if (item.State == (int)MiniappState.通过)
+                    {
+                        <a href="javascript:Delete(@item.Id,@item.StoreId);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            删除
+                        </a>
+                    }
+                    @if (ViewBag.storeId == 0)
+                    {
+                        <a href="/groups/AddOrEdit?appId=@(ViewBag.appId)&PageType=@ViewBag.PageType&sgid=@item.Id&tag=1" class="btn  btn-primary btn-xs" style="margin-top:5px;">编辑</a>
+                    }
+                    else
+                    {
+                        <a href="/groups/AddOrEdit?appId=@(ViewBag.appId)&PageType=@ViewBag.PageType&sgid=@item.Id" class="btn  btn-primary btn-xs" style="margin-top:5px;">编辑</a>
+                    }
+                    <a href="/groups/MiniappUserGroupList?appId=@(ViewBag.appId)&PageType=@ViewBag.PageType&sgid=@item.Id" class="btn btn-success btn-xs" style="margin-top:5px;">
+                        购买记录
+                    </a>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+
+@*<script type="text/html" id="id_typeconfigsort">
+        <span>排序值：</span>
+        <input maxlength="3" onkeyup="value=value.replace(/\D/g, '')" placeholder="排序值" id="sortVal" type="text" class="form-control" value="{#sort#}">
+    </script>
+    <script type="text/html" id="js_article_content">
+        @Html.Raw(ViewBag.Description)
+    </script>*@
+<script>
+
+    $(function () {
+        if(@ViewBag.PageType == 22)
+        {
+            layer.confirm("团购功能即将在9月25号下架，请提前做好数据迁移准备，选择使用拼团功能", {
+                btn: ['确定', '取消'] //按钮
+            }, function () {
+                layer.closeAll();
+            });
+        }
+        
+        $("#notUse").click(function(){
+            layer.msg("请升级更高版本");
+            return;
+        });
+
+        $("#ckbAll").click(function () {
+            if (this.checked) {
+                $("#bcontent :checkbox").prop("checked", true);
+            } else {
+                $("#bcontent :checkbox").prop("checked", false);
+            }
+        });
+
+        if (@ViewBag.storeId == 0)
+        {
+            $("#ddlState").val(@(Utility.IO.Context.GetRequest("State", "")));
+            $("#iptTitle").val('@(Utility.IO.Context.GetRequest("title", ""))');
+        }
+
+        @*$(document).on("click", ".temp-openclose_couponconfig", function () {
+            var $self = $(this);
+            var isPostSH = $self.attr("data-state");
+            if (isPostSH == 0) {
+                $self.attr("data-state", 1);
+                $self.removeClass("btn-danger").addClass("btn-primary");
+                $self.html("<span class=\"glyphicon glyphicon-edit\"></span>已开启");
+            } else {
+                $self.attr("data-state", 0);
+                $self.removeClass("btn-primary").addClass("btn-danger");
+                $self.html("<span class=\"glyphicon glyphicon-remove\"></span>已关闭");
+            }
+        });
+        $("#saveBtn").click(function(){
+            var SCcoupon = $(".temp-openclose_couponconfig").attr("data-state");
+            $.ajax({
+                type: "Post",
+                url: "/CityCoupon/couponConfig",
+                data:{cityInfoId:@(cityInfo.Id),coupon:SCcoupon},
+                success: function (data) {
+                    if (data.code > 0) {
+                        AppTools.Alert("修改成功");
+                        //setTimeout(function() {
+                        //    location.reload();
+                        //}, 1000);
+                    }
+                    else
+                    {
+                        AppTools.Alert("请先开启同城信息分类!");
+                    }
+                }
+            });
+        });*@
+    });
+    function shreach()
+    {
+        window.location.href = "/groups/CityStoreGroupsManager?appId=" + @ViewBag.appId + "&title=" + $("#iptTitle").val() + "&State=" + $("#ddlState").val();
+    }
+
+    function batchEditList()
+    {
+        var groupsIdlist = new Array();
+        var storeIdlist = new Array();
+        $.each($("#bcontent input[type=checkbox]:checked"), function (i, t) {
+            groupsIdlist.push($(this).val());
+            storeIdlist.push($(this).attr("storeId"));
+        });
+        if (groupsIdlist.length == 0) return alert('最少需要选择一项');
+        //return alert(storeIdlist.join(','));
+        //editchecked(groupsIdlist.join(','), storeIdlist.join(','));
+        $.ajax({
+            type: "post",
+            url: "/groups/DeleteStoreGroupsBatch",
+            data: { type: 1, id: groupsIdlist, storeid: storeIdlist },
+            traditional: true,
+            success: function (data) {
+                if (data.Success)
+                    alert('审核通过');
+                else
+                    alert("审核失败");
+                window.location.reload();
+            }
+        })
+    }
+
+    function batchdeleteList() {
+        var groupsIdlist = new Array();
+        var storeIdlist = new Array();
+        $.each($("#bcontent input[type=checkbox]:checked"), function (i, t) {
+            groupsIdlist.push($(this).val());
+            storeIdlist.push($(this).attr("storeId"));
+        });
+        if (groupsIdlist.length == 0) return alert('最少需要选择一项');
+        if (confirm("你确定要删除么?")) {
+            $.ajax({
+                type: "post",
+                url: "/groups/DeleteStoreGroupsBatch",
+                data: { type: -1, id: groupsIdlist, storeid: storeIdlist,appId:'@ViewBag.appId' },
+                traditional: true,
+                success: function (data) {
+                    if (data.Success)
+                        alert('删除成功');
+                    else
+                        alert("删除失败");
+                    window.location.reload();
+                }
+            })
+        }
+    }
+
+    function Delete(id, storeid)
+    {
+        if (confirm("你确定要删除么?")) {
+            $.ajax({
+                type: "post",
+                url: "/groups/DeleteStoreGroup",
+                data: { type: -1, id: id,  storeid: storeid ,appId:'@ViewBag.appId'},
+                success: function (data) {
+                    if (data.Success)
+                        alert('删除成功');
+                    else
+                        alert(data.Msg);
+
+
+                    window.location.reload();
+                }
+            })
+        }
+    }
+    function editchecked(id, storeid) {
+        $.ajax({
+            type: "post",
+            url: "/groups/DeleteStoreGroup",
+            data: { type: 1, id: id, storeid: storeid },
+            success: function (data) {
+                if (data.Success)
+                    alert('成功启用');
+                else
+                    alert(data.Msg);
+                window.location.reload();
+            }
+        })
+    }
+    //回收站
+    function shreach_delete()
+    {
+        window.location.href = "/groups/CityStoreGroupsManager?appId=@ViewBag.appId&title=" + $("#iptTitle").val() + "&State=-1";
+    }
+</script>

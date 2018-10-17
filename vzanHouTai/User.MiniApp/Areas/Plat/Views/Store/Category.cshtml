@@ -1,0 +1,544 @@
+﻿@using Entity.MiniApp.Plat
+@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    PlatStoreCategoryConfig platStoreCategoryConfig = ViewBag.PlatStoreCategoryConfig;
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; cursor: pointer; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .pslideimgs { display: inline-block; }
+    .materialsItem { display: inline-block; margin-left: 5px; margin-top: 10px; cursor: pointer; width: 100px; height: 100px; }
+        .materialsItem img:hover { border: dashed 1px #ccc }
+        .materialsItem img { width: 100%; height: 100%; }
+    .edit { color: cornflowerblue; }
+    .del { color: red; }
+    .tipSpan { color: #ccc; margin-left: 5px; }
+
+    .layui-laypage span { background-color: #eff0f4; }
+</style>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+
+    <div id="app_type" v-cloak>
+        <div role="alert" class="alert alert-warning alert-dismissible"><button type="button" data-dismiss="alert" aria-label="Close" class="close"><span aria-hidden="true">×</span></button> 
+        <p>提示：</p>
+        <p>1.大类,小类均必需录入，否则前端入驻时将无法选择分类。</p>
+        <p>2.二级分类模式未开启时，前端只会显示小类类目；开启二级分类，则同时显示大类-小类选择，管理员可随时修改分类显示模式，分类数据及关系不会被删除。</p>
+        </div>
+        <div>
+            <a href="javascript:void(0)" class="btn btn-primary ml10" v-on:click="updateCategoryLevel()" v-if="@platStoreCategoryConfig.Level==1">开启二级分类</a>
+            <a href="javascript:void(0)" class="btn btn-primary ml10" v-on:click="updateCategoryLevel()" v-else>关闭二级分类</a>
+        </div>
+
+        <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+            <ul class="layui-tab-title">
+                <li class="layui-this" v-on:click="Tab(1)" lay-id="tab_element_1">大类管理</li>
+                <li v-on:click="Tab(2)" lay-id="tab_element_2">小类管理</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+
+                    <table class="table table-bordered viplevel ml_19">
+                        <tr class="active">
+                            <th class="centertext">序号</th>
+                            <th class="centertext">分类图</th>
+                            <th class="centertext">分类名称</th>
+                            <th class="centertext">排序</th>
+                            <th class="centertext">新增时间</th>
+                            <th class="centertext">更新时间</th>
+                            <th class="centertext">操作</th>
+                        </tr>
+                        <tr v-for="(item,index) in categoryList">
+                            <td class="centertext">
+                                <label>
+                                    <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                                </label>
+                            </td>
+                            <td class="centertext">
+                                <div class="msgTypeImg">
+                                    <img v-bind:src="item.MaterialPath" alt="图片跑丢了" width="50" height="50" />
+                                </div>
+                            </td>
+                            <td class="centertext">
+                                {{item.Name}}
+                            </td>
+
+                            <td class="centertext" v-on:click.stop="showEditSort(index)">
+                                <span v-show="!item.IsShowEditSort">{{item.SortNumber}}</span>
+                                <input type="text" v-show="item.IsShowEditSort" class="form-control" style="width:50px;display:inline-block;" v-model="item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " />
+
+                            </td>
+                            <td class="centertext">
+                                {{item.AddTimeStr}}
+                            </td>
+                            <td class="centertext">
+                                {{item.UpdateTimeStr}}
+                            </td>
+                            <td class="centertext">
+                                <a href="javascript:void(0)" class="btn btn-primary ml10" v-on:click="addedit(index)">编辑</a>
+                                <a href="javascript:void(0)" class="btn btn-default ml10" v-on:click="delMsgType(item.Id)">删除</a>
+                            </td>
+                        </tr>
+
+                    </table>
+
+                </div>
+                <div class="layui-tab-item">
+                    <table class="table table-bordered viplevel ml_19">
+                        <tr class="active">
+                            <th class="centertext">序号</th>
+                            <th class="centertext">分类图</th>
+                            <th class="centertext">分类名称</th>
+                            <th class="centertext">所属类别</th>
+                            <th class="centertext">排序</th>
+                            <th class="centertext">新增时间</th>
+                            <th class="centertext">更新时间</th>
+                            <th class="centertext">操作</th>
+                        </tr>
+                        <tr v-for="(item,index) in categoryList">
+                            <td class="centertext">
+                                <label>
+                                    <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                                </label>
+                            </td>
+                            <td class="centertext">
+                                <div class="msgTypeImg">
+                                    <img v-bind:src="item.MaterialPath" alt="图片跑丢了" width="50" height="50" />
+                                </div>
+                            </td>
+                            <td class="centertext">
+                                {{item.Name}}
+                            </td>
+                            <td class="centertext">
+                                {{item.ParentName}}
+                            </td>
+                            <td class="centertext" v-on:click.stop="showEditSort(index)">
+                                <span v-show="!item.IsShowEditSort">{{item.SortNumber}}</span>
+                                <input type="text" v-show="item.IsShowEditSort" class="form-control" style="width:50px;display:inline-block;" v-model="item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " />
+
+                            </td>
+                            <td class="centertext">
+                                {{item.AddTimeStr}}
+                            </td>
+                            <td class="centertext">
+                                {{item.UpdateTimeStr}}
+                            </td>
+                            <td class="centertext">
+                                <a href="javascript:void(0)" class="btn btn-primary ml10" v-on:click="addedit(index)">编辑</a>
+                                <a href="javascript:void(0)" class="btn btn-default ml10" v-on:click="delMsgType(item.Id)">删除</a>
+                            </td>
+                        </tr>
+
+                    </table>
+
+                </div>
+
+            
+
+
+            </div>
+        </div>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+            <div class="ml_19">
+                <a href="javascript:void(0)" class="btn btn-primary ml10" v-on:click="addedit()">新增分类</a>
+                <a href="javascript:void(0)" class="btn btn-primary ml10" v-on:click="saveBatch()">批量改排序</a>
+                <a href="javascript:void(0)" class="btn btn-default ml10" v-on:click="delMsgType(-1)">批量删除</a>
+            </div>
+
+
+
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                &times;
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+                                分类编辑
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <div>
+
+                                <div style="margin-top:10px;">
+                                    <div style="margin-left:55px;">
+                                        <div>
+                                            <span>分类名称：<span style="color:red;">*</span></span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="分类名称" v-model="categoryInfo.Name" />
+                                        </div>
+                                        <div style="margin-top: 5px;" v-if="postdata.isFirstType==2">
+                                            <span>所属类别：<span style="color:red;">*</span></span>
+                                            <select class="form-control" v-model="categoryInfo.ParentId" style="width: 200px; margin-left: 5px;">
+                                                <option  v-bind:value="item.Id"  v-for="(item,index) in firstCategoryList">{{item.Name}}</option>
+                                                
+                                            </select>
+                                        </div>
+                                        <div style="margin-top:5px;">
+                                            <span>分类图标：<span style="color:red;">*</span></span><img v-if="categoryInfo.MaterialPath==''" style="margin-left:5px;width:55px;height:55px;" src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180308/97259ef92d7c45c3af657077e734f186.png" /><img v-bind:src="categoryInfo.MaterialPath" v-else style="width:55px;height:55px;margin-left:5px;" />
+                                            <a href="#" class="btn btn-info ml10" v-on:click="UploadImg()">上传图标</a>
+                                        </div>
+                                        <div style="margin-top:5px;">
+                                            <span>排序字段：</span><input type="text" class="form-control" style="width:200px;margin-left:5px;" placeholder="排序字段,整数越大越靠前" v-model="categoryInfo.SortNumber" /><span class="tipSpan">排序字段,整数越大越靠前</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+
+                                <div stle=" clear:both;"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="text-align:center;">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                关闭
+                            </button>
+                            <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                                保存
+                            </button>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </div><!--/.modal-->
+            <!-- #region 上传图片弹窗 -->
+            <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header" style="border:0px;">
+                            <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                        </div>
+                        <div class="modal-body" style="min-height:500px;padding:0px;">
+                            <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- #endregion -->
+
+
+        </div>
+
+
+</div>
+
+
+<script>
+    layui.use('element', function(){
+        var $ = layui.jquery
+        ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+        element.tabChange('docDemoTabBrief', 'tab_element_@(ViewBag.isFirstType)');
+    });
+
+
+
+    var mask;
+
+    var ids;
+    var chk_value =[];
+    var categoryItem= {
+        Id:0,
+        Aid:@ViewBag.appId,
+        Name:"",
+        SortNumber:0,
+        MaterialPath:"",
+        ParentId:0
+    };
+    var app = new Vue({
+        el: "#app_type",
+        data: {
+            categoryInfo: JSON.parse(JSON.stringify(categoryItem)),
+            editIndex: 0,
+            isloading: false,
+            recordCount: 0,
+            materialsRecordCount: 0,
+            materials:[],
+            categoryList: [],
+            sortCategoryList:[],
+            firstCategoryList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            postdata: {
+                appId:@ViewBag.appId,
+                typeName:"",
+                pageIndex: 1,
+                pageSize: 10,
+                isFirstType:@ViewBag.isFirstType,
+            },
+            curMaterialPath:"",
+        },
+        watch:{
+            curMaterialPath:function(){
+                var that=this;
+                that.categoryInfo.MaterialPath=that.curMaterialPath;
+            }
+        },
+        mounted: function () {
+            var that = this;
+
+        },
+        methods: {
+            updateCategoryLevel:function(){
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/UpdateStoreCategoryLevel',
+                    data: {Id:@platStoreCategoryConfig.Id,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            Tab:function(isFirstType){
+                //isFirstType 0表示是获取大类的
+                var that=this;
+                that.postdata.pageIndex=1;
+                that.postdata.isFirstType=isFirstType;
+                that.getCategoryList();
+                window.history.pushState(null,null,'Category?aid='+ @ViewBag.appId +'&isFirstType='+that.postdata.isFirstType);//浏览器不跳转追加tab属性
+            },
+
+            delMsgType:function(id){
+                //删除
+                var that=this;
+                if(id==-1){
+                    //表示批量删除
+                    if(chk_value.length<=0){
+                        layer.msg("请先选择需要删除的类别");
+                        return;
+                    }
+                }else{
+                    chk_value.push(id);
+                }
+
+                ids= chk_value.join(",");
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/DelCategory',
+                    data: {ids:ids,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+            saveBatch:function(){
+                var that=this;
+                //批量保存排序
+                if(that.sortCategoryList.length<=0){
+                    layer.msg('请先编辑需要排序的分类');
+                    return;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/SaveCategorySort',
+                    data: {appId:@ViewBag.appId,list:that.sortCategoryList },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            showEditSort:function(index){
+                var that=this;
+                var curSortMsgType=that.categoryList[index];
+                curSortMsgType.IsShowEditSort=true;
+
+                if(that.sortCategoryList.length>0){
+                    var curIndex=that.sortCategoryList.findIndex(x=>x.Id==curSortMsgType.Id);
+                    if(curIndex>-1){
+                        //表示存在了则直接替换
+                        that.sortCategoryList[curIndex]=curSortMsgType;
+                        return;
+                    }
+                }
+
+                    that.sortCategoryList.push(curSortMsgType);
+            },
+
+            //添加编辑窗口
+            addedit: function (index) {
+                var that=this;
+                that.editIndex = index;
+                if (typeof (index) != "undefined") {//编辑
+
+                    that.categoryInfo = JSON.parse(JSON.stringify(that.categoryList[index]));
+
+                } else {
+                    that.categoryInfo = JSON.parse(JSON.stringify(categoryItem));
+                }
+                $('#myModal').modal('show')
+            },
+            //获取分类列表
+            getCategoryList: function () {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Store/GetCategoryList", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.categoryList = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                that.sortCategoryList=[];//翻页后清空 之前编辑了排序的数据
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getCategoryList();
+
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //保存分类
+            saveInfo: function () {
+                var that=this;
+                if(that.categoryInfo.Name==''||that.categoryInfo.Name.length>5){
+                    layer.msg('类别名称不能为空或者不能大于5个字符');
+                    return;
+                }
+                if(that.categoryInfo.MaterialPath==''){
+                    layer.msg('图标不能为空');
+                    return;
+                }
+                if(that.postdata.isFirstType==2&&that.categoryInfo.ParentId<=0){
+                    layer.msg('请先选择所属类别');
+                    return;
+                }
+                var ok=false;
+                //判断类别名称是否存在
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/CheckCategoryName',
+                    data: {appId:@ViewBag.appId,categoryName:that.categoryInfo.Name,Id:that.categoryInfo.Id,isFirstType:that.postdata.isFirstType },
+                    dataType: 'json',
+                    success: function (data) {
+
+                        if (!data.isok) {
+                            layer.msg(data.Msg);
+                        }else{
+                            ok=true;
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                }).then(function(){
+                    if(ok){
+                        $.ajax({
+                            type: 'POST',
+                            url: '/Plat/Store/SaveCategory',
+                            data: {platStoreCategory:that.categoryInfo ,appId:@ViewBag.appId},
+                            dataType: 'json',
+                            success: function (data) {
+                                layer.msg(data.Msg);
+                                if (data.isok) {
+
+                                    window.setTimeout(function(){
+                                        window.location.reload();
+                                    },2000);
+                                }
+                            },
+                            error: function (data) {
+                                layer.msg('与服务器通讯错误');
+                            }
+                        });
+                    }
+
+
+                });
+
+            },UploadImg: function () {
+                var that=this;
+                var framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=0&maxImgSize=1&objKey=curMaterialPath&objType=1&remainCount=1";
+                $("#uploadFrame").attr("src",framSrc);
+                $("#addModal_UploadImg").modal('show');
+
+            }
+        },created:function(){
+            var that=this;
+             that.getCategoryList();
+        }
+    });
+</script>

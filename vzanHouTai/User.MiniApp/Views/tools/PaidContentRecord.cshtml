@@ -1,0 +1,211 @@
+﻿@{
+    ViewBag.Title = "内容付费记录";
+
+    int appId = ViewBag.appId;
+    string viewStruct = ViewBag.view;
+    if (viewStruct != "standalone")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<link href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" rel="stylesheet" type="text/css" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+
+<div id="app" v-cloak style="margin:5px;">
+    <div style="margin-left:17px;">
+        <ul class="searchul">
+            <li><span>购买用户：</span><input v-model="inputPara.contact" type="search" placeholder="手机号搜索" class="input-sm form-control" /></li>
+            <li><span>资讯标题：</span><input v-model="inputPara.title" type="search" class="input-sm form-control" /></li>
+            <li><span>购买时间：</span><input v-model="dateHolder" id="payDate" type="text" class="input-sm form-control" /></li>
+        </ul>
+        <div class="d-flex d-flex-center formsearch">
+            <a @@click="searchBegin" style="cursor:pointer" class="btn btn-primary">搜索</a>
+            @*<a @@click="clearInput" style="cursor:pointer;margin-left:1rem;" class="btn btn-primary">清空</a>*@
+        </div>
+    </div>
+    <br />
+    <br />
+    <table class="layui-table">
+        <thead>
+            <tr>
+                <th class="centertext">资讯标题</th>
+                <th class="centertext">资讯类型</th>
+                <th class="centertext">商品价格（元）</th>
+                <th class="centertext">支付金额（元）</th>
+                <th class="centertext">用户昵称</th>
+                <th class="centertext">用户手机号</th>
+                <th class="centertext">购买时间</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="payment in records">
+                <td>{{payment.Title}}</td>
+                <td>{{contentType[payment.ContentType.toString()]}}</td>
+                <td>{{(payment.Snapshot.OriginalAmout / 100).toFixed(2)}}</td>
+                <td>{{(payment.Snapshot.PaidAmout / 100).toFixed(2)}}</td>
+                <td>{{payment.Snapshot.UserName}}</td>
+                <td>{{payment.Snapshot.Contact}}</td>
+                <td>{{payment.Addtime}}</td>
+            </tr>
+            <tr v-if="!records.length">
+                <td colspan="7" style="text-align:center">暂无记录</td>
+            </tr>
+        </tbody>
+    </table>
+    <div id="pager" style="text-align:center"></div>
+</div>
+
+<script id="contentType" type="application/json">
+    {"@((int)PaidContentType.专业版图文)":"文章","@((int)PaidContentType.专业版视频)":"视频"}
+</script>
+<input id="appId" value="@appId" type="hidden" />
+
+<script>
+    var appId = document.getElementById('appId').value;
+    var contentType = JSON.parse(document.getElementById('contentType').innerText.trim());
+    var standalone = null;
+    var _layer = parent.layer;
+
+    $(function () {
+        var app = new Vue({
+            el: '#app',
+            data: {
+                records: [],
+                contentType: contentType,
+                //输入参数
+                inputPara: {
+                    title: '',
+                    contact: '',
+                    queryStart: null,
+                    queryEnd: null,
+                },
+                //已查询参数
+                queryPara: {
+                    appId: appId,
+                    title: '',
+                    contact: '',
+                    queryStart: null,
+                    queryEnd: null,
+                    pageIndex: 1
+                },
+                //日期控件
+                dateHolder:null,
+                datePicker: {
+                    elem: '#payDate',
+                    theme: 'grid',
+                    range: '~',
+                    value: '',
+                    done: function (valueStr, start, end) {
+                        app.inputPara.queryStart = String.raw`${start.year}/${start.month}/${start.date}`;
+                        app.inputPara.queryEnd = String.raw`${end.year}/${end.month}/${end.date} 23:59:59`;
+                    }
+                },
+                //翻页控件
+                pager: {
+                    elem: 'pager',
+                    count: 0, //数据总数，从服务端得到
+                    curr: 1,
+                    limit: 10,
+                    jump: function (obj, first) {
+                        //首次执行
+                        if (!first) {
+                            app.pageChange(obj.curr);
+                        }
+                    },
+                    theme: '#1E9FFF',
+                    layout: ['prev', 'page', 'next', 'skip']
+                }
+            },
+            updated: function () {
+                console.log('updated');
+                layui.use(['element', 'laydate', 'form', 'laypage'], this.iniLayer);
+            },
+            created: function () {
+                console.log('created');
+                this.pageChange(1);
+            },
+            methods: {
+                searchBegin: function () {
+                    this.queryPara.contact = this.inputPara.contact;
+                    this.queryPara.title = this.inputPara.title;
+                    this.queryPara.queryStart = this.inputPara.queryStart;
+                    this.queryPara.queryEnd = this.inputPara.queryEnd;
+                    this.queryPara.pageIndex = 1;
+                    this.pager.curr = 1;
+                    this.getList(this.queryPara);
+                },
+                pageChange: function (pageIndex) {
+                    this.queryPara.pageIndex = pageIndex;
+                    this.getList(this.queryPara, this.pageChanged);
+                },
+                getList: function (queryPara, callBack) {
+                    thisApp = this;
+                    $.post('/Tools/PaidContentRecord', queryPara).then(function (result) {
+                        if (!result.isok) {
+                            layer.msg(result.Msg);
+                            return;
+                        }
+                        if (thisApp.pager.curr === 1) {
+                            thisApp.pager.count = result.dataObj.total;
+                        }
+                        result.dataObj.records.forEach((record) => { record.Snapshot = JSON.parse(record.Snapshot); });
+                        thisApp.records = result.dataObj.records;
+                        !callBack || callBack(result);
+                    }).fail(function (result) {
+                        alert(String.raw`error:${result.Msg}`);
+                    });
+                },
+                iniLayer: function () {
+                    var $ = layui.jquery, element = layui.element, form = layui.form;
+                    //时间选择器
+                    layui.laydate.render(this.datePicker);
+                    //翻页控件
+                    layui.laypage.render(this.pager);
+                },
+                clearInput: function () {
+                    this.inputPara.contact = '';
+                    this.inputPara.title = '';
+                    this.dateHolder = null;
+                    this.inputPara.queryStart = null;
+                    this.inputPara.queryEnd = null;
+                },
+            },
+        });
+    });
+</script>
+
+<style>
+    .centertext {
+        vertical-align: middle !important;
+        text-align: center;
+    }
+
+    span.layui-laypage-curr, span.layui-laypage-skip {
+        float: none;
+        padding-top: 0;
+    }
+
+    .searchul {
+        width: 100%;
+        margin: 20px 0px 14px 0px;
+    }
+
+        .searchul li { /*width:25%;*/
+            float: left;
+            margin-right: 25px;
+        }
+
+            .searchul li span {
+                float: left;
+                padding-top: 5px;
+                padding-right: 8px;
+            }
+
+            .searchul li input, .searchul li select {
+                width: 140px;
+            }
+</style>

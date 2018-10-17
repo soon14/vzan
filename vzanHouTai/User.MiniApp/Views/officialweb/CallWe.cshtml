@@ -1,0 +1,416 @@
+﻿@using User.MiniApp.comment
+@using Entity.MiniApp.Conf
+@model Moduls
+@{
+    //行业版同城配置
+    ViewBag.Title = "联系我们";
+    ViewBag.PageType = 1;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+
+
+<style>
+    .edui-modal {
+        margin-top: 150px;
+    }
+
+    .twxq-new-kuang {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-right: 10px;
+        background: #fff;
+    }
+
+    .twxq-edit-zhanshi {
+        border: 2px dashed #fc7d7d;
+        padding: 10px;
+        min-height: 108px;
+        position: relative;
+    }
+
+    .spgl-bianji-bt {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: inline-block;
+        background-color: rgba(0,0,0,0.3);
+        color: #fff;
+        padding: 0 5px;
+        margin-left: 1px;
+        font-size: 12px;
+    }
+
+    .bz {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .spxqq-f p:first-child {
+        font-size: 17px;
+    }
+
+    .spxqq-f {
+        text-align: center;
+        margin-top: 17px;
+        line-height: 25px;
+    }
+
+    #label_1 {
+        color: white;
+        display: none;
+    }
+
+    .checkKey {
+        background-color: coral;
+        color: white !important;
+        border-color: transparent;
+    }
+
+    .noCheckKey {
+        background-color: white;
+        border-color: black;
+        color: black;
+    }
+</style>
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            <tr>
+                <td style="width:120px;"><p class="model_right_t_font">标题</p></td>
+                <td>
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control width400", maxlength = 25 })
+                </td>
+            </tr>
+            <tr>
+                <td><p class="model_right_t_font">上传图片</td>
+                <td>
+                    @Html.FileUploadFor(m => m.LitleImgUrl, controllerWidth: 120, initImageList: new List<object> { new { id = Model.Id, url = Model.LitleImgUrl } }, removeCallback: "removeLogoFun")
+                    <div>建议图片尺寸：750*1334，宽高比例：9:16</div>
+                </td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><p class="model_right_t_font">上传二维码</td>
+                <td>
+                    @Html.FileUploadFor(m => m.ImgUrl, controllerWidth: 120, initImageList: new List<object> { new { id = Model.Id, url = Model.ImgUrl } }, removeCallback: "removeLogoFun")
+                    <div>建议图片尺寸：350*350，宽高比例：1:1</div>
+                </td>
+            </tr>
+            <tr style="display:none;">
+                <td><p class="model_right_t_font">简介</p></td>
+                <td>@Html.TextAreaFor(m => m.Content, new { @class = "form-control width400", rows = "4" })</td>
+            </tr>
+            <tr>
+                <td><p class="model_right_t_font">联系电话</p></td>
+                <td>
+                    @Html.TextBoxFor(m => m.mobile, new { @class = "form-control width400", maxlength = 13, onkeyup = "this.value=this.value.replace(/[^\\d]/g,'');" })
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align:top;"><p class="model_right_t_font">地图</p></td>
+                <td>
+                    <table>
+                        <tr>
+                            <td>
+                                <input  type="button" onclick="clickamp(this)" style="height:30px;width:100px;border-radius:5px;outline:none;display:none;" value="显示地图" />
+                            </td>
+                            <td>
+                                @Html.TextBoxFor(m => m.Address, new { @class = "form-control width300", palcehlder = "请输入详细地址", maxlength = 100 })
+                            </td>
+                            <td style="vertical-align:bottom;">
+                                <div style="margin-left:10px;">
+                                    @*<input type="button" value="定位" id="btnMap" style="width:60px;height:30px;margin-left:10px;border-radius:5px;border:none;background-color:#169BD5;color:#fff;" />*@
+                                    <a data-toggle="modal" href="#ChooseLocationModal" class="btn btn-info">＋选择地图位置</a>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td colspan="3">
+                                <div style="height:400px;display:none;" id="mapModalContent">
+
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <!--隐藏值-->
+            <input type="hidden" id="appId" value="@ViewBag.appId" />
+            <input type="hidden" id="Level" value="@ViewBag.Level" />
+            <input type="hidden" id="keyid" value="@Model.Id" />
+        </table>
+    </form>
+</div>
+<input type="hidden" id="AddressPoint" value="@Model.AddressPoint" />
+<div class="col-md-offset-2">
+    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+</div>
+
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- #region 选择地图位置弹窗 -->
+<div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+    <div class="modal-dialog modal-lg" role="document" style="width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+            </div>
+            <div class="modal-body">
+                <iframe name="mapframe" src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="ChooseLocationOK">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+
+
+<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.Content)
+</script>
+<script>
+    //点击显示或隐藏地图
+    function clickamp(e)
+    {
+        if (e.value == "显示地图")
+        {
+            $('#mapModalContent').css('display',"block");
+            e.value = "隐藏地图"
+        }
+        else {
+            $('#mapModalContent').css('display', "none");
+            e.value = "显示地图";
+        }
+    }
+    // #region 地图回调
+    //function mapCallback(point,address) {
+    //    $('#AddressPoint').val(point.lng + "," + point.lat);
+    //    $("#Address").val(address);
+    //}
+    $(function () {
+
+        $(document).on("click", "#ChooseLocationOK", function () {
+            var _location = mapframe.window.document.getElementById("poi_cur").value;
+            var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+            var _address = mapframe.window.document.getElementById("addr_cur").value;
+            if (_location == "") {
+                layer.msg("您还未选择地理位置！");
+                return;
+            }
+            _location = _location.split(",");
+
+            $('#AddressPoint').val(_location[1] + "," + _location[0]);
+            $("#Address").val(_address);
+
+            $("#ChooseLocationModal").modal("hide");
+        });
+
+
+        // #region 保存
+        $('#saveBtn').click(function () {
+            if ($("#Title").val().trim() == "") {
+                AppTools.Alert("请输入标题");
+                return;
+            }
+
+            var imgArray = [];
+            var imgs = $('input[name="LitleImgUrl"]');
+            for (var j = 0; j < imgs.length; j++) {
+                imgArray.push($(imgs[j]).val());
+            }
+            var LitleImgUrl = imgArray.join();
+            if (LitleImgUrl == '') {
+                if ('@Model.LitleImgUrl' == "") {
+                    AppTools.Alert("请上传图片");
+                    return;
+                }
+                else {
+                    LitleImgUrl = '@Model.LitleImgUrl'
+                }
+            }
+
+            imgArray = [];
+            var imgs = $('input[name="ImgUrl"]');
+            for (var j = 0; j < imgs.length; j++) {
+                imgArray.push($(imgs[j]).val());
+            }
+            var ImgUrl = imgArray.join();
+            if (ImgUrl == '') {
+                if ('@Model.ImgUrl' == "")
+                {
+                    AppTools.Alert("请上传二维码");
+                    return;
+                }
+                else
+                {
+                    ImgUrl = '@Model.ImgUrl'
+                }
+            }
+            //var LogoUrl = $('div[class="dz-image"]>img');
+            //var ImgUrl = "";
+            //if (LogoUrl != null && LogoUrl != undefined && LogoUrl.length > 0) {
+            //    var tempurl = $('input[name="ImgUrl"]').val()
+            //    ImgUrl = LogoUrl[0].src;
+            //    if (tempurl != undefined) {
+            //        ImgUrl = tempurl;
+            //    }
+            //}
+
+            //var LogoUrl2 = $('div[class="dz-image"]>img');
+            //var LitleImgUrl = "";
+            //if (LogoUrl2 != null && LogoUrl2 != undefined && LogoUrl2.length > 0) {
+            //    var tempurl = $('input[name="LitleImgUrl"]').val()
+            //    LitleImgUrl = LogoUrl2[0].src;
+            //    if (tempurl != undefined) {
+            //        LitleImgUrl = tempurl;
+            //    }
+            //}
+
+            if ($("#mobile").val().trim() == "") {
+                AppTools.Alert("请输入联系电话");
+                return;
+            }
+            if ($("#Address").val().trim() == "") {
+                AppTools.Alert("请输入详细地址");
+                return;
+            }
+            if ($("#AddressPoint").val().trim() == "") {
+                AppTools.Alert("请在地图中定位");
+                return;
+            }
+
+            saveStore(LitleImgUrl, ImgUrl);
+        });
+
+        function saveStore(LitleImgUrl, ImgUrl) {
+            var appId = $('#appId').val();
+            var Level = $("#Level").val();
+
+            var keyid = $("#keyid").val();
+            var Content = $("#Content").val();//ue.getContent();
+            var Address = $("#Address").val();
+            var mobile = $("#mobile").val();
+            var AddressPoint = $("#AddressPoint").val();
+            var title = $("#Title").val();
+            if (Address != '@Model.Address')
+            {
+                if(AddressPoint=='@Model.AddressPoint')
+                {
+                    AppTools.Alert("请在地图中定位");
+                    return;
+                }
+            }
+
+            $('#saveBtn').attr('disabled', "true");
+
+            $('#loadModal').modal('show');
+            $.post('/officialweb/AddOrEdit',
+                {
+                    Id:keyid,
+                    appId: appId,
+                    Level: Level,
+                    Content: Content,
+                    ImgUrl: ImgUrl,
+                    LitleImgUrl: LitleImgUrl,
+                    Address: Address,
+                    mobile: mobile,
+                    AddressPoint: AddressPoint,
+                    Title: title,
+                    State:1
+                },
+                function (data) {
+                    $('#loadModal').modal('hide');
+                    AppTools.Alert(data.Message);
+                    $('#saveBtn').removeAttr('disabled');
+                    location.reload();
+                });
+        }
+        // #endregion
+
+        // #region 地图弹框
+        $('#btnMap').on('click', function () {
+            var lng = 0;
+            var lat = 0;
+            var address = $("#Address").val();
+            $.post('/officialweb/_PartailMapPoint',
+            {
+                lat: lat,
+                lng: lng,
+                address: address
+            }, function (data) {
+                $('#mapModalContent').css('display', "block");
+                $('#mapModalContent').html(data);
+            });
+        });
+        // #endregion
+    });
+</script>

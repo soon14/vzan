@@ -1,0 +1,260 @@
+﻿@model RedisModel<EntStoreCode>
+@{
+    //小程序专业店铺二维码配置
+    ViewBag.Title = "店铺二维码";
+    Layout = "";
+    int storeCodeSwtich = ViewBag.storeCodeSwtich;//扫码购物功能开关
+}
+
+<link rel="stylesheet" href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=1" />
+<script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+<style>
+    .ggtable tr, td {
+        border-top: none !important;
+    }
+</style>
+<div id="storeapp" hidden style="overflow: hidden;">
+    <table class="table ggtable" style="text-align: left;">
+        <tr>
+            <td colspan="2">扫码购买商品使用流程</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <div>
+                    <img src="@(WebSiteConfig.cdnurl)content/enterprise/img/storecode.png" />
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td width=120px;">店铺二维码：</td>
+            <td>
+                @{
+                    if (ViewBag.PageType == 22 && storeCodeSwtich == 1)
+                    {
+                        <a href="#" style="color: #337ab7;" title="请升级更高版本">+新增二维码</a>
+                    }
+                    else
+                    {
+                        <a href="#" v-on:click="addCode()" style="color: #337ab7;">+新增二维码</a>
+                    }
+                }
+                
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <table id="tableNo" class="layui-table" style="width:50%;">
+                    <tr style="background-color:#D3D3D3;">
+                        <th width="20%">名称</th>
+                        <th width="40%">二维码</th>
+                        <th width="15%">用户扫码量</th>
+                        <th width="15%">用户下单量</th>
+                        <th>操作</th>
+                    </tr>
+                    <tr v-if="storecodelist!=null && storecodelist.Count>0" v-for="(code,index) in storecodelist.DataList">
+                        <td width="80px">{{code.Scene}}</td>
+                        <td width="180px">
+                            <img v-bind:src="code.ImgUrl" style="width:50px;height:50px;" />
+                            <a href="#" style="" v-on:click="LockBigImg(code.ImgUrl)">查看大图</a>
+                            <a v-bind:href="code.ImgUrl" target="_blank" download="filename.jpg">下载图片</a>
+                        </td>
+                        <td width="80px">{{code.ScanCount}}</td>
+                        <td width="80px">{{code.OrderCount}}</td>
+                        <td width="50px">
+                            <a href="#" style="color:red;" v-on:click="delecode(code.Id)">删除</a>
+                        </td>
+                    </tr>
+                    <tr v-if="storecodelist==null || storecodelist.Count==0">
+                        <td colspan="3" style="text-align:center;">暂无数据</td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+        <tr v-if="storecodelist.Count>0">
+            <td></td>
+            <td>
+                <div id="pages" style="text-align: center;margin-top: 0.5rem;width:50%;" v-if="storecodelist.Count>0"></div>
+            </td>
+        </tr>
+    </table>
+
+    <div id="editcode" hidden>
+        <div style='margin-top: 20px;margin-left: 20px;'>二维码名称：
+        <input class='form-control' style='display: inline-block;width: 140px;' type='text' id='nameVal'>
+        </div>
+        <div style='margin-top: 5px;margin-left: 20px;'>二维码大小：
+        <input class='form-control' style='display: inline-block;width: 140px;' type='text' value='200' id='codewidth' onkeyup="value=value.replace(/[^\d]/g,'')" maxlength="3"/>px
+        <div style="color:red;text-align: center;">图片尺寸范围200~750</div>
+        </div>
+    </div>
+</div>
+<script>
+    var _layer = parent.layer;
+    var storeapp = new Vue({
+        el: "#storeapp",
+        data: {
+            appId: @ViewBag.appId,
+            storecodelist:[],
+            pageIndex: 1,
+            pageSize:10,
+            currenteditid:0,
+            name:'',
+            codewidth:200,
+        },
+        methods: {
+            //查看大图
+            LockBigImg:function(imgurl){
+                var htmldiv="<div ><img  style='width:220px;height:220px;' src='"+imgurl+"' /></div>";
+                _layer.alert(htmldiv);
+            },
+            //删除
+            delecode:function(id){
+                _layer.confirm('你确定要删除这张二维码吗？', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                    $.ajax({
+                        type: "Post",
+                        url: "/enterprisepro/AddOrEditStoreCode",
+                        data:
+                            {
+                                appId:storeapp.appId,
+                                id : id
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                _layer.msg("删除成功", { anim: 0, time: 1000 }, function () {
+                                    _layer.load(1);
+                                    window.parent.location.reload();
+                                });
+                            }
+                            else
+                            {
+                                _layer.msg("删除失败");
+                            }
+                        }
+                    });
+                }, function(){
+                });
+            },
+            //添加
+            addCode:function(){
+                _layer.open({
+                    type:1,
+                    zIndex:999999,
+                    title: "添加二维码",
+                    shade: 0.3,
+                    area: ['350px', '210px'], //宽高
+                    content: $("#editcode").html(),//this.adddiv(),
+                    btn:["确定","取消"],
+                    end: function () {
+                        storeapp.currenteditid=0;
+                    },
+                    yes:function(){
+                        if(storeapp.currenteditid>0)
+                        {
+                            return;
+                        }
+                        var name = window.parent.document.getElementById("nameVal").value;//$("#nameVal").val();
+                        if (name == undefined || name.length <= 0) {
+                            return _layer.msg("请输入二维码名称");
+                        }
+                        var codewidth =window.parent.document.getElementById("codewidth").value;// $("#codewidth").val();
+                        if(codewidth==undefined || codewidth.length<=0)
+                        {
+                            return _layer.msg("请输入二维码大小");
+                        }
+                        if (!/^\d*$/.test(codewidth)) {
+                            layer.msg("请输入数字！");
+                            return;
+                        }
+                        if(codewidth<200 || codewidth>750)
+                        {
+                            return _layer.msg("二维码大小范围200~750");
+                        }
+
+                        storeapp.currenteditid = _layer.load(1);
+                        $.ajax({
+                            type: "Post",
+                            url: "/enterprisepro/AddOrEditStoreCode",
+                            data:
+                                {
+                                    appId:storeapp.appId,
+                                    name:name,
+                                    codewidth:codewidth,
+                                },
+                            success: function (data) {
+                                if (data.isok) {
+                                    _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                        _layer.load(1);
+                                        window.parent.location.reload();
+                                    });
+                                }
+                                else {
+                                    _layer.msg(data.Msg);
+                                    _layer.close(storeapp.currenteditid);
+                                    storeapp.currenteditid=0;
+                                }
+                            }
+                        });
+                    },
+                });
+
+            },
+            adddiv:function()
+            {
+                var htmlarray = [];
+                htmlarray[htmlarray.length] = "<div style='margin-top: 20px;margin-left: 20px;'>二维码名称：<input class='form-control' style='display: inline-block;width: 140px;' type='text' v-model='name' id='nameVal'></div><div style='margin-top: 5px;margin-left: 20px;'>二维码大小：<input class='form-control' style='display: inline-block;width: 140px;' type='number' value='200' step='1' id='codewidth' min='10' max='10000'/>px</div>";
+                return htmlarray.join("");
+            },
+            getStoreCodelist: function () {
+                if (this.isloading) {
+                    _layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                $.post("/enterprisepro/GetStoreCodeList", {appId:this.appId,pageIndex:this.pageIndex,pageSize:this.pageSize}, function (data) {
+                    if (!data.isok) {
+                        _layer.msg(data.Msg);
+                    } else {
+                        storeapp.storecodelist = data.dataObj;
+                        storeapp.resetPage();
+                    }
+                    storeapp.isloading = false;
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: storeapp.storecodelist.Count //数据总数，从服务端得到
+                        , curr: storeapp.pageIndex //当前页
+                        , limit: storeapp.pageSize
+                        , jump: function (obj, first) {
+                            storeapp.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                storeapp.getStoreCodelist();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+        },
+        mounted: function () {
+            $("#storeapp").show();
+            this.getStoreCodelist();
+        }
+    });
+</script>

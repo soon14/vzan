@@ -1,0 +1,1562 @@
+﻿
+@model FoodGoods
+@{
+    ViewBag.Title = "菜品编辑";
+    ViewBag.PageType = (int)TmpType.小程序餐饮模板;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int storeId = Model.FoodId;
+
+    List<FoodGoodsType> ptypes =  FoodGoodsTypeBLL.SingleModel.GetlistByFoodId(Model.FoodId);//当前店铺的分类
+                                                                                      //选用的分类
+    string[] typeIds = Model.TypeId.Split(',');
+    List<FoodGoodsType> selPtypes = (ptypes == null || !ptypes.Any()) ? new List<FoodGoodsType>() : ptypes.Where(p => typeIds.Contains(p.Id.ToString())).ToList();
+    if (selPtypes!= null && selPtypes.Any())    //同步选中的分类
+    {
+        ptypes.ForEach(t =>
+        {
+            t.sel = selPtypes.Any(s => s.Id == t.Id);
+        });
+    }
+
+    List<FoodLabel> plabels =  FoodLabelBLL.SingleModel.GetList(string.Format("FoodStoreId={0}", Model.FoodId), 50, 1, "*", "id asc") ?? new List<FoodLabel>();//当前店铺的标签
+                                                                                                                                                        //选用的标签
+    string[] labelIds = Model.labelIdStr.Split(',');
+    List<FoodLabel> selPlabels = (labelIds == null || !labelIds.Any()) ? new List<FoodLabel>() : plabels.Where(p => labelIds.Contains(p.Id.ToString())).ToList();
+    if (selPlabels != null && selPlabels.Any())    //同步选中的标签
+    {
+        plabels.ForEach(t =>
+        {
+            t.isCheck = selPlabels.Any(s => s.Id == t.Id);
+        });
+    }
+
+    //所有的规格集合
+    List<FoodGoodsAttr> goodsAttr = FoodGoodsAttrBLL.SingleModel.GetList(string.Format(" FoodId = {0} and State = 0 ", Model.FoodId));
+    if (goodsAttr != null && goodsAttr.Any())
+    {
+        goodsAttr.ForEach(ga =>
+        {
+            ga.SpecList = FoodGoodsSpecBLL.SingleModel.GetList(string.Format(" AttrId = {0} and State = 0 ", ga.Id));
+        });
+    }
+
+    //正在使用的规格
+    List<FoodGoodsAttrSpec> attrSpecList = FoodGoodsAttrSpecBLL.SingleModel.GetList(string.Format(" FoodGoodsId = {0} ", Model.Id));
+    //List <FoodGoodsAttr> pickGoodsAttr = (goodsAttr == null || !goodsAttr.Any()) ? new List<FoodGoodsAttr>() :
+    //        goodsAttr.Where(g => attrSpecList.Any(a => a.AttrId == g.Id)).ToList();
+    //if (pickGoodsAttr != null && pickGoodsAttr.Any())
+    //{
+    //    pickGoodsAttr.ForEach(ga =>
+    //    {
+    //        ga.SpecList = ga.SpecList.Where(gs => attrSpecList.Any(asl => asl.SpecId == gs.Id)).ToList();
+    //    });
+    //}
+    List<FoodGoodsAttr> pickGoodsAttr = new List<FoodGoodsAttr>();
+    if (goodsAttr != null && goodsAttr.Any() && attrSpecList!=null && attrSpecList.Any())
+    {
+        foreach (FoodGoodsAttr item in goodsAttr)
+        {
+            FoodGoodsAttrSpec specitem = attrSpecList.Where(w => w.AttrId == item.Id).FirstOrDefault();
+            if(specitem!=null)
+            {
+                FoodGoodsAttr model = new FoodGoodsAttr();
+                model.Id = item.Id;
+                model.AttrName = item.AttrName;
+                model.FoodId = item.FoodId;
+                model.sel = item.sel;
+                model.Sort = item.Sort;
+                model.SpecList = item.SpecList;
+                model.State = item.State;
+                
+                pickGoodsAttr.Add(model);
+            }
+        }
+        if (pickGoodsAttr != null && pickGoodsAttr.Any())
+        {
+            pickGoodsAttr.ForEach(ga =>
+            {
+                ga.SpecList = ga.SpecList.Where(gs => attrSpecList.Any(asl => asl.SpecId == gs.Id)).ToList();
+            });
+        }
+    }
+
+
+    //产品类型，是拼团商品还是普通商品
+    int goodtype = ViewBag.goodtype ?? 0;
+}
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<style>
+    .width100 { width: 100px;}
+    .picklabels { white-space: normal; word-break: break-all; }
+    .picklabels span { cursor: pointer; padding: 5px 10px; border: 1px solid #5B94FD; color: #5B94FD; border-radius: 5px; text-align: center; display: inline-block; margin: 10px 10px 0 0; }
+    .picklabels span.sel { background-color: #5B94FD; color: #fff; }
+    .btn-primary { background-color: rgba(16, 142, 233, 1) !important; color: #fff; border-color: rgba(16, 142, 233, 1) !important; }
+
+    .alert-info { display: inline-block; min-width: 100px; margin-right: 10px; padding: 5px; margin-bottom: 10px; }
+
+    .gg_line { padding: 5px; }
+    .gg_line .goodlabels { padding: 10px 0; }
+    .gg_title { background-color: #E5E5E5; padding: 10px; }
+    .ggtable { border-top: 1px solid #ccc; border-left: 1px solid #ccc; }
+    .ggtable tr td { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; border-collapse: collapse; }
+    .w50 { width: 50px; }
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+    .i_Posters > div { display: inline-block;vertical-align:middle; margin-right:10px;box-shadow: 0 0 2px #ccc;}
+    .DelPoster { position:absolute;right:5px;top:5px;}
+    .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button {box-shadow:none!important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+    .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700;margin-top:-10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+
+    .region-head { font-size: 14px; color: dodgerblue; border-left: 2px solid dodgerblue; padding-left: 10px; }
+    .width600 { width:600px; }
+
+    .layui-form-switch { height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form { width: 665px; }
+    .layui-form tr { height: 50px; }
+    .layui-form .title { text-align: right; }
+    .layui-form-label {text-align:right;}
+    .layui-form-item { margin-bottom: 0px; margin-top:5px;}
+    /*.layui-input-block { margin-left: 0px; }*/
+
+</style>
+
+<div id="app" v-cloak>
+    <div>
+        <input type="button" value="保存" class="btn btn-primary" v-on:click="save" />
+        @if (goodtype == 1)
+        {
+            <a href="/entgroups/MiniappStoreGroupsManager?appId=@(appid)&PageType=@(ViewBag.PageType)" class="btn btn-default">返回</a>
+        }
+        else
+        {
+            <a href="/foods/FoodGoodsList?appId=@(appid)" class="btn btn-default">返回</a>
+        }
+    </div>
+    <div class="mt10" v-show="@(goodtype == (int)EntGoodsType.拼团产品 ? "false" : "true")">
+        <h2 class="region-head">售卖设置</h2>
+        <form class="layui-form f fv" action="">
+            <div class="layui-form-item">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">堂食:</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="openTheShop" lay-skin="switch" lay-text="开|关" v-bind:checked="p.openTheShop==1">
+                    </div>
+                </div>
+                <label class="layui-form-label">外卖:</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="openTakeOut" lay-skin="switch" lay-text="开|关" v-bind:checked="p.openTakeOut==1">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">餐盒:</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="isPackin" lay-skin="switch" lay-text="收费|免费" v-bind:checked="p.isPackin==1">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="wrap mt10">
+        <h2 class="region-head">基础信息</h2>
+        <table width="60%" class="formtable">
+            <tr>
+                <td width="125" align="right"><span class="danger">*</span>菜品标题：</td>
+                <td align="left">
+                    <input type="text" name="" v-model="p.GoodsName" class="form-control width400" placeholder="必填，40个字以内" size="40" maxlength="40" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top"><span class="danger">*</span>菜品图片：</td>
+                <td align="left">
+                    <div class="pimg">
+                        <img style="height:150px;width:150px;" :src="p.ImgUrl" v-if="p.ImgUrl!=''&&p.ImgUrl!=null" v-on:click="UploadImg(0)" />
+                        <div class="plus-button" v-on:click="UploadImg(0)" v-else>
+                            <div class="s-image-uploader-wrapper">
+                                <div>
+                                    <div class="plus">+</div>
+                                    <div class="plus-label">上传图片</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <b class="warn">建议尺寸：300*300px</b>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><span class="danger">*</span>菜品分类：</td>
+                <td align="left">
+                    <div class="d-flex fc">
+                        <div class="goodlabels">
+                            <div class="alert alert-info" v-for="(item,index) in picktype">
+                                <button type="button" class="close" v-on:click="removePickType(index)" v-show="!groupedit2">×</button>
+                                {{item.Name}}
+                            </div>
+                        </div>
+                        <div>
+                            <input type="button" class="btn btn-primary" value="＋增加分类" v-on:click="addnewptype" v-show="!groupedit2"/>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr v-show="@(goodtype == (int)EntGoodsType.拼团产品 ? "false" : "true")">
+                <td align="right" valign="top" >菜品标签：</td>
+                <td align="left">
+                    <div class="d-flex fc">
+                        <div class="goodlabels">
+                            <div class="alert alert-info" v-for="(item,index) in picklabel">
+                                <button type="button" class="close" v-on:click="removePickLabel(index)">×</button>
+                                {{item.LabelName}}
+                            </div>
+                        </div>
+                        <div>
+                            <input type="button" class="btn btn-primary" value="＋增加标签" v-on:click="addnewlabel" />
+                        </div>
+                        <span class="warn mt10">*最多可添加5个标签</span>
+                    </div>
+                </td>
+            </tr>
+            @*<tr v-show="!(groupedit2 && p.GASDetailList.length == 0)">*@
+            <tr>
+                <td align="right" valign="top">菜品规格：</td>
+                <td valign="top">
+                    <div><input type="button" class="btn btn-primary groupelement" value="添加规格项目" v-on:click="addSpecificationItem" v-bind:disabled ="groupedit2" /></div>
+                    <div>
+                        <div v-for="(item,index) in pickGoodsAttr" class="gg_line">
+                            <div class="d-flex d-flex-center gg_title">
+                                <div class="flex">
+                                    <select v-model="item.Id" v-on:change="changeSpecification(item)" v-bind:disabled="groupedit2">
+                                        <option v-for="(gg_item,gg_index) in goodsAttr" v-bind:value="gg_item.Id">{{gg_item.AttrName}}</option>
+                                    </select>
+                                </div>
+                                <div><a class="btn-link" v-on:click="pickGoodsAttr.splice(index,1)" v-show="!groupedit2">删除</a></div>
+                            </div>
+                            <div class="goodlabels">
+                                <div class="alert alert-info" v-for="(value_item,value_index) in item.SpecList" v-if="item.SpecList.length>0">
+                                    <button type="button" class="close" v-on:click="item.SpecList.splice(value_index,1)" v-show="!groupedit2">×</button>
+                                    {{value_item.SpecName}}
+                                </div>
+
+                                <a v-on:click="addSpecificationValue(item,index)" v-show="!groupedit2">＋添加规格值</a>
+                            </div>
+                        </div>
+
+                        <div class="" v-if="pickGoodsAttr.length>0">
+                            <table width="100%" class="ggtable">
+                                <tr class="gg_title">
+                                    <td v-for="(item,index) in pickGoodsAttr" v-if="item.SpecList.length>0">
+                                        {{item.AttrName}}
+                                    </td>
+                                    <td v-if="goodtype==1">原价</td>
+                                    <td>{{goodtype==1?"单买价":"价格"}}</td>
+                                    <td v-if="goodtype==1">拼团价</td>
+                                    <td>库存</td>
+                                </tr>
+                                <template v-if="pickGoodsAttr.length==1">
+                                    <tr v-for="(item,index) in pickGoodsAttr[0].SpecList">
+                                        <td>
+                                            {{item.SpecName}}
+                                        </td>
+                                        <!--原价-->
+                                        <td width="110" align="center" v-if="goodtype==1"><input type="text" class="original-price form-control input-mini" v-on:input="changePrice" /> </td>
+                                        <!--单买价/普通商品价格-->
+                                        <td width="110" align="center"><input type="text" v-bind:disabled="groupedit2" class="price form-control input-mini" v-on:input="changePrice" /> </td>
+                                        <!--拼团价-->
+                                        <td width="110" align="center" v-if="goodtype==1"><input v-bind:disabled="groupedit2" type="text" class="group-price form-control input-mini" v-on:input="changePrice" /> </td>
+                                        <!--库存-->
+                                        <td width="110" align="center"><input type="text" class="stock form-control input-mini" v-on:input="changeStock" /> </td>
+                                    </tr>
+                                </template>
+                                <template v-else>
+                                    <tr v-for="(item,index) in buildSpecificationTable()">
+                                        <template v-for="(col_item,col_index) in item">
+                                            <td valign="middle" align="center" v-bind:rowspan="GetRowSpan(col_index)" v-if="GetRowSpan(col_index)>1&&index%GetRowSpan(col_index)==0">
+                                                {{col_item.SpecName}}
+                                            </td>
+                                            <td v-else-if="GetRowSpan(col_index)==1">
+                                                {{col_item.SpecName}}
+                                            </td>
+
+                                        </template>
+
+                                        <!--原价-->
+                                        <td width="110" align="center" v-if="goodtype==1"><input type="text" class="original-price form-control input-mini" v-on:input="changePrice" /> </td>
+                                        <!--单买价/普通商品价格-->
+                                        <td width="110" align="center"><input type="text" v-bind:disabled="groupedit2" class="price form-control input-mini" v-on:input="changePrice" /> </td>
+                                        <!--拼团价-->
+                                        <td width="110" align="center" v-if="goodtype==1"><input type="text" v-bind:disabled="groupedit2" class="group-price form-control input-mini" v-on:input="changePrice" /> </td>
+                                        <!--库存-->
+                                        <td width="110" align="center"><input type="text" class="stock form-control input-mini " v-on:input="changeStock" /> </td>
+                                    </tr>
+                                </template>
+                            </table>
+                            <div v-if="pickGoodsAttr.length>0" class="gg_title" style="padding:0;">
+                                <table align="right">
+
+                                    <tr>
+                                        <td align="right">批量设置：</td>
+                                        <!--原价-->
+                                        <td width="110" align="center" v-if="goodtype==1"><input type="number" min="0" class="form-control input-mini" v-model="allOriginalPrice" /> </td>
+                                        <!--单买价/普通商品价格-->
+                                        <td width="110" align="center"><input v-bind:disabled="groupedit2" type="number" min="0" class="form-control input-mini " v-model="allPrice" /> </td>
+                                        <!--拼团价-->
+                                        <td width="110" align="center" v-if="goodtype==1"><input v-bind:disabled="groupedit2" type="number" min="0" class="form-control input-mini " v-model="allGroupPrice" /> </td>
+                                        <!--库存-->
+                                        <td width="110" align="center"><input type="number" min="-1" class="form-control input-mini" v-model="allStock" /> </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <!--原价-->
+                                        <td align="center" v-if="goodtype==1"><input type="button" class="btn btn-primary" value="确定" v-on:click="setAllOriginalPrice" /></td>
+                                        <!--单买价/普通商品价格-->
+                                        <td align="center"><input type="button" v-bind:disabled="groupedit2" class="btn btn-primary" value="确定" v-on:click="setAllPrice" /></td>
+                                        <!--拼团价-->
+                                        <td align="center" v-if="goodtype==1"><input v-bind:disabled="groupedit2" type="button" class="btn btn-primary " value="确定" v-on:click="setAllGroupPrice" /></td>
+                                        <!--库存-->
+                                        <td align="center"><input type="button" class="btn btn-primary" value="确定" v-on:click="setAllStock" /></td>
+                                    </tr>
+                                </table>
+                                <div style="clear:both;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td width="125" align="right"><span class="danger">*</span>排序：</td>
+                <td align="left">
+                    <input type="text" name="" v-model="p.Sort" class="form-control width100" placeholder="请输入数字,数字越大排序越靠前" size="100" maxlength="100" v-on:input="changeNum" />
+                </td>
+            </tr>
+            <tr v-show="pickGoodsAttr.length==0" >
+                <td width="125" align="right"><span class="danger">*</span>@(goodtype == (int)EntGoodsType.拼团产品 ? "单买价" : "售卖价格")：</td>
+                <td align="left">
+                    <input type="text" name="" v-model="p.PriceStr" class="form-control width100" placeholder="请输入金额" size="7" maxlength="7" v-on:input="changePrice" v-bind:disabled="groupedit2||pickGoodsAttr.length>0"/>
+                </td>
+            </tr>
+            <tr>
+                <td width="125" align="right"><span class="danger">*</span>库存：</td>
+                <td align="left">
+                    <input type="text" name="" v-model="p.Inventory" class="form-control width100" placeholder="请输入库存" size="7" maxlength="7" v-bind:disabled ="pickGoodsAttr.length>0" v-on:input="changeStock" />
+                </td>
+            </tr>
+
+            <tr v-show="goodtype==1">
+                <td width="125" align="right" valign="top"><label style="color: red">*</label>拼团价：</td>
+                <td align="left">
+                    <input v-bind:disabled="p.Id>0||pickGoodsAttr.length>0"  v-model="p.EntGroups.GroupPriceStr" maxlength="7" placeholder="拼团价" class="form-control width100 inputdecimal" v-on:input="changePrice"/>
+                </td>
+            </tr>
+            <tr v-show="goodtype==1">
+                <td align="right" valign="top"><label style="color: red">*</label>原价：</td>
+                <td align="left">
+                    <input v-bind:disabled="p.Id>0||pickGoodsAttr.length>0"  v-model="p.EntGroups.OriginalPriceStr" maxlength="7" placeholder="原价" class="form-control width100 inputdecimal" v-on:input="changePrice"/>
+                </td>
+            </tr>
+            <tr v-show="goodtype==1">
+                <td align="right" valign="top"><label style="color: red">*</label>团长减价：</td>
+                <td align="left">
+                    <input v-bind:disabled="p.Id>0" v-model="p.EntGroups.HeadDeductStr" placeholder="团长减价" class="form-control width100 limitinput inputdecimal " v-on:input="changePrice"/>
+                </td>
+            </tr>
+            <tr v-show="goodtype==1">
+                <td align="right" valign="top"><label style="color: red">*</label>成团人数：</td>
+                <td align="left">
+                    <input type="text" maxlength="2" placeholder="成团人数" v-model="p.EntGroups.GroupSize" onkeyup="value = value.replace(/[^\d]/g, '')" class="form-control width100">
+                </td>
+            </tr>
+            <tr v-show="goodtype==1">
+                <td align="right" valign="top"><label style="color: red">*</label>每用户限购：</td>
+                <td align="left">
+                    <select class="form-control width100" id="LimitNum" name="LimitNum" v-model="p.EntGroups.LimitNum">
+                        <option value="0">不限</option>
+                        @for (var i = 1; i <= 20; i++)
+                        {
+                            <option value="@i">@i</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+
+            <tr v-show="goodtype==1">
+                <td align="right" valign="top"><label style="color: red">*</label>团有效时长：</td>
+                <td align="left">
+                    <input type="text" maxlength="3" placeholder="团有效时长（单位：时）" v-model.number="p.EntGroups.ValidDateLength" class="form-control width100">
+                </td>
+            </tr>
+            <tr>
+                <td width="125" align="right">菜品简介：</td>
+                <td align="left">
+                    <textarea class="form-control width600" rows="8" v-model="p.Introduction"></textarea>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+
+
+
+    <!--#region 添加分类-->
+    <div class="modal bs-example-modal" id="addModal_ptype" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        添加菜品分类
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <p>已有分类：</p>
+                    <div class="picklabels">
+                        <span v-bind:class="{sel:item.sel}" v-for="(item,index) in ptypes" v-on:click="selType(index)">{{item.Name}}</span>
+                    </div>
+                    <a class="btn btn-link" v-on:click="addnewptype_add" v-show="!ptypeadd">＋新增分类</a>
+                    <div class="d-flex d-flex-center mt10" v-show="ptypeadd">
+                        <div>分类名称：</div>
+                        <div class="flex"><input maxlength="10" placeholder="分类名称，10个字以内" v-model="editptypeitem.Name" type="text" class="form-control"></div>
+                        &nbsp;&nbsp;
+                        <a class="btn btn-default" v-on:click="ptypeadd=false">取消</a>&nbsp;&nbsp;
+                        <a class="btn btn-primary" v-on:click="addnewptypeOK">确定</a>&nbsp;&nbsp;
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="pickptypeOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#endregion-->
+    <!--#region 产品标签-->
+    <div class="modal bs-example-modal" id="addModal_plabel" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        添加产品标签
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <p>已有标签：</p>
+                    <div class="picklabels">
+                        <span v-bind:class="{sel:item.isCheck}" v-for="(item,index) in plabels" v-on:click="selLabel(index)">{{item.LabelName}}</span>
+                    </div>
+                    <a class="btn btn-link" v-on:click="addnewlabel_add" v-show="!plabeladd">＋新增标签</a>
+                    <div class="d-flex d-flex-center mt10" v-show="plabeladd">
+                        <div>标签名称：</div>
+                        <div class="flex"><input maxlength="10" placeholder="标签名称，10个字以内" v-model="editplabelitem.LabelName" type="text" class="form-control"></div>
+                        &nbsp;&nbsp;
+                        <a class="btn btn-default" v-on:click="plabeladd=false">取消</a>&nbsp;&nbsp;
+                        <a class="btn btn-primary" v-on:click="addnewlabelOK">确定</a>&nbsp;&nbsp;
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="pickplabelOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#endregion-->
+    <!-- #region 添加规格值 -->
+    <div class="modal bs-example-modal" id="addSpecValueModal" tabindex="-1" role="dialog" aria-labelledby="addSpecValueLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="addSpecValueLabel">
+                        添加规格值
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="picklabels">
+                        <span v-bind:class="{'sel':item.sel}" v-for="(item,index) in current_specificationlist" v-on:click="item.sel=!item.sel">{{item.SpecName}}</span>
+                    </div>
+                    <div v-if="current_specificationlist.length==0&&current_pickspecification_id>0">
+                        当前规格没有设置规格值 <a v-bind:href="'/enterprisepro/specificationlist?appId=@(appid)&fid='+current_pickspecification_id" target="_blank">添加规格值</a>
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="addSpecValueOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+    <!--上传所用按钮封装-->
+    <div style="display: none;">
+        <button id="browse_file_img">上传图片</button>
+        <button id="start_upload_img" v-on:click="uploadFile('img')">开始上传</button>
+    </div>
+</div>
+
+<script>
+    var aid = @(appid);
+    var storeId = @(storeId);
+    var goodtype = @(goodtype);
+    var ispost=false;   //是否正在执行保存
+    var copy=@(ViewBag.Copy);  //是否为复制商品
+
+    var mask;//上传进度弹框
+    var MAX_IMG_SIZE=1,MAX_AUDIO_SIZE=10,MAX_VIDEO_SIZE=20; //各上传文件类型的文件大小限制
+    var uploadImgType = 0;  //当前上传文件的类型
+    //各类型上传文件的配置
+    var uploader= {
+        img: {
+            filePath: ''
+        },
+        video: {
+            filePath: ''
+        },
+        audio: {
+            filePath: ''
+        }
+    };
+
+
+    //默认的产品分类model
+    var ptypeitem = {
+        Id:0,
+        Name: "",
+        FoodId:storeId,
+    };
+    //默认的菜品标签model
+    var plabelitem = {
+        Id:0,
+        LabelName: "",
+        FoodStoreId:storeId,
+    };
+    //默认的规格model
+    var pGoodsAttr = {
+        Id:0,
+        AttrName:"",
+        SpecList:[],//当前选中的规格
+    };
+    //默认的规格值model
+    var pGoodsSpec = {
+        Id:0,
+        AttrId:0,
+        SpecName: "",
+    };
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            goodtype: goodtype, //当前编辑的商品类型
+
+            p:@Html.Raw(JsonConvert.SerializeObject(Model)), //菜品model
+
+            ptypes:@Html.Raw(JsonConvert.SerializeObject(ptypes)),  //所有分类
+            ptypeadd: false,    //是否要添加分类
+            editptypeitem:JSON.parse(JSON.stringify(ptypeitem)),//当前编辑的分类model
+            picktype: @Html.Raw(JsonConvert.SerializeObject(selPtypes)),   //选中的分类
+
+            plabels:@Html.Raw(JsonConvert.SerializeObject(plabels)), //所有标签
+            plabeladd: false,   //是否要添加标签
+            picklabel:@Html.Raw(JsonConvert.SerializeObject(selPlabels)),   //选中的标签
+            editplabelitem:JSON.parse(JSON.stringify(plabelitem)), //当前编辑的标签model
+
+            goodsAttr: @(Html.Raw(JsonConvert.SerializeObject(goodsAttr))),    //所有菜品多规格 - 规格,规格值
+            pickGoodsAttr: @(Html.Raw(JsonConvert.SerializeObject(pickGoodsAttr))),//选择的规格
+            current_pickspecification_index: -1,//当前操作的规格索引
+            current_pickspecification_id:-1,
+            current_specificationlist:[],//当前显示的规格值列表
+            specificationTable:[],
+
+            allPrice:'',   //批量设定价格
+            allStock:'',    //批量设定库存
+            allOriginalPrice:'',
+            allGroupPrice:'',
+        },
+        computed: {
+            //当前是否拼团商品二次编辑
+            groupedit2: function () {
+                return this.goodtype == 1 && this.p.Id > 0;
+            }
+
+        },
+        created: function()
+        {
+            this.InitLayForm();
+        },
+        mounted: function()
+        {
+            //若为复制,那么商品名称标注上 复制
+            if(copy == 1)
+            {
+                this.p.GoodsName = this.p.GoodsName + "_复制";
+            }
+            //初始化上传图片控件
+            this.initUploader('img');
+
+            this.p.goodtype = this.goodtype;
+            this.p.EntGroups.RId = aid;
+
+            //初始化多规格设定
+            if(this.p.AttrDetail!=""){
+                var detail=@Html.Raw(JsonConvert.SerializeObject(Model.GASDetailList));
+                var jqggtable=$(".ggtable tr:not(.gg_title)");
+                jqggtable.each(function(i,o){
+                    $(o).find(".price").val(detail[i].priceStr);
+                    $(o).find(".stock").val(detail[i].count);
+                    if (goodtype == 1) {
+                        $(o).find(".original-price").val(detail[i].originalPriceStr);
+                        $(o).find(".price").prop("disabled", true);
+                        $(o).find(".group-price").val(detail[i].groupPriceStr).prop("disabled", true);
+                    }
+                });
+            }
+        },
+        methods:
+            {
+                //初始化lay
+                InitLayForm:function()
+                {
+                    layui.use('form', function(){
+                        var form = layui.form;
+
+                        form.on('switch', function (data) {
+                            if(data.elem.name == 'openTakeOut')
+                            {
+                                app.p.openTakeOut = data.elem.checked ? 1 : 0;
+                            }
+                            else if(data.elem.name == 'openTheShop')
+                            {
+                                app.p.openTheShop = data.elem.checked ? 1 : 0;
+                            }
+                            else if(data.elem.name == 'isPackin')
+                            {
+                                app.p.isPackin = data.elem.checked ? 1 : 0;
+                            }
+                        });
+                    });
+                },
+
+
+                //保存
+                save:function(){
+                    var that=this;
+                    if(ispost)
+                        return;
+                    if($.trim(this.p.GoodsName).length==0){
+                        layer.msg("请填写菜品名称！");
+                        return;
+                    }
+                    if($.trim(this.p.GoodsName).length>40){
+                        layer.msg("菜品名称不能超过40个字！");
+                        return;
+                    }
+
+                    if(this.p.ImgUrl==""||this.p.ImgUrl==null){
+                        layer.msg("请上传菜品图片！",{time:1000});
+                        return;
+                    }
+
+                    if(this.p.Sort == null || $.trim(this.p.Sort).length==0 || this.p.Sort < 0)
+                    {
+                        layer.msg("请输入正确的菜品排序！",{time:1000});
+                        return;
+                    }
+
+                    //价格
+                    if(this.pickGoodsAttr.length==0){
+                        if(!/^\d*.?\d{0,2}$/.test(this.p.PriceStr)){
+                            layer.msg("菜品价格请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+                        else if (this.p.PriceStr == "" || parseFloat(this.p.PriceStr) <= 0.00 || this.p.PriceStr>9999999.99) {
+                            layer.msg("菜品价格请输入大于0小于9999999.99的数字，最多两位小数！");
+                            return;
+                        }
+                        this.p.Price = this.p.PriceStr * 10000 / 100;
+                        if (!/^\d{0,7}$/.test(this.p.Inventory)||(parseInt(this.p.Inventory)) < 0) {
+                            layer.msg("请输入菜品库存,库存只能输入>=0的整数！");
+                            return;
+                        }
+                    }
+                    var _ptypes = [];
+                    if (this.picktype.length <= 0) {
+                        layer.msg("请选择菜品分类！", { time: 1000 });
+                        return;
+                    }
+                    else {
+                        for (var i = 0; i < this.picktype.length; i++) {
+                            _ptypes.push(this.picktype[i].Id);
+                        }
+                    }
+                    this.p.TypeId =  _ptypes.join(",");
+
+                    //标签
+                    var _plabels=[];
+                    if(this.picklabel.length>0){
+                        for (var i = 0; i < this.picklabel.length; i++) {
+                            _plabels.push(this.picklabel[i].Id);
+                        }
+                    }
+                    this.p.labelIdStr = _plabels.join(",");
+
+                    //规格
+                    var gglist=this.buildSpecificationTable();
+                    //规格详情列表
+                    var ggdetail=[];
+                    var jqggtable=$(".ggtable tr:not(.gg_title)");
+                    if(gglist.length>0){
+                        for (var gi = 0; gi < gglist.length; gi++) {
+                            var _cstock=jqggtable.eq(gi).find(".stock").val();
+                            _cstock = parseInt(_cstock) || 0;
+                            var _price = Number(jqggtable.eq(gi).find(".price").val())||0;
+                            var _originalPrice = 0,
+                                _groupPrice = 0;
+                            //如果是拼团商品
+                            if (goodtype == 1) {
+                                _originalPrice = Number(jqggtable.eq(gi).find(".original-price").val()) || 0;
+                                _groupPrice = Number(jqggtable.eq(gi).find(".group-price").val()) || 0;
+                                if (_price >= _originalPrice) {
+                                    layer.msg("单买价需小于原价！");
+                                    return;
+                                }
+                                if (_groupPrice >= _price) {
+                                    layer.msg("拼团价需小于单买价！");
+                                    return;
+                                }
+
+                                if (!/^\d{1,}.?(\d{0,2})?$/.test(_originalPrice) ||
+                                    !/^\d{1,}.?(\d{0,2})?$/.test(_groupPrice)){
+                                    layer.msg("菜品价格请输入大于0的数字，最多两位小数！");
+                                    return;
+                                }
+                            }
+                            if (!/^\d{1,}.?(\d{0,2})?$/.test(_price) || _price <= 0){
+                                layer.msg("菜品价格请输入大于0的数字，最多两位小数！");
+                                return;
+                            }
+                            var _cids=[];
+                            gglist[gi].forEach(function(_gi_item){
+                                _cids.push(_gi_item.Id);
+                            });
+                            ggdetail.push({
+                                "id": _cids.join("_") + "_",
+                                "originalPrice": _originalPrice * 10000 / 100,
+                                "price": _price * 10000 / 100,
+                                "groupPrice": _groupPrice * 10000 / 100,
+                                "count": _cstock
+                            });
+                        }
+                    }
+                    else if(this.pickGoodsAttr.length==1&&this.pickGoodsAttr[0].SpecList.length>0){
+                        for (var gi = 0; gi < this.pickGoodsAttr[0].SpecList.length; gi++) {
+                            var _cstock=jqggtable.eq(gi).find(".stock").val();
+                            _cstock=parseInt(_cstock)||0;
+                            var _price = jqggtable.eq(gi).find(".price").val();
+
+                            //如果是拼团商品
+                            var _originalPrice = 0,
+                                _groupPrice = 0;
+                            if (goodtype == 1) {
+                                _originalPrice = Number(jqggtable.eq(gi).find(".original-price").val()) || 0;
+                                _groupPrice = Number(jqggtable.eq(gi).find(".group-price").val()) || 0;
+                                if (_price >= _originalPrice) {
+                                    layer.msg("单买价需小于原价！");
+                                    return;
+                                }
+                                if (_groupPrice >= _price) {
+                                    layer.msg("拼团价需小于单买价！");
+                                    return;
+                                }
+
+                                if (!/^\d{1,}.?(\d{0,2})?$/.test(_originalPrice) ||
+                                    !/^\d{1,}.?(\d{0,2})?$/.test(_groupPrice)){
+                                    layer.msg("菜品价格请输入大于0的数字，最多两位小数！");
+                                    return;
+                                }
+                            }
+
+                            if (!/^\d{1,}.?(\d{0,2})?$/.test(_price) || _price <= 0){
+                                layer.msg("菜品价格请输入大于0的数字，最多两位小数！");
+                                return;
+                            }
+
+                            var _citem=this.pickGoodsAttr[0].SpecList[gi];
+                            ggdetail.push({
+                                "id": _citem.Id + "_",
+                                "originalPrice": _originalPrice * 10000 / 100,
+                                "price": _price * 10000 / 100,
+                                "groupPrice": _groupPrice * 10000 / 100,
+                                "count": _cstock
+                            });
+                        }
+
+                    }
+                    else if(goodtype == 1)//拼团验证价格
+                    {
+                        if (/[^\d]/g.test(this.p.EntGroups.ValidDateLength)) {
+                            layer.msg("团有效时长格式不正确！");
+                            return;
+                        }
+                        if (Number(this.p.EntGroups.ValidDateLength) <= 0) {
+                            layer.msg("请输入团有效时长！");
+                            return;
+                        }
+                        if(this.p.EntGroups.OriginalPriceStr.length <=  0 ||  this.p.EntGroups.OriginalPriceStr <= 0)
+                        {
+                            layer.msg("原价请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+
+                        this.p.EntGroups.OriginalPrice = (this.p.EntGroups.OriginalPriceStr * 100).toFixed();
+                        if(this.p.Price > this.p.EntGroups.OriginalPrice)
+                        {
+                            layer.msg("售卖/单买 价需小于原价！");
+                            return;
+                        }
+
+                        if(this.p.EntGroups.GroupPriceStr.length <=  0 ||  this.p.EntGroups.GroupPriceStr <= 0)
+                        {
+                            layer.msg("拼团价请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+                        this.p.EntGroups.GroupPrice = (this.p.EntGroups.GroupPriceStr * 100).toFixed();
+                        if(this.p.EntGroups.GroupPrice > this.p.Price)
+                        {
+                            layer.msg("拼团价需小于 售卖/单买 价！");
+                            return;
+                        }
+
+                        //if(this.p.EntGroups.HeadDeductStr.length <=  0 ||  this.p.EntGroups.HeadDeductStr <= 0)
+                        //{
+                        //    layer.msg("团长减价请输入大于0的数字，最多两位小数！");
+                        //    return;
+                        //}
+                        this.p.EntGroups.HeadDeduct = (this.p.EntGroups.HeadDeductStr * 100).toFixed();
+                        if(this.p.EntGroups.HeadDeduct > this.p.EntGroups.GroupPrice)
+                        {
+                            layer.msg("团长减价不可大于拼团价！");
+                            return;
+                        }
+
+                        if(this.p.EntGroups.GroupSize <= 1)
+                        {
+                            layer.msg("拼团人数最少为2！");
+                            return;
+                        }
+                    }
+                    //餐饮拼团默认开启堂食
+                    if (goodtype == 1) {
+                        this.p.openTheShop = 1;
+                    }
+
+                    //选择最小价格 作为产品的展示价格
+                    var minGroupPrice = 0,
+                        minOriginalPrice=0;
+                    if (ggdetail.length > 0) {
+                        var ggdetail_temp = JSON.parse(JSON.stringify(ggdetail));
+                        ggdetail_temp.sort(function (a, b) {
+                            return a.price - b.price;
+                        });
+                        //最小的价格/单买价
+                        this.p.Price = ggdetail_temp[0].price;
+
+                        if (goodtype == 1) {
+                            ggdetail_temp.sort(function (a, b) {
+                                return a.groupPrice - b.groupPrice;
+                            });
+                            //最小的拼团价
+                            minGroupPrice = ggdetail_temp[0].groupPrice;
+
+                            ggdetail_temp.sort(function (a, b) {
+                                return a.originalPrice - b.originalPrice;
+                            });
+                            //最小原价
+                            minOriginalPrice = ggdetail_temp[0].originalPrice;
+
+                            this.p.EntGroups.GroupPrice = minGroupPrice;
+                            this.p.EntGroups.OriginalPrice = minOriginalPrice;
+                        }
+                    }
+                    this.p.AttrDetail=JSON.stringify(ggdetail);
+                    this.p.Stock = this.p.Inventory;    //旧逻辑,剩余库存会随着更改库存而重置
+
+                    ispost=true;
+                    $.post("/foods/SaveFoodGood",{goods: that.p,useGoodsAttr:[...that.pickGoodsAttr],copy :copy},function(data){
+                        if(data&&data.isok){
+                            layer.msg(data.Msg,{time:1000});
+
+
+                            if(goodtype == 1)
+                            {
+                                setTimeout(function () {
+                                    window.location.href="/entgroups/MiniappStoreGroupsManager?appId="+aid+"&PageType=@ViewBag.PageType";
+                                }, 1000);
+                            }
+                            else
+                            {
+                                setTimeout(function () {
+                                    window.location.href="/foods/FoodGoodsList?appId="+ aid;
+                                }, 1000);
+                            }
+                        }
+                        else{
+                            layer.msg(data.Msg,{time:1000});
+                            ispost = false;
+                        }
+                    });
+                },
+
+
+                //上传图片
+                UploadImg:function(type){
+                    app.uploadImgType=type;
+                    $('#browse_file_img').click();
+                },
+
+                //初始化上传控件
+                initUploader:function (type) {
+
+                    var that = this;
+                    var options = {
+                        browse_button: 'browse_file_' + type,
+                        url: 'http://oss.aliyuncs.com',
+                        flash_swf_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                        silverlight_xap_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                        filters: {
+
+                        },
+                        multi_selection: true
+
+                    };
+                    switch (type) {
+                        case 'img':
+
+                            options.filters = {
+
+                                mime_types: [
+                                    {
+                                        title: "图片文件",
+                                        extensions: "jpg,jpeg,gif,png"
+                                    },
+                                ],
+                                //max_file_size: '5mb'
+                            }
+                            break;
+                        case 'video':
+                            options.filters = {
+
+                                mime_types: [ //只允许上传图片和zip文件
+                                    {
+                                        title: "视频文件",
+                                        extensions: "mp4,m3u8",
+                                    },
+                                ],
+                                //max_file_size: '20mb'
+                            }
+
+                            break;
+                        case 'audio':
+                            options.filters = {
+
+                                mime_types: [ //只允许上传图片和zip文件
+                                    {
+                                        title: "音频文件",
+                                        extensions: "mp3",
+                                    },
+                                ],
+                                //max_file_size: '10mb'
+                            }
+
+
+                            break;
+                    }
+
+                    //如果还有当前类型的上传组件实例的话则先把其销毁
+                    if (uploader[type].instance) {
+                        console.log('destroy uploader :' + type);
+                        uploader[type].instance.destroy();
+                    }
+
+                    //创建新的控件实例
+                    uploader[type].instance = new plupload.Uploader(options);
+                    uploader[type].instance.init();
+
+                    //添加路径
+                    uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                        $('#start_upload_' + type).click();
+                    });
+
+                    //上传之前
+                    uploader[type].instance.bind('BeforeUpload', function (d, f) {
+
+
+                        //取到文件后缀名
+
+                        var fileName = f.name;
+                        var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                        //转成Mb
+                        var fileSize = f.size / 1024 / 1024;
+                        var flag = true;
+
+                        switch (type) {
+                            case 'img':
+                                if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                                    layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                                    flag = false;
+                                }
+                                if (fileSize > MAX_IMG_SIZE) {
+                                    layer.msg('文件最大支持 ' + MAX_IMG_SIZE + 'Mb');
+                                    flag = false;
+
+                                }
+                                break;
+                            case 'audio':
+                                if (!['mp3'].contains(ext)) {
+                                    layer.msg('请上传正确的音频格式文件，后缀名可为：mp3');
+                                    flag = false;
+
+                                }
+                                if (fileSize > MAX_AUDIO_SIZE) {
+                                    layer.msg('文件最大支持 ' + MAX_AUDIO_SIZE + 'Mb');
+                                    flag = false;
+
+                                }
+                                break;
+                            case 'video':
+                                if (!['mp4', 'm3u8'].contains(ext)) {
+                                    layer.msg('请上传正确的视频格式文件，后缀名可为：mp4,m3u8');
+                                    flag = false;
+
+                                }
+                                if (fileSize > MAX_VIDEO_SIZE) {
+                                    layer.msg('文件最大支持 ' + MAX_VIDEO_SIZE + 'Mb');
+                                    flag = false;
+                                }
+                                break;
+                        }
+                        //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                        if (!flag) {
+                            that.initUploader(type);
+                        }
+
+                        uploader.token.key += '.' + ext;
+                        uploader[type].instance.setOption(uploader.token);
+
+                    });
+
+                    //上传过程中
+                    uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+
+                        mask=  layer.load(0, {content: file.percent + "%",shade: [0.8, '#393D49'],
+
+                            success: function(layero){
+                                layero.find('.layui-layer-content').css('color', 'white').css('font-size','2rem').css('background','none');
+                            }
+                        });
+                    });
+
+                    //上传成功后
+                    uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+                        layer.close(mask);
+
+                        var fileName; //文件名
+                        var fileExt;  //文件格式
+                        var filePath; //文件最终的存储路径
+
+                        if(that.uploadImgType==0){
+                            fileName = f[0].name;
+                            fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                            filePath = uploader[type].filePath + '.' + fileExt;
+
+                            that.p.ImgUrl=filePath;
+                        }
+                        else
+                        {
+                            //轮播图上传,未有
+                            $(f).each(function(index,item)
+                            {
+                                fileName = item.name;
+                                fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                                filePath = uploader[type].filePath + '.' + fileExt;
+
+                            });
+                        }
+
+                        //上传完成后重新初始上传组件
+                        that.initUploader(type);
+                    });
+                },
+
+                //上传文件
+                uploadFile:function (type) {
+                    //   var that = this;
+                    $.get('/upload/initupload', {
+                        type: type
+                    }).then(function (data) {
+                        var filePath = data.dir + data.key;
+                        uploader[type].filePath = data.host + '/' + filePath;
+
+                        var multipartParams = {
+                            //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                            'key': filePath,
+                            'policy': data.policy,
+                            'OSSAccessKeyId': data.accessid,
+                            'success_action_status': '200',
+                            'signature': data.signature
+                        };
+                        uploader.token = multipartParams;
+                        uploader[type].instance.setOption({
+                            'url': data.host,
+                            'multipart_params': multipartParams
+                        });
+                        uploader[type].instance.start();
+                    }).fail(function (data) {
+                    });
+
+                },
+
+                //删除图片
+                clearImg:function(type,index){
+                    var that = this;
+                    if(type>0){
+                        //表示轮播图
+                        if(that.bannerImg.length>0){
+                            that.bannerImg.splice(index,1);
+                        }
+
+                        that.p.slideimgs=that.bannerImg.join(",");
+                    }else{
+                        that.p.img="";
+                    }
+                },
+
+
+
+                //弹框选择分类
+                addnewptype: function () {
+                    $('#addModal_ptype').modal('show');
+                },
+
+                //确定选择的分类
+                pickptypeOK: function () {
+                    var selcount = 0;
+                    this.picktype = [];
+                    for (var i = 0; i < this.ptypes.length; i++) {
+                        if (this.ptypes[i].sel) {
+                            this.picktype.push(this.ptypes[i]);
+                        }
+                    }
+                    $('#addModal_ptype').modal('hide');
+                },
+
+                //取消选择分类
+                removePickType: function (index) {
+
+                    for (var i = 0; i < this.ptypes.length; i++) {
+                        if (this.ptypes[i].id == this.picktype[index].id) {
+                            this.ptypes[i].sel = false;
+                        }
+                    }
+                    this.picktype.splice(index, 1)
+                },
+
+                //切换分类的选用状态(弹框内)
+                selType: function (index) {
+                    this.ptypes[index].sel = !this.ptypes[index].sel;
+                },
+
+                //检测是否可以添加分类
+                addnewptype_add: function () {
+                    if (this.ptypes.length >= 50) {
+                        layer.alert("无法新增分类！您已添加了50个菜品分类，已达到上限，请编辑已有的分类或删除部分分类后再进行新增。");
+                        return;
+                    }
+                    this.ptypeadd = true;
+                },
+
+                //添加新分类
+                addnewptypeOK:function(){
+                    var that=this;
+                    var _typename=$.trim(that.editptypeitem.Name);
+                    if(_typename.length==0||_typename.length>10){
+                        layer.msg("分类名称不能为空，且不能超过10个字",{time:1000});
+                        return;
+                    }
+                    $.post("/foods/AddFoodGoodType", $.extend(that.editptypeitem,{appId:aid}),function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                layer.msg("保存成功",{time:1000});
+
+                                that.ptypes.push(data.dataObj);
+                                that.editptypeitem=JSON.parse(JSON.stringify(ptypeitem));
+                            }
+                            else{
+                                layer.msg(data.msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    });
+                },
+
+
+
+                //弹框选择标签
+                addnewlabel:function(){
+
+                    $('#addModal_plabel').modal('show');
+                },
+
+                //检测是否可以添加标签
+                addnewlabel_add:function(){
+                    if(this.plabels.length>=25){
+                        layer.alert("无法新增标签！您已添加了25个标签分类，已达到上限，请编辑已有的标签或删除部分标签后再进行新增。");
+                        return;
+                    }
+                    this.plabeladd=true;
+                },
+
+                //取消选择标签
+                removePickLabel:function(index){
+                    for (var i = 0; i < this.plabels.length; i++) {
+                        if(this.plabels[i].id==this.picklabel[index].id){
+                            this.plabels[i].sel=false;
+                        }
+                    }
+                    this.picklabel.splice(index,1)
+                },
+
+                //切换标签选用状态(弹框内)
+                selLabel:function(index){
+                    this.plabels[index].isCheck=!this.plabels[index].isCheck;
+
+                },
+
+                //确定选中标签
+                pickplabelOK:function(){
+
+                    var selcount=0;
+                    for (var i = 0; i < this.plabels.length; i++) {
+                        if(this.plabels[i].isCheck){
+                            selcount+=1;
+                        }
+                    }
+                    if(selcount>5){
+                        layer.msg("最多只能选择5个标签！",{time:1000});
+                        return;
+                    }
+                    this.picklabel=[];
+                    for (var i = 0; i < this.plabels.length; i++) {
+                        if(this.plabels[i].isCheck){
+                            this.picklabel.push(this.plabels[i]);
+                        }
+                    }
+                    $('#addModal_plabel').modal('hide');
+                },
+
+                //添加新标签
+                addnewlabelOK:function(){
+                    var that=this;
+                    var _typename=$.trim(that.editplabelitem.LabelName);
+                    if(_typename.length==0||_typename.length>10){
+                        layer.msg("标签名称不能为空，且不能超过10个字",{time:1000});
+                        return;
+                    }
+                    $.post("/foods/AddFoodLabel", $.extend(that.editplabelitem,{appId:aid}),function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                //$('#addModal_plabel').modal('hide');
+                                layer.msg("保存成功",{time:1000});
+
+                                that.plabels.push(data.dataObj);
+                                that.editplabelitem=JSON.parse(JSON.stringify(plabelitem));
+                                that.plabeladd=false;
+                            }
+                            else{
+                                layer.msg(data.msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    });
+                },
+
+
+
+                //添加规格项
+                addSpecificationItem:function(){
+                    if(this.goodsAttr.length<=0){
+                        layer.msg("请先添加菜品规格！");
+                        return;
+                    }
+                    if(this.pickGoodsAttr.length>=3){
+                        layer.msg("最多只能选择3种规格！");
+                        return;
+                    }
+
+                    var _specificationItem=$.extend({},pGoodsAttr,true);
+                    this.pickGoodsAttr.push(_specificationItem);
+                },
+
+                //选择使用规格
+                changeSpecification:function(item){
+                    var check=this.pickGoodsAttr.filter(function(_item){
+                        return _item.Id!=0&&_item.Id==item.Id;
+                    });
+                    if(check.length>1){
+                        layer.msg("不能设置重复的规格！");
+                        item.Id=0;
+                        item.SpecList=[];
+                        return;
+                    }
+                    item.SpecList=[];
+                    var selitem=this.goodsAttr.find(function(_selitem){
+                        return _selitem.Id==item.Id;
+                    });
+                    if(selitem){
+                        item.AttrName=selitem.AttrName;
+                    }
+
+                    //基于旧版限制,需要兼容数据,那么此时这里的规格需要根据ID从小到大排序
+                    for(i=0;i< this.pickGoodsAttr.length-1;i++){
+                        for(j=0;j<this.pickGoodsAttr.length-1-i;j++){
+                            if(this.pickGoodsAttr[j].Id>this.pickGoodsAttr[j+1].Id){
+                                var temp=this.pickGoodsAttr[j];
+                                this.pickGoodsAttr[j]=this.pickGoodsAttr[j+1];
+                                this.pickGoodsAttr[j+1]=temp;
+                            }
+                        }
+                    }
+
+                    this.buildSpecificationTable();
+                },
+
+                //创建规格表格
+                buildSpecificationTable:function(){
+                    var _t=[];
+                    var that=this;
+
+                    this.pickGoodsAttr.forEach(function(o){
+                        if(o.SpecList.length>0){
+                            _t.push(o.SpecList);
+                        }
+                    });
+                    var _result=[];
+                    if(_t.length>1){
+                        _result= this.discarts(..._t);
+                    }
+                    return _result;
+                },
+
+                //使用 笛卡尔积 算法将多规格值,穷举出各种组合
+                discarts:function () {
+                    //笛卡尔积
+                    var twodDscartes = function (a, b) {
+                        var ret = [];
+                        for (var i = 0; i < a.length; i++) {
+                            for (var j = 0; j < b.length; j++) {
+                                ret.push(ft(a[i], b[j]));
+                            }
+                        }
+                        return ret;
+                    }
+                    var ft = function (a, b) {
+                        if (!(a instanceof Array))
+                            a = [a];
+                        var ret = a.slice(0);
+                        ret.push(b);
+                        return ret;
+                    }
+                    //多个一起做笛卡尔积
+                    return (function (data) {
+                        var len = data.length;
+                        if (len == 0)
+                            return [];
+                        else {
+                            var r = data[0];
+                            for (var i = 1; i < len; i++) {
+                                r = twodDscartes(r, data[i]);
+                            }
+                            return r;
+                        }
+                    })(arguments.length > 1 ? arguments : arguments[0]);
+                },
+
+                //弹出选择规格值的窗口
+                addSpecificationValue:function(item,index){
+                    if(item.id==0){
+                        layer.msg("请先选择产品规格！");
+                        return;
+                    }
+
+                    $("#addSpecValueModal").modal("show");
+                    this.current_pickspecification_index = index;
+                    this.current_pickspecification_id = item.id;
+                    this.current_specificationlist= this.goodsAttr.filter(function(_item){
+                        return _item.Id==item.Id;
+                    })[0].SpecList;
+                },
+
+                //确认选择的规格值
+                addSpecValueOK:function(){
+                    var that=this;
+                    this.pickGoodsAttr[this.current_pickspecification_index].SpecList=[];
+                    var selarray=JSON.parse(JSON.stringify(this.current_specificationlist.filter(function(item){
+                        return item.sel;
+                    })));
+                    selarray.forEach(function(o,i){
+                        that.pickGoodsAttr[that.current_pickspecification_index].SpecList.push({Id:o.Id,AttrId:o.AttrId,SpecName:o.SpecName});
+                    });
+
+                    this.current_pickspecification_index = -1;
+                    this.current_pickspecification_id = -1;
+                    $("#addSpecValueModal").modal("hide");
+                },
+
+                //批量设定价格
+                setAllPrice:function(){
+                    var that=this;
+                    if(!/^\d*.?\d{0,2}$/.test(that.allPrice)){
+                        layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                        return;
+                    }
+                    else if(parseFloat(this.p.price)>1000000000){
+                        layer.msg("产品价格最高只能设置为1000000000！");
+                        return;
+                    }
+                    //var table=this.buildSpecificationTable();
+                    $(".ggtable tr:not(.gg_title)").each(function(i,o){
+                        $(o).find(".price").val(that.allPrice);
+
+                    });
+
+                },
+
+                //批量设定原价
+                setAllOriginalPrice: function () {
+                    var that = this;
+                    if (!/^\d*.?\d{0,2}$/.test(that.allOriginalPrice)) {
+                        layer.msg("产品原价请输入大于0的数字，最多两位小数！");
+                        return;
+                    }
+                    else if (parseFloat(this.p.price) > 1000000000) {
+                        layer.msg("产品原价最高只能设置为1000000000！");
+                        return;
+                    }
+                    $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                        $(o).find(".original-price").val(that.allOriginalPrice);
+
+                    });
+                },
+
+                //批量设定拼团价
+                setAllGroupPrice: function () {
+                    var that = this;
+                    if (!/^\d*.?\d{0,2}$/.test(that.allGroupPrice)) {
+                        layer.msg("拼团价格请输入大于0的数字，最多两位小数！");
+                        return;
+                    }
+                    else if (parseFloat(this.p.price) > 1000000000) {
+                        layer.msg("拼团价格最高只能设置为1000000000！");
+                        return;
+                    }
+                    $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                        $(o).find(".group-price").val(that.allGroupPrice);
+
+                    });
+                },
+
+                //批量设定库存
+                setAllStock:function(){
+                    var that=this;
+                    if(this.p.stockLimit){
+                        if(that.allStock<=0){
+                            layer.msg("限制库存时，库存不能为0");
+                            return;
+                        }
+                    }
+
+                    $(".ggtable tr:not(.gg_title)").each(function(i,o){
+                        $(o).find(".stock").val(that.allStock);
+
+                    });
+                    this.sumStock();
+                },
+
+                //计算当前列应该跨的行数
+                GetRowSpan:function(index){
+                    result= this.pickGoodsAttr.reduce(function(sum,currentValue,currentIndex){
+                        if(currentIndex>index&&sum*currentValue.SpecList.length>0){
+                            return sum*currentValue.SpecList.length;
+                        }
+                        else{
+                            return  sum*1;
+                        }
+                    },1);
+                    return result;
+                },
+
+                //检测价格格式
+                changePrice:function(e){
+                    var obj=$(e.target);
+                    if(!/^[0-9]{1,10}(\.\d{0,2})?$/.test(obj.val())){
+                        layer.msg("请输入正确的价格",{time:1000});
+                        obj.val("");
+                        return;
+                    }
+                },
+
+                //检测库存格式
+                changeStock:function(e){
+                    var obj=$(e.target);
+                    if(!/^\d{0,7}$/.test(obj.val())){
+                        layer.msg("请输入正确的库存数",{time:1000});
+                        obj.val("");
+                        return;
+                    }
+                    this.sumStock();
+                },
+
+                //检测数字格式
+                changeNum:function(e){
+                    var obj=$(e.target);
+                    if(!/^\d{0,7}$/.test(obj.val())){
+                        layer.msg("请输入数字",{time:1000});
+                        obj.val("");
+                        return;
+                    }
+                    this.sumStock();
+                },
+
+                //统计规格总库存
+                sumStock:function(){
+                    var that=this;
+                    if(that.pickGoodsAttr.length>0){
+                        Vue.nextTick(function(){
+                            var allcount=0;
+                            $(".ggtable tr:not(.gg_title)").each(function(i,o){
+                                var _citemstock= $(o).find(".stock");
+
+                                var _stock = _citemstock.val();
+                                if(_stock == '') _stock = 0;
+                                if(/^\d{0,7}$/.test(_stock)){
+                                    allcount+=parseInt(_stock);
+                                }
+                                else{
+                                    layer.msg("请输入正确的库存数",{time:1000});
+                                    _citemstock.val("");
+                                    return;
+                                }
+
+                            });
+                            that.p.Inventory=allcount;
+                        })
+                    }
+                },
+            }
+    });
+
+
+</script>

@@ -1,0 +1,662 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 49;
+    ViewBag.Title = "信息管理";
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .nowrap { white-space: nowrap; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+    .fc-h { -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+    .materialsItem { display: inline-block; padding:0 5px; margin-top: 10px; cursor: pointer; width: 33%; height: 100px; }
+        .materialsItem img:hover { border: dashed 1px #ccc }
+        .materialsItem img { width: 100%; height: 100%; }
+    .del { color: red; }
+    .msgDetail { max-height: 200px; max-width: 800px; overflow-y: auto; }
+    .layui-carousel, .layui-this { background-color: transparent !important; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content">
+
+    <div id="app" v-cloak>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <label for="plist-pname">分类名称：</label>
+                    <input type="text" name="msgTypeName" class="form-control" id="msgTypeName" value="" />
+                    <label for="plist-pname">用户昵称：</label>
+                    <input type="text" name="userName" class="form-control" id="userName" value="" />
+                    <label for="plist-pname">用户手机号码：</label>
+                    <input type="text" name="userPhone" class="form-control" id="userPhone" value="" />
+                    <label for="plist-pname">审核状态：</label>
+                    <select v-model="postdata.Review" class="form-control">
+                        <option value="-2">全部</option>
+                        <option value="0">无需审核</option>
+                        <option value="-1">审核不通过</option>
+                        <option value="1">待审核</option>
+                        <option value="2">审核通过</option>
+                    </select>
+                </div>
+
+                <div style="display:inline-block;margin-left:10px;">
+                    <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                    <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+            <ul class="layui-tab-title">
+                <li class="tab_element layui-this" lay-id="tab_element_0" v-on:click="Tab(0)">普通信息</li>
+                <li class="tab_element" lay-id="tab_element_1" v-on:click="Tab(1)">置顶信息</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+                    <table class="table table-bordered viplevel ml_19" style="margin-top:20px;">
+                        <tr class="active">
+                            <th class="centertext nowrap">编号</th>
+                            <th class="centertext nowrap">分类</th>
+                            <th class="centertext nowrap">信息详情</th>
+                            <th class="centertext nowrap" style="width:450px;">信息图片</th>
+                            <th class="centertext nowrap">发布人</th>
+                            <th class="centertext nowrap">手机号码</th>
+                            <th class="centertext nowrap">地理位置</th>
+                            <th class="centertext nowrap">发布时间</th>
+                            <th class="centertext nowrap">审核状态</th>
+                            <th class="centertext nowrap">操作</th>
+                        </tr>
+                        <tr v-for="(item,index) in msglist">
+                            <td class="centertext nowrap">
+                                <label>
+                                    <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                                </label>
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.msgTypeName}}
+                            </td>
+                            <td class="centertext">
+                                <div class="msgDetail">
+                                    {{item.msgDetail}}
+                                </div>
+
+                            </td>
+                            <td class="centertext" v-on:click="viewImg(index)">
+                                <div class="materialsItem" v-for="(imgPath,index2) in item.imgList">
+                                    <img v-bind:src="imgPath" />
+                                </div>
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.userName}}
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.phone}}
+                            </td>
+                            <td class="centertext">
+                                {{item.location}}
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.addTimeStr}}
+                            </td>
+                            <td class="centertext nowrap">
+                                <span class="label label-success" v-if="item.Review==2">审核通过</span>
+                                <span class="label label-info" v-if="item.Review==0">无需审核</span>
+                                <span class="label label-danger" v-if="item.Review==-1">审核不通过</span>
+                                <span class="label label-default" v-if="item.Review==1">待审核</span>
+                            </td>
+                            <td class="centertext">
+                                <div><a href="javascript:void(0)" class="del" v-on:click="delMsg(item.Id,0)">删除</a></div>
+
+                                <div class="centertext nowrap">
+                                    <a href="javascript:void(0)" v-if="item.Review==1" style="color:#5bbd5b;" v-on:click="delMsg(item.Id,2)">通过审核</a>
+                                </div>
+                                <div class="centertext nowrap">
+                                    <a href="javascript:void(0)" v-if="item.Review==1" style="color:#88712d;" v-on:click="delMsg(item.Id,-1)">不通过审核</a>
+                                </div>
+                                <div class="centertext nowrap">
+                                    <a href="javascript:void(0)"  v-on:click="DoTop(item.Id)">手动置顶</a>
+                                </div>
+                                <div class="centertext nowrap">
+                                    <a :href="'/cityminiapp/MsgCommentMgr?appId=@ViewBag.appId&Id='+item.Id" style="color:#2196F3;">评论管理</a>
+
+                                </div>
+                </td>
+                </tr>
+
+
+                </table>
+            </div>
+                <div class="layui-tab-item">
+                    <table class="table table-bordered viplevel ml_19" style="margin-top:20px;">
+                        <tr class="active">
+                            <th class="centertext nowrap">编号</th>
+                            <th class="centertext nowrap">分类</th>
+                            <th class="centertext nowrap">信息详情</th>
+                            <th class="centertext nowrap" style="width:450px;">信息图片</th>
+                            <th class="centertext nowrap">发布人</th>
+                            <th class="centertext nowrap">手机号码</th>
+                            <th class="centertext nowrap">地理位置</th>
+                            <th class="centertext nowrap">置顶时间</th>
+                            <th class="centertext nowrap">置顶金额</th>
+                            <th class="centertext nowrap">置顶状态</th>
+                            <th class="centertext nowrap">发布时间</th>
+                            <th class="centertext nowrap">审核状态</th>
+                            <th class="centertext nowrap">操作</th>
+                        </tr>
+                        <tr v-for="(item,index) in msglist">
+                            <td class="centertext nowrap">
+                                <label>
+                                    <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                                </label>
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.msgTypeName}}
+                            </td>
+                            <td class="centertext">
+                                <div class="msgDetail">
+                                    {{item.msgDetail}}
+                                </div>
+                            </td>
+
+                            <td class="centertext" v-on:click="viewImg(index)">
+                                <div class="materialsItem" v-for="(imgPath,index2) in item.imgList">
+                                    <img v-bind:src="imgPath" />
+                                </div>
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.userName}}
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.phone}}
+                            </td>
+                            <td class="centertext">
+                                {{item.location}}
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.topDay}}天
+                            </td>
+                            <td class="centertext nowrap">
+                                {{item.topCostPriceStr}}元
+                            </td>
+                            <td class="centertext" v-if="item.Review==1&&item.State==0">
+                                <span class="label label-default">审核后开始生效</span>
+
+                            </td>
+                            <td class="centertext" v-else>
+                                <span style="color:red" v-if="item.isExpired">已失效</span>
+                                <span style="color:yellowgreen" v-else>未失效</span>
+                            </td>
+                           
+                            <td class="centertext">
+                                {{item.addTimeStr}}
+                            </td>
+                            <td class="centertext nowrap">
+                                <span class="label label-success" v-if="item.Review==2">审核通过</span>
+                                <span class="label label-info" v-if="item.Review==0">无需审核</span>
+                                <span class="label label-danger" v-if="item.Review==-1">审核不通过</span>
+                                <span class="label label-default" v-if="item.Review==1">待审核</span>
+                            </td>
+                            <td class="centertext">
+                                <a href="javascript:void(0)" class="del" v-on:click="delMsg(item.Id,0)">删除</a>
+                                <div class="centertext nowrap">
+                                    <a href="javascript:void(0)" v-if="item.Review==1" style="color:#5bbd5b;" v-on:click="delMsg(item.Id,2)">通过审核</a>
+                                </div>
+                                <div class="centertext nowrap">
+                                    <a href="javascript:void(0)" v-if="item.Review==1" style="color:#88712d;" v-on:click="delMsg(item.Id,-1)">不通过审核</a>
+                                </div>
+                                <div class="centertext nowrap" v-if="!item.isExpired">
+                                    <a href="javascript:void(0)" v-on:click="DoNotTop(item.Id,item.BalanceDay,item.BalanceHousrs,item.BalanceMinute)">取消置顶</a>
+                                </div>
+                                <div class="centertext nowrap">
+                                    <a :href="'/cityminiapp/MsgCommentMgr?appId=@ViewBag.appId&Id='+item.Id" style="color:#2196F3;">评论管理</a>
+                                </div>
+                            </td>
+                        </tr>
+
+                    </table>
+
+                </div>
+                <div id="pages" style="text-align: center;margin-top: 0.5rem;"  v-show="msglist.length>0"></div>
+
+            </div>
+        </div>
+
+
+        <div class="ml_19">
+            <a href="javascript:;" v-on:click="delMsg(-1,0)">批量删除</a>
+        </div>
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content" style="width:100%;">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+
+                    </div>
+                    <div class="modal-body">
+                        <div class="layui-carousel" id="imgsBanner">
+                            <div carousel-item>
+                                <div v-for="(bannerImgPath,bannerIndex) in viewImgs">
+                                    <div class="d-flex d-flex-center fc-h" style="height:100%;">
+                                        <img v-bind:src="bannerImgPath" style="max-width:100%;max-height:100%;" />
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+        <div class="modal fade" id="DoTopModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            手动置顶
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+
+                                    <div style="margin-top: 5px;">
+                                        <span>置顶规则：<span style="color:red;">*</span></span>
+                                        <select class="form-control" v-model="ruleId" style="width: 200px; margin-left: 5px;">
+                                            <option value="0">请选择</option>
+                                            <option v-bind:value="item.Id" v-for="(item,index) in rulelist">{{item.exptimeday}}天/{{item.priceStr}}元</option>
+                                        </select>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveDoTopInfo()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+        <div class="modal fade" id="DoNotTopModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            取消置顶
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="text-align:center;">
+
+                                    <span>置顶剩余时间{{BalanceDay}}天{{BalanceHousrs}}小时{{BalanceMinute}}分钟，取消置顶后直接清零，请认是否取消？</span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveDoNotTopInfo()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+
+<script>
+
+    layui.use('element', function () {
+        var $ = layui.jquery
+        , element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+        element.tabChange('docDemoTabBrief', 'tab_element_@(ViewBag.tab)');
+    });
+
+
+
+</script>
+
+<script>
+     var carousel;
+    var ids;
+    var chk_value =[];
+    var app = new Vue({
+        el: "#app",
+        data: {
+            editIndex: 0,
+            isloading: false,
+            recordCount: 0,
+            msglist: [],
+            viewImgs:[],
+            postdata: {
+                appId:@Html.Raw(ViewBag.appId),
+                msgTypeName:"",
+                userName:"",
+                userPhone:"",
+                isTop:@ViewBag.tab,
+                pageIndex: 1,
+                pageSize: 10,
+                Review:-2
+            },
+            bannerOptions:{
+                elem: '#imgsBanner'
+                      ,width: '100%' //设置容器宽度
+                        ,height:'500px'
+                      ,arrow: 'hover' //始终显示箭头
+                 ,autoplay:false
+
+
+            },
+            rulelist:[],
+        ruleId:0,
+        curTopMsgId:0,
+        curNotTopMsgId:0,
+        BalanceDay:0,
+        BalanceHousrs:0,
+        BalanceMinute:0
+        },
+
+        methods: {
+            saveDoTopInfo:function(){
+                var that=this;
+                if(that.curTopMsgId<=0||that.ruleId<=0){
+                    layer.msg('请选择需要置顶的帖子或者置顶规则');
+                }
+                //手动置顶
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/DoTopMsg',
+                    data: {aid:@ViewBag.appId,Id:that.curTopMsgId,ruleId:that.ruleId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            saveDoNotTopInfo:function(){
+                var that=this;
+                if(that.curNotTopMsgId<=0){
+                    layer.msg('请选择需要取消置顶的帖子');
+                }
+                //手动取消置顶
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/DoNotTopMsg',
+                    data: {aid:@ViewBag.appId,Id:that.curNotTopMsgId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            DoNotTop:function(id,BalanceDay,BalanceHousrs,BalanceMinute){
+
+                var that=this;
+                if(id<=0){
+                    layer.msg('请选择需要取消置顶的帖子');
+                }
+                that.BalanceDay=BalanceDay;
+                that.BalanceHousrs=BalanceHousrs;
+                that.BalanceMinute=BalanceMinute;
+                that.curNotTopMsgId=id;
+                $("#DoNotTopModal").modal('show');
+
+            },
+
+            DoTop:function(id){
+                var that=this;
+                if(id<=0){
+                    layer.msg('请选择需要置顶的帖子');
+                }
+                that.curTopMsgId=id;
+                $("#DoTopModal").modal('show');
+            },    //获取规则列表
+            getRuleList: function () {
+                var that=this;
+                $.post("/cityminiapp/GetMsgRules", { appId:@ViewBag.appId,pageIndex: 1,pageSize: 500}, function (data) {
+                    that.rulelist = data.dataObj.list;
+                })
+
+            },
+            viewImg:function(index){
+                //点击图片查看大图
+                var that=this;
+                console.log(index);
+                that.viewImgs=[];
+                that.viewImgs=that.msglist[index].imgList;
+                var index = layer.load(1);
+                window.setTimeout(function(){
+                    if(that.viewImgs.length<=1){
+                        $(".layui-carousel-arrow").css("display","none");
+                    }
+
+                        that.resetBanner();
+                    layer.close(index);
+                    $("#myModal").modal('show');
+                },1000);
+
+
+            },
+
+            resetBanner:function(){
+                //轮播图
+                var that=this;
+                layui.use('carousel', function(){
+                     carousel = layui.carousel;
+                    //建造实例
+                     $($("#imgsBanner div")[0]).find(".layui-this").removeClass("layui-this");
+                     carousel.render(that.bannerOptions);
+
+
+                });
+            },
+            delMsg:function(id,actionType){
+                //删除
+                var that=this;
+                var txt="确认进行删除操作？";
+                if(actionType!=0){
+                    txt="确认进行审核操作？";
+                }
+                layer.open({
+                    content: txt
+                 ,btn: ['确认', '取消']
+                 ,yes: function(index, layero){
+
+                     if(id==-1){
+                         //表示批量删除
+                         if(chk_value.length<=0){
+                             layer.msg("请先选择需要删除的信息");
+                             return;
+                         }
+                     }else{
+                         chk_value.push(id);
+                     }
+
+                     ids= chk_value.join(",");
+
+                     $.ajax({
+                         type: 'POST',
+                         url: '/cityminiapp/delMsg',
+                         data: {ids:ids,appId:@ViewBag.appId,actionType:actionType},
+                         dataType: 'json',
+                         success: function (data) {
+                             layer.msg(data.Msg);
+                             if (data.isok) {
+
+                                 window.setTimeout(function(){
+
+                                     window.location.reload();
+                                 },2000);
+                             }
+                         },
+                         error: function (data) {
+                             layer.msg('与服务器通讯错误');
+                         }
+                     });
+
+                 }
+                 ,btn2: function(index, layero){
+
+                     // layer.msg("点击取消");
+                 }
+
+                });
+
+
+
+
+
+
+
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+            search:function(){
+                var that=this;
+                that.postdata.msgTypeName=$("#msgTypeName").val();
+                that.postdata.userName=$("#userName").val();
+                that.postdata.userPhone=$("#userPhone").val();
+                that.getMsgList();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+            Tab:function(type){
+                var that=this;
+                that.postdata.pageIndex=1,
+                that.postdata.isTop=type;
+                chk_value=[];//清空之前勾选的
+                that.getMsgList();
+                window.history.pushState(null,null,'cityMsg?appId=@ViewBag.appId&tab='+type);//浏览器不跳转追加tab属性
+            },
+
+            //获取分类列表
+            getMsgList: function () {
+                var that=this;
+                var index = layer.load(1);
+                $.post("/cityminiapp/getMsg", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.msglist = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getMsgList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            }
+        },created:function(){
+            var that=this;
+            that.getMsgList();
+            that.getRuleList();
+        }
+    });
+</script>
+
+
+

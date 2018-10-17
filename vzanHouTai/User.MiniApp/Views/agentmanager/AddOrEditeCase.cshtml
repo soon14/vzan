@@ -1,0 +1,386 @@
+﻿@using Entity.MiniApp
+@model  AgentinfoCase
+@{
+    ViewBag.Title = "案例管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = -1;
+}
+
+<style>
+    .textname {
+        text-align: right !important;
+        width: 100px !important;
+    }
+
+    table.layui-form td {
+        padding: 7px 0px;
+    }
+
+    .layui-form-select {
+        width: 90%;
+    }
+
+    .width200 {
+        display: block;
+        width: 200px !important;
+    }
+
+    /*start图片上传控件的样式*/
+    .i_Posters {
+        height: 25%;
+        margin-bottom: 2px;
+        border-radius: 5px;
+    }
+
+        .i_Posters > div {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+            box-shadow: 0 0 2px #ccc;
+        }
+
+    .DelPoster {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+    }
+
+        .DelPoster .glyphicon-remove {
+            font-size: 14px;
+            color: #ccc;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 100%;
+        }
+
+    .plus-button {
+        box-shadow: none !important;
+        border: 2px dashed #aaa;
+        color: #888;
+        cursor: pointer;
+        text-align: center;
+        height: 120px;
+        transition: all .2s cubic-bezier(.7,0,.3,1);
+        width: 120px;
+    }
+
+        .plus-button .plus {
+            font-size: 100px;
+            line-height: 1;
+            font-weight: 700;
+            margin-top: -10px;
+        }
+
+    .plus-label {
+        font-size: 14px;
+        position: relative;
+        text-align: center;
+        top: -2px;
+    }
+    /*end图片上传控件的样式*/
+
+
+    .layui-form-switch {
+        margin-top: 0px;
+        height: 24px;
+        width: 53px;
+    }
+
+    .layui-form-onswitch {
+        border-color: #2196f3;
+        background-color: #2196f3;
+    }
+
+</style>
+
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff" id="app" v-cloak>
+    <div>
+        <table class="table" style="margin-top:10px;">
+            <tr>
+                <td align="right" style="width:6%;">
+                    <label>案例名称:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control width200" maxlength="20" placeholder="不超过20个汉字" v-model="datainfo.CaseName" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>案例类型:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <select v-if="XcxtemplatList!=null && XcxtemplatList.length>0" v-model="datainfo.TId" class="form-control width200" v-on:change="ChangeXcx()">
+                        <option value="0">请选择</option>
+                        <option v-for="(item,index) in XcxtemplatList" v-bind:value="item.Id">{{item.TName}}</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>标签:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <div v-if="TagList!=null && TagList.length>0" >
+                        <span v-for="(item,index) in TagList">
+                            <input type="checkbox" v-model="item.SelTag"/>{{item.tagname}}
+                            <br v-if="index>=5 && index%5==0" />
+                        </span>
+                    </div>
+                    <span v-else>无标签</span>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>排序:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control width200" maxlength="4" v-model="datainfo.Sort" />
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">
+                    <label>是否上架:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <div class="layui-form">
+                        <input type="checkbox" lay-skin="switch" lay-text="是|否" v-model="changCanSaveMoneyFunctionData.canSaveMoneyFunction" value="CashPay">
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">封面:<span class="warn">*</span></td>
+                <td>
+                    <div class="pslideimgs" style="display:block;">
+                        <div class="pslideimgs">
+                            <div class="i_Posters rel">
+                                <div style="position:relative;" v-for="(item,index) in Banners">
+                                    <img v-bind:src="item" style="display:block;height:150px;width:150px;" />
+                                    <span v-on:click="ClearImg(0,0)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                                </div>
+                                <div class="plus-button" v-on:click="UploadImg(0)" v-if="Banners.length<=0">
+                                    <div class="s-image-uploader-wrapper">
+                                        <div>
+                                            <div class="plus">+</div>
+                                            <div class="plus-label">上传图片</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">二维码：</td>
+                <td>
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-for="(item,index) in BottomImgUrl">
+                                <img v-bind:src="item" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="ClearImg(1,0)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)" v-if="BottomImgUrl.length<=0">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"></td>
+                <td>
+                    <button type="button" class="btn btn-primary ml10" v-on:click="SaveInfo()">
+                        保存
+                    </button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+</div>
+
+<script>
+    var BottomImgUrl=@Html.Raw(JsonConvert.SerializeObject(string.IsNullOrEmpty(Model.CoverUrl) ?new List<string>():new List<string>() { Model.CoverUrl }));
+    var QrCodeImgUrl=@Html.Raw(JsonConvert.SerializeObject(string.IsNullOrEmpty(Model.QrCodeUrl) ?new List<string>():new List<string>() { Model.QrCodeUrl }));
+    var comeditor=null;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            datainfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            Banners:BottomImgUrl,
+            BottomImgUrl:QrCodeImgUrl,
+            XcxtemplatList:[],
+            changCanSaveMoneyFunctionData :
+            {
+                appId: 0,
+                canSaveMoneyFunction : @(Model.State==1 ? "true" : "false"),
+            },
+            TagList:[],
+        },
+        created:function(){
+            this.GetXcxlist();
+            this.InitLayer();
+        },
+        methods:{
+            //初始化switch按钮
+            InitLayer: function () {
+                layui.use(['form'], function () {
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch', function (data) {
+                        app.changCanSaveMoneyFunctionData.canSaveMoneyFunction = data.elem.checked;
+                        app.datainfo.State=data.elem.checked?1:0;
+                    });
+                });
+            },
+            SaveInfo:function(){
+                var that=this;
+                if(that.datainfo.CaseName==null||that.datainfo.CaseName==""||that.datainfo.CaseName.length<=0){
+                    layer.msg("案例名称不能为空",{time:1000});
+                    return;
+                }
+
+                if(that.datainfo.TId==0){
+                    layer.msg("请选择案例类型",{time:1000});
+                    return;
+                }
+                if(that.Banners.length<=0)
+                {
+                    layer.msg("请上传封面",{time:1000});
+                    return;
+                }
+                if(that.BottomImgUrl.length<=0)
+                {
+                    layer.msg("请上传二维码图片",{time:1000});
+                    return;
+                }
+                that.datainfo.CoverUrl=that.Banners[0];
+                that.datainfo.QrCodeUrl=that.BottomImgUrl[0];
+
+                var tagIds = [];
+                $.each(that.TagList, function (i, obj) {
+                    if(obj.SelTag)
+                    {
+                        tagIds.push(obj.id);
+                    }
+                });
+                if(tagIds.length>20)
+                {
+                    layer.msg("标签不能超过20个",{time:1000});
+                    return;
+                }
+                that.datainfo.TagIds = tagIds.join(',');
+
+                $.post("/agentmanager/SaveCaseInfo",app.datainfo,function(data){
+                    if(data.isok)
+                    {
+                        layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                            window.location.href="/agentmanager/agentinfocase";
+                        });
+                    }
+                    else{
+                        layer.msg(data.Msg);
+                    }
+                });
+            },
+            GetXcxlist: function () {
+                $.post("/agentmanager/GetCaseXcxTemplate", function (data) {
+                    app.XcxtemplatList = data.dataObj;
+                    if(app.datainfo.TId>0)
+                    {
+                        app.ChangeXcx();
+                    }
+                });
+            },
+            ChangeXcx:function(){
+                $.post("/agentmanager/GetCaseTagList",{tid:app.datainfo.TId}, function (data) {
+                    if(data.isok && data.dataObj.list!=null && data.dataObj.list.length>0)
+                    {
+                        var tagInds = app.datainfo.TagIds
+                        if(tagInds!=null && tagInds.length>0 )
+                        {
+                            tagInds=","+tagInds+",";
+                            $.each(data.dataObj.list, function (i, obj) {
+                                if(tagInds.indexOf(","+obj.id+",")>-1)
+                                {
+                                    obj.SelTag=true;
+                                }
+                            });
+                        }
+                    }
+                        
+                    app.TagList = data.dataObj.list;
+                });
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=1;
+                var remainCount=0;
+                if(that.uploadImgType==0){
+                    //表示轮播图
+
+                    if(that.Banners.length>=maxCount){
+                        layer.msg("封面最多1张");
+                        return;
+                    }
+                    remainCount=maxCount-that.Banners.length;
+                    framSrc="/tools/UpLoadImgFrm?Id=0&appId=0&multi_selection=1&maxImgSize=1&objKey=Banners&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }else{
+                    remainCount=maxCount-that.BottomImgUrl.length;
+                    if(that.BottomImgUrl.length>=maxCount){
+                        layer.msg("二维码最多1张");
+                        return;
+                    }
+                    framSrc="/tools/UpLoadImgFrm?Id=0&appId=0&multi_selection=0&maxImgSize=1&objKey=BottomImgUrl&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+            },
+            ClearImg:function(type,index){
+                var that = this;
+                if(type==0){
+                    //封面
+                    if(that.Banners.length>0){
+                        that.Banners.splice(index,1);
+                    }
+
+                    that.datainfo.CoverUrl="";
+
+                }else{
+                    //二维码
+                    that.datainfo.QrCodeUrl="";
+
+                    //表示店铺大图
+                    if(that.BottomImgUrl.length>0){
+                        that.BottomImgUrl.splice(index,1);
+                    }
+                }
+            }
+        }
+    });
+</script>

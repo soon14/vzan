@@ -1,0 +1,228 @@
+﻿@model ViewModel<DishTable>
+@{
+    ViewBag.Title = "DishTable";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@section styles{
+    <style type="text/css">
+        .tb_main { margin-top: 10px; }
+        .tb_list { float: left; width: 150px; height: 200px; border: 1px solid #f1f1f1; margin-right: 20px; margin-top: 10px; }
+        .tb_list .tb_title_l { height: 30px; line-height: 30px; background: #5a98de; color: #fff; text-align: center; }
+        .tb_list .state { height: 100px; width: 100px; display: table-cell; text-align: center; vertical-align: middle; border-radius: 50%; text-align: center; font-size: 16px; }
+        .s_kongxian { background: #555555; color: #ffffff; display: table; margin-left: 25px; border-radius: 50%; }
+        .s_opened { background: #ef4437; color: #ffffff; display: table; margin-left: 25px; border-radius: 50%; }
+        .s_isorder { background: #ffd200; color: #000000; display: table; margin-left: 25px; border-radius: 50%; }
+        .s_ispay { background: #5cb85c; color: #ffffff; display: table; margin-left: 25px; border-radius: 50%; }
+        .ta_status_l { height: 30px; line-height: 30px; background: #f1f1f1; margin-top: 10px; text-align: center; }
+    </style>
+}
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    系统管理
+    <span class="c-gray en">&gt;</span>
+    餐桌管理
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray mt-10">
+        <span class="l">
+            <a class="btn btn-primary radius" onclick="table_add('添加桌台', '/DishAdmin/Main/DishTableEdit?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId ')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 新建桌台</a>
+            <a class="btn btn-warning radius" onclick="table_clear('/DishAdmin/Main/DishTable?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId&act=clear')"><i class="Hui-iconfont">&#xe68f;</i> 一键清台</a>
+            <a class="btn btn-secondary radius" onclick="table_sort()" href="javascript:;"><i class="Hui-iconfont">&#xe675;</i> 一键排序</a>
+        </span>
+        <span class="r">共有数据：<strong>@(Model.DataList.Count)</strong> 条</span>
+    </div>
+    <div class="tb_main">
+        @foreach (DishTable item in Model.DataList)
+        {
+            string aClass = string.Empty; //不同状态对应的class样式
+            switch (item.state)
+            {
+                case (int)DishEnums.TableStateEnums.空闲:
+                    aClass = "s_kongxian";
+                    break;
+                case (int)DishEnums.TableStateEnums.已开台:
+                    aClass = "s_opened";
+                    break;
+                case (int)DishEnums.TableStateEnums.已下单:
+                    aClass = "s_isorder";
+                    break;
+                case (int)DishEnums.TableStateEnums.已支付:
+                    aClass = "s_ispay";
+                    break;
+            }
+
+            <div class="tb_list">
+                <p class="tb_title_l" style="margin-bottom: 0px;">@(item.table_name)(@(item.table_renshu)人桌)</p>
+                <p style="text-align: center;background: #f1f1f1;">
+                    排序：<input type="text" name="table_sort[]" data-id="@(item.id)" value="@(item.table_sort)" class="input-text table_sort_val" style="width: 90px;height: 24px;" />
+                </p>
+                <a href="javascript:void(0);" onclick="table_info('【@(item.table_name)】管理', '/DishAdmin/Main/DishTableEdit?id=@item.id&aid=@Model.DataModel.aId&storeId=@Model.DataModel.storeId')"
+                    id="state_class_@(item.id)" class="@(aClass)">
+                    <div class="state" id="state_text_@(item.id)">@(Enum.GetName(typeof(DishEnums.TableStateEnums), item.state))</div>
+                </a>
+                <p class="ta_status_l" style="margin-bottom: 0px;">
+                    状态：<select name="table_status" onchange="change_status(@(item.id),this.value)" class="select" style="width: 90px;">
+                        <option value="0" @(item.state == 0 ? "selected" : "")>空闲</option>
+                        <option value="1" @(item.state == 1 ? "selected" : "")>已开台</option>
+                        <option value="2" @(item.state == 2 ? "selected" : "")>已下单</option>
+                        <option value="3" @(item.state == 3 ? "selected" : "")>已支付</option>
+                    </select>
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+        });
+        //修改桌台状态
+        function change_status(id, status_val) {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "/DishAdmin/Main/DishTableEdit?aid=@Model.DataModel.aId&storeId=@Model.DataModel.storeId",
+                data: { id: id, state: status_val, act: "save", editCols: "state" },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        $("#state_text_" + id).html(GetStateName(status_val));
+                        $("#state_class_" + id).attr('class', '');
+                        $("#state_class_" + id).attr('class', GetStateClass(status_val));
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+
+        //编辑
+        function table_info(title, url) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '300px']
+            });
+        }
+
+        //新增
+        function table_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '300px']
+            });
+        }
+
+        //清台
+        function table_clear(url)
+        {
+            if (confirm('确认要将所有桌台设为空闲吗?'))
+            {
+                $.ajax({
+                    url: url,
+                    type: 'post',
+                    success: function (data) {
+                        layer.alert(data.msg, { icon: 0 });
+                        if(data.code == 1)
+                        {
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        }
+                    },
+                    error: function () {
+                        alert('error');
+                    }
+                });
+            }
+        }
+
+        //排序
+        function table_sort() {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            var sort_data = '';
+            $(".table_sort_val").each(function () {
+                sort_data = sort_data + $(this).data("id") + "_" + $(this).val() + ',';
+            })
+            $.ajax({
+                type: "POST",
+                url: "/DishAdmin/Main/DishTable?aId=@Model.DataModel.aId&storeId=@Model.DataModel.storeId",
+                data: {sortData: sort_data, act: "sort" },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+
+        }
+
+        //返回状态名
+        function GetStateName(state)
+        {
+            switch (state)
+            {
+                case "0":
+                    return "空闲中";
+                    break;
+                case "1":
+                    return "已开台";
+                    break;
+                case "2":
+                    return "已下单";
+                    break;
+                case "3":
+                    return "已支付";
+                    break;
+            }
+        }
+
+        //返回状态class
+        function GetStateClass(state)
+        {
+            switch (state) {
+                case "0":
+                    return "s_kongxian";
+                    break;
+                case "1":
+                    return "s_opened";
+                    break;
+                case "2":
+                    return "s_isorder";
+                    break;
+                case "3":
+                    return "s_ispay";
+                    break;
+            }
+
+        }
+    </script>
+    <!--/请在上方写此页面业务相关的脚本-->
+
+}

@@ -1,0 +1,167 @@
+﻿@using Entity.MiniApp.Ent;
+@model  List<EntGroupsRelation>
+@{
+    ViewBag.Title = "拼团";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int EntjoingroupSwtich = ViewBag.EntjoingroupSwtich;
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        @if (ViewBag.PageType == (int)TmpType.小程序专业模板)
+        {
+            if (EntjoingroupSwtich == 1)
+            {
+                <a href="#" class="btn btn-success" id="notUse" title="请升级更高版本">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    添加拼团
+                </a>
+            }
+            else
+            {
+                <a href="/enterprisepro/pedit?appId=@ViewBag.appId&id=0&goodtype=1" class="btn btn-success" id="btnBatch_Pass">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    添加拼团
+                </a>
+            }
+
+        }
+        else if (ViewBag.PageType == (int)TmpType.小程序多门店模板)
+        {
+            <a href="/MultiStore/GoodsManager/pedit?appId=@ViewBag.appId&id=0&goodtype=1" class="btn btn-success" id="btnBatch_Pass">
+                <span class="glyphicon glyphicon-ok"></span>
+                添加拼团
+            </a>
+        }
+        else if (ViewBag.PageType == (int)TmpType.小程序餐饮模板)
+        {
+            <a href="/foods/GoodEdit?appId=@ViewBag.appId&gid=0&goodtype=1" class="btn btn-success" id="btnBatch_Pass">
+                <span class="glyphicon glyphicon-ok"></span>
+                添加拼团
+            </a>
+        }
+    </div>
+</div>
+
+<table class="table table-condensed table-hover cancel-table-td-border " style="width:800px;display:none;"></table>
+
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th><input type="checkbox" class="checkbox-ickeck selectAll" id="ckbAll"><label for="ckbAll">全选</label></th>
+        <th>拼团名称</th>
+        @*<th>有效时间</th>*@
+        <th>拼团价格</th>
+        <th>单买价格</th>
+        <th>原价</th>
+        <th>发布时间</th>
+        <th>状态</th>
+        <th>小程序页面路径</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="3%"><input type="checkbox" id="ckbitem@(item.Id)" class="checkbox-ickeck" value="@(item.Id)"><label for="ckbitem@(item.Id)">@(i++)</label> </td>
+                <td width="8%">@(item.Name)</td>
+                @*<td width="13%">@item.ValidDateStartStr 至 @item.ValidDateEndStr</td>*@
+                <td width="4%">@item.GroupPriceStr</td>
+                @if (ViewBag.PageType == (int)TmpType.小程序餐饮模板)
+                {
+                    <td width="4%">@((item.SinglePrice * 0.01).ToString("0.00"))</td>
+                }
+                else
+                {
+                    <td width="4%">@item.SinglePriceStr</td>
+                }
+                <td width="4%">@item.OriginalPriceStr</td>
+                <td width="8%">@item.AddTimeStr</td>
+                <td width="4%">
+                    <span>@(item.State == 0 ? "已下架" : item.State == 1 ? "已上架" : "已失效")</span>
+                </td>
+                <td width="8%">/pages/group2/group2?id=@item.EntGoodsId</td>
+                <td width="12%">
+                    @switch (item.State)
+                    {
+                        case 0:
+                            <a href="javascript:updatestate(@item.Id,1);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                                <span class="glyphicon glyphicon-ok"></span>
+                                上架
+                            </a>
+                            <a href="javascript:updatestate(@item.Id,-1);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                                <span class="glyphicon glyphicon-remove"></span>
+                                使失效
+                            </a>
+                            break;
+                        case -1:
+                            <a href="javascript:;" class="btn btn-primary btn-xs" style="margin-top:5px;">
+                                已失效
+                            </a>
+                            <a href="javascript:updatestate(@item.Id,-2);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;width:65px;">
+                                <span class="glyphicon glyphicon-remove"></span>
+                                删除
+                            </a>
+                            break;
+                        case 1:
+                            <a href="javascript:updatestate(@item.Id,0);" class="btn btn-warning btn-xs" style="margin-top:5px;">
+                                <span class="glyphicon glyphicon-ok"></span>
+                                下架
+                            </a>
+                            <a href="javascript:updatestate(@item.Id,-1);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                                <span class="glyphicon glyphicon-remove"></span>
+                                使失效
+                            </a>
+                            break;
+                        default:
+                            break;
+                    }
+                    @if (item.State != -1 && item.State != 1)
+                    {
+                        if (ViewBag.PageType == (int)TmpType.小程序餐饮模板)
+                        {
+                            <a href="/foods/GoodEdit?appId=@ViewBag.appId&gid=@item.EntGoodsId" class="btn  btn-primary btn-xs" style="margin-top:5px;">编辑</a>
+                        }
+                        else
+                        {
+                            <a href="/enterprisepro/pedit?appId=@ViewBag.appId&id=@item.EntGoodsId" class="btn  btn-primary btn-xs" style="margin-top:5px;">编辑</a>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+
+<script>
+
+    $("#notUse").click(function(){
+        layer.msg("请升级更高版本");
+        return;
+    });
+
+    function updatestate(id, state) {
+        if (state== -1 && !confirm("你确定要这组拼团失效吗?")) {
+            return;
+        }
+
+        $.ajax({
+            type: "post",
+            url: "/entgroups/UpdateState",
+            data: { id: id, state: state ,appId:@ViewBag.appId,type:@ViewBag.PageType},
+            success: function (data) {
+                layer.msg(data.msg);
+                window.location.reload();
+            }
+        })
+    }
+
+</script>

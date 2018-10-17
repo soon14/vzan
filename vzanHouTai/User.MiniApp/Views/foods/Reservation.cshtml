@@ -1,0 +1,439 @@
+﻿@using Entity.MiniApp.Fds;
+@using Entity.MiniApp;
+@model FoodConfigModel
+@{
+    ViewBag.Title = "预约点餐";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+
+<style>
+    .centertext {
+        vertical-align: middle !important;
+        text-align: center;
+    }
+
+    .table-span {
+        margin: 1rem;
+    }
+
+    span.layui-laypage-curr, span.layui-laypage-skip {
+        float: none;
+        padding-top: 0;
+    }
+
+    #logModal .modal-dialog {
+        width: 952px;
+    }
+
+    .searchul {
+        width: 100%;
+        margin: 20px 0px 14px 0px;
+    }
+
+        .searchul li { /*width:25%;*/
+            float: left;
+            margin-right: 25px;
+        }
+
+            .searchul li span {
+                float: left;
+                padding-top: 5px;
+                padding-right: 8px;
+            }
+
+            .searchul li input, .searchul li select {
+                width: 140px;
+            }
+
+    .layui-form-switch {
+        margin-top: 0px;
+        height: 24px;
+        width: 53px;
+    }
+</style>
+
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+
+<div id="app" v-cloak>
+    <div style="margin-left:17px;">
+        <ul class="searchul">
+            <li style="border-bottom:1px solid #f1f1f1;padding-bottom:1rem;width:100%;display:flex">
+                <span>预约点餐功能：</span>
+                @*<select v-model="functionEnable" data-value="@(Model.reservationSwitch ? 1 : 0)" ref="ConfigSwitch"  class="form-control">
+                        <option value="1">开启</option>
+                        <option value="0">关闭</option>
+                    </select>*@
+                <div class="layui-form">
+                    <input type="checkbox" @(Model.reservationSwitch ? "checked=\"checked\"" : "") v-model="functionEnable" lay-filter="reserveSwitch" lay-skin="switch" lay-text="开启|关闭"/>
+                </div>
+                @*<span style="margin-left:1rem">预约点餐自动打印：</span>
+                <div class="layui-form">
+                    <input type="checkbox" @(Model.reservationPrint ? "checked=\"checked\"" : "") v-model="printEnabel" lay-filter="printEnabel" lay-skin="switch" lay-text="开启|关闭" />
+                </div>*@
+            </li>
+        </ul>
+        <br />
+        <br />
+    </div>
+    <div style="margin-left:17px;">
+        <ul class="searchul">
+            <li><span>姓名:</span><input type="text" v-model="queryData.userName" class="input-sm form-control" /></li>
+            @*<li>
+                    <span>会员级别:</span>
+                    <select class="form-control">
+                        <option value="0" selected>全部</option>
+                    </select>
+                </li>*@
+            <li><span>手机号	:</span><input type="text" v-model="queryData.contact" class="input-sm form-control" /></li>
+        </ul>
+        <div class="d-flex d-flex-center formsearch">
+            就餐时间 从：
+            <div class="input-daterange input-group" id="datepicker" style="width:300px;margin-right:1rem;">
+                <input type="text" class="input-sm form-control" ref="dinnerStart" readonly />
+                <span class="input-group-addon">到</span>
+                <input type="text" class="input-sm form-control" ref="dinnerEnd" readonly />
+            </div>
+            下单时间从：
+            <div class="input-daterange input-group" id="datepicker" style="width:300px;">
+                <input type="text" class="input-sm form-control" ref="startDate" readonly />
+                <span class="input-group-addon">到</span>
+                <input type="text" class="input-sm form-control" ref="endDate" readonly />
+            </div>
+
+            <a style="cursor:pointer" @@click="search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+            <a style="cursor:pointer" @@click="reset()" class="btn btn-default">清除</a>
+        </div>
+        <br />
+    </div>
+
+    <div class="ml_19">
+        <div class="tabs-container" style="height:0px">
+            <ul class="nav nav-tabs">
+                <li @@click="selectState = @((int)miniAppFoodOrderState.待接单)" class="active">
+                    <a data-toggle="tab" href="#tab-1" aria-expanded="true"> 待确认</a>
+                </li>
+                <li @@click="selectState = @((int)miniAppFoodOrderState.待就餐)">
+                    <a data-toggle="tab" href="#tab-2" aria-expanded="false">待消费</a>
+                </li>
+                <li @@click="selectState = @((int)miniAppFoodOrderState.已完成)">
+                    <a data-toggle="tab" href="#tab-2" aria-expanded="false">已作废</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <table class="table table-bordered ml_19">
+        <tr class="active">
+            <th class="centertext">预约号</th>
+            <th class="centertext">订单号</th>
+            <th class="centertext">手机号</th>
+            <th class="centertext">姓名</th>
+            <th class="centertext">就餐时间</th>
+            <th class="centertext">就餐人数</th>
+            <th class="centertext">预约菜单</th>
+            <th class="centertext">菜单状态</th>
+            <th class="centertext">备注</th>
+            <th class="contertext" v-if="selectState === @((int)miniAppFoodOrderState.已完成)">桌号</th>
+            <th class="centertext">下单时间</th>
+            <th class="centertext">订单状态</th>
+            <th class="centertext" v-if="selectState != @((int)miniAppFoodOrderState.已完成)">操作</th>
+        </tr>
+        <tr v-for="(reservation,index) in reserveList">
+            <td width="5%" class="centertext">{{reservation.Id}}</td>
+            <td width="5%" class="centertext">{{reservation.OrderId}}</td>
+            <td width="9%" class="centertext">{{reservation.Contact}}</td>
+            <td width="6%" class="centertext">{{reservation.UserName}}</td>
+            <td width="10%" class="centertext">{{reservation.DinnerTime}}</td>
+            <td width="6%" class="centertext">{{reservation.Seats}}</td>
+            <td v-if="reservation.Menu" v-html="reservation.Menu.replace(/;/g,'<br>')" width="20%" class="centertext"></td>
+            <td v-else width="20%" class="centertext">未点餐</td>
+            <td width="6%" class="centertext">{{reservation.Type === @((int)miniAppReserveType.到店扫码) ? '到店扫码' : '已支付'}}</td>
+            <td width="9%" class="centertext">{{reservation.Note}}</td>
+            <td width="5%" class="centertext" v-if="selectState === @((int)miniAppFoodOrderState.已完成)">{{reservation.TableNo}}</td>
+            <td width="10%" class="centertext">{{reservation.OrderDate}}</td>
+            <td width="6%" class="centertext"
+                v-if="(reservation.Type === @((int)miniAppReserveType.到店扫码) && reservation.State === @((int)miniAppFoodOrderState.待付款)) ||
+                      (reservation.Type === @((int)miniAppReserveType.预约支付) && reservation.State === @((int)miniAppFoodOrderState.待接单))">
+                待确认
+            </td>
+            <td width="6%" class="centertext"
+                v-if="reservation.State === @((int)miniAppFoodOrderState.待就餐)">
+                待消费
+            </td>
+            <td width="6%" class="centertext"
+                v-if="reservation.State === @((int)miniAppFoodOrderState.已完成)">
+                已完成
+            </td>
+            <td width="6%" class="centertext"
+                v-if="reservation.State === @((int)miniAppFoodOrderState.已退款)">
+                已退款
+            </td>
+            <td width="6%" class="centertext"
+                v-if="reservation.State === @((int)miniAppFoodOrderState.已取消)">
+                已取消
+            </td>
+            <td width="15%" class="centertext" v-if="reservation.Type === @((int)miniAppReserveType.到店扫码) && selectState != @((int)miniAppFoodOrderState.已完成)">
+                <input v-if="reservation.State === @((int)miniAppFoodOrderState.待付款)"
+                       @@click="updateState(reservation.Id,@((int)miniAppFoodOrderState.待就餐),'确认接单吗？')"
+                       value="确认" type="button" class="btn btn-primary">
+                <input v-if="reservation.State === @((int)miniAppFoodOrderState.待就餐)"
+                       @@click="updateState(reservation.Id,@((int)miniAppFoodOrderState.已完成),'确认到店，完成订单吗？')"
+                       value="到店" type="button" class="btn btn-primary">
+                <input v-if="reservation.State === @((int)miniAppFoodOrderState.待就餐) || reservation.State === @((int)miniAppFoodOrderState.待付款)"
+                       @@click="updateState(reservation.Id,@((int)miniAppFoodOrderState.已取消),'确认取消吗？')"
+                       value="取消" type="button" class="btn btn-danger">
+            </td>
+            <td width="15%" class="centertext" v-if="reservation.Type === @((int)miniAppReserveType.预约支付) && selectState != @((int)miniAppFoodOrderState.已完成)">
+                <input v-if="reservation.State === @((int)miniAppFoodOrderState.待接单)"
+                       @@click="updateState(reservation.Id,@((int)miniAppFoodOrderState.待就餐),'确认接单吗？')"
+                       value="确认" type="button" class="btn btn-primary">
+                <input v-if="reservation.State === @((int)miniAppFoodOrderState.待就餐)"
+                       @@click="showTable(reservation.Id)"
+                       value="下单" type="button" class="btn btn-primary">
+                <input v-if="reservation.State === @((int)miniAppFoodOrderState.待就餐) || reservation.State === @((int)miniAppFoodOrderState.待接单)"
+                       @@click="updateState(reservation.Id,@((int)miniAppFoodOrderState.已退款),'确认退款吗？')"
+                       value="退款" type="button" class="btn btn-danger">
+            </td>
+        </tr>
+        <tr v-if="!reserveList || !reserveList.length">
+            <td colspan="11">暂无数据</td>
+        </tr>
+    </table>
+
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+
+    <!--分配桌号-->
+    <div class="modal fade" ref="TableLayer" id="editModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择桌位</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <tr>
+                            <td align="left">
+                                @*<input v-for="table in tableList"
+                                    v-bind:value="table.Scene" type="button" class="btn btn-default table-span"
+                                    v-bind:class="{'btn-primary':selectTable === table.Id}"
+                                    @@click="selectTable = table.Id" />*@
+                                <span v-for="table in tableList"
+                                      class="btn btn-default table-span"
+                                      v-bind:class="{'btn-primary':selectTable === table.Id}"
+                                      @@click="selectTable = table.Id">{{table.Scene}}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button @@click="updateState(selectReserve,@((int)miniAppFoodOrderState.已完成),'确认就座，下单完成吗？',selectTable)" type="button" class="btn btn-primary">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            functionEnable: '@(Model.reservationSwitch)' === 'True',
+            printEnabel: '@(Model.reservationPrint)' === 'True',
+            recordCount: 0,
+            reserveList: [],
+            tableList: [],
+            selectState: '',
+            selectTable: 0,
+            selectReserve: 0,
+            queryData: {
+                appId: Number('@ViewBag.appId'),
+                pageIndex: 1,
+                pageSize: 10,
+                userName: "",
+                contact: '',
+                dinnerStart: '',
+                dinnerEnd: '',
+                state: '',
+                start: '',
+                end: '',
+            },
+            formData: {
+                appId: Number('@ViewBag.appId'),
+                pageIndex: 1,
+                pageSize: 10,
+                userName: "",
+                contact: '',
+                dinnerStart: '',
+                dinnerEnd: '',
+                state: '',
+                start: '',
+                end: '',
+            },
+            isloading: false,
+        },
+        methods: {
+            getReserveList: function () {
+                if (this.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                this.isloading = true;
+                var index = layer.load(1);
+                $.get("/foods/GetReserveList", this.formData, function (data) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (!data.isok) {
+                        layer.msg(data.msg);
+                        return;
+                    }
+                    if (app.formData.pageIndex === 1) {
+                        app.recordCount = data.count;
+                        app.resetPage();
+                    }
+                    app.reserveList = data.data;
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.formData.pageIndex //当前页
+                        , limit: app.formData.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            app.formData.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.getReserveList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            renderLayUI: function () {
+                var thisVue = this;
+                layui.use(['form', 'element'], function () {
+                    element = layui.element;
+                    form = layui.form;
+                    //预约开关
+                    form.on('switch(reserveSwitch)', function (data) {
+                        thisVue.functionEnable = data.elem.checked;
+                    });
+                    //预约打印开关
+                    form.on('switch(printEnabel)', function (data) {
+                        thisVue.printEnabel = data.elem.checked;
+                    });
+                });
+            },
+            search: function () {
+                this.queryData.start = this.$refs.startDate.value;
+                this.queryData.end = this.$refs.endDate.value;
+                this.queryData.dinnerStart = this.$refs.dinnerStart.value;
+                this.queryData.dinnerEnd = this.$refs.dinnerEnd.value;
+                this.formData = JSON.parse(JSON.stringify(this.queryData));
+                this.getReserveList();
+            },
+            reset: function () {
+                this.$refs.startDate.value = '';
+                this.$refs.endDate.value = '';
+                this.$refs.dinnerStart.value = '';
+                this.$refs.dinnerEnd.value = '';
+                this.queryData.pageIndex = 1;
+                this.queryData.userName = '';
+                this.queryData.contact = '';
+            },
+            updateState: function (reserveId, state, alertMsg, tableId) {
+                var post = function () {
+                    var index = layer.load(1);
+                    $.post('/Foods/UpdateReservation', {
+                        appId: app.queryData.appId,
+                        reserveId: reserveId,
+                        updateState: state,
+                        tableId: tableId
+                    }).then(function (result) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (!result.isok) { layer.msg(result.msg); return; }
+                        if (tableId) {
+                            $(app.$refs.TableLayer).modal('hide');
+                        }
+                        app.getReserveList();
+                    });
+                }
+                if (alertMsg) {
+                    layer.confirm(alertMsg, function (index) {
+                        layer.close(index);
+                        post();
+                    });
+                }
+                else {
+                    post();
+                }
+            },
+            showTable: function (reserveId) {
+                var index = layer.load(1);
+                this.selectReserve = reserveId;
+                $.get('/Foods/GetTableList', {
+                    appId: app.queryData.appId,
+                }).then(function (result) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (!result.isok) { layer.msg(result.msg); return; }
+                    app.tableList = result.data;
+                    $(app.$refs.TableLayer).modal('show');
+                });
+            },
+            updateConfig: function (option, value) {
+                var index = layer.load(1);
+                $.post('/Foods/UpdateStoreConfig', {
+                    appId: app.queryData.appId,
+                    option: option,
+                    value: value
+                }).then(function (result) {
+                    layer.close(index);
+                    app.isloading = false;
+                    layer.msg(result.isok ? '保存成功' : result.msg);
+                });
+            }
+        },
+        created: function () {
+            this.getReserveList();
+            this.renderLayUI();
+        },
+        mounted: function () {
+        },
+        watch: {
+            selectState: function (value) {
+                this.queryData.state = value;
+                this.formData.state = value;
+                this.formData.pageIndex = 1;
+                this.getReserveList();
+            },
+            functionEnable: function (value) {
+                this.updateConfig('reservation', value);
+            },
+            printEnabel: function (value) {
+                this.updateConfig('reservationPrint', value);
+            },
+        }
+    })
+
+
+    $('.input-daterange').datepicker({
+        format: "yyyy-mm-dd",
+        language: "zh-CN",
+        //autoclose: true,
+        todayHighlight: true
+    });
+</script>

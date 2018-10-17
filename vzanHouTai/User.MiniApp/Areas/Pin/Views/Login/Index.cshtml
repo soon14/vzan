@@ -1,0 +1,114 @@
+﻿@{
+    ViewBag.Title = "拼享惠官方管理平台";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+}
+
+@section styles{
+    <link href="~/Content/css/dzbase.css" rel="stylesheet" />
+    <link href="~/Areas/PinAdmin/css/base.css" rel="stylesheet" />
+    <link href="~/Areas/PinAdmin/css/animate.css" rel="stylesheet" />
+    <link href="~/Areas/PinAdmin/css/login.css" rel="stylesheet" />
+    <style>
+        .mainbody { width: 600px; height: 100%; margin: 0 auto; }
+        .Validform_error, input.error, select.error { background-color: transparent; border-color: #c66161; color: #3eb94e; }
+        .main { background-image: linear-gradient(30deg,#3eb94e,#3eb94e); }
+    </style>
+}
+
+<body class="main">
+    <div class="mainbody rel" id="app">
+        <div>
+            <form method="post" id="post-form">
+                <input type="hidden" name="act" value="login" />
+                <div class="float-mid">
+                    <div class="errow-tip animated zoomIn disn">用户名或密码错误</div>
+                    <h2 class="tit">拼享惠官方管理平台</h2>
+                    <ul>
+                        <li class="rel"><input type="text" name="username" placeholder="请输入登陆名"></li>
+                        <li class="rel"><input type="password" name="password" placeholder="请输入密码"></li>
+                        <li><button type="submit" id="submit_button">登录</button></li>
+                    </ul>
+                </div>
+            </form>
+            <span class="c1"></span>
+            <span class="c2"></span>
+            <span class="c3"></span>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            //表单验证
+            $("#post-form").validate({
+                rules: {
+                    loginname: {
+                        required: true,
+                    },
+                    password: {
+                        required: true
+                    },
+                },
+                messages: {
+                    loginname: {
+                        required: "请输入用户名"
+                    },
+                    password: {
+                        required: "请输入密码"
+                    },
+                },
+                onkeyup: false,
+                success: "valid",
+                submitHandler: function (form) {
+                    var l_index = layer.msg('数据提交中', {
+                        icon: 16,
+                        //shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        type: 'post',
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.msg(data.msg, { time: 1000 });
+                            } else {
+                                var url = window.location.host;
+                                var domain = "";
+                                if (url.indexOf("www.") != -1) {
+                                    domain = url.replace("www.", ".");
+                                }
+                                else {
+                                    domain = "." + url;
+                                }
+                                $.cookie("dz_UserCookieNew", data.obj.loginToken, {
+                                    expires: 7,
+                                    path: '/',
+                                    domain: domain
+                                });
+                                $.cookie("adminAuth", data.obj.authToken, {
+                                    expires: 7,
+                                    path: '/',
+                                    domain: domain
+                                });
+                                $.cookie("masterAuth", "x", {
+                                    expires: 7,
+                                    path: '/',
+                                    domain: domain
+                                });
+                                setTimeout(function () {
+                                    window.location = data.obj.url;
+                                }, 1000);
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+    </script>
+}
+
+

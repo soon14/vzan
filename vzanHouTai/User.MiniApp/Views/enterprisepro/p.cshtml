@@ -1,0 +1,577 @@
+﻿@using User.MiniApp.Model
+@model ViewModel<EntGoods>
+@{
+    //小程序商城店铺配置
+    ViewBag.Title = "产品列表";
+    ViewBag.PageType = 22;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+    List<object> imglist = (List<object>)ViewBag.CarouselList;
+    if (imglist == null)
+    {
+        imglist = new List<object>();
+    }
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    List<EntGoodType> goodTypeList =  EntGoodTypeBLL.SingleModel.GetList(string.Format("aid={0} and state=1  and parentid<>0", appid));
+    List<EntGoodLabel> goodLabelList =  EntGoodLabelBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid));
+}
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .nowrap { white-space: nowrap; }
+    .search { margin: 20px; }
+    .instruction { background: rgba(218,237,255,.3); height: 172px; padding: 21px 0 31px 21px; border: 1px solid #d5d5de; line-height: 26px; margin-top: 20px; }
+</style>
+
+<div id="app" class="container-fluid">
+
+    <div>
+
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、只有状态为已上架的产品才能进行购买和预约</p>
+            <p>2、库存为“无限制”时，预约和购买产品均不会扣减库存</p>
+        </div>
+        <div class="search ">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">货号：</label>
+                    <input type="text" name="search" class="form-control" id="stockNo" maxlength="20" value="@(Utility.IO.Context.GetRequest("stockNo",""))" />
+                </div>
+                <div class="form-group">
+                    <label for="plist-pname">产品名称：</label>
+                    <input type="text" name="search" class="form-control" id="plist-pname" value="@(Utility.IO.Context.GetRequest("search",""))" />
+                </div>
+                <div class="form-group ml10">
+                    <label>产品标签：</label>
+                    <select class="form-control" id="plist-plabels">
+                        <option value="">全部</option>
+                        @if (goodLabelList != null && goodLabelList.Count > 0)
+                        {
+                            foreach (EntGoodLabel item in goodLabelList)
+                            {
+                                <option value="@(item.id)" @(Utility.IO.Context.GetRequestInt("plabels", 0) == item.id ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group ml10">
+                    <label>产品分类：</label>
+                    <select class="form-control" id="plist-ptype">
+                        <option value="">全部</option>
+                        @if (goodTypeList != null && goodTypeList.Count > 0)
+                        {
+                            foreach (EntGoodType item in goodTypeList)
+                            {
+                                <option value="@(item.id)" @(Utility.IO.Context.GetRequestInt("ptype", 0) == item.id ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    </select>
+
+                </div>
+                <div class="form-group ml10">
+                    <label>状态：</label>
+                    <select class="form-control" id="plist-tag">
+                        <option value="">全部</option>
+                        <option value="1" @(Utility.IO.Context.GetRequestInt("ptag", -1) == 1 ? "selected" : "")>已上架</option>
+                        <option value="0" @(Utility.IO.Context.GetRequestInt("ptag", -1) == 0 ? "selected" : "")>已下架</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary ml10" id="searchbtn">搜索</button>
+                <a href="/enterprisepro/p?appId=@(appid)" class="btn btn-default ml10" id="searchReset">重置</a>
+            </div>
+        </div>
+
+        <div class="d-flex d-flex-center">
+            <a href="/enterprisepro/pedit?appId=@appid&id=0&industr=@ViewBag.industr" class="btn btn-success" id="btnBatch_Pass">
+                <span class="glyphicon glyphicon-plus"></span>
+                新增产品
+            </a>
+            &nbsp;&nbsp;
+            <input type="button" class="btn btn-success batch-action" actin="1" value="批量上架" />
+            &nbsp;&nbsp;
+            <input type="button" class="btn btn-success batch-action" actin="0" value="批量下架" />
+            &nbsp;&nbsp;
+            <button class="btn btn-success savesort" data-id="0">
+                批量改排序
+            </button>
+            &nbsp;&nbsp;
+            <div>
+                <a href="javascript:;" class="btn btn-success" id="btn_ImportProductFrm"><span class="glyphicon glyphicon-open"></span>导入产品</a>
+            </div>
+            &nbsp;&nbsp;
+            <div>
+                <a href="javascript:;" class="btn btn-success" onclick="ExportProducts(0)"><span class="glyphicon glyphicon-save"></span>导出产品(所有)</a>
+            </div>
+            &nbsp;&nbsp;
+
+            <div>
+                <a href="javascript:;" class="btn btn-success" onclick="ExportProducts(1)"><span class="glyphicon glyphicon-save"></span>导出产品(按查询条件)</a>
+            </div>
+            &nbsp;&nbsp;
+
+            <div>
+                <a href="javascript:;" class="btn btn-success" onclick="ExportProducts(2)"><span class="glyphicon glyphicon-save"></span>导出产品(按勾选)</a>
+            </div>
+            &nbsp;&nbsp;
+
+
+            <input type="button" class="btn btn-danger batch-action" actin="-1" value="批量删除" /> &nbsp;<span style="color:orange">(批量删除操作只会对选中的已下架的商品生效)</span>
+        </div>
+
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th class="centertext nowrap" width="50">
+                            <input type="checkbox" name="checkall" id="checkall" />
+                        </th>
+                        <th class="centertext nowrap" width="300">产品名称</th>
+                        <th class="centertext nowrap">产品分类</th>
+                        <th class="centertext nowrap">产品标签</th>
+                        <th class="centertext nowrap">货号</th>
+                        <th class="centertext nowrap">价格（元）</th>
+                        <th class="centertext nowrap">库存</th>
+                        <th class="centertext nowrap">实际销量</th>
+                        <th class="centertext nowrap">单位</th>
+                        <th class="centertext nowrap">最后更新时间</th>
+                        <th class="centertext nowrap">状态</th>
+                        <th class="centertext nowrap" width="150">排序</th>
+                        <th class="centertext nowrap">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr>
+                            <td align="center">
+                                <input type="checkbox" class="item_sel" value="@(item.id)" />
+                            </td>
+                            <td class="centertext">
+                                <a href="/enterprisepro/pedit?appId=@appid&id=@item.id" title="@item.name">@item.name</a>
+                            </td>
+                            <td class="centertext">@item.ptypestr</td>
+                            <td class="centertext">@item.plabelstr</td>
+                            <td class="centertext">@item.StockNo</td>
+                            <td class="centertext">@(item.price.ToString("#0.00"))</td>
+                            <td class="centertext">@(item.stockLimit ? item.stock.ToString() : "不限库存")</td>
+                            <td class="centertext">@item.salesCount</td>
+                            <td class="centertext">@item.unit</td>
+                            <td class="nowrap">@(item.updatetime)</td>
+                            <td class="centertext">@(item.tag == 1 ? "上架" : "下架") </td>
+                            <td class="showorclose centertext" data-state="0">
+                                <div>@item.sort</div>
+                                <div style="display:none;">
+                                    <input type="text" class="form-control" name="sort_@item.id" style="width:50px;display:inline-block;" value="@item.sort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" data-sort="@item.sort" data-id="@item.id" />
+                                    <a href="javascript:;" class="btn btn-primary btn-xs savesort" data-id="@item.id">保存</a>
+                                    <a href="javascript:;" data-state="1" class="btn btn-danger btn-xs showorclose">关闭</a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="nobr">
+                                    <input type="button" class='btn btn-sm @(item.tag==1?"btn-primary":"btn-warning") changeGoodTag ml10' value="@(item.tag==1?"下架":"上架")" data-pid="@(item.id)" data-tag="@(item.tag)" />
+                                    <a class="copygood btn btn-success btn-sm ml10" data-id="@(item.id)"><i class="glyphicon glyphicon-file"></i>复制</a>
+                                    <a class="delp btn btn-danger btn-sm" data-id="@(item.id)"><i class="glyphicon glyphicon-trash ml10"></i>删除</a>
+                                    <a href="/enterprisepro/pedit?appId=@appid&id=@item.id" class="btn btn-default btn-sm ml10"><i class="glyphicon glyphicon-pencil"></i>编辑</a>
+                                    <a href="javascript:" onclick="appRoute(@item.id)" class="btn btn-default btn-sm ">小程序路径</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal fade" id="ImportProductModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        产品导入
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+
+                        <div style="margin-top:10px;">
+                            <p>产品导入(用excel表格快速导入本地产品)</p>
+
+                            <div style="margin-top:20px;">
+                                <a href="~/Content/enterprise/产品批量上传.xlsx" download="产品批量上传" class="btn btn-primary"><span class="glyphicon glyphicon-save"></span>下载导入模板</a>
+                                <a href="javascript:;" class="btn btn-primary" id="btn_ImportProduct"><span class="glyphicon glyphicon-open"></span>导入产品</a>
+                                <input type="file" name="FileUpload" id="FileUpload" accept=".xls,.xlsx" style="display:none;">
+
+                            </div>
+                            <div class="instruction">
+                                <p class="text-border">说明：</p>
+                                <p>1. 下载商品导入模板</p>
+                                <p>2. 在 [商品导入模板] 工作表按规则添加商品数据</p>
+                                <p>注: 一次上传最多上传300个商品</p>
+                            </div>
+                        </div>
+
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+
+
+    <script>
+        var aid=@appid;
+        $(function () {
+            $(document)
+                 .on("click", "#btn_ImportProductFrm", function () {
+                     $("#ImportProductModal").modal('show');
+                 })
+            .on("click", "#btn_ImportProduct", function () {
+                $("#FileUpload").click();
+            }) .on("change", "#FileUpload", function () {
+                var fileObj = document.getElementById("FileUpload").files[0]; // js 获取文件对象
+                if (typeof (fileObj) == "undefined" || fileObj.size <= 0) {
+                    layer.msg("请先选择文件");
+                    return;
+                }
+                var formFile = new FormData();
+                formFile.append("aid", aid);
+                formFile.append("file", fileObj); //加入文件对象
+                var data = formFile;
+                var indexMsg=layer.load(0);
+                $.ajax({
+                    url: "/enterprisepro/ImportProducts",
+                    data: data,
+                    type: "Post",
+                    dataType: "json",
+                    cache: false,//上传文件无需缓存
+                    processData: false,//用于对data参数进行序列化处理 这里必须false
+                    contentType: false, //必须
+                    success: function (result) {
+                        layer.msg(result.msg);
+                        layer.close(indexMsg);
+                        setTimeout(function(){window.location.reload();},2000);
+
+                    },
+                })
+            })
+            .on("click", ".copygood", function () {
+                var that = $(this);
+                var pid = that.data("id");
+                layer.open({
+                    title: "复制确认",
+                    content: "确定要复制该产品吗？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        $.post("/enterprisepro/pedit", { act: "copy", id: pid, appId: aid })
+                        .then(function (data) {
+                            console.log(data);
+                            if (typeof data == "object") {
+                                if (data.isok) {
+                                    layer.msg("复制成功", { time: 1000 });
+                                    window.location.href="/enterprisepro/pedit?appId="+aid+"&id="+data.msg;
+                                }
+                                else {
+                                    layer.alert(data.msg);
+                                }
+                            }
+                            else {
+                                layer.alert(data);
+                            }
+                        });
+
+                    }
+                })
+            })
+            .on("click", ".delp", function () {
+                var that = $(this);
+                var pid = that.data("id");
+                layer.open({
+                    title: "删除确认",
+                    content: "确定要删除该产品吗？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        $.post("/enterprisepro/pedit", { act: "del", id: pid, appId: aid })
+                        .then(function (data) {
+                            console.log(data);
+                            if (typeof data == "object") {
+                                if (data.isok) {
+                                    layer.msg("删除成功", { time: 1000 });
+                                    window.location.reload();
+                                }
+                                else {
+                                    layer.alert(data.msg);
+                                }
+                            }
+                            else {
+                                layer.alert(data);
+                            }
+                        });
+
+                    }
+                })
+            })
+            .on("click", "#searchbtn", function () {
+                var skey = $("#plist-pname").val();
+                var plabels = $("#plist-plabels").find("option:selected").val() || "";
+                var ptype = $("#plist-ptype").find("option:selected").val() || "";
+                var ptag = $("#plist-tag").find("option:selected").val() || "";
+                var stockNo = $('#stockNo').val() || "";
+                window.location.href = "/enterprisepro/p?appId=" + aid + "&search=" + skey + "&plabels=" + plabels + "&ptype=" + ptype + "&ptag=" + ptag + '&stockNo=' + stockNo;
+            })
+            .on("click",".changeGoodTag",function(){
+                var tag=$(this).data("tag");
+                var pid=$(this).data("pid");
+                tag=(tag==0?1:0);
+                $.post("/enterprisepro/pedit", { act: "tag", id: pid, appId: aid,tag:tag })
+                        .then(function (data) {
+                            console.log(data);
+                            if (data.isok) {
+                                layer.msg("操作成功", { time: 1000 });
+                                window.location.reload();
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        });
+            })
+            .on("click", ".batch-action", function () {
+                var selitems = $(".item_sel:checked");
+                var actval = $(this).attr("actin");
+                var actionName;
+                switch(actval)
+                {
+                    case "1" :
+                        actionName = "批量上架" ;
+                        break;
+                    case "0" :
+                        actionName = "批量下架" ;
+                        break;
+                    case "-1" :
+                        actionName = "批量删除" ;
+                        break;
+                }
+                if (selitems.length <= 0) {
+                    layer.msg("请选择要" + actionName + "的产品", { time: 1000 });
+                    return;
+                }
+                layer.open({
+                    title: "操作确认",
+                    content: "确定要" + actionName + "产品吗？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        var ids = [];
+                        $.each(selitems, function (i, obj) {
+                            ids.push($(obj).val());
+                        })
+
+                        $.post("/enterprisepro/pedit", { act: "batch", actval: actval, ids: ids.join(","), appId: aid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    if (data.isok) {
+                                        layer.msg(actionName+"成功", { time: 1000 });
+                                        setTimeout(function(){window.location.reload();},1000);
+                                    }
+                                    else {
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                    }
+                })
+
+            })
+             .on("click",".showorclose",function(even){
+                 var state = $(this).attr("data-state");
+                 if(state==0)
+                 {
+                     var div1 = $(this)[0].children[0]
+                     var div2 = $(this)[0].children[1]
+                     $(div1).hide();
+                     $(div2).show();
+                 }
+                 else{
+                     var div1 = $(this.offsetParent)[0].children[0]
+                     var div2 = $(this.offsetParent)[0].children[1]
+
+                     $(div2).hide();
+                     $(div1).show();
+                 }
+
+                 //js阻止事件冒泡
+                 even.cancelBubble = true;
+                 even.stopPropagation();
+             })
+             .on("click",".savesort",function(even){
+                 var itemid = $(this).attr("data-id");
+
+                 var data = [];
+                 if(itemid<=0)
+                 {
+                     var inputlist = $("input[name^='sort_']");
+                     if(inputlist!=undefined && inputlist.length>0)
+                     {
+                         for (var i = 0; i < inputlist.length; i++) {
+                             var value = inputlist[i];
+                             if($(value).val().length<=0)
+                             {
+                                 layer.msg("请输入排序值",{time:1000});
+                                 return;
+                             }
+                             if($(value).val().length>0 && $(value).attr("data-sort") != $(value).val())
+                             {
+                                 data[data.length]={id:$(value).attr("data-id"),sort:$(value).val()};
+                             }
+                         }
+                     }
+                 }
+                 else{
+                     var inputitemval = $("input[name='sort_"+itemid+"']").val();
+                     if(inputitemval.length<=0)
+                     {
+                         layer.msg("请输入排序值",{time:1000});
+                         return;
+                     }
+                     data[data.length]={id:itemid,sort:inputitemval};
+                 }
+
+                 if(data.length<=0)
+                 {
+                     layer.msg("保存成功",{time:1000},function(){
+                         window.location.reload();
+                     });
+
+                     return;
+                 }
+
+                 var datajson = JSON.stringify(data);
+
+                 $.post("/enterprise/updatesort", {appId:aid,datajson:datajson,type:3},function(data){
+                     if(typeof data=="object"){
+                         if(data.isok){
+                             layer.msg("保存成功",{time:1000},function(){
+                                 window.location.reload();
+                             });
+                         }
+                         else{
+                             layer.msg(data.msg,{time:1000});
+                         }
+                     }
+                     else{
+                         layer.msg(data.msg,{time:1000});
+                     }
+                 });
+
+                 //js阻止事件冒泡
+                 even.cancelBubble = true;
+                 even.stopPropagation();
+             })
+            .on("click","#checkall",function(){
+                $('.item_sel').prop("checked",$(this).prop("checked"));
+            });
+        });
+
+        function ExportProducts(type){
+            var txt="确定导出所有产品吗？<br /><数量越多响应时间越长>";
+            if(type==1){
+                txt="确定按查询条件导出产品吗？<br /><数量越多响应时间越长>";
+            }
+            if(type==2){
+                txt="确定导出所勾选产品吗？<br /><数量越多响应时间越长>";
+            }
+            var confForm = layer.open({
+                title: '导出产品',
+                btn: ["确定", "取消"],
+                content: txt,
+                yes: function () {
+                    var params;
+                    if (type == 1) {
+                        //按搜索条件导出
+                        var skey = $("#plist-pname").val();
+                        var plabels = $("#plist-plabels").find("option:selected").val() || "";
+                        var ptype = $("#plist-ptype").find("option:selected").val() || "";
+                        var ptag = $("#plist-tag").find("option:selected").val() || "";
+                        var stockNo = $('#stockNo').val() || "";
+                        params = serialize({
+                            appId:aid,
+                            search:skey,
+                            plabels:plabels,
+                            ptype:ptype,
+                            ptag:ptag,
+                            stockNo:stockNo,
+                            pageIndex:0
+                        });
+                        window.location.href = '/enterprisepro/ExportProductsFromDB?'+params;
+                    }
+                    else if (type == 2) {
+                        //按勾选导出
+                        var selitems = $(".item_sel:checked");
+                        if (selitems.length <= 0) {
+                            layer.msg("请选择要导出的产品", { time: 1000 });
+                            return;
+                        }
+
+                        var ids = [];
+                        $.each(selitems, function (i, obj) {
+                            ids.push($(obj).val());
+                        });
+                        params = serialize({
+                            appId:aid,
+                            ids:ids.join(','),
+                            pageIndex:0
+                        });
+                        window.location.href = '/enterprisepro/ExportProductsFromDB?'+params;
+
+
+                    }
+                    else {
+                        //导出所有
+                        params = serialize({
+                            appId:aid,
+                            pageIndex:0
+                        });
+                        window.location.href = '/enterprisepro/ExportProductsFromDB?'+params;
+
+                    }
+                    layer.close(confForm);
+                },
+            });
+        }
+
+        serialize = function(obj, prefix) {
+            var str = [], p;
+            for(p in obj) {
+                if (obj.hasOwnProperty(p)) {
+                    var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
+                    str.push((v !== null && typeof v === "object") ?
+                      serialize(v, k) :
+                      encodeURIComponent(k) + "=" + encodeURIComponent(v));
+                }
+            }
+            return str.join("&");
+        }
+
+        function appRoute(id){
+            layer.open({content: String.raw`/pages/good/good?para={"id":${id},"btn":"buy","showprice":true}`,title:'小程序端路径',btn:[], shadeClose:true});
+        }
+    </script>
+</div>

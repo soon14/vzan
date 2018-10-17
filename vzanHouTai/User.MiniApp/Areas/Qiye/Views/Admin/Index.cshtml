@@ -1,0 +1,192 @@
+﻿@using BLL.MiniApp.Conf
+@using Entity.MiniApp.Conf
+@{
+    ViewBag.Title = "企业智慧版";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (aid <= 0)
+    {
+        aid = Utility.IO.Context.GetRequestInt("appId", 0);
+    }
+
+    string souceFrom = "TemplateDecoration";
+    int type = Utility.IO.Context.GetRequestInt("type", 0);
+
+    string domain = Request.Url.Host;
+
+    if (domain.Contains(WebSiteConfig.DzWebSiteDomainExt))
+    {
+        //表示二级域名
+        domain = domain.Replace(WebSiteConfig.DzWebSiteDomainExt, "");
+    }
+    if (domain.Contains("xn--"))
+    {
+        domain = new System.Globalization.IdnMapping().GetUnicode(domain);
+    }
+    AgentWebSiteInfo agentWebSiteInfo = AgentWebSiteInfoBLL.SingleModel.GetModelByDomian(domain);
+    SeoConfigModel seoConfig = new SeoConfigModel();
+    if (agentWebSiteInfo != null && !string.IsNullOrEmpty(agentWebSiteInfo.seoConfig))
+    {
+        seoConfig = JsonConvert.DeserializeObject<SeoConfigModel>(agentWebSiteInfo.seoConfig);
+        if (seoConfig != null)
+        {
+            agentWebSiteInfo.seoConfigModel = seoConfig;
+        }
+    }
+}
+
+
+@section styles{
+    <style>
+        .backgroundcolor { background: #F8F9FB; }
+        .backgroundcolorfff { background: #fff; }
+    </style>
+}
+<body class="fixed-sidebar full-height-layout gray-bg" style="overflow:hidden">
+    <div id="wrapper">
+        <!-- 顶部 -->
+        <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="admin-logo">
+                @if (seoConfig != null && !string.IsNullOrEmpty(seoConfig.logo))
+                {
+                    <img src="@(seoConfig.logo)" height="50" />
+                }
+                else
+                {
+                    <img src="@(WebSiteConfig.cdnurl)content/newhome/image/logo-green.png" height="50" />
+                }
+            </div>
+            <ul class="nav navbar-top-links main-menu">
+                <li class="hidden-xs">
+                    <a href="/dzhome/casetemplate"><i class="fa fa-mail-reply"></i> 查看所有模板</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- #region 左侧导航 -->
+        <nav class="navbar-default navbar-static-side" role="navigation">
+            <div class="nav-close">
+                <i class="fa fa-times-circle"></i>
+            </div>
+            <div class="sidebar-collapse backgroundcolor">
+                <ul class="nav" id="side-menu">
+                    <li class="active">
+                        <a href="#">
+                            <i class="fa fa-home"></i> <span class="nav-label">企业智慧版管理后台</span><span class="fa arrow"></span>
+                        </a>
+                        <ul class="nav nav-second-level ulbox">
+                            <li><a class="J_menuItem" href="/common/AladingTongJi?appId=@aid&pageType=@((int)TmpType.企业智推版)&SouceFrom=TemplateDecoration">阿拉丁统计</a></li>
+                            <li><a class="J_menuItem" href="/config/MiniAppConfig?appId=@aid&SouceFrom=TemplateDecoration&type=@((int)TmpType.小程序企业模板)">小程序授权</a></li>
+                            <li><a class="J_menuItem" href="/Qiye/OfficialWeb/Store?aid=@aid">商城配置</a></li>
+                            <li>
+                                <a href="#">
+                                    <span class="nav-label">企业管理</span><span class="fa arrow"></span>
+                                </a>
+                                <ul class="nav nav-second-level">
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/Index?aid=@aid">企业信息</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/Development?aid=@aid">发展历程</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/CompanyNews?aid=@aid">企业资讯</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/DepartmentMgr?aid=@aid">部门管理</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/QiyeEmployeeMgr?aid=@aid">员工管理</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/YeJi?aid=@aid">业绩管理</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/Customer/Index?aid=@aid">客户管理</a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <span class="nav-label">产品管理</span><span class="fa arrow"></span>
+                                </a>
+                                <ul class="nav nav-second-level">
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/ProductMgr?aid=@aid">产品列表</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/ProductCategroyMgr?aid=@aid">类别管理</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/ProductLabelMgr?aid=@aid">标签管理</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/ProductSKUMgr?aid=@aid">规格管理</a></li>
+                                    <li><a class="J_menuItem" href="/Qiye/OfficialWeb/Punit?aid=@aid">单位管理</a></li>
+                                    <li><a class="J_menuItem" href="/tools/deliveryTemplate?appId=@aid&SouceFrom=@souceFrom&pageType=@((int)TmpType.企业智推版)">运费模板</a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <span class="nav-label">订单相关</span><span class="fa arrow"></span>
+                                </a>
+                                <ul class="nav nav-second-level">
+                                    <li><a class="J_menuItem" href="/Qiye/Order/Index?aid=@aid">订单管理</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <!-- #endregion -->
+        <!--右侧部分开始-->
+        <div id="page-wrapper" class="gray-bg dashbard-1">
+            <div class="J_mainContent" id="content-main">
+                @if (type > 0)
+                {
+                    <iframe class="J_iframe" name="J_iframe" width="100%" height="100%" src="/config/MiniAppConfig?appId=@aid&SouceFrom=TemplateDecoration&type=@((int)TmpType.企业智推版)" frameborder="0" data-id="" seamless></iframe>
+                }
+                else
+                {
+                    <iframe class="J_iframe" name="J_iframe" width="100%" height="100%" src="/Qiye/OfficialWeb/Index?aid=@aid" frameborder="0" data-id="" seamless></iframe>
+                }
+            </div>
+            <!-- 底部 -->
+            <div class="footer">
+                <div class="pull-right">
+                    <p class="copyright">小未程序 © <a href="http://www.xiaochengxu.com.cn" target="_blank">http://www.xiaochengxu.com.cn</a></p>
+                </div>
+            </div>
+        </div>
+        <!--右侧部分结束-->
+
+    </div>
+
+
+
+</body>
+@section scripts{
+    <script>
+        $(function () {
+
+            //点击左侧菜单
+            $(".J_menuItem").click(function () {
+                var alist = $(".ulbox li[class='active']");
+                if (alist != undefined && alist.length>0)
+                {
+                    $.each(alist,function (value,index) {
+                        $(index).removeClass("active");
+                    })
+                }
+                $(this.parentElement).addClass("active")
+                var url = $(this).attr("href");
+                $(".J_iframe").attr("src", url);
+            });
+            var currentPageSrc = $(".J_iframe").attr("src");
+            var currentMenu = $("#side-menu .J_menuItem[href='" + currentPageSrc + "']");
+            if (currentMenu) {
+                currentMenu.parent().addClass("active").siblings().removeClass("active");
+                currentPageSrc = null;
+            }
+
+            $("body").bind("keydown", function (e) {
+                e = window.event || e;
+
+                //屏蔽F5刷新键
+                if (event.keyCode == 116) {
+                    $(".J_iframe").attr("src", $(".J_iframe").attr("src"));
+                    e.keyCode = 0; //IE下需要设置为keyCode为false
+                    return false;
+                }
+
+                //屏蔽ctrl+R
+                if ((event.ctrlKey) && (event.keyCode == 82)) {
+                    $(".J_iframe").attr("src", $(".J_iframe").attr("src"));
+                    e.keyCode = 0;
+                    return false;
+                }
+            });
+            var addon_name = "";
+        });
+    </script>
+}

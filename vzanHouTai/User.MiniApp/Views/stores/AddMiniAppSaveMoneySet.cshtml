@@ -1,0 +1,286 @@
+﻿@using User.MiniApp.comment;
+@using Entity.MiniApp.Conf;
+@model List<SaveMoneySet>
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "餐饮菜品分类管理";
+}
+
+<script src="//j.vzan.cc/scripts/common/verify_input.js"></script>
+<script src="@WebSiteConfig.SourceContent/scripts/min/juicer-min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_004.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<p style="font-size:16px; font-weight:bold; color:#5691fc">&nbsp;|储值设定</p>
+<br/>
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+    <tr class="text-center">
+        <th>项目名称</th>
+        <th>储值金额（元）</th>
+        <th>赠送金额（元）</th>
+        <th>到账金额（元）</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><label>@(item.SetName)</label> </td>
+                <td>@(item.JoinMoneyStr)</td>
+                <td>@(item.GiveMoneyStr)</td>
+                <td>@(item.AmountMoneyStr)</td>
+                <th>@( (item.State == 1 ? "上架" : (item.State == 0 ?"下架" : "")) )</th>
+                <td>
+                    @if (item.State == 1)
+                    {
+                        <a style="margin-top: 5px;" href="#" data-itemid="@(item.Id)" @*class="btn btn-primary btn-xs temp-btn-setting editegoodtype"*@ onclick="upDownLine(@item.Id,0)" >
+                            @*<span class="glyphicon glyphicon-edit"></span>*@
+                            下架
+                        </a>
+                    }
+                    else
+                    {
+                        <a style="margin-top: 5px;" href="#" class="temp-btn-del" data-itemid="@(item.Id)" data-setval="-1" data-typename="state">
+                            @*<span class="glyphicon glyphicon-remove"></span>*@
+                            删除
+                        </a>
+                        <a style="margin-top: 5px;" href="#" data-itemid="@(item.Id)" @*class="btn btn-primary btn-xs temp-btn-setting editegoodtype"*@ onclick="upDownLine(@item.Id,1)">
+                            @*<span class="glyphicon glyphicon-edit"></span>*@
+                           上架
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass" @*style="background-color:#5e97fa;"*@>
+            <span class="glyphicon glyphicon-plus"></span>
+            添加储值设定
+        </a>
+    </div>
+    <div>
+        &nbsp;&nbsp;储值设定不可超过20个
+    </div>
+</div>
+<div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    添加储值设定
+                </h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-add">
+                    <tr>
+                        <td>充值金额 : </td>
+                        <td>
+                            <input maxlength="8" placeholder="充值金额请输入0.01~99999.99"  id="nameVal1" type="text" class="form-control" value="" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><span>赠送金额：</span></td>
+                        <td>
+                            <input maxlength="8" placeholder="赠送金额请输入0.01~99999.99" id="nameVal2" type="text" class="form-control" value="" onkeyup="keyPress(this)" onafterpaste="keyPress(this)">
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    //// 删除Logo
+    //function removeLogoFun(file) {
+    //    $("#hiddenimg").val("");
+    //}
+
+    function upDownLine(id,state)
+    {
+        var handle = "";
+        if(state == 1)
+        {
+            handle = "上架";
+        }
+        else if (state == 0)
+        {
+            handle = "下架";
+        }
+
+        layer.open({
+            title: handle + "确认",
+            content: "确定要" + handle + "储值项目么？",
+            btn: ["确定", "取消"],
+            yes: function () {
+                //var _title =title;
+                $.ajax({
+                    type: "Post",
+                    url: "/foods/updateMiniAppSaveMoneySetState",
+                    data:
+                        {
+                            appId:@(ViewBag.appId),
+                            saveMoneySetId:id,
+                            State: state
+                        },
+                    success: function (data) {
+                        if (data.isok) {
+                            layer.alert("保存成功");
+                            window.location.reload();
+                        }
+                        else {
+                            layer.alert(data.msg);
+                        }
+                    }
+                });
+            }
+        })
+
+    }
+
+    //验证金额格式
+    function keyPress(ob) {
+        if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+            if (ob.t_value == undefined || ob.t_value.length == 1) {
+                ob.value = "";
+            }
+            else {
+                ob.value = ob.t_value;
+            }
+        }
+        else
+            ob.t_value = ob.value;
+    }
+
+    //var FoodId =@(ViewBag.FoodId);
+    $(function () {
+        $('#btnAdd').on('click', function() {
+            var JoinMoneyStr = $("#nameVal1").val();
+
+            if (JoinMoney == "") {
+                alert("请输入有效的充值金额");
+                return;
+            }
+            var JoinMoney = JoinMoneyStr * 1000000 / 10000;
+            if (JoinMoney <= 0 || JoinMoney > 9999999) {
+                alert("请输入有效的充值金额");
+                return;
+            }
+            var GiveMoneyStr = $("#nameVal2").val();
+
+            if (GiveMoney == "")
+            {
+                alert("请输入有效的赠送金额");
+                return;
+            }
+            var GiveMoney = GiveMoneyStr * 1000000 / 10000;
+            if (GiveMoney <= 0 || GiveMoney > 9999999) {
+                alert("请输入有效的赠送金额");
+                return;
+            }
+
+
+            $(this).attr('disabled', 'disabled');
+
+            $.ajax({
+                type: "Post",
+                url: "/foods/AddMiniAppSaveMoneySet",
+                data:
+                    {
+                        appId:@(ViewBag.appId),
+                        JoinMoney:JoinMoney,
+                        GiveMoney:GiveMoney
+                        //LogImg: imgUrl,
+                    },
+                success: function (data) {
+                    if (data.isok) {
+                        layer.alert(data.msg, {closeBtn: 0 ,yes:function(){
+                            window.location.reload();
+                        }
+                        });
+                    }
+                    else {
+                        $("#btnAdd").removeAttr("disabled");
+                        layer.alert(data.msg);
+                    }
+                }
+            });
+        });
+        $(document).on("click", "#btnBatch_Pass", function () {
+            var canadd = 1 ;
+            $.ajax({
+                type: "Post",
+                async: false,
+                url: "/foods/GetMiniAppSaveMoneySetCanAdd",
+                data:
+                    {
+                        appId: @(ViewBag.appId),
+                    },
+                success: function (data) {
+                    if (!data.isok) {
+                        layer.alert(data.msg);
+                        canadd = 0;
+                    }
+                }
+            });
+            if(canadd == 0)
+            {
+                return;
+            }
+
+
+            $("#nameVal1").val("");
+            $("#nameVal2").val("");
+            $('#addModal').modal('show');
+
+        }).on("click",".temp-btn-del",function(){
+            var $thisobj = $(this);
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            layer.open({
+                title: "删除确认",
+                content: "确定要删除储值项目么？",
+                btn: ["确定", "取消"],
+                yes: function () {
+                    var _title =title;
+                    $.ajax({
+                        type: "Post",
+                        url: "/foods/updateMiniAppSaveMoneySetState",
+                        data:
+                            {
+                                appId:@(ViewBag.appId),
+                                State:-1
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.alert("保存成功");
+                                window.location.reload();
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                }
+            })
+        });
+
+
+    })
+</script>

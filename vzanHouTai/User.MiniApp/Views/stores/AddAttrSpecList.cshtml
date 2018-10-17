@@ -1,0 +1,240 @@
+﻿@using Entity.MiniApp.Stores
+@model List<StoreGoodsAttr>
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "商品规格";
+}
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <a href="#" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass">
+            <span class="glyphicon glyphicon-ok"></span>
+            添加规格
+        </a>
+    </div>
+    <div>
+        最多可添加100个规格
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+    <tr class="text-center">
+        <th>序号</th>
+        <th>规格名称</th>
+        <th>规格属性</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td ><label>@(i++)</label> </td>
+                <td >@(item.AttrName)</td>
+                <td >
+                    <table class="table" style="margin-bottom: 0;">
+                        @foreach (var itemSpec in item.SpecList)
+                        {
+                            <tr>
+                                <td width="80%">@itemSpec.SpecName</td>
+                                <td width="20%">
+                                    <a style="margin-top: 5px;" href="#" data-attrid="@(itemSpec.AttrId)" data-itemid="@(itemSpec.Id)" data-name="@(itemSpec.SpecName)" class="btn btn-primary btn-xs temp-btn-settingSpec">
+                                        <span class="glyphicon glyphicon-edit"></span>
+                                        编辑
+                                    </a>
+                                    <a style="margin-top: 5px;" href="#" class="btn btn-danger btn-xs temp-btn-delSpec" data-attrid="@(itemSpec.AttrId)" data-itemid="@(itemSpec.Id)" data-name="@(itemSpec.SpecName)" data-setval="-1" data-typename="state">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                        删除
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </td>
+                <td>
+                    <a style="margin-top: 5px;" href="#" data-attrid="@(item.Id)" data-itemid="0" data-name="" class="btn btn-primary btn-xs temp-btn-settingSpec">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        添加属性
+                    </a>
+                    <a style="margin-top: 5px;" href="#" data-itemid="@(item.Id)" data-name="@(item.AttrName)" class="btn btn-primary btn-xs temp-btn-setting">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        编辑
+                    </a>
+                    <a style="margin-top: 5px;" href="#" class="btn btn-danger btn-xs temp-btn-del" data-itemid="@(item.Id)" data-name="@(item.AttrName)" data-setval="-1" data-typename="state">
+                        <span class="glyphicon glyphicon-remove"></span>
+                        删除
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<script type="text/html" id="id_attrtitle">
+    <span>规格名称：</span>
+    <input maxlength="10" placeholder="规格名称" id="nameVal" type="text" class="form-control" value="{#name#}">
+</script>
+<script type="text/html" id="id_spectitle">
+    <span>属性名称：</span>
+    <input maxlength="20" placeholder="属性名称" id="specnameVal" type="text" class="form-control" value="{#name#}">
+</script>
+<script>
+    var storeId =@(ViewBag.StoreId);
+    $(function () {
+        //编辑规格
+        $(document).on("click", ".temp-btn-setting", function () {
+            //一修改名称
+            var $thisobj = $(this);
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            layer.open({
+                title: "",
+                content: $("#id_attrtitle").html().replace("{#name#}",title),
+                btn: ["保存", "取消"],
+                yes: function () {
+                    var _title = $("#nameVal").val().replace(/(^\s*)|(\s*$)/g, "");
+                    if (_title == "") {
+                        alert("请输入规格名称");
+                        return;
+                    }
+                    $.ajax({
+                        type: "Post",
+                        url: "/stores/AddAttrList",
+                        data:
+                            {
+                                appId:@(ViewBag.appId),
+                                AttrName:_title,
+                                StoreId:storeId,
+                                Id:itemid
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.alert("保存成功");
+                                window.location.reload();
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                },
+                no: function () { layer.closeAll(); },
+                cancel: function () {
+                    layer.closeAll();
+                }
+            })
+        }).on("click",".temp-btn-del",function(){
+            var $thisobj = $(this);
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            layer.open({
+                title: "删除确认",
+                content: "确定要删除该规格么？",
+                btn: ["确定", "取消"],
+                yes: function () {
+                    var _title =title;
+                    $.ajax({
+                        type: "Post",
+                        url: "/stores/AddAttrList",
+                        data:
+                            {
+                                appId:@(ViewBag.appId),
+                                AttrName:_title,
+                                StoreId:storeId,
+                                Id:itemid,
+                                State:-1
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.alert("保存成功");
+                                window.location.reload();
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                }
+            })
+        });
+
+        //编辑属性
+        $(document).on("click", ".temp-btn-settingSpec", function () {
+            //一修改名称
+            var $thisobj = $(this);
+            var attrid = $thisobj.attr("data-attrid");
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            layer.open({
+                title: "",
+                content: $("#id_spectitle").html().replace("{#name#}",title),
+                btn: ["保存", "取消"],
+                yes: function () {
+                    var _title = $("#specnameVal").val().replace(/(^\s*)|(\s*$)/g, "");
+                    if (_title == "") {
+                        alert("请输入属性名称");
+                        return;
+                    }
+                    $.ajax({
+                        type: "Post",
+                        url: "/stores/AddSpecList",
+                        data:
+                            {
+                                appId:@(ViewBag.appId),
+                                SpecName:_title,
+                                AttrId:attrid,
+                                Id:itemid
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.alert("保存成功");
+                                window.location.reload();
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                },
+                no: function () { layer.closeAll(); },
+                cancel: function () {
+                    layer.closeAll();
+                }
+            })
+        }).on("click",".temp-btn-delSpec",function(){
+            var $thisobj = $(this);
+            var attrid = $thisobj.attr("data-attrid");
+            var title = $thisobj.attr("data-name");
+            var itemid = $thisobj.attr("data-itemid");
+            layer.open({
+                title: "删除确认",
+                content: "确定要删除该属性么？",
+                btn: ["确定", "取消"],
+                yes: function () {
+                    var _title =title;
+                    $.ajax({
+                        type: "Post",
+                        url: "/stores/AddSpecList",
+                        data:
+                            {
+                                appId:@(ViewBag.appId),
+                                SpecName:_title,
+                                AttrId:attrid,
+                                Id:itemid,
+                                State:-1
+                            },
+                        success: function (data) {
+                            if (data.isok) {
+                                layer.alert("保存成功");
+                                window.location.reload();
+                            }
+                            else {
+                                layer.alert(data.msg);
+                            }
+                        }
+                    });
+                }
+            })
+        });
+    });
+</script>

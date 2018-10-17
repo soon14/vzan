@@ -1,0 +1,71 @@
+﻿@using Entity.MiniApp.Alading;
+@using BLL.MiniApp.Alading;
+@using Entity.MiniApp;
+@using BLL.MiniApp;
+@{
+    ViewBag.Title = "阿拉丁统计";
+    int pageType = Utility.IO.Context.GetRequestInt("pageType", 0);
+    if (pageType == (int)TmpType.智慧餐厅 ||
+        pageType == (int)TmpType.小未平台 ||
+        pageType == (int)TmpType.拼享惠 ||
+        pageType == (int)TmpType.企业智推版)
+    {
+        Layout = null;
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+    int appId = Utility.IO.Context.GetRequestInt("appId", 0);
+    if (appId == 0)
+    {
+        @:非法请求
+        return;
+    }
+    XcxAppAccountRelation rel = XcxAppAccountRelationBLL.SingleModel.GetModelById(appId);
+    if (rel == null)
+    {
+        @:小程序不存在
+        return;
+    }
+    AlaDingAppInfo aldInfo = AlaDingAppInfoBLL.SingleModel.GetModelByAppId(rel.AppId);
+    string appkey = string.Empty;
+
+    if (aldInfo == null)
+    {
+        
+        OpenAuthorizerConfig authInfo = OpenAuthorizerConfigBLL.SingleModel.GetModelByAppids(rel.AppId);
+        if (authInfo == null)
+        {
+            @:请先授权
+            @Html.Raw("<a href='/config/MiniAppConfig?appId=" + rel.Id + "&id=" + rel.Id + "&SouceFrom=TemplateDecoration&pageType=" + pageType + "&type=" + pageType + "'>点击去授权</a>");
+            return;
+        }
+        aldInfo = new AlaDingAppInfo
+        {
+            AppId = rel.AppId,
+            Name = authInfo.nick_name,
+            Logo = authInfo.head_img,
+        };
+        appkey = AlaDingAppInfoBLL.SingleModel.RegisterApp(aldInfo);
+        if (string.IsNullOrEmpty(appkey))
+        {
+            @:注册失败
+            return;
+        }
+    }
+    else
+    {
+        appkey = aldInfo.AppKey;
+    }
+    string access_token = AlaDingAppInfoBLL.SingleModel.GetAccessToken(rel.AppId);
+    if (string.IsNullOrEmpty(access_token))
+    {
+        @:请求失败
+        return;
+    }
+}
+<style>
+    .rightheight { max-height: none !important; }
+</style>
+<iframe id="iframe" src="http://statistic.plugin.aldwx.com/assets?app_key=@(appkey)&access_token=@(access_token)" frameborder="0" style="width:100%;min-height:1440px;"></iframe>

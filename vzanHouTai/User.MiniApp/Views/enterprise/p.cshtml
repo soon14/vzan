@@ -1,0 +1,304 @@
+﻿@using User.MiniApp.Model
+@using Entity.MiniApp.FunctionList
+@model ViewModel<EntGoods>
+@{
+    //小程序商城店铺配置
+    ViewBag.Title = "产品列表";
+    ViewBag.PageType = 12;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+    List<object> imglist = (List<object>)ViewBag.CarouselList;
+    if (imglist == null)
+    {
+        imglist = new List<object>();
+    }
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    List<EntGoodType> goodTypeList =  EntGoodTypeBLL.SingleModel.GetList(string.Format("aid={0} and state=1 and parentid<>0", appid));
+    List<EntGoodLabel> goodLabelList = EntGoodLabelBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid));
+    bool notAdd = Convert.ToBoolean(ViewBag.notAdd);//是否继续允许添加产品
+}
+
+
+<div id="app" class="container-fluid">
+
+    <div>
+        <div class="search ">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">产品名称：</label>
+                    <input type="text" name="search" class="form-control" id="plist-pname" value="@(Utility.IO.Context.GetRequest("search", ""))" />
+                </div>
+                <div class="form-group ml10">
+                    <label>产品标签：</label>
+                    <select class="form-control" id="plist-plabels">
+                        <option value="">全部</option>
+                        @if (goodLabelList != null && goodLabelList.Count > 0)
+                        {
+                            foreach (EntGoodLabel item in goodLabelList)
+                            {
+                                <option value="@(item.id)" @(Utility.IO.Context.GetRequestInt("plabels", 0) == item.id ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group ml10">
+                    <label>产品分类：</label>
+                    <select class="form-control" id="plist-ptype">
+                        <option value="">全部</option>
+                        @if (goodTypeList != null && goodTypeList.Count > 0)
+                        {
+                            foreach (EntGoodType item in goodTypeList)
+                            {
+                                <option value="@(item.id)" @(Utility.IO.Context.GetRequestInt("ptype", 0) == item.id ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    </select>
+
+                </div>
+                @*<div class="form-group ml10">
+                        <label>状态：</label>
+                        <select class="form-control" id="plist-tag">
+                            <option value="">全部</option>
+                            <option value="1">已上架</option>
+                            <option value="0">已下架</option>
+                        </select>
+                    </div>*@
+                <button type="submit" class="btn btn-primary ml10" id="searchbtn">搜索</button>
+                <a href="/enterprise/p?appId=@(appid)" class="btn btn-default ml10" id="searchReset">重置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+
+                        <th width="400">产品名称</th>
+                        <th>产品分类</th>
+                        <th>产品标签</th>
+                        <th>是否显示价格</th>
+                        <th>价格（元）</th>
+                        <th>单位</th>
+                        <th width="150">排序</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr>
+
+                            <td>
+                                <a href="/enterprise/pedit?appId=@appid&id=@item.id" title="@item.name">@item.name</a>
+                            </td>
+                            <td>
+                                @item.ptypestr
+                            </td>
+                            <td>@item.plabelstr</td>
+                            <td>@(item.showprice ? "是" : "否")</td>
+                            <td>@(item.price.ToString("f2"))</td>
+                            <td>@item.unit</td>
+                            <td class="showorclose" data-state="0">
+                                <div>@item.sort</div>
+                                <div style="display:none;">
+                                    <input type="text" class="form-control" name="sort_@item.id" style="width:50px;display:inline-block;" value="@item.sort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" data-sort="@item.sort" data-id="@item.id" />
+                                    <a href="javascript:;" class="btn btn-primary btn-xs savesort" data-id="@item.id">保存</a>
+                                    <a href="javascript:;" data-state="1" class="btn btn-danger btn-xs showorclose">关闭</a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="nobr">
+                                    <a class="delp btn-sm btn-danger" data-id="@(item.id)">删除</a>
+                                    <a class="btn-sm btn-primary ml10" href="/enterprise/pedit?appId=@appid&id=@item.id">编辑</a>
+                                    <a class="copygood btn-sm btn-info ml10" data-id="@(item.id)">复制</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+        <div class="d-flex d-flex-center">
+            @{
+                if (Model.PageType == 22 && notAdd)
+                {
+                    <div title="数量达到上限,请升级更高版本">
+                        <a href="#" class="btn btn-success" id="btnBatch_Pass">
+                            <span class="glyphicon glyphicon-plus"></span>
+                            新增产品
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <a href="/enterprise/pedit?appId=@appid&id=0" class="btn btn-success" id="btnBatch_Pass">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增产品
+                    </a>
+                }
+            }
+
+            &nbsp;&nbsp;
+            <button class="btn btn-success savesort" data-id="0">
+                批量改排序
+            </button>
+        </div>
+    </div>
+    <script>
+        var aid=@appid;
+        $(function () {
+            $(document)
+                .on("click", ".copygood", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "复制确认",
+                        content: "确定要复制该产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/enterprise/pedit", { act: "copy", id: pid, appId: aid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    if (data.isok) {
+                                        layer.msg("复制成功", { time: 1000 });
+                                        window.location.href="/enterprise/pedit?appId="+aid+"&id="+data.msg;
+                                    }
+                                    else {
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                })
+                .on("click", ".delp", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/enterprise/pedit", { act: "del", id: pid, appId: aid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    if (data.isok) {
+                                        layer.msg("删除成功", { time: 1000 });
+                                        window.location.reload();
+                                    }
+                                    else {
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                })
+                .on("click", "#searchbtn", function () {
+                    var skey = $("#plist-pname").val();
+                    var plabels = $("#plist-plabels").find("option:selected").val() || "";
+                    var ptype = $("#plist-ptype").find("option:selected").val() || "";
+                    var ptag = $("#plist-tag").find("option:selected").val() || "";
+
+                    window.location.href = "/enterprise/p?appId=" + aid + "&search=" + skey + "&plabels=" + plabels + "&ptype=" + ptype + "&ptag=" + ptag;
+                })
+                .on("click",".showorclose",function(even){
+                    var state = $(this).attr("data-state");
+                    if(state==0)
+                    {
+                        var div1 = $(this)[0].children[0]
+                        var div2 = $(this)[0].children[1]
+                        $(div1).hide();
+                        $(div2).show();
+                    }
+                    else{
+                        var div1 = $(this.offsetParent)[0].children[0]
+                        var div2 = $(this.offsetParent)[0].children[1]
+
+                        $(div2).hide();
+                        $(div1).show();
+                    }
+
+                    //js阻止事件冒泡
+                    even.cancelBubble = true;
+                    even.stopPropagation();
+                })
+             .on("click",".savesort",function(even){
+                 var itemid = $(this).attr("data-id");
+
+                 var data = [];
+                 if(itemid<=0)
+                 {
+                     var inputlist = $("input[name^='sort_']");
+                     if(inputlist!=undefined && inputlist.length>0)
+                     {
+                         for (var i = 0; i < inputlist.length; i++) {
+                             var value = inputlist[i];
+                             if($(value).val().length<=0)
+                             {
+                                 layer.msg("请输入排序值",{time:1000});
+                                 return;
+                             }
+                             if($(value).val().length>0 && $(value).attr("data-sort") != $(value).val())
+                             {
+                                 data[data.length]={id:$(value).attr("data-id"),sort:$(value).val()};
+                             }
+                         }
+                     }
+                 }
+                 else{
+                     var inputitemval = $("input[name='sort_"+itemid+"']").val();
+                     if(inputitemval.length<=0)
+                     {
+                         layer.msg("请输入排序值",{time:1000});
+                         return;
+                     }
+                     data[data.length]={id:itemid,sort:inputitemval};
+                 }
+
+                 if(data.length<=0)
+                 {
+                     layer.msg("保存成功",{time:1000},function(){
+                         window.location.reload();
+                     });
+
+                     return;
+                 }
+
+                 var datajson = JSON.stringify(data);
+
+                 $.post("/enterprise/updatesort", {appId:aid,datajson:datajson,type:3},function(data){
+                     if(typeof data=="object"){
+                         if(data.isok){
+                             layer.msg("保存成功",{time:1000},function(){
+                                 window.location.reload();
+                             });
+                         }
+                         else{
+                             layer.msg(data.msg,{time:1000});
+                         }
+                     }
+                     else{
+                         layer.msg(data.msg,{time:1000});
+                     }
+                 });
+
+                 //js阻止事件冒泡
+                 even.cancelBubble = true;
+                 even.stopPropagation();
+             })
+        });
+    </script>
+</div>

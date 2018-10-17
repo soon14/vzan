@@ -1,0 +1,781 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 49;
+    ViewBag.Title = "商家配置";
+
+}
+@using Entity.MiniApp.cityminiapp
+@model CityStoreBanner
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .nowrap { white-space: nowrap; }
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+    .msgDetail { max-height: 100px; max-width: 800px; overflow-y: auto; }
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; cursor: pointer; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .pslideimgs { display: inline-block; }
+</style>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<div style="height:100%;" class="form-horizontal set-form-content">
+    <div id="app_banner" v-cloak>
+        <div class="form-title">广告轮播图管理以及发帖审核设置</div>
+        <div>
+            <label>轮播图：</label>
+            <div class="pslideimgs">
+                <div class="i_Posters rel">
+
+                    <div style="position:relative;" v-for="(item,index) in bannerImgs">
+                        <img :src="item" style="display:block;height:150px;width:150px;" />
+                        <span v-on:click="clearImg(index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                    </div>
+                    <div class="plus-button" v-on:click="UploadImg()">
+                        <div class="s-image-uploader-wrapper">
+                            <div>
+                                <div class="plus">+</div>
+                                <div class="plus-label">上传图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <label class="forinputmassage" style="color:#ccc;margin-left:50px;">点击灰色区域选择上传图片，最多五张 ( 建议上传750*350px，大小不超过1M，格式为jpg或png的图片 )</label>
+
+        <div style="width:600px;">
+
+
+            <div class="form-title">轮播图跳转帖子</div>
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">编号</th>
+                    <th class="centertext">帖子详情简介</th>
+                    <th class="centertext">对应轮播图顺序</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(msg,index) in listBannersToMsg">
+
+                    <td class="centertext">{{msg.Id}}</td>
+                    <td class="centertext">{{msg.Txt}}</td>
+                    <td class="centertext nowrap">
+                        <span>{{index+1}}</span>
+                    </td>
+                    <td class="centertext">
+                        <a href="javascript:;" style="color:#4a86e8;" v-on:click="delBannerMsg(index)">删除</a>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="ml_19">
+                <a href="javascript:;" v-on:click="addBannerMsg()" style="color:#4a86e8;">+新增跳转帖子</a>
+            </div>
+        </div>
+        <div>
+            <label>审核设置：</label>
+            <label><input type="radio" name="ReviewSetting" value="0" v-model="cityStoreBanner.ReviewSetting" />不需要审核</label>
+            <label><input type="radio" name="ReviewSetting" value="1" v-model="cityStoreBanner.ReviewSetting" />审核后发布</label>
+            <label><input type="radio" name="ReviewSetting" value="2" v-model="cityStoreBanner.ReviewSetting" />发布后审核</label>
+            <br />
+            <label class="forinputmassage" style="color:#ccc;margin-left:50px;">注意：设置了为不需要审核，则前端不显示审核状态</label>
+        </div>
+
+
+        <div style="margin-bottom:10px;">
+            <label>客服电话：</label>
+            <input type="text" class="form-control" v-model="cityStoreBanner.KeFuPhone" style="width:200px;" />
+        </div>
+        <div>
+            <label>公告弹窗：</label>
+            <label><input type="radio" name="RemarkOpenFrm" value="1" v-model="cityStoreBanner.RemarkOpenFrm" />关闭</label>
+            <label><input type="radio" name="RemarkOpenFrm" value="0" v-model="cityStoreBanner.RemarkOpenFrm" />开启</label>
+            <label class="forinputmassage" style="color:#ccc;margin-left:50px;">注意：设置了开启就需要填写公告内容,弹窗才会生效</label>
+        </div>
+        <div style="margin-bottom:10px;">
+            <label>平台公告(限50字)：</label>
+            <textarea name="platRemark" class="form-control" maxlength="50" v-model="cityStoreBanner.Remark" style="width:300px;height:100px;resize:none;"></textarea>
+
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="display:inline-block!important">
+                <label>虚拟访问量：</label>
+                <input type="text" class="form-control" v-model="cityStoreBanner.VirtualPV" style="width:200px;" />
+            </div>
+            <div style="display:inline-block!important">
+                <label>真实访问量：</label>
+                <input type="text" class="form-control" v-model="cityStoreBanner.PV" readonly="readonly" style="width:200px;" />
+            </div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="display:inline-block!important">
+                <label>虚拟发帖量：</label>
+                <input type="text" class="form-control" v-model="cityStoreBanner.VirtualMsgCount" style="width:200px;" />
+
+            </div>
+            <div style="display:inline-block!important">
+                <label>真实发帖量：</label>
+                <input type="text" class="form-control" v-model="cityStoreBanner.MsgCount" readonly="readonly" style="width:200px;" />
+
+            </div>
+        </div>
+        <div>
+            <input type="button" class="btn btn-primary width100" value="保存" v-on:click="saveImg" style="margin-left:50px;" />
+        </div>
+        <div style="display: none;">
+            <button id="browse_file_img">上传图片</button>
+            <button id="start_upload_img" v-on:click="uploadFile('img')">开始上传</button>
+        </div>
+
+        <div class="modal fade" id="msgModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="msgModalLabel">
+                            帖子列表
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+                                    <div>
+                                        <table class="table table-bordered viplevel ml_19">
+                                            <tr class="active">
+                                                <th class="centertext">编号</th>
+                                                <th class="centertext">帖子详情简介</th>
+                                               
+                                            </tr>
+                                            <tr v-for="(msg,index) in msglist">
+
+                                                <td class="centertext nowrap">
+                                                    <label>
+                                                        <input type="checkbox" name="msgIds" class="msgIds" :value="msg.Id" v-on:click="addMsgIds(msg.Id,msg.msgDetail)" />{{msg.Id}}
+                                                    </label>
+                                                </td>
+                                                <td class="centertext">
+                                                    <div class="msgDetail">
+                                                        {{msg.msgDetail}}
+                                                    </div>
+                                                </td>
+                                               
+</tr>
+                                        </table>
+                                        <div id="msgPages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveMsgIds()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+    </div>
+
+    <div id="app_rules" v-cloak>
+        <div class="form-title">置顶规则管理</div>
+        <table class="table table-bordered viplevel ml_19">
+            <tr class="active">
+                <th class="centertext">置顶时间</th>
+                <th class="centertext">置顶金额</th>
+                <th class="centertext">规则更新时间</th>
+                <th class="centertext">操作</th>
+            </tr>
+            <tr v-for="(rule,index) in rulelist">
+
+                <td class="centertext">{{rule.exptimeday}}天</td>
+                <td class="centertext">{{rule.priceStr}}元</td>
+                <td class="centertext">{{rule.updateTimeStr}}</td>
+                <td class="centertext">
+                    <a href="javascript:;" style="color:red" v-on:click="delRule(rule.aid,rule.Id)">删除</a>
+                    <a href="javascript:;" style="color:#4a86e8;" v-on:click="addedit(index)">编辑</a>
+                </td>
+            </tr>
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+
+        <div class="ml_19">
+            <a href="javascript:;" v-on:click="addedit()">+新增规则</a>
+        </div>
+
+
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            编辑置顶规则
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+                                    <div>
+                                        <span>置顶时间:</span><input type="text" class="form-control" style="width:120px;" v-model="ruleInfo.exptimeday" />天&nbsp;&nbsp;
+                                        <span>置顶金额:</span><input type="text" class="form-control" style="width:120px;" v-model="ruleInfo.priceStr" />元
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+    </div>
+
+
+</div>
+<script>
+    var mask;
+    var MAX_IMG_SIZE = 1, MAX_AUDIO_SIZE = 10, MAX_VIDEO_SIZE = 20;
+    var uploader = {
+        img: {
+            filePath: ''
+        },
+        video: {
+            filePath: ''
+        },
+        audio: {
+            filePath: ''
+        }
+    };
+
+
+    var app = new Vue({
+        el: "#app_banner",
+        data: {
+            cityStoreBanner:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            bannerImgs:@Html.Raw(JsonConvert.SerializeObject(Model.banners.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))),
+            listBannersToMsg:@Html.Raw(JsonConvert.SerializeObject(ViewBag.listBannersToMsg)),
+            recordCount: 0,
+            msglist: [],
+            postdata: {
+                appId:@Html.Raw(ViewBag.appId),
+                pageIndex: 1,
+                pageSize: 5,
+                isTop:-1
+            },
+            tempMsg:[]
+
+        },
+        mounted: function () {
+            var that = this;
+            that.initUploader('img');
+        },
+        methods: {
+            delBannerMsg:function(index){
+                var that=this;
+                that.listBannersToMsg.splice(index, 1);
+            },
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'msgPages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                //获取帖子
+                                that.getMsgList();
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            getMsgList:function(){
+                var that=this;
+
+                var index = layer.load(1);
+                $.post("/cityminiapp/getMsg", that.postdata, function (data) {
+                    layer.close(index);
+                    that.msglist = data.dataObj.list;
+                    that.recordCount = data.dataObj.totalCount;
+                    that.resetPage();
+                })
+            },
+            addBannerMsg:function(){
+                var that=this;
+                that.tempMsg=[];
+                $('#msgModal').modal('show');
+            },
+            saveMsgIds:function(){
+                var that=this;
+               
+                that.tempMsg.forEach(function(e) {
+                    that.listBannersToMsg.push(e);
+                })
+                that.tempMsg=[];
+                $(".msgIds").attr("checked",false);
+                $('#msgModal').modal('hide');
+            },
+            addMsgIds:function(id,msg){
+               
+                var that=this;
+                
+                if(that.listBannersToMsg==null){
+                    that.listBannersToMsg=[];
+                }
+
+                if(that.listBannersToMsg.length>=5){
+                    layer.msg("轮播图最多5张对应跳转帖子也只能最多5条!",{time:2000});
+                    return;
+                }
+
+
+                if(that.listBannersToMsg.length)
+                var haveIndex=that.listBannersToMsg.findIndex(x=>x.Id==id);
+                if(haveIndex>-1){
+                    layer.msg("轮播图跳转帖子里已经存在该帖子了!");
+                    return;
+                }
+
+                var curIndex=that.tempMsg.findIndex(x=>x.Id==id);
+                if(curIndex>-1){
+                    //表示存在则移除
+                    that.tempMsg.splice(curIndex, 1);
+                    return;
+                }
+                that.tempMsg.push({Id:id,Txt:msg.length>10?msg.substring(0,10):msg});
+
+
+            },
+            UploadImg: function () {
+                var that=this;
+                if(that.bannerImgs.length>=5){
+                    layer.msg("最多5张轮播图!",{time:2000});
+                    return;
+                }
+                $('#browse_file_img').click();
+            },
+            clearImg: function (index) {
+                var that = this;
+
+                if (that.bannerImgs.length > 0) {
+                    that.bannerImgs.splice(index, 1);
+                }
+
+            },saveImg:function(){
+                var that = this;
+                if(that.bannerImgs.length==0||that.bannerImgs==''){
+                    layer.msg("请上传至少一张轮播图");
+                    return ;
+                }
+
+                var msgIds=[];
+                that.listBannersToMsg.forEach(function(e) {
+                    msgIds.push(e.Id);
+                })
+
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/saveBanners',
+                    data: {appId:@ViewBag.appId,bannerMsg:msgIds.join(","),bannerImgs:that.bannerImgs.join(","),ReviewSetting:that.cityStoreBanner.ReviewSetting,KeFuPhone:that.cityStoreBanner.KeFuPhone,Remark:that.cityStoreBanner.Remark,RemarkOpenFrm:that.cityStoreBanner.RemarkOpenFrm,VirtualMsgCount:that.cityStoreBanner.VirtualMsgCount,VirtualPV:that.cityStoreBanner.VirtualPV,PV:that.cityStoreBanner.PV },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+
+            initUploader: function (type) {
+                var that = this;
+                var options = {
+                    browse_button: 'browse_file_' + type,
+                    url: 'http://oss.aliyuncs.com',
+                    flash_swf_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                    silverlight_xap_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                    filters: {
+
+                    },
+                    multi_selection: false
+
+                };
+                switch (type) {
+                    case 'img':
+
+                        options.filters = {
+
+                            mime_types: [
+                                {
+                                    title: "图片文件",
+                                    extensions: "jpg,jpeg,gif,png"
+                                },
+                            ],
+                            //max_file_size: '5mb'
+                        }
+                        break;
+                    case 'video':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "视频文件",
+                                    extensions: "mp4,m3u8",
+                                },
+                            ],
+                            //max_file_size: '20mb'
+                        }
+
+                        break;
+                    case 'audio':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "音频文件",
+                                    extensions: "mp3",
+                                },
+                            ],
+                            //max_file_size: '10mb'
+                        }
+
+
+                        break;
+                }
+                //如果还有当前类型的上传组件实例的话则先把其销毁
+                if (uploader[type].instance) {
+                    console.log('destroy uploader :' + type);
+                    uploader[type].instance.destroy();
+                }
+                uploader[type].instance = new plupload.Uploader(options);
+
+                uploader[type].instance.init();
+
+                uploader[type].instance.bind('BeforeUpload', function (d, f) {
+
+
+                    //取到文件后缀名
+
+                    var fileName = f.name;
+                    var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                    //转成Mb
+                    var fileSize = f.size / 1024 / 1024;
+                    var flag = true;
+
+                    switch (type) {
+                        case 'img':
+                            if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                                layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                                flag = false;
+                            }
+                            if (fileSize > MAX_IMG_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_IMG_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'audio':
+                            if (!['mp3'].contains(ext)) {
+                                layer.msg('请上传正确的音频格式文件，后缀名可为：mp3');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_AUDIO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_AUDIO_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'video':
+                            if (!['mp4', 'm3u8'].contains(ext)) {
+                                layer.msg('请上传正确的视频格式文件，后缀名可为：mp4,m3u8');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_VIDEO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_VIDEO_SIZE + 'Mb');
+                                flag = false;
+                            }
+                            break;
+                    }
+                    //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                    if (!flag) {
+                        that.initUploader(type);
+                    }
+
+                    uploader.token.key += '.' + ext;
+                    uploader[type].instance.setOption(uploader.token);
+
+                });
+
+                uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                    $('#start_upload_' + type).click();
+                });
+                uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+
+                    mask = layer.load(0, {
+                        content: file.percent + "%", shade: [0.8, '#393D49'],
+
+                        success: function (layero) {
+                            layero.find('.layui-layer-content').css('color', 'white').css('font-size', '2rem').css('background', 'none');
+                        }
+                    });
+                });
+                uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+
+
+                    layer.close(mask);
+                    var fileName = f[0].name;
+                    var fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                    var filePath = uploader[type].filePath + '.' + fileExt;
+
+                    that.bannerImgs.push(filePath);
+                    //上传完成后重新初始上传组件
+                    that.initUploader(type);
+
+                });
+
+            },
+            uploadFile: function (type) {
+                //   var that = this;
+                $.get('/upload/initupload', {
+                    type: type
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+                    uploader[type].filePath = data.host + '/' + filePath;
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    uploader.token = multipartParams;
+                    uploader[type].instance.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+                    uploader[type].instance.start();
+                })
+
+            }
+
+        },created:function(){
+            var that=this;
+            that.getMsgList();
+        }
+
+
+    });
+
+
+
+
+
+</script>
+
+<script>
+    var ruleData= {
+        Id:0,
+        aid:@ViewBag.appId,
+        price:0,
+        priceStr:0,
+        exp_time_day:0
+    };
+    var app = new Vue({
+        el: "#app_rules",
+        data: {
+            ruleInfo: JSON.parse(JSON.stringify(ruleData)),
+            editIndex: 0,
+            isloading: false,
+            recordCount: 0,
+            rulelist: [],
+            postdata: {
+                appId:@Html.Raw(ViewBag.appId),
+                pageIndex: 1,
+                pageSize: 10
+
+            }
+        },
+        methods: {
+            //添加编辑窗口
+            addedit: function (index) {
+                var that=this;
+                that.editIndex = index;
+                if (typeof (index) != "undefined") {//编辑
+
+                    that.ruleInfo = JSON.parse(JSON.stringify(that.rulelist[index]));
+
+                } else {
+                    that.ruleInfo = JSON.parse(JSON.stringify(ruleData));
+                }
+                $('#myModal').modal('show')
+            },
+            //获取规则列表
+            getRuleList: function () {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/cityminiapp/getMsgRules", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.rulelist = data.dataObj.list;
+                    that.resetRulePage();
+                })
+
+            },
+            //列表分页跳转
+            resetRulePage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getRuleList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+
+            delRule:function(appId,ruleId){
+
+                //删除
+                var index = layer.load(1);
+
+                $.post("/cityminiapp/delMsgRules", {appId:appId,ruleId:ruleId}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.Msg);
+                    if (data.isok) {
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                })
+            },
+            //保存规则
+            saveInfo: function () {
+                var that=this;
+                if (!/^\+?[1-9][0-9]*$/.test(that.ruleInfo.exptimeday)) {
+                    layer.msg("置顶时间天数必须为大于零的整数");
+                    return ;
+                }
+
+                var price=that.ruleInfo.priceStr;
+
+
+                if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(price)) {
+                    layer.msg("金额为大于0小于1000000且小数不超过2位的正数！");
+                    return;
+                } else {
+                    var price_save = price * 1000000 / 10000;
+                    if (0 == price_save || parseInt(price_save) < 1) {
+                        layer.msg("金额不能低于1分钱！");
+                        return;
+                    }
+
+                    that.ruleInfo.price=price_save;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/saveMsgRule',
+                    data: {city_Storemsgrules:that.ruleInfo },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+
+            }
+        },created:function(){
+            var that=this;
+            that.getRuleList();
+        }
+    });
+</script>

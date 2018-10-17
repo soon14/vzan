@@ -1,0 +1,222 @@
+﻿@{
+    ViewBag.Title = "企业智推版";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section styles{
+    <style>
+        .centertext {
+            vertical-align: inherit !important;
+            text-align: center;
+        }
+
+        .width200 {
+            width: 200px !important;
+            display: inline-block !important;
+        }
+
+        .width100 {
+            width: 100px !important;
+            display: inline-block !important;
+        }
+
+        .datetimebox {
+            float: none !important;
+        }
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+
+        <div id="app" v-cloak>
+            <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+                <tr class="active">
+                    <th class="centertext">图片</th>
+                    <th class="centertext">标题</th>
+                    <th class="centertext">访问量</th>
+                    <th class="centertext">更新日期</th>
+                    <th class="centertext">排序</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in datalist">
+                    <td class="centertext"><img :src="item.ImgUrl" style="height:50px;width:50px;" /></td>
+                    <td class="centertext">{{item.Title}}</td>
+                    <td class="centertext">{{item.ViewCount}}</td>
+                    <td class="centertext">{{item.LastdateStr}}</td>
+                    <td class="centertext">{{item.Sort}}</td>
+                    <td class="centertext">
+                        <a v-bind:href="editeurl(item.Id)" class="btn btn-primary ml10">编辑</a>
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="deldata(item.Id)">删除</a>
+                    </td>
+                </tr>
+                <tr v-if="datalist==null || datalist.length==0">
+                    <td colspan="8" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+            <div>
+                <a href="/Qiye/OfficialWeb/AddOrEditCompanyNews?aid=@ViewBag.appId" class="btn btn-primary ml11">添加</a>
+            </div>
+        </div>
+
+
+        <input type="hidden" id="modelimgurlvalue" value="" />
+        <input type="hidden" id="backgroudlogovalue" value="" />
+        <div id="editedata" hidden>
+            <div>
+                <div style="margin: 10px;">
+                    <span>标题：</span>
+                    <input type="text" id="temptitle" maxlength="20" class="form-control" style="width:200px !important;display:inline-block;" />
+                </div>
+                <div style='margin:10px;overflow:auto;'>
+                    <span style="float:left;">图片：</span>
+                    <div style="float:left;">
+                        <div class="pimg">
+                            <img style="height:150px;width:150px;" src="" id="tempmodelimgurl" onclick="UploadImg(@ViewBag.appId,0,0,-1)" hidden />
+                            <div class="plus-button" onclick="UploadImg(@ViewBag.appId,0,0,-1)" id="tempmodelimgurlupload">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin: 10px;">
+                    <span style="float:left;">概述：</span>
+                    <textarea id="tempcontent2" class="form-control" style="height:50px;width:200px;"></textarea>
+                </div>
+                <div style="margin: 10px;">
+                    <span style="float:left;">简介：</span>
+                    <textarea id="tempcontent" class="form-control" style="height:80px;width:200px;"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                },
+                isloading: false,
+                currentdata:{},
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Qiye/OfficialWeb/GetCompanyNewsDataList", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.data;
+                        app.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                //开启自定义水印
+                editedata:function(index){
+                    if(index!=-1)
+                    {
+                        app.currentdata = app.datalist[index];
+                    }
+                    _layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: "编辑",
+                        shade: 0.3,
+                        area: ['350px', '450px'], //宽高
+                        content: $("#editedata").html().replace(/temp/g, ''),//this.adddiv(),
+                        btn: ["确定", "取消"],
+                        end: function () {
+                        },
+                        yes: function () {
+
+                        },
+                        success:function(e)
+                        {
+                            $(e).find("#title").val(app.currentdata.Title);
+                            $(e).find("#content2").val(app.currentdata.Content2);
+                            $(e).find("#content").val(app.currentdata.Content);
+
+                            if (app.currentdata.ImgUrl != null && app.currentdata.ImgUrl != undefined && app.currentdata.ImgUrl.length > 0)
+                            {
+                                $("#modelimgurlvalue").val(tempmodel.Value);
+                                $("#modelimgurl").attr("src", tempmodel.Value);
+                                $("#modelimgurl").show();
+                                $("#modelimgurlupload").hide();
+                            }
+                        },
+                    });
+                },
+                editeurl: function (id) {
+                    return "/Qiye/OfficialWeb/AddOrEditCompanyNews?act=edite&aid=@ViewBag.appId&id="+id;
+                },
+                deldata:function(id){
+                    _layer.confirm("确定删除该数据？", {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        $.post("/Qiye/OfficialWeb/DelCompanyData", {aid:@ViewBag.appId,id:id}, function (data) {
+                            if (data.isok) {
+                                _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                            _layer.closeAll();
+                        })
+                    }, function () {
+                    });
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+
+    </script>
+}

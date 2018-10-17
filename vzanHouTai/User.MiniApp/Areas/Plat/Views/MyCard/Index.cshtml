@@ -1,0 +1,207 @@
+﻿
+@using Entity.MiniApp.Plat;
+@model List<PlatMyCard>
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "会员管理";
+}
+
+@section styles{
+    <style>
+        .width200 {width: 200px !important;display: inline-block !important;}
+        .datetimebox {float: none !important;}
+        .centertext { vertical-align: inherit !important; text-align: center; }
+    </style>
+
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+
+        <div id="app" v-cloak>
+            <div style="margin-left:17px;">
+                <div class="d-flex d-flex-center formsearch">
+                    <span>会员姓名：</span><input type="text" v-model="postdata.name" class="input-sm form-control width200" />
+                    @*<span>昵称：</span><input type="text" v-model="postdata.nickname" class="input-sm form-control width200" />*@
+                    <span>手机号：</span><input type="text" v-model="postdata.phone" class="input-sm form-control width200" />
+                    <span>用户ID：</span><input type="text" v-model="postdata.loginid" class="input-sm form-control width200" />
+                    <span>店铺状态：</span>
+                    <select v-model="postdata.storestate" class="form-control width200">
+                        <option value="-1">全部</option>
+                        <option value="1">正常</option>
+                        <option value="0">屏蔽</option>
+                    </select>
+                    @*<div class="input-daterange input-group" id="datepicker" style="display:inline-block;">
+                        从：<input type="text" class="input-sm width200 datetimebox form-control" id="starttime" v-model="postdata.starttime" readonly />到
+                        <input type="text" class="input-sm width200 datetimebox form-control" id="endtime" v-model="postdata.endtime" readonly />
+                    </div>*@
+
+                    <a href="#" v-on:click="Search()" class="btn btn-primary ml10">搜索</a>&nbsp;
+                    <a href="#" v-on:click="ReSet()" class="btn btn-default ml10">重置</a>&nbsp;
+                </div>
+            </div>
+            <br />
+            <br />
+
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    @*<th class="centertext">头像</th>*@
+                    <th class="centertext">用户ID</th>
+                    <th class="centertext">姓名</th>
+                    <th class="centertext">手机号码</th>
+                    <th class="centertext">店铺名称</th>
+                    <th class="centertext">发帖数</th>
+                    <th class="centertext">注册时间</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(vipInfo,index) in viplist">
+                    <td class="centertext">{{vipInfo.LoginId}}</td>
+                    <td class="centertext">{{vipInfo.Name}}</td>
+                    <td class="centertext">{{vipInfo.Phone}}</td>
+                    <td class="centertext">{{vipInfo.StoreName}}</td>
+                    <td class="centertext">{{vipInfo.MsgCount}}</td>
+                    <td class="centertext">{{vipInfo.AddTimeStr}}</td>
+                    <td class="centertext">
+                        <a href="javascript:;" v-on:click="LookInfo(index)" class="btn btn-primary ml10">查看</a>
+                        <a href="javascript:;" v-if="vipInfo.State>=0" v-on:click="EditeCardState(vipInfo.Id,-1)" class="btn btn-default ml10">屏蔽</a>
+                        <a href="javascript:;" v-if="vipInfo.State==-1" v-on:click="EditeCardState(vipInfo.Id,0)" class="btn btn-primary ml10">显示</a>
+                    </td>
+                </tr>
+                <tr v-if="viplist==null || viplist.length==0">
+                    <td colspan="7" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                viplist: [],
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    name: "",
+                    nickname: "",
+                    starttime:"",
+                    endtime:"",
+                    phone:"",
+                    loginid:"",
+                    storestate:-1,
+                },
+                isloading: false,
+            },
+            methods: {
+                getvipList: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Plat/MyCard/GetMyCardDataList", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.viplist = data.dataObj.data;
+                        app.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getvipList();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                ClearParam:function()
+                {
+                    this.postdata.pageIndex= 1;
+                    this.postdata.pageSize= 10;
+                    this.postdata.username= "";
+                    this.postdata.levelid= 0;
+                    this.postdata.leveltype= -1;
+                    this.postdata.startDate="";
+                    this.postdata.endDate=""
+                    this.postdata.endDate = "";
+                },
+                Search:function()
+                {
+                    this.postdata.starttime = $("#starttime").val();
+                    this.postdata.endtime = $("#endtime").val();
+                    this.getvipList();
+                },
+                ReSet:function(){
+                    app.postdata= {
+                        aid:@ViewBag.appId,
+                        pageIndex: 1,
+                        pageSize: 10,
+                        name: "",
+                        nickname: "",
+                        starttime:"",
+                        endtime:"",
+                        phone:"",
+                        loginid:"",
+                        storestate:-1,
+                        }
+                },
+                //查看
+                LookInfo:function(index){
+                    layer.open({
+                        type: 2,
+                        title: "会员详情",
+                        shade: [0.8, '#000'],
+                        // skin: 'layui-layer-rim', //加上边框
+                        area: ['650px', '550px'], //宽高
+                        content: '/Plat/MyCard/CardInfo?aid=@ViewBag.appId&id=' + app.viplist[index].Id
+                    })
+                },
+                EditeCardState:function(id,state)
+                {
+                    $.post("/Plat/MyCard/EditeCardState", {aid:@ViewBag.appId,id:id,state:state}, function (data) {
+                        layer.msg(data.Msg, { anim: 0, time: 500 }, function () {
+                            app.getvipList();
+                        });
+                    })
+                }
+            },
+            created: function(){
+                this.getvipList();
+                $("#app").show();
+            }
+        })
+
+
+        $('.input-daterange').datepicker({
+            format: "yyyy-mm-dd",
+            language: "zh-CN",
+            //autoclose: true,
+            todayHighlight: true
+        });
+    </script>
+}
+

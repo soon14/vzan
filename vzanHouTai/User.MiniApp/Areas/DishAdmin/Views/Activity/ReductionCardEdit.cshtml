@@ -1,0 +1,480 @@
+﻿@model Entity.MiniApp.Tools.Coupons
+@{
+    ViewBag.Title = "编辑社交立减金";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@section styles{
+    <style>
+        .table-border tr th, .table-border tr td { text-align: center; }
+    </style>
+}
+<div class="page-container" id="app">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        @*<input type="hidden" name="act" value="edit" />
+            <input type="hidden" name="id" value="@(Model.Id)" />
+            <input type="hidden" name="aId" value="@(Model.appId)" />
+            <input type="hidden" name="storeId" value="@(Model.StoreId)" />*@
+        <div id="tab-system" class="HuiTab">
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    立减金名称：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    <input type="text" name="q_name" placeholder="1-20字（例如：满100元优惠10元）" v-model="editmodel.CouponName" class="input-text">
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    生成份数：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    <input type="number" name="q_name" placeholder="生成份数" v-model="editmodel.CreateNum" class="input-text">
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    每份人数：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    <select class="input-text" v-model="editmodel.SatisfyNum" v-bind:disabled="editmodel.Id>0">
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    优惠形式：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    指定金额&nbsp;面值
+                    <input type="number" name="q_name" placeholder="" class="input-text" v-model="editmodel.MoneyStr" maxlength="5" v-bind:disabled="editmodel.Id>0">
+                </div>
+            </div>
+            <div class="row cl" id="validdate">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    有效期：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    <div>
+                        <label>
+                            <input type="radio" name="val" value="0" v-model="editmodel.ValType" v-bind:disabled="editmodel.Id>0" />固定日期
+                            <span id="val0" v-show="editmodel.ValType==0">
+                                生效时间：
+                                <input type="text" name="StartUseTimeStr" id="StartUseTimeStr" value="@(Model.StartUseTimeStr=="0001.01.01 00:00:00"?"":Model.StartUseTimeStr)" class="input-text" placeholder="请选择生效日期" maxlength="20" readOnly style="background-color:white;width:200px;display:inline-block;" v-bind:disabled="editmodel.Id>0" />
+
+                                过期时间：
+                                <input type="text" name="EndUseTimeStr" id="EndUseTimeStr" class="input-text" value="@(Model.EndUseTimeStr=="0001.01.01 00:00:00"?"":Model.EndUseTimeStr)" placeholder="请选择过期日期" maxlength="20" readOnly style="background-color:white;width:200px;display:inline-block;" v-bind:disabled="editmodel.Id>0" />
+                            </span>
+                        </label>
+                    </div><br />
+                    <div>
+                        <label>
+                            <input type="radio" name="val" value="1" v-model="editmodel.ValType" v-bind:disabled="editmodel.Id>0" />
+
+                            领到券次日开始
+                            <span id="val1" style='display:inline-block;' v-show="editmodel.ValType!=1">N</span>
+                            <input id="valtype1" type="number" class="input-text" style="width:100px;display:inline-block;" min="1" v-show="editmodel.ValType==1" v-model="editmodel.ValDay" v-bind:disabled="editmodel.Id>0" />
+                            天内有效
+                        </label>
+                    </div><br />
+                    <div>
+                        <label>
+                            <input type="radio" name="val" value="2" v-model="editmodel.ValType" v-bind:disabled="editmodel.Id>0" />
+                            领到券当日开始
+                            <span id="val2" style='display:inline-block;' v-show="editmodel.ValType!=2">N</span>
+                            <input id="valtype2" type="number" class="input-text" style="width:100px;display:inline-block" min="1" v-show="editmodel.ValType==2" v-model="editmodel.ValDay" v-bind:disabled="editmodel.Id>0" />
+                            天内有效
+                        </label>
+                    </div>
+
+
+                </div>
+
+            </div>
+
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    使用门槛：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    <label>
+                        <input name="limitmoney" value="0" type="radio" v-model="editmodel.LimitMoneyType" v-bind:disabled="editmodel.Id>0">
+                        不限制
+                    </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <label>
+                        <input type="radio" name="limitmoney" value="1" v-model="editmodel.LimitMoneyType" v-bind:disabled="editmodel.Id>0" />
+                        满
+                        <input type="text" class="input-text inputdecimal" style="width:100px;display:inline-block;" v-model="editmodel.LimitMoneyStr" v-bind:disabled="editmodel.Id>0" />元可使用
+                    </label>
+                    <div style="color:red;" v-show="editmodel.LimitMoneyType==0">
+                        请谨慎设置无门槛优惠券，避免资金损失
+                    </div>
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    每人限领：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9">
+                    <select class="input-text" id="LimitReceive" v-model="editmodel.LimitReceive" v-bind:disabled="editmodel.Id>0">
+                        <option value="0">不限张</option>
+                        @for (var i = 1; i <= 20; i++)
+                        {
+                            <option>@i</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-2">
+                    <span class="c-red">*</span>
+                    适用商品：
+                </label>
+                <div class="formControls col-xs-8 col-sm-9" id="goodsbox">
+                    <label>
+                        <input type="radio" name="goods" value="0" v-model="editmodel.GoodsType" v-bind:disabled="editmodel.Id>0" />全部产品
+                    </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <label>
+                        <input type="radio" name="goods" value="1" v-model="editmodel.GoodsType" v-bind:disabled="editmodel.Id>0" />指定产品
+                    </label>
+                    <br /> <br />
+
+                    <table id="selGoods" class="table table-border table-bordered table-bg table-hover table-sort" style="width:800px;text-align:center;" v-show="editmodel.GoodsType==1">
+                        <thead>
+                            <tr>
+                                <th width="50">ID</th>
+                                <th width="70">产品图片</th>
+                                <th width="200">名称</th>
+                                <th width="150">创建时间</th>
+                                <th width="100" v-if="editmodel.Id==0">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(good_item,good_index) in editmodel.SelectGoods">
+                                <td align="center">{{good_item.id}}</td>
+                                <td align="center"><img v-bind:src="good_item.img" width="50" /></td>
+                                <td>
+                                    <div style="word-break:break-all;">
+                                        {{good_item.g_name}}
+                                    </div>
+                                </td>
+                                <td>{{good_item.add_time_str}}</td>
+                                <td align="center" valign="middle"  v-if="editmodel.Id==0">
+                                    <input type="button" class="btn btn-danger" value="移除" v-on:click="delgood(good_index)" v-bind:disabled="editmodel.Id>0" />
+                                </td>
+                            </tr>
+                            <tr v-if="editmodel.Id==0">
+                                <td colspan="5"> <a href="javascript:;" class="actionbtn " v-on:click="getgoodslist()">＋添加产品</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="button" v-on:click="saveInfo()"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button" v-on:click="cancelEdit()">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+    <!--添加可使用优惠券产品-->
+    <div class="modal fade" id="AddGoodModal" tabindex="-1" role="dialog" aria-labelledby="AddGoodModal_label" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择产品</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <thead>
+                            <tr>
+                                <th width="50">ID</th>
+                                <th width="70">产品图片</th>
+                                <th width="200">名称</th>
+                                <th width="150">创建时间</th>
+                                <th width="100">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(good_item,good_index) in goodslistdata.list">
+                                <td align="center">{{good_item.id}}</td>
+                                <td align="center"><img v-bind:src="good_item.img" width="50" /></td>
+                                <td>
+                                    <div style="word-break:break-all;">
+                                        {{good_item.g_name}}
+                                    </div>
+                                </td>
+                                <td>{{good_item.add_time_str}}</td>
+                                <td align="center" valign="middle">
+                                    <input type="button" :class="['btn btn-default',{'btn-primary':good_item.sel}]"
+                                           v-bind:value="good_item.sel?'取消':'选取'"
+                                           v-on:click="good_item.sel=!good_item.sel" />
+
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="goodslistdata.recordCount>0"></div>
+                    <br />
+                    <div class="nodata" v-if="goodslistdata.recordCount<=0">
+                        暂无数据，请先添加 <a href="/enterprisepro/p?appId=@(ViewBag.appId)">点击添加产品</a>
+                    </div>
+                    @*<vue-pager ref="goodpager" name="goods"></vue-pager>*@
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="PickGoodOK()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section scripts{
+    <script>
+        $(function () {
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#validdate .iCheck-helper").click(function () {
+                $(".val").show();
+                $(".valinput").hide();
+                var val = $(this).prev().val();
+                $("#val" + val).hide();
+                $("#valtype" + val).show();
+            })
+            $("#goodsbox .iCheck-helper").click(function () {
+                var val = $(this).prev().val();
+                if (val == 1) {
+                    $("#selGoods").show();
+                } else {
+                    $("#selGoods").hide();
+                }
+            });
+            layui.use('laydate', function () {
+                var laydate = layui.laydate;
+
+                //执行一个laydate实例
+                laydate.render({
+                    elem: '#StartUseTimeStr',
+                    format: 'yyyy-MM-dd HH:mm',
+                    type: 'datetime',
+                });
+                laydate.render({
+                    elem: '#EndUseTimeStr',
+                    format: 'yyyy-MM-dd HH:mm',
+                    type: 'datetime',
+                });
+            });
+
+        })
+    </script>
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+
+    <script>
+        var app = new Vue({
+            el: "#app",
+            data: {
+                editmodel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+                appId:@Model.appId,
+                goodslistdata: {
+                    recordCount: 0,
+                    list: [],
+                    postdata: {
+                        aid:@Html.Raw(Model.appId),
+                        pageIndex: 1,
+                        pageSize: 8,
+                        storeId:@Html.Raw(Model.StoreId),
+                    }
+                },
+            },
+            methods: {
+                //保存
+                saveInfo: function () {
+                    var that = this;
+                    if (that.editmodel.CouponName.length <= 0)
+                        return layer.msg("请填写立减金名称");
+
+                    if (that.editmodel.CreateNum <= 0)
+                        return layer.msg("请填写生成数量");
+                    if (that.editmodel.SatisfyNum < 2) {
+                        return layer.msg("每份人数应不少于2人");
+                    }
+                    that.editmodel.Money = parseInt(that.editmodel.MoneyStr * 100);
+                    //使用门槛
+                    if (that.editmodel.LimitMoneyStr <= 0 && that.editmodel.LimitMoneyType == 1) {
+                        return layer.msg("请填写使用门槛限制金额");
+                    }
+                    that.editmodel.LimitMoney = parseInt(that.editmodel.LimitMoneyStr*100);
+                    //有效期
+                    var startusetime = $('#StartUseTimeStr').val();
+                    var endusetime = $('#EndUseTimeStr').val();
+                    if (that.editmodel.ValType == 0) {
+                        if (startusetime == "") {
+                            layer.msg('请选择生效日期！');
+                            return false;
+                        }
+                        if (endusetime == "") {
+                            layer.msg('请选择过期日期！');
+                            return false;
+                        }
+                        if (new Date(endusetime) <= new Date(startusetime)) {
+                            layer.msg('过期时间必须大于生效时间时间！');
+                            return false;
+                        }
+
+                        that.editmodel.StartUseTime = startusetime
+                        that.editmodel.EndUseTime = endusetime
+                    }
+                    else if (that.editmodel.ValDay <= 0) {
+                        layer.msg('生效时间不能为空！');
+                        return false;
+                    }
+
+                    //指定产品
+                    if (that.editmodel.GoodsType == 1) {
+                        if (that.editmodel.SelectGoods.length <= 0) {
+                            layer.msg('请添加指定产品！');
+                            return false;
+                        }
+
+                        var idsarray = [];
+                        that.editmodel.SelectGoods.forEach(function (o, i) {
+                            idsarray.push(o.id);
+                        });
+
+                        that.editmodel.GoodsIdStr = idsarray.join(",");
+                    }
+
+                    var Description = that.editmodel.Desc;
+                    //Base64加密
+                    var b = new Base64();
+                    Description = b.encode(Description);
+
+                    var index = layer.load(2)
+
+                    $.post('/coupons/addorupdatecoupon', { appId: that.editmodel.appId, coupon: that.editmodel }, function (result) {
+                        layer.close(index);
+                        if (result.isok) {
+                            layer.msg('保存成功', { anim: 4 }, function () {
+                                parent.location.reload();
+                            });
+
+                        } else {
+                            layer.msg(result.msg);
+                        }
+                    });
+                },
+                //获取产品列表
+                getgoodslist: function () {
+                    var that = this;
+                    var index = layer.load(2)
+                    $.post("/Activity/GetGoodsList", this.goodslistdata.postdata, function (data) {
+                        layer.close(index);
+                        if (data.code == 1) {
+                            that.goodslistdata.recordCount = data.obj.recordCount;
+                            that.goodslistdata.list = data.obj.list;
+                            that.resetgoodsPage();
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                    $('#AddGoodModal').modal('show');
+                },
+                //产品列表分页跳转
+                resetgoodsPage: function () {
+                    var that = this;
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: that.goodslistdata.recordCount //数据总数，从服务端得到
+                            , curr: that.goodslistdata.postdata.pageIndex //当前页
+                            , limit: that.goodslistdata.postdata.pageSize
+                            , jump: function (obj, first) {
+                                that.goodslistdata.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    that.getgoodslist();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                //选取优惠产品完成
+                PickGoodOK: function () {
+                    var that = this;
+                    if (that.editmodel.SelectGoods == null || that.editmodel.SelectGoods.length <= 0) {
+                        that.editmodel.SelectGoods = [];
+                    }
+
+                    var list = this.goodslistdata.list.filter(function (_item) {
+                        return _item.sel;
+                    });
+
+                    if (list.length <= 0) {
+                        layer.msg("请选择可使用优惠券的产品");
+                        return;
+                    }
+
+                    var sellist = list.filter(function (_item) {
+                        that.editmodel.SelectGoods.forEach(function (value, index) {
+                            if (_item.Id == value.Id) {
+                                _item.sel = false;
+                                return _item.sel;
+                            }
+                        });
+                        return _item.sel;
+                    });
+
+                    that.editmodel.SelectGoods = that.editmodel.SelectGoods.concat(sellist);
+                    $('#AddGoodModal').modal('hide');
+                },
+                //删除产品
+                delgood: function (index) {
+                    var that = this;
+                    layer.confirm('您确定要移除此产品吗？', {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        that.editmodel.SelectGoods.splice(index, 1);
+                        layer.msg("操作成功");
+                    });
+                },
+                cancelEdit:function() {
+                    var index = parent.layer.getFrameIndex(window.name);
+                    parent.layer.close(index);
+                }
+            }
+        });
+
+    $(".inputdecimal").keyup(function(){
+
+        var reg = /^\d+\.?(\d{1,2})?$/;
+        while (!reg.test($(this).val()) && $(this).val() != "") {
+            $(this).val(checkStr($(this).val()));
+        }
+    });
+    //检查是否符合金额格式:只能输入数字且最多保留小数点后两位
+    function checkStr(str) {
+        str = str.substring(0,str.length-1);
+        return str;
+    }
+    </script>
+}

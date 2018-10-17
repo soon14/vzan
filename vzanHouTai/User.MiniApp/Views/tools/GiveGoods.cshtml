@@ -1,0 +1,138 @@
+﻿@using Entity.MiniApp.Tools
+@using User.MiniApp.comment
+@model BargainUser
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "发货管理";
+    WxAddress address = JsonConvert.DeserializeObject<WxAddress>(ViewBag.addr);
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+
+<style>
+    .twxq-new-kuang { border: 1px solid #ccc; padding: 10px; margin-right: 10px; background: #fff; }
+
+    .twxq-edit-zhanshi { border: 2px dashed #fc7d7d; padding: 10px; min-height: 108px; position: relative; }
+
+    .spgl-bianji-bt { position: absolute; bottom: 0; right: 0; display: inline-block; background-color: rgba(0,0,0,0.3); color: #fff; padding: 0 5px; margin-left: 1px; font-size: 12px; }
+
+    .bz { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+    .spxqq-f p:first-child { font-size: 17px; }
+
+    .spxqq-f { text-align: center; margin-top: 17px; line-height: 25px; }
+    .form-control{width:539px !important;}
+</style>
+@Html.HiddenFor(m => m.Id, new { name = "Id" })
+<div>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+
+        <tr>
+            <td style="text-align: right;" width="30%">收货信息：<label style="color: red">*</label></td>
+            <td>
+                <textarea style="margin: 0px; width: 539px; height: 133px;">
+@address.userName
+@address.telNumber
+@(address.provinceName+" "+address.cityName+" "+address.countyName+" "+address.detailInfo)
+@("邮编:"+address.postalCode)
+</textarea>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">快递名称：<label style="color: red">*</label></td>
+            <td>
+                <input name="SendGoodsName" id="SendGoodsName"  placeholder="快递名称" value="@Model.SendGoodsName" class="form-control width300"  maxlength="8"  />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">快递单号：<label style="color: red">*</label></td>
+            <td>
+
+                <input name="WayBillNo" id="WayBillNo"  placeholder="快递单号"  value="@Model.WayBillNo" class="form-control width300" onkeyup="value = value.replace(/[^\d\.]/g, '')" onafterpaste="this.value=this.value.replace(/D/g, '')"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">发货时间：</td>
+            <td>
+
+                <input name="SendGoodsTime" id="SendGoodsTime" maxlength="5" placeholder="发货时间" readonly="readonly" value="@(Model.SendGoodsTime==DateTime.MinValue?DateTime.Now:Model.SendGoodsTime)" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" id="btnSave" value="保存" style="@(!string.IsNullOrEmpty(Model.WayBillNo)?"display:none": "display:inline-block")" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+    </table>
+</div>
+<!-- loading -->
+<div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body" id="modelMsg">
+                请稍候,正在处理你的请求.....
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $("#btnSave").click(function () {
+            var SendGoodsName = $("#SendGoodsName").val();
+            if (SendGoodsName == '' || SendGoodsName.length <= 0) {
+                AppTools.Alert('快递名称不能为空!');
+                return;
+            }
+            var WayBillNo = $("#WayBillNo").val();
+            if (WayBillNo == '' || WayBillNo.length <= 0) {
+                AppTools.Alert('快递单号不能为空!');
+                return;
+            }
+
+            $('#loading').modal('show');
+            $.post('/tools/UpdateGiveGoods',
+                {
+                    appId: @ViewBag.appId,
+                    buid:@Model.Id,
+                    SendGoodsName:SendGoodsName,
+                    WayBillNo:WayBillNo                  
+                },
+                function (result) {
+                    if (result.code > 0) {
+                       
+                        $("#modelMsg").html("操作成功!2秒后自动跳转...");
+
+                        window.setTimeout(function(){
+                            $('#loading').modal('hide');
+                            if(@ViewBag.PageType==22){
+                                window.location.href='/enterprisepro/OrderTotalList?appId=@ViewBag.appId&PageType=@ViewBag.PageType&tab=2';
+
+                            }else{
+                                window.location.href='/tools/BargainUserList?appId=@ViewBag.appId&PageType=@ViewBag.PageType&bid=@Model.BId';
+
+                            }
+                        },2000);
+                    } else {
+                        $('#loading').modal('hide');
+                        AppTools.Alert(result.msg);
+                    }
+                });
+
+
+
+        });
+
+    });
+</script>
+

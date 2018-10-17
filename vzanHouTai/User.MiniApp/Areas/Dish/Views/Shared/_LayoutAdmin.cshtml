@@ -1,0 +1,112 @@
+﻿@using BLL.MiniApp.Conf
+@using Entity.MiniApp.Conf
+@{
+    string domain = Request.Url.Host;
+   
+    if (domain.Contains(WebSiteConfig.DzWebSiteDomainExt))
+    {
+        //表示二级域名
+        domain = domain.Replace(WebSiteConfig.DzWebSiteDomainExt, "");
+    }
+    AgentWebSiteInfo agentWebSiteInfo = AgentWebSiteInfoBLL.SingleModel.GetModelByDomian(domain);
+    SeoConfigModel seoConfig = new SeoConfigModel();
+    if (agentWebSiteInfo != null && !string.IsNullOrEmpty(agentWebSiteInfo.seoConfig))
+    {
+        seoConfig = JsonConvert.DeserializeObject<SeoConfigModel>(agentWebSiteInfo.seoConfig);
+    }
+}
+
+<!DOCTYPE html>
+
+<html>
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width" />
+    <meta name="renderer" content="webkit">
+    <title>智慧餐厅（多店版）管理平台</title>
+    <meta content="" name="keywords" />
+    <meta content="" name="description" />
+    <link href="~/Areas/Dish/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/Areas/Dish/static/css/font-awesome.min.css" rel="stylesheet">
+    <link href="~/Areas/Dish/static/css/animate.css" rel="stylesheet">
+    <link href="~/Areas/Dish/static/css/style.css" rel="stylesheet">
+    <link href="~/Content/assets/global/plugins/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet" />
+
+    <!-- 如果页面中有图片上传就保留这行代码，没有的话，可以删除 -->
+    <link href="~/Areas/Dish/static/css/module1.css" rel="stylesheet">
+    <link href="~/Areas/Dish/static/css/mofang.css" rel="stylesheet">
+
+    @if (seoConfig != null && !string.IsNullOrEmpty(seoConfig.iconImg))
+    {
+        <link rel="shortcut icon" href="@seoConfig.iconImg" />
+    }
+    else
+    {
+        <link rel="shortcut icon" type="image/x-icon" href="@(WebSiteConfig.cdnurl)content/newhome/image/bitbug_favicon.ico">
+    }
+    <style>
+        [v-cloak] { display: none; }
+    </style>
+    @RenderSection("styles", false)
+    <title>@ViewBag.Title</title>
+</head>
+
+@RenderBody()
+
+<!-- 全局js -->
+<script src="~/Areas/Dish/static/js/jquery.min.js"></script>
+<script src="http://j.vzan.cc/dz/js/jquery.cookie.js"></script>
+<script src="~/Areas/Dish/static/js/jquery.form.min.js"></script>
+<script src="~/Areas/Dish/static/js/bootstrap.min.js"></script>
+<script src="~/Areas/Dish/static/js/plugins/jquery.metisMenu.js"></script>
+<script src="~/Areas/Dish/static/js/plugins/jquery.slimscroll.min.js"></script>
+<script src="~/Areas/Dish/static/js/plugins/layer/layer.min.js"></script>
+<script src="~/Content/assets/global/plugins/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+<script src="~/Content/assets/global/plugins/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.zh-CN.js"></script>
+
+<script src="/Areas/DishAdmin/lib/jquery.validation/1.14.0/jquery.validate.js"></script>
+<script src="/Areas/DishAdmin/lib/jquery.validation/1.14.0/validate-methods.js"></script>
+<script src="/Areas/DishAdmin/lib/jquery.validation/1.14.0/messages_zh.js"></script>
+<!-- 自定义js -->
+<script src="~/Areas/Dish/static/js/hplus.js"></script>
+<script type="text/javascript" src="~/Areas/Dish/static/js/contabs.js"></script>
+<script src="~/Areas/Dish/static/js/admin_common.js"></script>
+<script src="~/Areas/Dish/static/js/dg.js"></script>
+<!-- 第三方插件 -->
+<script src="~/Areas/Dish/static/js/plugins/suggest/bootstrap-suggest.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+<!--开发使用开发版-->
+@*<script src="@(WebSiteConfig.cdnurl)content/vue.js"></script>*@
+<!--上线使用压缩版-->
+<script src="@WebSiteConfig.SourceContent/fcontent/plugin/vue.min.js"></script>
+
+<!-- 页面上的自定义js -->
+<script>
+    $(function () {
+
+        $("body").bind("keydown", function (e) {
+            e = window.event || e;
+
+            //屏蔽F5刷新键
+            if (event.keyCode == 116) {
+                window.location.reload();
+                e.keyCode = 0; //IE下需要设置为keyCode为false
+                return false;
+            }
+
+            //屏蔽ctrl+R
+            if ((event.ctrlKey) && (event.keyCode == 82)) {
+                window.location.reload();
+                e.keyCode = 0;
+                return false;
+            }
+        });
+
+    })
+</script>
+@RenderSection("scripts", false)
+</html>

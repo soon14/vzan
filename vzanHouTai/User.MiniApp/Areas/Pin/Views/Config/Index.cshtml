@@ -1,0 +1,385 @@
+﻿@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content" id="app" v-cloak>
+        <div class="search-area">
+            <div class="row">
+                <div class="col-sm-3 col-lg-2 col-xs-6">店铺名称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.storeName" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">店铺电话：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.phone" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">用户昵称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.nickName" /></div>
+            </div>
+            <div class="row" style="margin-top:18px;">
+                <div class="col-sm-3 col-lg-2 col-xs-6">父级代理昵称：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.fnickName" /></div>
+                <div class="col-sm-3 col-lg-2 col-xs-6">父级代理手机：<input type="text" class="form-control" style="width:120px; display:inline-block;margin:0 8px;" v-model="postdata.fphone" /></div>
+                <div class="col-sm-3 col-lg-3 col-xs-3">
+                    <a href="javascript:;" class="btn btn-sm  btn-primary radius" v-on:click="searchList()"> <i class="fa fa-search"></i> 搜索</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5 style="margin-top:7px;">商家列表</h5>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isAgent==0&&postdata.isBiaogan==0?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetAllList()">查看所有商家</a>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isAgent!=0?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetAgentList()">查看代理用户</a>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isBiaogan==2?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetBiaoganList(2)">查看标杆店铺</a>
+                    <a href="javascript:;" :class="['btn btn-sm  btn-primary radius',postdata.isBiaogan==1?'': 'btn-outline']" style="margin:0 8px;" v-on:click="GetBiaoganList(1)">申请中的标杆店铺</a>
+
+
+                    <span>总数：{{recordCount}}</span>
+                </div>
+                <div class="ibox-content xcx-list">
+                    <table class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th width="40">店铺ID</th>
+                                <th>用户昵称</th>
+                                <th style="text-align: center;">店铺Logo</th>
+                                <th style="text-align: center;">店铺名称</th>
+                                <th>店铺电话</th>
+                                <th>状态</th>
+                                <th>上架商品</th>
+                                <th>交易金额</th>
+                                <th>待提现金额</th>
+                                <th>商家入驻日期</th>
+                                <th>代理入驻日期</th>
+                                <th>入驻费</th>
+                                <th>标杆店铺</th>
+                                <th>父级代理</th>
+                                <th width="220">标杆/代理设置</th>
+                                <th width="260">操作</th>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(store,index) in list">
+                                <td>{{store.id}}</td>
+                                <td>{{store.nickName}}</td>
+                                <td align="center"><img :src="store.logo" width="50" v-if="store.logo"></td>
+                                <td align="center">{{store.storeName}}</td>
+                                <td>{{store.phone}}</td>
+
+                                <td>{{store.stateName}}</td>
+
+                                <td>
+                                    {{store.goodsCount}}
+                                </td>
+                                <td>{{store.moneyStr}}</td>
+                                <td>{{store.cashStr}}</td>
+                                <td>{{store.startDateStr}}</td>
+                                <td>{{store.agentInfo==null?'':store.agentInfo.addTimeStr}}</td>
+                                <td>{{store.agentFee}}</td>
+                                <td>{{store.biaoganStr}}</td>
+                                <td v-if="store.fuserInfo!=null">{{store.fuserInfo.NickName }}<br />{{store.fuserInfo.TelePhone}}</td>
+                                <td v-else>————</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="javascript:;" v-on:click="setBiaoGan(index,2)" style="margin:4px;" class="btn btn-sm btn-outline btn-success radius" v-if="store.biaogan!=2">
+                                            <i class="fa fa-diamond"></i> 设为标杆
+                                        </a>
+                                        <a href="javascript:;" v-on:click="setBiaoGan(index,-1)" style="margin:4px;" class="btn btn-sm btn-outline btn-default radius" v-if="store.biaogan==2||store.biaogan==1">
+                                            <i class="fa fa-times"></i> 取消标杆
+                                        </a>
+                                        <a href="javascript:;" v-on:click="setAgent(index,1)" style="margin:4px;" class="btn btn-sm btn-outline btn-primary radius" v-if="store.agentInfo==null">
+                                            <i class="fa fa-user-secret"></i> 设为代理
+                                        </a>
+                                        <a href="javascript:;" v-on:click="setAgent(index,0)" style="margin:4px;" class="btn btn-sm btn-outline btn-default radius" v-else>
+                                            <i class="fa fa-user-times"></i> 取消代理
+                                        </a>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="javascript:;" class="btn btn-sm btn-primary radius" style="margin:0 8px;" v-on:click="entermanage(store.id,store.aId)"><i class="fa fa-home"></i> 进入管理</a>
+                                        <a :href="'/Pin/Config/StoreEdit?aid='+store.aId+'&id='+store.id" style="margin-right:8px;" class="btn btn-sm btn-outline btn-default radius">
+                                            <i class="fa fa-edit"></i> 编辑
+                                        </a>
+
+
+                                        <a href="javascript:;" class="btn btn-sm btn-outline btn-default radius confirm" v-on:click="Del(index)">
+                                            <i class="fa fa-trash"></i> 删除
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="list.length<=0">
+                                <td colspan="16" align="center">查无数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="postdata.pageSize<recordCount"></div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!--设为代理填写费用Start-->
+        <div class="modal fade" id="addAgentModal" tabindex="-1" role="dialog" aria-labelledby="addAgentModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="addAgentTimeModalLabel">
+                            缴费
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                            <div style="margin-left:200px;">
+                                <table id="tb">
+                                    <tr>
+                                        <td>等级:</td>
+                                        <td>
+                                            <span>入门代理</span>
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>收费:</td>
+                                        <td>
+                                            <input type="text" class="form-control" style="width:100px;display: inline;" v-model="agentMoney" />元
+                                        </td>
+                                    </tr>
+
+
+                                </table>
+
+                            </div>
+      
+                        <div stle="clear:both;"></div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-primary" v-on:click="AddAgent()">
+                            确认
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!--设为代理填写费用End-->
+
+
+    </div>
+</body>
+@section styles{
+    <style>
+       
+        #tb tr { display: block; margin-bottom: 20px !important; }
+        .table-condensed th, .table-condensed td { text-align: center; }
+        .search-area { background: rgba(252, 248, 227, 1); padding: 19px 12px; margin-bottom: 1px; }
+    </style>
+}
+@section scripts{
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                list: [],
+                recordCount: 0,
+                postdata:{
+                    pageIndex: 1,
+                    pageSize: 10,
+                    aid:@aid,
+                    isAgent: 0,
+                    storeName: '',
+                    phone: '',
+                    nickName: '',
+                    isBiaogan: 0,
+                    fnickName: '',
+                    fphone:'',
+                },
+                curIndex:-1,
+                agentMoney:0
+            },
+            methods: {
+                GetList: function () {
+                    var that = this;
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Config/GetStoreList", that.postdata, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code==1) {
+                            that.list = data.obj.list;
+                            that.recordCount = data.obj.recordCount;
+                            that.resetPage();
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                },
+                resetPage: function () {
+                    var that = this;
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: that.recordCount //数据总数，从服务端得到
+                            , curr: that.postdata.pageIndex //当前页
+                            , limit: that.postdata.pageSize
+                            , jump: function (obj, first) {
+                                that.postdata.pageIndex = obj.curr;
+                                //首次执行
+                                if (!first) {
+                                    that.GetList();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Del: function (index,state) {
+                    var that = this;
+                    layer.confirm('是否确定要删除店铺：'+that.list[index].storeName+'？', {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        var layerIndex = layer.load(2);
+                        $.post("/Pin/Config/DelStore", { aid: that.postdata.aid, id: that.list[index].id }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.msg);
+                            if (data.code==1) {
+                                that.list.splice(index, 1);
+                            }
+
+                        })
+                    });
+                },
+                setAgent: function (index, state) {
+                    var that = this;
+                    if (state == 0) {
+                        layer.confirm("是否确认要取消" + that.list[index].nickName + "的代理身份？", { btn: ['确定', '取消'] }, function () {
+                            var layerIndex = layer.load(2);
+                            $.post("/Pin/Config/SetAgent", { aid: that.postdata.aid, userid: that.list[index].userId, state: state }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.msg);
+                                if (data.code == 1) {
+                                    that.GetList();
+                                }
+
+                            })
+                        });
+                    } else {
+                        that.curIndex=index;
+                        $('#addAgentModal').modal('show');
+                    }
+
+                },
+                AddAgent:function(){
+                    var that=this;
+                    if(parseInt(that.curIndex)<0){
+                        layer.msg("请选择需要设置为代理的用户");
+                        return;
+                    }
+                    var agentFee = that.agentMoney;
+                    var reg = /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
+                    if (!reg.test(agentFee)) {
+                        layer.msg("请输入正确的金额");
+                        return;
+                    }
+                    agentFee = parseInt(agentFee * 100);
+                    if (agentFee <0) {
+                        layer.msg("金额不能为负数");
+                        return;
+                    }
+
+                    var layerIndex = layer.load(2);
+                    $.post("/Pin/Config/SetAgent", { aid: that.postdata.aid, userid: that.list[that.curIndex].userId, state: 1,agentMoney:agentFee }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.code == 1) {
+                            that.GetList();
+                            $('#addAgentModal').modal('hide');
+                        }
+
+                    });
+                },
+                setBiaoGan: function (index, state) {
+                    var that = this;
+                    if (state == -1) {
+                        layer.confirm("是否取消" + that.list[index].storeName + "为标杆店铺?", { btn: ['确定', '取消'] }, function () {
+                            var layerIndex = layer.load(2);
+                            $.post("/Pin/Config/SetBiaoGan", { aid: that.postdata.aid, sId: that.list[index].id, state: state }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.msg);
+                                if (data.code == 1) {
+                                    that.GetList();
+                                }
+
+                            })
+                        })
+                    } else {
+                        var layerIndex = layer.load(2);
+                        $.post("/Pin/Config/SetBiaoGan", { aid: that.postdata.aid, sId: that.list[index].id, state: state }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.msg);
+                            if (data.code == 1) {
+                                that.GetList();
+                            }
+
+                        })
+                    }
+                },
+                InitLayer: function () {
+
+                },
+                entermanage: function (id,aid) {
+                    $.post("/Pin/Config/EnterStoreManage", { aid: aid, id: id }).then(function (result) {
+                        if (result.code == 1) {
+                            var host = window.location.host;
+                            var domain = "";
+                            if (host.indexOf('vzan.com') != -1) {
+                                domain = ".vzan.com";
+                            }
+                            else if (host.indexOf('xiaochengxu.com') != -1) {
+                                domain = ".xiaochengxu.com.cn";
+                            }
+                            $.cookie('dzPinAdmin', result.msg, { expires: 7, path: '/', domain: domain });
+
+                            setTimeout(function () {
+                                window.parent.open("/PinAdmin/main/index?aId=" + aid + "&storeId=" + id,"_blank");
+                            }, 10);
+                        }
+                    });
+                },
+                GetAllList: function () {
+                    var that = this;
+                    that.postdata.isAgent = 0;
+                    that.postdata.isBiaogan = 0;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+                GetAgentList: function () {
+                    var that = this;
+                    that.postdata.isAgent = 1;
+                    that.postdata.isBiaogan = 0;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+                GetBiaoganList: function (state) {
+                    var that = this;
+                    that.postdata.isAgent = 0;
+                    that.postdata.isBiaogan = state;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+                searchList: function () {
+                    var that = this;
+                    that.postdata.pageIndex = 1;
+                    that.GetList();
+                },
+
+            },
+            mounted: function () {
+                var that = this;
+                that.GetList();
+            }
+        })
+    </script>
+}

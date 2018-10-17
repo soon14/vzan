@@ -1,0 +1,603 @@
+﻿@model ViewModel<EntSetting>
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "产品预约";
+    ViewBag.PageType = Model.PageType;
+    int aid = Utility.IO.Context.GetRequestInt("appId", 0);
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    StoreConfigModel configModel=(StoreConfigModel)ViewData["FunJoinModel"];
+}
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+<style>
+    table { margin: 20px 0px 0px 20px; color: #616060; }
+    table tr { height: 35px; }
+    table th { text-align: center; }
+    .ml10 { margin-left: 20px; }
+    .modal-title { font-size: 16px; font-weight: bold; }
+    .modal-body ul li { width: 50%; min-height: 28px; }
+    .detail_title { color: #4a86e8; font-size: 16px; margin-bottom: 10px; }
+    .searchul { width: 100%; margin: 20px 0px 14px 0px; height: 50px; }
+    .searchul li { /*width:25%;*/ float: left; margin-right: 25px; }
+    .searchul li span { float: left; padding-top: 5px; padding-right: 8px; }
+    .inputWidth200 { width: 200px !important; }
+    .searchul li input, .searchul li select { width: 140px; }
+    [v-cloak] { display: none }
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 54px; }
+    #SettingModal label { margin-bottom: 0px; }
+    #SettingModal table td { padding: 8px 18px; }
+</style>
+<div id="app" class="container-fluid" v-cloak>
+    <div>
+        @*<div v-for="(item,index) in pages" v-if="isSysPage(item, '产品预约')">
+                <p style="font-size:16px; font-weight:bold; color:#5691fc">|预约信息配置</p>
+                <table>
+                    <tr>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showname" />姓名</label></td>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showphone" />手机号</label></td>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showsex" />性别</label></td>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showage" />年龄</label></td>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showremark" />备注</label></td>
+                    </tr>
+                    <tr>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showdress" v-on:click="cancelmap(index)" />地址</label></td>
+                        <td colspan="4"><label><input type="checkbox" v-model="item.coms[0].showmap" v-on:click="selectdress(index)" />精确到经纬度(若需要上门服务或配送时请勾选本选项)</label></td>
+                    </tr>
+                    <tr>
+                        <td><label><input type="checkbox" v-model="item.coms[0].showtime" />预约时间</label></td>
+                        <td colspan="4" style="text-align:center">
+                            预约提前时间：<input type="text" style="width:50px;" v-model="item.coms[0].timecount" />
+                            <select v-model="item.coms[0].timetype">
+                                <option value="分钟">分钟</option>
+                                <option value="小时">小时</option>
+                                <option value="天">天</option>
+                            </select>
+                            <span v-if="(item.coms[0].timetype=='min'&&item.coms[0].timecount<10)||item.coms[0].timecount==0" style="color:red;">*必须大于10分钟</span>
+                        </td>
+                    </tr>
+                </table>
+                <a class="btn btn-info" style="margin:10px 20px;" v-on:click="saveSetting(index)">保存</a>
+            </div>*@
+
+        <div>
+            <ul class="searchul">
+                <li><span>产品名称:</span><input type="text" v-model="postdata.goods" class="input-sm form-control" /></li>
+                <li><span>客户姓名:</span><input type="text" v-model="postdata.name" class="input-sm form-control" /></li>
+                <li><span>手机号码:</span><input type="number" v-model="postdata.phone" class="input-sm form-control" /></li>
+                <li>
+                    <span>处理状态:</span>
+                    <select v-model="postdata.state" class="form-control">
+                        <option value="0">全部</option>
+                        <option value="2">已处理</option>
+                        <option value="1">未处理</option>
+                    </select>
+                </li>
+                <div style="clear:both;"></div>
+            </ul>
+            <div class="d-flex d-flex-center formsearch">
+                从：
+                <div class="input-daterange input-group" id="datepicker" style="width:400px;">
+                    <input type="text" class="input-sm form-control" name="start" id="startdate" />
+                    <span class="input-group-addon">到</span>
+                    <input type="text" class="input-sm form-control" name="end" id="enddate" />
+                </div>
+
+                <a href="javascript:;" v-on:click="Search()" class="btn btn-primary ml10">查询</a>
+
+                <span v-if="list.length>0">
+                    <a v-bind:href="'/@(dirName)/SubscribeListExport?act=search&appid=@(aid)&start='+postdata.start+'&end='+postdata.end+'&name='+postdata.name+'&phone='+postdata.phone+'&state='+postdata.state+'&goods='+postdata.goods" target="_blank" class="btn btn-primary ml10" id="exportSearch">导出查询</a>
+                    <a href="/@(dirName)/SubscribeListExport?act=all&appid=@(aid)" target="_blank" class="btn btn-primary ml10" id="exportAll">导出全部</a>
+                    <a href="Javascript:void(0);" target="_blank" class="btn btn-primary ml10" v-on:click="exportCK()">导出选择</a>
+                </span>
+                <a href="javascript:;" v-on:click="ShowSetting()" class="btn btn-warning ml10">预约设置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="5%">选择</th>
+                        <th width="15%">预约产品</th>
+                        <th width="40%">预约详情</th>
+                        <th width="10%">提交时间</th>
+                        <th width="7%">处理状态</th>
+                        <th width="15%">操作人备注</th>
+                        <th width="20%">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list">
+                        <td style="vertical-align: middle !important; text-align:center;"><input type="checkbox" name="ck" :value="item.id" /></td>
+                        <td style="vertical-align: middle !important; text-align:center;">{{item.formremark.goods.name}}</td>
+                        <td v-html="item.formdatajson" style="vertical-align: middle !important;"></td>
+                        <td style="vertical-align: middle !important; text-align:center;">{{item.showtime}}</td>
+                        <td v-if="item.state==1" style="vertical-align: middle !important; text-align:center;">未处理</td>
+                        <td v-else-if="item.state==2" style="vertical-align: middle !important; text-align:center;">已处理</td>
+                        <td v-else style="vertical-align: middle !important; text-align:center;">未知状态</td>
+                        <td style="vertical-align: middle !important;">{{item.formremark.operationremark}}</td>
+                        <td style="vertical-align: middle !important; text-align:center;">
+                            <a class="editiInfo" v-on:click="dealbtn(index)">处理预约</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="8" v-if="recordCount<=0">暂无数据</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+        </div>
+    </div>
+    <!--预约处理 开始-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        预约处理
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div style=" margin-bottom:20px;">
+                        <div class="detail_title">预约信息</div>
+                        <ul>
+                            <li v-for="item in detail"><p style="word-wrap:break-word">{{item}}</p></li>
+                        </ul>
+                        <div style="clear:both"></div>
+                    </div>
+                    <div>
+                        <div class="detail_title">信息处理</div>
+                        <table style="margin:0;">
+                            <tr>
+                                <td>处理状态:</td>
+                                <td>
+                                    <label><input type="radio" value="2" v-model="formpostdata.state" name="state" />已处理</label>&nbsp;&nbsp;
+                                    <label><input type="radio" value="1" v-model="formpostdata.state" name="state" />未处理</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>操作人备注：</td>
+                                <td><textarea style=" max-width: 462px; max-height: 134px; min-width: 462px; min-height: 134px; padding:5px; border-radius:5px;" v-model="formpostdata.remark" placeholder="备注内容不超过100字"></textarea></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                        提交更改
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+    <!--预约处理 结束-->
+    <!--预约设置 开始-->
+    <div class="modal fade" id="SettingModal" tabindex="-1" role="dialog" aria-labelledby="SettingModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="SettingModalLabel">
+                        预约设置
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div style=" margin-bottom:20px; width:100%;">
+                        <div class="detail_title">预约信息栏</div>
+                        <table class="table table-bordered layui-form" style="margin:0;">
+                            <tr>
+                                <td width="50%">
+                                    <label style="display:inline-block;float:left;line-height: 24px;">姓名</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showname" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showname" lay-filter="showname">
+                                    </div>
+                                </td>
+                                <td>
+                                    <label style="display:inline-block;float:left;line-height: 24px;">手机</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showphone" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showphone" lay-filter="showphone">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+
+                                    <label style="display:inline-block;float:left;line-height: 24px;">预约时间</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showtime" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showtime" lay-filter="showtime">
+                                    </div>
+                                </td>
+                                <td>
+                                    提前：<input type="text" style="width:50px;" v-model="com.timecount" />
+                                    <select v-model="com.timetype" lay-ignore>
+                                        <option value="分钟">分钟</option>
+                                        <option value="小时">小时</option>
+                                        <option value="天">天</option>
+                                    </select>
+                                    预约
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+
+                                    <label style="display:inline-block;float:left;line-height: 24px;">年龄</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showage" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showage" lay-filter="showage">
+                                    </div>
+                                </td>
+                                <td>
+                                    <label style="display:inline-block;float:left;line-height: 24px;">性别</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showsex" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showsex" lay-filter="showsex">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label style="display:inline-block;float:left;line-height: 24px;">省市区选择</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showdress" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showdress" lay-filter="showdress">
+                                    </div>
+                                </td>
+                                <td>
+                                    <label style="display:inline-block;float:left;line-height: 24px;">详细街道门牌</label>
+                                    <div style="float:right;">
+                                        <input type="checkbox" name="showstree" lay-skin="switch" lay-text="显示|隐藏" v-model="com.showstree" lay-filter="showstree">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <label><input type="checkbox" lay-ignore v-model="com.showmap"/>使用地图定位</label>
+                                    <span>开启后<span style="color:#ff0000;font-weight:bold;">将不显示</span>省市区选择，详细街道门牌选择，直接通过地图获取定位地址</span>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="clear:both"></div>
+                    </div>
+                    <div>
+                        <div class="detail_title">支付设置</div>
+                        <table class="layui-form" style="margin:0;width:100%;">
+                            <tr>
+                                <td style="padding:0px;" width="139">
+                                    付费预约:
+                                    <input type="checkbox" name="OpenYuyuePay" lay-skin="switch" lay-text="显示|隐藏" v-model="funModel.OpenYuyuePay" lay-filter="OpenYuyuePay">
+                                </td>
+                                <td style="color:#999;">
+                                    选择“是”，用户需支付相应费用才能成功提交预约，预约失败后预约费用自动退回用户零钱
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding:0px;" colspan="2">
+                                    <p style="display:inline-block;">计费规则：</p>
+                                    <ul style="width: 80%; display: inline-table;">
+                                        <li style="width:100%"><label><input type="radio" lay-ignore name="paytype" value="0" v-model="funModel.YuyuePayType"/>设置固定预约费用<input type="text" style="width:50px;" v-model="funModel.YuyuePayCount"/>元，任意产品均支付该金额预约</label></li>
+                                        <li style="width:100%"><label><input type="radio" lay-ignore name="paytype" value="1" v-model="funModel.YuyuePayType" />按预约产品价格的<input type="text" style="width:50px;" v-model="funModel.YuyuePayCount"/>%计算需支付的预约费用</label></li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" v-on:click="saveSetting()">
+                        保存配置
+                    </button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        返回
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+    <!--预约设置 结束-->
+</div>
+<script>
+    var element;
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            recordCount: 0,
+            list: [],
+            index: 0,
+            detailindex:0,
+            pages:@Html.Raw(Model.DataModel.pages),
+            funModel:@Html.Raw(JsonConvert.SerializeObject(configModel)),
+            postdata: {
+                appid:'@aid',
+                pageIndex: 1,
+                pagesize: 10,
+                start: '',
+                end: '',
+                name: '',
+                goods: '',
+                phone: '',
+                state:0,
+            },
+            detail: [],
+            formpostdata:{
+                appid:'@aid',
+                formId: 0,
+                state: 1,
+                remark:''
+            },
+            customer: null,
+            isloading: false,
+            com:null,
+        },
+        methods: {
+            exportCK:function(){
+
+                var chk_value =[];
+                $('input[name="ck"]:checked').each(function(){
+                    chk_value.push($(this).val());
+                });
+                if (chk_value.length <= 0) {
+                    layer.msg("请勾选要导出的数据");
+                    return;
+                }
+                var Ids= chk_value.join(",");
+              //  console.log(Ids);
+                window.open("/@(dirName)/SubscribeListExport?act=search&appid=@(aid)&Ids="+Ids);
+
+
+            },
+            getlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                var loadindex = layer.load(1);
+                $.post("/@(dirName)/GetSubscribeList", this.postdata, function (data) {
+                    layer.close(loadindex);
+                    app.isloading = false;
+                    if (!data.isok) {
+                        console.log(data.Msg);
+                        layer.msg(data.Msg);
+                        return;
+                    } else {
+                        app.recordCount = data.dataObj.recordCount;
+                        app.list = data.dataObj.list;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pagesize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            console.log(app.recordCount);
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getlist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            Search: function () {
+                this.pageIndex = 1;
+                this.postdata.start = $("#startdate").val();
+                this.postdata.end = $("#enddate").val();
+                this.getlist();
+            },
+            isSysPage: function (pageitem, pagename) {
+                if (!pageitem) {
+                    return;
+                }
+                if (pagename == undefined) {
+                    // return (("def_name" in pageitem && pageitem.def_name != "") || ("def_name" in pageitem));
+                    return ("def_name" in pageitem && pageitem.def_name != "")
+                }
+                return "def_name" in pageitem && pageitem.def_name == pagename;
+            },
+            hasItem: function (coms, itemname) {
+                if (!coms) {
+                    return;
+                }
+                var result = false;
+                $.each(coms.items, function (i, v) {
+                    if (v.name == itemname) {
+                        result = true;
+                        return false;
+                    }
+                })
+                return result;
+            },
+            saveSetting: function () {
+                var that = this;
+                //var coms = this.pages[index].coms[0];
+                var valid = false;
+                //console.log(coms)
+                if (that.com.showname == true) {
+                    valid = true;
+                }
+                if (that.com.showphone == true) {
+                    valid = true;
+                }
+                if (that.com.showsex == true) {
+                    valid = true;
+                }
+                if (that.com.showage == true) {
+                    valid = true;
+                }
+                if (that.com.showremark == true) {
+                    valid = true;
+                }
+                if (that.com.showdress == true && that.com.showmap==false) {
+                    valid = true;
+                }
+                if (that.com.showstree == true && that.com.showmap == false) {
+                    valid = true;
+                }
+                if (that.com.showmap == true) {
+                    valid = true;
+                }
+                if (that.com.showtime == true) {
+                    valid = true;
+                }
+                if (that.funModel.OpenYuyuePay == true) {
+                    valid = true;
+                }
+
+                if (!valid) {
+                    layer.msg("请至少勾选一项");
+                    return;
+                }
+                if (!/^[1-9]\d*$/.test(that.com.timecount)) {
+                    layer.msg("预约提前时间:请输入大于0的整数");
+                    return;
+                }
+                if ((that.com.timecount < 10 && that.com.timetype == 'min') || that.com.timecount == 0) {
+                    layer.msg("预约提前时间必须大于10分钟");
+                    return;
+                }
+                if (!/^[1-9]\d*$/.test(that.funModel.YuyuePayCount) && that.funModel.OpenYuyuePay == true) {
+                    layer.msg("计费规则:请输入大于0的整数");
+                    return;
+                }
+                $.post("/@(dirName)/SettingyyForm", { appid: that.postdata.appid, pages: JSON.stringify(that.pages), funModel: that.funModel }, function (data) {
+                    layer.msg(data.msg);
+                })
+            },
+            selectdress: function (index) {
+                var coms = this.pages[index].coms[0];
+                if (coms.showmap) {
+                    coms.showdress = true;
+                }
+            },
+            cancelmap: function (index) {
+                var coms = this.pages[index].coms[0];
+                if (!coms.showdress) {
+                    coms.showmap = false;
+                }
+            },
+            dealbtn: function (index) {
+                this.formpostdata.formId = this.list[index].id;
+                this.detail = this.list[index].formdatajson.split("<br/>");
+                this.formpostdata.state = this.list[index].state;
+                this.formpostdata.remark = this.list[index].formremark.operationremark;
+                //页面层
+                $('#myModal').modal('show')
+            },
+            saveInfo: function () {
+                if (this.formpostdata.remark.length > 100) {
+                    layer.msg("备注内容不能超过100字");
+                    return;
+                }
+                var layindex = layer.load(1)
+                $.post("/@(dirName)/saveyyForm", this.formpostdata, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.Msg, {
+                        time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                    } ,function () {
+                        if (data.isok) {
+                            app.getlist();
+                            $('#myModal').modal('hide')
+                        }
+                    });
+                })
+            },
+            checkNewAttr: function () {//判断新属性是否存在，不存在则添加
+                var that = this;
+                that.com = null;
+                $.each(that.pages, function (i, v) {
+                    if (that.isSysPage(v, '产品预约')) {
+                        that.com = v.coms[0];
+                    }
+                })
+                if (!that.com.showstree) {//是否显示街道详细
+                    $.extend(that.com, { showstree: false }, true);
+                }
+            },
+            ShowSetting: function () {
+                $('#SettingModal').modal('show')
+            },
+            InitLayer: function () {
+                var that = this;
+                layui.use('form', function () {
+                    var form = layui.form;
+                    //姓名开关
+                    form.on('switch(showname)', function (data) {
+                        that.com.showname = data.elem.checked;
+                    });
+                    //手机开关
+                    form.on('switch(showphone)', function (data) {
+                        that.com.showphone = data.elem.checked;
+                    });
+                     //预约时间开关
+                    form.on('switch(showtime)', function (data) {
+                        that.com.showtime = data.elem.checked;
+                    });
+                     //年龄开关
+                    form.on('switch(showage)', function (data) {
+                        that.com.showage = data.elem.checked;
+                    });
+                     //性别开关
+                    form.on('switch(showsex)', function (data) {
+                        that.com.showsex = data.elem.checked;
+                    });
+                     //省市区开关
+                    form.on('switch(showdress)', function (data) {
+                        that.com.showdress = data.elem.checked;
+                    });
+                     //街道开关
+                    form.on('switch(showstree)', function (data) {
+                        that.com.showstree = data.elem.checked;
+                    });
+                     //付费开关
+                    form.on('switch(OpenYuyuePay)', function (data) {
+                        that.funModel.OpenYuyuePay = data.elem.checked;
+                    });
+
+
+                });
+            }
+        },
+
+        created: function (index) {
+            var that = this;
+            that.getlist();
+            that.checkNewAttr();
+            that.InitLayer();
+
+        }
+
+    })
+    $('.input-daterange').datepicker({
+        format: "yyyy-mm-dd",
+        language: "zh-CN",
+        //autoclose: true,
+        todayHighlight: true
+
+    });
+
+</script>

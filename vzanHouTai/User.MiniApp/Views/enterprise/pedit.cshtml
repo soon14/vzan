@@ -1,0 +1,847 @@
+﻿@model EntGoods
+@{
+    ViewBag.Title = "编辑产品";
+    ViewBag.PageType = 12;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+
+    List<EntGoodType> ptypes = EntGoodTypeBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid), 100, 1, "*", "sort desc,id asc");
+    List<EntGoodLabel> plabels = EntGoodLabelBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid), 100, 1, "*", "id asc");
+    List<EntGoodUnit> punits =  EntGoodUnitBLL.SingleModel.GetListBySql(string.Format("select * from entgoodunit where aid={0}", appid));
+
+
+
+    
+    List<EntIndutypes> exttypes = EntIndutypesBLL.SingleModel.GetList(string.Format("state=1 and aid={0}", appid));
+    XcxAppAccountRelation rel = XcxAppAccountRelationBLL.SingleModel.GetModel(appid);
+
+
+ 
+}
+<script type="text/javascript" src="http://j.vzan.cc/dz/content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+
+<script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<link href="http://j.vzan.cc/dz/content/Miniapp/css/iconfont.css" rel="stylesheet" />
+
+<style>
+    .picklabels { white-space: normal; word-break: break-all; }
+    .picklabels span { cursor: pointer; padding: 5px 10px; border: 1px solid #5B94FD; color: #5B94FD; border-radius: 5px; text-align: center; display: inline-block; margin: 10px 10px 0 0; }
+    .picklabels span.sel { background-color: #5B94FD; color: #fff; }
+    .btn-primary { background-color: rgba(16, 142, 233, 1) !important; color: #fff; border-color: rgba(16, 142, 233, 1) !important; }
+
+    .alert-info { display: inline-block; min-width: 100px; margin-right: 10px; padding: 5px; margin-bottom: 10px; }
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+
+</style>
+<div id="app" v-cloak>
+    <div>
+        <input type="button" value="保存" class="btn btn-primary" v-on:click="save" />
+
+        <a href="/enterprise/p?appId=@appid" class="btn btn-default">返回</a>
+    </div>
+    <div class="wrap mt10">
+        <h2 class="region-head">基础信息（把产品展示组件添加到小程序后，以下信息将显示在产品展示列表）</h2>
+        <table width="60%" class="formtable">
+            <tr>
+                <td width="125" align="right"><span class="danger">*</span>产品名称：</td>
+                <td align="left">
+                    <input type="text" name="" id="" v-model="p.name" class="form-control" placeholder="必填，100个字以内" size="100" maxlength="100" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top"><span class="danger">*</span>产品图片：</td>
+                <td align="left">
+                    <div class="pimg">
+                                <img style="height:150px;width:150px;" :src="p.img" v-if="p.img!=''" v-on:click="UploadImg(0)"/>
+                        <div class="plus-button" v-on:click="UploadImg(0)" v-else>
+                            <div class="s-image-uploader-wrapper">
+                                <div>
+                                    <div class="plus">+</div>
+                                    <div class="plus-label">上传图片</div>
+                                </div>
+                            </div>
+                        </div>                    </div>
+                    <b class="warn">建议尺寸：750*750px</b>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><span class="danger">*</span>产品分类：</td>
+                <td align="left">
+                    <div class="d-flex fc">
+                        <div class="goodlabels">
+                            <div class="alert alert-info" v-for="(item,index) in picktype">
+                                <button type="button" class="close" v-on:click="removePickType(index)">×</button>
+                                {{item.name}}
+                            </div>
+                        </div>
+                        <div>
+                            <input type="button" class="btn btn-primary" value="＋增加分类" v-on:click="addnewptype" />
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top">产品标签：</td>
+                <td align="left">
+
+                    <div class="">
+                        <div class="goodlabels">
+                            <div class="alert alert-info" v-for="(item,index) in picklabel">
+                                <button type="button" class="close" v-on:click="removePickLabel(index)">×</button>
+                                {{item.name}}
+                            </div>
+                        </div>
+                        <div class="">
+                            <input type="button" class="btn btn-primary" value="＋增加标签" v-on:click="addnewlabel" />
+                        </div>
+                        <span class="warn mt10">*最多可添加5个标签</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top">产品参数：</td>
+                <td align="left">
+                    <table class="table table-condensed" style="width:300px">
+                        <tr class="info">
+                            <td>参数名称</td>
+                            <td>参数值</td>
+                            <td>操作</td>
+                        </tr>
+                        <tr v-for="(pickitem,pickindex) in pickindutypes">
+                            <td>
+                                <select v-model="pickitem.sel1" class="form-control" v-on:change="changetype1(pickitem.sel1,pickitem)">
+                                    <option v-for="(item1,index1) in pickitem.typelist1" v-bind:value="item1.TypeId">{{item1.TypeName}}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select v-model="pickitem.sel2" class="form-control">
+                                    <option v-for="(item2,index2) in pickitem.typelist2" v-bind:value="item2.TypeId">{{item2.TypeName}}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <a class="btn btn-link" v-on:click="pickindutypes.splice(pickindex,1)">删除</a>
+                            </td>
+                        </tr>
+                    </table>
+                    <input type="button" class="btn btn-primary" value="＋添加参数" v-on:click="addMoreTypeLine" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top">是否显示价格：</td>
+                <td align="left">
+                    <label for="showprice">
+                        <input type="checkbox" id="showprice" name="showprice" v-model="p.showprice" />（默认显示价格）
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top">价格：</td>
+                <td align="left">
+                    <input type="text" name=""  v-model="p.price" class="form-control w100" placeholder="非必填，请输入大于0的数字，最多两位小数" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top">单位：</td>
+                <td align="left">
+                    <div class="d-flex d-flex-center">
+                        <select class="form-control w100" v-model="p.unit">
+                            <option disabled value="">请选择</option>
+                            <option v-for="(item,index) in punits" v-bind:value="item.name">{{item.name}}</option>
+                        </select>
+
+                        <div class="ml10">
+                            <input type="button" class="btn btn-primary" value="＋新增单位" v-on:click="addnewunit" />
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <br />
+        <h2 class="region-head">产品详情（把产品展示组件添加到小程序后，以下信息将显示在产品详情页）</h2>
+        <table width="100%" class="formtable">
+            <tr>
+                <td align="right" width="125">产品轮播图：</td>
+                <td>
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-for="(item,index) in bannerImg">
+                                <img :src="item" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(1,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">产品描述：</td>
+                <td>
+                    @*<textarea class="form-control w500" rows="8" v-model="p.description"></textarea>*@
+                    <div id="editor" style="width:380px;height:360px;"></div>
+                </td>
+            </tr>
+        </table>
+        <!-- #region 添加分类 -->
+        <div class="modal bs-example-modal" id="addModal_ptype" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            添加产品分类
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>已有分类：</p>
+                        <div class="picklabels">
+                            <span v-bind:class="{sel:item.sel}" v-for="(item,index) in ptypes" v-on:click="selType(index)">{{item.name}}</span>
+                        </div>
+                        <a class="btn btn-link" v-on:click="addnewptype_add" v-show="!ptypeadd">＋新增分类</a>
+                        <div class="mt10" v-show="ptypeadd">
+                            @{
+                                if ((ViewBag.PageType == 22 || ViewBag.PageTypel == 12) && ViewBag.SecondTypeSwitch > 0)
+                                {
+
+                                    <div>
+                                        <span>所属大类：</span>
+                                        <select class="form-control" style="width:70%;display:inline-block;" v-model="editptypeitem.parentId">
+                                            <option value="-2">请选择</option>
+                                            @{
+                                                if (ViewBag.FirstEntGoodTypeList != null)
+                                                {
+                                                    foreach (EntGoodType item in ViewBag.FirstEntGoodTypeList)
+                                                    {
+                                                        <option value="@item.id">@item.name</option>
+                                                    }
+                                                }
+
+
+                                            }
+
+                                        </select>
+
+                                    </div>
+                                                }
+                            }
+
+
+                            <div style="margin-top:5px;margin-left:4px;"><span>分类名称：</span><input style="width:70%;display:inline-block;" maxlength="10" placeholder="分类名称，10个字以内" v-model="editptypeitem.name" type="text" class="form-control"></div>
+                            <div style="margin-top:5px">
+                                <a class="btn btn-default" v-on:click="ptypeadd=false">取消</a>&nbsp;&nbsp;
+                                <a class="btn btn-primary" v-on:click="addnewptypeOK">确定</a>&nbsp;&nbsp;
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                    <div class="modal-footer" style="text-align: center;">
+                        <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="pickptypeOK">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- #endregion -->
+        <!-- #region 添加标签 -->
+        <div class="modal bs-example-modal" id="addModal_plabel" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            添加产品标签
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>已有标签：</p>
+                        <div class="picklabels">
+                            <span v-bind:class="{sel:item.sel}" v-for="(item,index) in plabels" v-on:click="selLabel(index)">{{item.name}}</span>
+                        </div>
+                        <a class="btn btn-link" v-on:click="addnewlabel_add" v-show="!plabeladd">＋新增标签</a>
+                        <div class="d-flex d-flex-center mt10" v-show="plabeladd">
+                            <div>标签名称：</div>
+                            <div class="flex"><input maxlength="10" placeholder="标签名称，10个字以内"  v-model="editplabelitem.name" type="text" class="form-control"></div>
+                            &nbsp;&nbsp;
+                            <a class="btn btn-default" v-on:click="plabeladd=false">取消</a>&nbsp;&nbsp;
+                            <a class="btn btn-primary" v-on:click="addnewlabelOK">确定</a>&nbsp;&nbsp;
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align: center;">
+                        <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="pickplabelOK">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- #endregion -->
+        <!-- #region 添加单位 -->
+        <div class="modal bs-example-modal" id="addModal_punit" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            添加产品单位
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex d-flex-center">
+                            <div>新增单位名称：</div>
+                            <div class="flex"><input maxlength="10" size="10" placeholder="单位名称"  v-model="editpunititem.name" type="text" class="form-control"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align: center;">
+                        <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="addnewpunitOK">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- #endregion -->
+
+        <!-- #region 上传图片弹窗 -->
+        <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="border:0px;">
+                        <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                    </div>
+                    <div class="modal-body" style="min-height:500px;padding:0px;">
+                       <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                    </div>
+                   
+                </div>
+            </div>
+        </div>
+        <!-- #endregion -->
+
+      
+    </div>
+
+
+  
+
+</div>
+
+<script>
+
+    var mask;
+    var ispost=false;
+    var aid=@appid;
+    var industr="@(rel.Industr)";
+    var ptypeitem = {
+        id:0,
+        name: "",
+        aid:aid,
+        state:1,
+        parentId:-1
+    };
+    var plabelitem = {
+        id:0,
+        name: "",
+        aid:aid,
+        state:1,
+    };
+    var punititem = {
+        id:0,
+        name: "",
+        aid:aid,
+        state:1,
+    };
+    var indutypeitem={
+        sel1:0,
+        sel2:0,
+        typelist1:[],
+        typelist2:[],
+    };
+    var comeditor=null;
+    var exttypes= @(Html.Raw(JsonConvert.SerializeObject(exttypes)));
+    if(exttypes.length>0){
+        indutypeitem.typelist1=exttypes.filter(function(item){
+            return item.ParentId==0;
+        });
+    }
+    var slideimg=@Html.Raw(JsonConvert.SerializeObject(Model.slideimgs.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList()));
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            p:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            ptypes:@Html.Raw(JsonConvert.SerializeObject(ptypes)),
+            plabels:@Html.Raw(JsonConvert.SerializeObject(plabels)),
+            punits:@Html.Raw(JsonConvert.SerializeObject(punits)),
+            editptypeitem:JSON.parse(JSON.stringify(ptypeitem)),
+            editplabelitem:JSON.parse(JSON.stringify(plabelitem)),
+            editpunititem:JSON.parse(JSON.stringify(punititem)),
+            plabeladd: false,
+            ptypeadd: false,
+            picklabel: [],
+            picktype:[],
+            pickindutypes:[],
+            bannerImg:slideimg,
+            uploadImgType:0,
+            uploader: {
+                tempFilePath: null,
+                img: {
+                    instalce: null,
+                    filePath: '',
+                    element: null,
+                    fileNames:[],
+                },
+                video: {
+                    instalce: null,
+                    filePath: '',
+                    element: null
+                },
+                audio: {
+                    instalce: null,
+                    filePath: '',
+                    element: null
+                }
+            },
+            maxImgSize:1,
+            imgItem:""
+        },
+        created:function(){
+
+            if (this.p.exttypes != "") {
+                var _exttypes = this.p.exttypes.split(",");
+                if (_exttypes.length > 0) {
+                    for (var i = 0; i < _exttypes.length; i++) {
+                        var _types_arr = _exttypes[i].split('-');
+                        var _newitem = $.extend({}, indutypeitem, true);
+                        _newitem.sel1 = _types_arr[0];
+                        this.changetype1(_newitem.sel1, _newitem);
+                        _newitem.sel2 = _types_arr[1];
+                        this.pickindutypes.push(_newitem);
+                    }
+                }
+            }
+        },
+        watch:{
+            imgItem:function(){
+                this.p.img=this.imgItem;
+            }
+        },
+        mounted: function () {
+            var that=this;
+            if ($(".edui-container").length == 0) {
+                //that.comeditor.destroy();
+                that.BuildEditor();
+            }
+
+            if (this.p.id > 0) {
+                if (this.p.plabels != "") {
+                    var _plabels = this.p.plabels.split(",");
+                    for (var i = 0; i < this.plabels.length; i++) {
+                        for (var j = 0; j < _plabels.length; j++) {
+                            if (this.plabels[i].id == _plabels[j]) {
+                                this.plabels[i].sel = true;
+                                this.picklabel.push(this.plabels[i]);
+                            }
+                        }
+                    }
+                }
+
+                if (this.p.ptypes!="") {
+                    var _ptypes = this.p.ptypes.split(",");
+                    for (var i = 0; i < this.ptypes.length; i++) {
+                        for (var j = 0; j < _ptypes.length; j++) {
+                            if (this.ptypes[i].id == _ptypes[j]) {
+                                this.ptypes[i].sel = true;
+                                this.picktype.push(this.ptypes[i]);
+                            }
+                        }
+                    }
+                }
+
+
+            }
+
+
+
+            console.log("mounted");
+        },
+        methods:{
+            save:function(){
+                var that=this;
+                if(ispost)
+                    return;
+                if($.trim(this.p.name).length==0){
+                    layer.msg("请填写产品名称！");
+                    return;
+                }
+                if($.trim(this.p.name).length>100){
+                    layer.msg("产品名称不能超过100个字！");
+                    return;
+                }
+                //价格
+                if(this.p.price!=""){
+                    if (!/^\d*.?\d{0,2}$/.test(this.p.price)) {
+                        layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                        return;
+                    }
+                    else if (parseFloat(this.p.price) > 1000000) {
+                        layer.msg("产品价格最高只能设置为1000000！");
+                        return;
+                    }
+                    else if (parseFloat(this.p.price) < 0) {
+                        layer.msg("产品价格不能小于0！");
+                        return;
+                    }
+                }
+                //if(!/^\d*.?\d{0,2}$/.test(this.p.price)){
+                //    layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                //    return;
+                //}
+                //else if(this.p.price<=0){
+                //    layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                //    return;
+                //}
+
+                //图片
+                if(this.p.img==""){
+                    layer.msg("请上传产品图片！",{time:1000});
+                    return;
+                }
+
+                //分类
+                var _ptypes = [];
+                if (this.picktype.length <= 0) {
+                    layer.msg("请选择产品分类！", { time: 1000 });
+
+                }
+                else {
+                    for (var i = 0; i < this.picktype.length; i++) {
+                        _ptypes.push(this.picktype[i].id);
+                    }
+                }
+
+                //标签
+                var _plabels=[];
+                if(this.picktype.length>0){
+                    for (var i = 0; i < this.picklabel.length; i++) {
+                        _plabels.push(this.picklabel[i].id);
+                    }
+                }
+
+                var selindutype=[];
+                if(this.pickindutypes.length>0){
+                    for (var i = 0; i < this.pickindutypes.length; i++) {
+                        var _item=this.pickindutypes[i];
+                        if(_item.sel1==0||_item.sel2==0){
+                            layer.msg("请选择产品参数和参数值！");
+                            return;
+                        }
+                        else{
+                            var _sel=_item.sel1+"-"+_item.sel2;
+                            if(selindutype.includes(_sel)){
+                                layer.msg("请勿添加重复的产品参数！");
+                                return;
+                            }
+                            else{
+                                selindutype.push(_sel);
+                            }
+
+                        }
+                    }
+                }
+                if(selindutype.length>0){
+                    this.p.exttypes=selindutype.join(",");
+                }
+
+
+                this.p.plabels = _plabels.join(",");
+                this.p.ptypes = _ptypes.join(",");
+
+                that.p.slideimgs=that.bannerImg.join(",");
+                that.p.aid=aid;
+                console.log(that.slideimgs);
+                if (comeditor != null) {
+                    that.p.description=comeditor.getContent();
+                }
+                ispost=true;
+
+                $.post("/enterprise/pedit", $.extend(that.p,{appId:aid}),function(data){
+                    console.log(data);
+                    if(data&&data.isok){
+                        layer.msg(data.msg,{time:1000});
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                    window.location.href="/enterprise/p?appId="+aid;
+                });
+            },
+            addnewptype:function(){
+
+                $('#addModal_ptype').modal('show');
+
+            },
+            addnewlabel:function(){
+
+                $('#addModal_plabel').modal('show');
+            },
+            addnewlabel_add:function(){
+                if(this.plabels.length>=100){
+                    layer.alert("无法新增标签！您已添加了100个标签分类，已达到上限，请编辑已有的标签或删除部分标签后再进行新增。");
+                    return;
+                }
+                this.plabeladd=true;
+            },
+            addnewptype_add: function () {
+                var that=this;
+                if (that.ptypes.length >= 100) {
+                    layer.alert("无法新增分类！您已添加了100个产品分类，已达到上限，请编辑已有的分类或删除部分分类后再进行新增。");
+                    return;
+                }
+                if(@ViewBag.SecondTypeSwitch>0){
+                    that.editptypeitem.parentId=-2;
+                }
+
+                that.ptypeadd = true;
+            },
+            //点击添加单位
+            addnewunit:function(){
+                $("#addModal_punit").modal("show");
+            },
+            addnewptypeOK:function(){
+                var that=this;
+                if(that.editptypeitem.parentId==-2){
+                    layer.msg("请先选择所属分类",{time:1000});
+                    return;
+                }
+                var _typename=$.trim(that.editptypeitem.name);
+                if(_typename.length==0||_typename.length>10){
+                    layer.msg("分类名称不能为空，且不能超过10个字",{time:1000});
+                    return;
+                }
+                $.post("/enterprise/ptype", $.extend(that.editptypeitem,{appId:aid}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            layer.msg("保存成功",{time:1000});
+                            that.ptypeadd = false
+                            if(ptypeitem.id==0){
+                                that.ptypes.push(data.msg);
+                            }
+                            that.editptypeitem=JSON.parse(JSON.stringify(ptypeitem));
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            addnewlabelOK:function(){
+                var that=this;
+                var _typename=$.trim(that.editplabelitem.name);
+                if(_typename.length==0||_typename.length>10){
+                    layer.msg("标签名称不能为空，且不能超过10个字",{time:1000});
+                    return;
+                }
+                $.post("/enterprise/plabel", $.extend(that.editplabelitem,{appId:aid}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            layer.msg("保存成功",{time:1000});
+                            if(plabelitem.id==0){
+                                that.plabels.push(data.msg);
+                            }
+                            that.editplabelitem=JSON.parse(JSON.stringify(plabelitem));
+                            that.plabeladd=false;
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            //确定添加单位
+            addnewpunitOK:function(){
+                var that=this;
+                var _typename=$.trim(that.editpunititem.name);
+                if(_typename.length==0||_typename.length>10){
+                    layer.msg("单位名称不能为空，且不能超过10个字",{time:1000});
+                    return;
+                }
+                $.post("/enterprise/punit", $.extend(that.editpunititem,{appId:aid}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            $('#addModal_punit').modal('hide');
+                            layer.msg("保存成功",{time:1000});
+                            if(punititem.id==0){
+                                that.punits.push(data.msg);
+                            }
+                            that.editpunititem=JSON.parse(JSON.stringify(punititem));
+
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            selLabel:function(index){
+                this.plabels[index].sel=!this.plabels[index].sel;
+
+            },
+            selType: function (index) {
+                this.ptypes[index].sel = !this.ptypes[index].sel;
+            },
+            pickplabelOK:function(){
+
+                var selcount=0;
+                for (var i = 0; i < this.plabels.length; i++) {
+                    if(this.plabels[i].sel){
+                        selcount+=1;
+                    }
+                }
+                if(selcount>5){
+                    layer.msg("最多只能选择5个标签！",{time:1000});
+                    return;
+                }
+                this.picklabel=[];
+                for (var i = 0; i < this.plabels.length; i++) {
+                    if(this.plabels[i].sel){
+                        this.picklabel.push(this.plabels[i]);
+                    }
+                }
+                $('#addModal_plabel').modal('hide');
+            },
+            pickptypeOK: function () {
+                var selcount = 0;
+                this.picktype = [];
+                for (var i = 0; i < this.ptypes.length; i++) {
+                    if (this.ptypes[i].sel) {
+                        this.picktype.push(this.ptypes[i]);
+                    }
+                }
+                $('#addModal_ptype').modal('hide');
+            },
+            removePickLabel:function(index){
+
+                for (var i = 0; i < this.plabels.length; i++) {
+                    if(this.plabels[i].id==this.picklabel[index].id){
+                        this.plabels[i].sel=false;
+                    }
+                }
+                this.picklabel.splice(index,1)
+            },
+            removePickType: function (index) {
+
+                for (var i = 0; i < this.ptypes.length; i++) {
+                    if (this.ptypes[i].id == this.picktype[index].id) {
+                        this.ptypes[i].sel = false;
+                    }
+                }
+                this.picktype.splice(index, 1)
+            },
+            BuildEditor: function () {
+                console.log("BuildEditor");
+                var that = this;
+                if(comeditor!=null){
+                    comeditor.reset();
+                }
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','insertvideo','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image?cityid=" + aid,
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.p.description);
+                });
+                comeditor.addListener("contentChange", function () {
+                    // const wordCount = ue.getContentLength(true);
+                    // const content = ue.getContent();
+                    //const plainTxt = ue.getPlainTxt();
+                    //console.log(wordCount, content);
+                    console.log("change");
+                    if (comeditor != null) {
+                        that.p.description=comeditor.getContent();
+                    }
+                });
+            },
+            addMoreTypeLine:function(){
+
+                var _newitem=$.extend({},indutypeitem,true);
+                this.pickindutypes.push(_newitem);
+            },
+            changetype1:function(pid,pickitem){
+                if(exttypes.length>0){
+                    var searchlist=exttypes.filter(function(item){
+                        return item.ParentId==pid&&item.Industr==industr&&item.AId==aid;
+                    });
+
+                    pickitem.typelist2=searchlist;
+                }
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=5;
+                var remainCount=0;
+                if(that.uploadImgType==1){
+                    //表示轮播图
+                    if(that.bannerImg.length>=maxCount){
+                        layer.msg("轮播图最多5张");
+                        return;
+                    }
+                    remainCount=maxCount-that.bannerImg.length;
+                    framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=1&maxImgSize=2&objKey=bannerImg&remainCount="+remainCount;
+                }else{
+                    maxCount=1;
+                    remainCount=1;
+                    framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=0&maxImgSize=2&objKey=imgItem&objType=1&remainCount="+remainCount;
+                }
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+            },
+            clearImg:function(type,index){
+                var that = this;
+                if(type>0){
+                    //表示轮播图
+                    if(that.bannerImg.length>0){
+                        that.bannerImg.splice(index,1);
+                    }
+
+                    that.p.slideimgs=that.bannerImg.join(",");
+                }else{
+                    that.p.img="";
+                }
+            }
+
+        }
+    });
+
+
+</script>

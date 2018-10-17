@@ -1,0 +1,1038 @@
+﻿@using Entity.MiniApp.Conf
+@{
+    ViewBag.PageType = (int)TmpType.小程序多门店模板;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "订单管理";
+    int appId = Utility.IO.Context.GetRequestInt("appId", 0);
+    int tab = Utility.IO.Context.GetRequestInt("tab", 1);
+    int storeId = Utility.IO.Context.GetRequestInt("storeId", 0);
+}
+@model List<VipLevel>
+<style>
+    .centertext { vertical-align: middle !important; text-align: center; }
+    span.layui-laypage-curr, span.layui-laypage-skip { float: none; padding-top: 0; }
+    #logModal .modal-dialog { width: 952px; }
+    .searchul { width: 100%; margin: 20px 0px 14px 0px; }
+    .searchul li { /*width:25%;*/ float: left; margin-right: 25px; }
+    .searchul li span { float: left; padding-top: 5px; padding-right: 8px; }
+    .searchul li input, .searchul li select { width: 140px; }
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #0094ff !important; }
+    .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #0094ff !important; }
+    .btnState { background-color: white; border-color: #5e97fa; margin-right: 10px; margin-bottom: 8px; background-color: White; color: #108EE9; }
+    .typeItem .active { background-color: #108EE9 !important; color: white !important; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+    .Tip { width: 70%; display: inline-block; text-align: center; }
+    .doItem { margin-top: 10px; }
+    .table-search > tbody > tr > td { vertical-align: middle; }
+    .goodsname { width:125px; display: -webkit-box; word-break: break-all; text-overflow: ellipsis; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+</style>
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css?v1" rel="stylesheet" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css?v1" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js?v1"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js?v1"></script>
+<div id="app" v-cloak class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief" style="min-width:1120px;">
+    <ul class="layui-tab-title">
+        <li class="tab_element" v-on:click="Tab(1)" lay-id="tab_element_1">到店自取</li>
+        <li class="tab_element" v-on:click="Tab(2)" lay-id="tab_element_2">同城配送</li>
+        @if (storeId == 0)
+        {
+            <li class="tab_element" v-on:click="Tab(3)" lay-id="tab_element_3">快递配送</li>
+        }
+    </ul>
+    <div class="layui-tab-content">
+        <!-- #region 到店自取 -->
+        <div class="layui-tab-item layui-show">
+
+            <table border="0" width="100%" class="table table-condensed table-search">
+                <tr>
+                    <td align="right" valign="middle">订单号：</td>
+                    <td><input type="text" v-model="postOrderdata.orderNum" class="input-sm form-control" /></td>
+                    <td align="right">商品：</td>
+                    <td><input type="text" v-model="postOrderdata.goodsName" class="input-sm form-control" /></td>
+                    <td align="right">会员微信昵称：</td>
+                    <td><input type="text" class="input-sm form-control" v-model="postOrderdata.accName" /></td>
+                    <td align="right">支付方式：</td>
+                    <td>
+                        <select class="form-control" v-model="postOrderdata.buyMode">
+                            <option value="0">全部</option>
+                            <option value="1">微信支付</option>
+                            <option value="2">储值支付</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">会员级别：</td>
+                    <td>
+                        <select class="form-control" v-model="postOrderdata.levelid">
+                            <option value="0">全部</option>
+                            <option v-for="vipLevel in levelList" :value="vipLevel.Id">{{vipLevel.name}}</option>
+                        </select>
+                    </td>
+                    <td align="right">自取门店：</td>
+                    <td>
+                        <select class="form-control" v-model="postOrderdata.storeid">
+                           @if (storeId == 0)
+                           {
+                            <option value="0">全部</option>
+                           }
+                            <option v-for="store in storeList" :value="store.Id">{{store.StoreName}}</option>
+                        </select>
+                    </td>
+                    <td align="right">下单时间：</td>
+                    <td colspan="3">
+                        <div class="d-flex d-flex-center">
+                            <input type="text" class="input-sm form-control time" v-model="postOrderdata.startdate" id="startdate_1" readonly />
+                            <span class="input-group-addon" style="width:10%;">到</span>
+                            <input type="text" class="input-sm form-control time" v-model="postOrderdata.enddate" id="enddate_1" readonly />
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">订单状态：</td>
+                    <td colspan="3">
+                        <div class="typeItem">
+                            <input :class="['col-xm-2 btn btn-default btnState',{active:item.state==postOrderdata.orderState}]" type="button" v-on:click="selectState(item.state)" :value="item.txt" v-for="(item,index) in orderState.daodianziqu">
+                        </div>
+                    </td>
+                    <td align="right"></td>
+                    <td colspan="3">
+                        
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="8" align="center">
+                        <a href="javascript:;" v-on:click="Search(1)" class="btn btn-primary ml10">搜索</a>&nbsp;
+                        <a href="javascript:;" v-on:click="ClearData(1)" class="btn btn-default ml10">清除</a>&nbsp;
+                        <a href="javascript:;" v-on:click="ChooseDate(1)" class="btn btn-primary ml10">导出订单</a>&nbsp;
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <br />
+
+
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext" style="width:165px;">订单号</th>
+                    <th class="centertext">商品</th>
+                    <th class="centertext">会员</th>
+                    <th class="centertext">会员级别</th>
+                    <th class="centertext">实收金额(元)</th>
+                    <th class="centertext">自取门店</th>
+                    <th class="centertext">下单时间</th>
+                    <th class="centertext">订单状态</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in OrderList.daodianziqu">
+                    <td class="centertext"><a href="javascript:;" v-on:click="GetDetail(index)" title="查看订单详情">{{item.OrderNum}}</a></td>
+                    <td class="centertext"><a href="javascript:;" v-on:click="GetDetail(index)" :title="item.goodsNames" class="goodsname">{{item.goodsNames}}</a></td>
+                    <td class="centertext">{{item.nickName}}</td>
+                    <td class="centertext">{{item.vipLevelName}}</td>
+                    <td class="centertext">{{item.BuyPriceStr}}</td>
+                    <td class="centertext">{{item.storeName}}</td>
+                    <td class="centertext">{{item.CreateDateStr}}</td>
+                    <td class="centertext">
+                        <div v-if="item.OrderType==3 && item.GroupState==@((int)GroupState.开团成功)">
+                            <span>拼团中</span>
+                        </div>
+                        <div v-else-if="item.OrderType==3 && item.GroupState==@((int)GroupState.已过期)">
+                            <span>未成团</span>
+                        </div>
+                        <div v-else>
+                            {{item.StateStr}}
+                        </div>
+
+                    </td>
+                    <td class="centertext" v-if="item.isSelfOrder && item.OrderType==3 && item.GroupState == @((int)GroupState.开团成功)">
+                        <span>请等待拼团成功</span>
+                    </td>
+                    <td class="centertext" v-else-if="item.isSelfOrder && item.OrderType==3 && item.GroupState == @((int)GroupState.已过期)">
+                        <span>无操作</span>
+                    </td>
+                    <td class="centertext" v-else-if="item.isSelfOrder">
+                        <!--待付款-->
+                        <div v-if="item.State === 0">
+                            <a v-on:click="CancelOrder(item.Id,-1)" href="javascript:;" style="margin-top:5px;">
+                                取消订单
+                            </a>
+                        </div>
+                        <!--待自取-->
+                        <div v-else-if="item.State === 8">
+                            <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                发起退款
+                            </a>
+                            <a v-on:click="ChangeOrder(item.Id,3)" href="javascript:;" style="margin-top:5px;">
+                                核销
+                            </a>
+                        </div>
+                        <!--退款审核中-->
+                        <div v-else-if="item.State === 10">
+                            <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                审核通过
+                            </a>
+                            <a v-on:click="RejectRequest(item.Id,9)" href="javascript:;" style="margin-top:5px;">
+                                驳回审核
+                            </a>
+                        </div>
+                        <!--退款失败-->
+                        <div v-else-if="item.State === -3">
+                            <a v-on:click="OpenOutOrderFailRemarkForm(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                查看退款失败原因
+                            </a>
+
+                        </div>
+
+                    </td>
+                    <td v-else></td>
+                </tr>
+                <tr v-if="OrderList.daodianziqu==null || OrderList.daodianziqu.length==0">
+                    <td colspan="14">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages_1" style="text-align: center;margin-top: 0.5rem;" v-show="orderRecordCount.daodianziqu>0"></div>
+
+        </div>
+        <!-- #endregion -->
+        <!-- #region 同城配送 -->
+        <div class="layui-tab-item">
+            <div>
+                <div>
+                    <table border="0" width="100%" class="table table-condensed table-search">
+                        <tr>
+                            <td align="right" valign="middle">订单号：</td>
+                            <td><input type="text" v-model="postOrderdata.orderNum" class="input-sm form-control" /></td>
+                            <td align="right">商品：</td>
+                            <td><input type="text" v-model="postOrderdata.goodsName" class="input-sm form-control" /></td>
+                            <td align="right">手机号：</td>
+                            <td><input type="text" class="input-sm form-control"  v-model="postOrderdata.accPhone"  /></td>
+                            <td align="right" class="nobr">支付方式：</td>
+                            <td>
+                                <select class="form-control" v-model="postOrderdata.buyMode">
+                                    <option value="0">全部</option>
+                                    <option value="1">微信支付</option>
+                                    <option value="2">储值支付</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="right" class="nobr">会员微信昵称：</td>
+                            <td><input type="text" class="input-sm form-control"  v-model="postOrderdata.accName"/></td>
+                            <td align="right" class="nobr">会员级别：</td>
+                            <td>
+                                <select class="form-control" v-model="postOrderdata.levelid">
+                                    <option value="0">全部</option>
+                                    <option v-for="vipLevel in levelList" :value="vipLevel.Id">{{vipLevel.name}}</option>
+                                </select>
+                            </td>
+                            <td align="right" class="nobr">配送门店：</td>
+                            <td>
+                                <select class="form-control" v-model="postOrderdata.storeid">
+                                    @if (storeId == 0)
+                                    {
+                                        <option value="0">全部</option>
+                                    }
+                                    <option v-for="store in storeList" :value="store.Id">{{store.StoreName}}</option>
+                                </select>
+                            </td>
+                            <td align="right" class="nobr">下单时间：</td>
+                            <td>
+                                <div class="d-flex d-flex-center">
+                                    <input type="text" class="input-sm form-control time" v-model="postOrderdata.startdate" id="startdate_2" readonly />
+                                    <span class="input-group-addon" style="width:10%;">到</span>
+                                    <input type="text" class="input-sm form-control time" v-model="postOrderdata.enddate" id="enddate_2" readonly />
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="right">订单状态：</td>
+                            <td colspan="7">
+                                <div class="typeItem">
+                                    <input :class="['btn btn-default btnState',{active:item.state==postOrderdata.orderState}]" type="button" v-on:click="selectState(item.state)" :value="item.txt" v-for="(item,index) in orderState.tongchengpeisong">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="8" align="center">
+                                <a href="javascript:;" v-on:click="Search(2)" class="btn btn-primary ml10">搜索</a>&nbsp;
+                                <a href="javascript:;" v-on:click="ClearData(2)" class="btn btn-default ml10">清除</a>&nbsp;
+                                <a href="javascript:;" v-on:click="ChooseDate(2)" class="btn btn-primary ml10">导出订单</a>&nbsp;
+                            </td>
+                        </tr>
+                    </table>
+
+                </div>
+                <br />
+                <br />
+
+
+                <table class="table table-bordered viplevel ml_19">
+                    <tr class="active">
+                        <th class="centertext" style="width:165px;">订单号</th>
+                        <th class="centertext">商品</th>
+                        <th class="centertext">会员</th>
+                        <th class="centertext">会员级别</th>
+                        <th class="centertext">实收金额(元)</th>
+                        <th class="centertext" style="width:222px;">配送地址</th>
+                        <th class="centertext">收货人</th>
+                        <th class="centertext">收货电话</th>
+                        <th class="centertext">配送门店</th>
+                        <th class="centertext">下单时间</th>
+                        <th class="centertext">订单状态</th>
+                        <th class="centertext">操作</th>
+                    </tr>
+                    <tr v-for="(item,index) in OrderList.tongchengpeisong">
+                        <td class="centertext"><a href="javascript:;" v-on:click="GetDetail(index)" title="查看订单详情">{{item.OrderNum}}</a></td>
+                        <td class="centertext"><a href="javascript:;" v-on:click="GetDetail(index)" :title="item.goodsNames" class="goodsname">{{item.goodsNames}}</a></td>
+                        <td class="centertext">{{item.nickName}}</td>
+                        <td class="centertext">{{item.vipLevelName}}</td>
+                        <td class="centertext">{{item.BuyPriceStr}}</td>
+                        <td class="centertext">{{item.Address}}</td>
+                        <td class="centertext">{{item.AccepterName}}</td>
+                        <td class="centertext">{{item.AccepterTelePhone}}</td>
+                        <td class="centertext">{{item.storeName}}</td>
+                        <td class="centertext">{{item.CreateDateStr}}</td>
+                        <td class="centertext">
+                            <div v-if="item.OrderType==3 && item.GroupState==@((int)GroupState.开团成功)">
+                                <span>拼团中</span>
+                            </div>
+                            <div v-else-if="item.OrderType==3 && item.GroupState==@((int)GroupState.已过期)">
+                                <span>未成团</span>
+                            </div>
+                            <div v-else>
+                                {{item.StateStr}}
+                            </div>
+
+                        </td>
+                        <td class="centertext" v-if="item.isSelfOrder && item.OrderType==3 && item.GroupState == @((int)GroupState.开团成功)">
+                            <span>请等待拼团成功</span>
+                        </td>
+                        <td class="centertext" v-else-if="item.isSelfOrder && item.OrderType==3 && item.GroupState == @((int)GroupState.已过期)">
+                            <span>无操作</span>
+                        </td>
+                        <td class="centertext" v-else-if="item.isSelfOrder">
+                            <!--待付款-->
+                            <div v-if="item.State === 0">
+                                <a v-on:click="CancelOrder(item.Id,-1)" href="javascript:;" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                            </div>
+                            <!--待接单-->
+                            <div v-else-if="item.State === 9">
+                                <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                    发起退款
+                                </a>
+                                <a v-on:click="ChangeOrder(item.Id,11)" href="javascript:;" style="margin-top:5px;">
+                                    确认接单
+                                </a>
+                            </div>
+                            <!--退款审核中-->
+                            <div v-else-if="item.State === 10">
+                                <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                    审核通过
+                                </a>
+                                <a v-on:click="RejectRequest(item.Id,9)" href="javascript:;" style="margin-top:5px;">
+                                    驳回审核
+                                </a>
+                            </div>
+                            <!--待配送-->
+                            <div v-else-if="item.State === 11">
+                                <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                    发起退款
+                                </a>
+                                <a v-on:click="ChangeOrder(item.Id,12)" href="javascript:;" style="margin-top:5px;">
+                                    确认配送
+                                </a>
+                            </div>
+                            <!--待确认送达-->
+                            <div v-else-if="item.State === 12">
+                                <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                    发起退款
+                                </a>
+                                <a v-on:click="ChangeOrder(item.Id,3)" href="javascript:;" style="margin-top:5px;">
+                                    确认送达
+                                </a>
+                            </div>
+                            <!--退款失败-->
+                            <div v-else-if="item.State === -3">
+                                <a v-on:click="OpenOutOrderFailRemarkForm(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                    查看退款失败原因
+                                </a>
+
+                            </div>
+                        </td>
+                        <td v-else></td>
+                    </tr>
+                    <tr v-if="OrderList==null || OrderList.length==0">
+                        <td colspan="16">暂无数据</td>
+                    </tr>
+                </table>
+                <div id="pages_2" style="text-align: center;margin-top: 0.5rem;" v-show="orderRecordCount.tongchengpeisong>0"></div>
+
+            </div>
+        </div>
+        <!-- #endregion -->
+        @if (storeId == 0)
+        {
+        <!-- #region 快递配送 -->
+        <div class="layui-tab-item">
+            <table border="0" width="100%" class="table table-condensed table-search">
+                <tr>
+                    <td align="right" valign="middle">订单号：</td>
+                    <td><input type="text" v-model="postOrderdata.orderNum" class="input-sm form-control" /></td>
+                    <td align="right">商品：</td>
+                    <td><input type="text" v-model="postOrderdata.goodsName" class="input-sm form-control" /></td>
+                    <td align="right">手机号：</td>
+                    <td><input type="text" class="input-sm form-control" v-model="postOrderdata.accPhone" /></td>
+                    <td align="right">支付方式：</td>
+                    <td>
+                        <select class="form-control" v-model="postOrderdata.buyMode">
+                            <option value="0">全部</option>
+                            <option value="1">微信支付</option>
+                            <option value="2">储值支付</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">会员微信昵称：</td>
+                    <td><input type="text" class="input-sm form-control" v-model="postOrderdata.accName"/></td>
+                    <td align="right">会员级别：</td>
+                    <td>
+                        <select class="form-control" v-model="postOrderdata.levelid">
+                            <option value="0">全部</option>
+                            <option v-for="vipLevel in levelList" :value="vipLevel.Id">{{vipLevel.name}}</option>
+                        </select>
+                    </td>
+                    <td align="right">下单时间：</td>
+                    <td colspan="3">
+                        <div class="d-flex d-flex-center">
+                            <input type="text" class="input-sm form-control time" v-model="postOrderdata.startdate" id="startdate_3" readonly />
+                            <span class="input-group-addon" style="width:10%;">到</span>
+                            <input type="text" class="input-sm form-control time" v-model="postOrderdata.enddate" id="enddate_3" readonly />
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">订单状态：</td>
+                    <td colspan="7">
+                        <div class="typeItem">
+                            <input :class="['btn btn-default btnState',{active:item.state==postOrderdata.orderState}]" type="button" v-on:click="selectState(item.state)" :value="item.txt" v-for="(item,index) in orderState.kuaidipeisong">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="8" align="center">
+                        <a href="javascript:;" v-on:click="Search(3)" class="btn btn-primary ml10">搜索</a>&nbsp;
+                        <a href="javascript:;" v-on:click="ClearData(3)" class="btn btn-default ml10">清除</a>&nbsp;
+                        <a href="javascript:;" v-on:click="ChooseDate(3)" class="btn btn-primary ml10">导出订单</a>&nbsp;
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <br />
+
+
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext" style="width:165px;">订单号</th>
+                    <th class="centertext">商品</th>
+                    <th class="centertext">会员</th>
+                    <th class="centertext">会员级别</th>
+                    <th class="centertext">实收金额(元)</th>
+                    <th class="centertext" style="width:222px;">配送地址</th>
+                    <th class="centertext">收货人</th>
+                    <th class="centertext">收货电话</th>
+
+                    <th class="centertext">下单时间</th>
+                    <th class="centertext">订单状态</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in OrderList.kuaidipeisong">
+
+                    <td class="centertext"><a href="javascript:;" v-on:click="GetDetail(index)" title="查看订单详情">{{item.OrderNum}}</a></td>
+                    <td class="centertext"><a href="javascript:;" v-on:click="GetDetail(index)" :title="item.goodsNames" class="goodsname">{{item.goodsNames}}</a></td>
+                    <td class="centertext">{{item.nickName}}</td>
+                    <td class="centertext">{{item.vipLevelName}}</td>
+                    <td class="centertext">{{item.BuyPriceStr}}</td>
+                    <td class="centertext">{{item.Address}}</td>
+                    <td class="centertext">{{item.AccepterName}}</td>
+                    <td class="centertext">{{item.AccepterTelePhone}}</td>
+                    <td class="centertext">{{item.CreateDateStr}}</td>
+                    <td class="centertext">
+                        <div v-if="item.OrderType==3 && item.GroupState==@((int)GroupState.开团成功)">
+                            <span>拼团中</span>
+                        </div>
+                        <div v-else-if="item.OrderType==3 && item.GroupState==@((int)GroupState.已过期)">
+                            <span>未成团</span>
+                        </div>
+                        <div v-else>
+                            {{item.StateStr}}
+                        </div>
+
+                    </td>
+                    <td class="centertext" v-if="item.OrderType==3 && item.GroupState == @((int)GroupState.开团成功)">
+                        <span>请等待拼团成功</span>
+                    </td>
+                    <td class="centertext" v-else-if="item.OrderType==3 && item.GroupState == @((int)GroupState.已过期)">
+                        <span>无操作</span>
+                    </td>
+                    <td class="centertext" v-else>
+                        <!--待付款-->
+                        <div v-if="item.State === 0">
+                            <a v-on:click="CancelOrder(item.Id,-1)" href="javascript:;" style="margin-top:5px;">
+                                取消订单
+                            </a>
+                        </div>
+                        <!--待发货-->
+                        <div v-else-if="item.State === 1">
+                            <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                发起退款
+                            </a>
+                            <a v-on:click="ChangeOrder(item.Id,2)" href="javascript:;" style="margin-top:5px;">
+                                确认发货
+                            </a>
+                        </div>
+                        <!--待收货-->
+                        <div v-else-if="item.State === 2">
+                            <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                发起退款
+                            </a>
+                            <a v-on:click="ChangeOrder(item.Id,3)" href="javascript:;" style="margin-top:5px;">
+                                确认收货
+                            </a>
+                        </div>
+                        <!--退款审核中-->
+                        <div v-else-if="item.State === 10">
+                            <a v-on:click="ExitOrder(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                审核通过
+                            </a>
+                            <a v-on:click="RejectRequest(item.Id,9)" href="javascript:;" style="margin-top:5px;">
+                                驳回审核
+                            </a>
+                        </div>
+                        <!--退款失败-->
+                        <div v-else-if="item.State === -3">
+                            <a v-on:click="OpenOutOrderFailRemarkForm(item.Id)" href="javascript:;" style="margin-top:5px;">
+                                查看退款失败原因
+                            </a>
+
+                        </div>
+                    </td>
+                </tr>
+                <tr v-if="OrderList.kuaidipeisong==null || OrderList.kuaidipeisong.length==0">
+                    <td colspan="15">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages_3" style="text-align: center;margin-top: 0.5rem;" v-show="orderRecordCount.kuaidipeisong>0"></div>
+
+        </div>
+        <!-- #endregion -->
+        }
+    </div>
+
+    <!--#region 导出订单 弹框-->
+    <div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">请选择导出订单时间段</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex d-flex-center" style="width: 72%;margin: 5px auto 17px;">
+                        <input type="text" class="input-sm form-control time" id="exportStartdate" v-model="ExportData.startDate" readonly />
+                        <span class="input-group-addon" style="width:10%;">到</span>
+                        <input type="text" class="input-sm form-control time" id="exportEnddate" v-model="ExportData.endDate" readonly  />
+                    </div>
+                    <div class="btnbox" style="text-align: center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" v-on:click="ExportOrder()">导出</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#region 查看订单详情-->
+    <div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">订单详情</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex d-flex-center" style="width: 87%;margin: 5px auto 17px;">
+                        <div v-if="orderDetail!=null">
+                            <table class="layui-table" lay-skin="nob" style="margin:0px;">
+                                <tr>
+                                    <td class="tr" width="120">订单号：</td>
+                                    <td colspan="2">{{orderDetail.OrderNum}}</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="tr">门店名称：</td>
+                                    <td width="150">{{orderDetail.storeName}}</td>
+                                    <td class="tr" width="100">支付方式：</td>
+                                    <td>{{orderDetail.BuyModeStr}}</td>
+                                </tr>
+                                <tr>
+                                    <td class="tr">会员：</td>
+                                    <td>{{orderDetail.nickName}}</td>
+                                    <td class="tr">会员等级：</td>
+                                    <td>{{orderDetail.vipLevelName}}</td>
+                                </tr>
+                                
+                            </table>
+                            <hr>
+                            <table class="layui-table" lay-skin="nob">
+                                <tr>
+                                    <td class="tr" width="120">订单状态：</td>
+                                    <td width="100">{{orderDetail.StateStr}}</td>
+                                    <td class="tr" width="100">下单时间：</td>
+                                    <td>{{orderDetail.CreateDateStr}}</td>
+                                </tr>
+                                <tr v-if="postOrderdata.tab!=1">
+                                    <td class="tr">收货人：</td>
+                                    <td>{{orderDetail.AccepterName}}</td>
+                                    <td class="tr">收货电话：</td>
+                                    <td>{{orderDetail.AccepterTelePhone}}</td>
+                                </tr>
+                                <tr>
+                                    <td class="tr">配送方式：</td>
+                                    <td colspan="3">{{orderDetail.MultiStoreGetWayStr}}</td>
+                                </tr>
+                                <tr v-if="postOrderdata.tab!=1">
+                                    <td class="tr">配送地址：</td>
+                                    <td colspan="3">{{orderDetail.Address}}</td>
+                                </tr>
+                                <tr>
+                                    <td class="tr">买家留言：</td>
+                                    <td colspan="3">{{orderDetail.Message}}</td>
+                                </tr>
+                            </table>
+                            <hr>
+                            <table  class="layui-table" lay-skin="line">
+                                <tr>
+                                    <th class="tc">商品名称</th>
+                                    <th class="tc">规格</th>
+                                    <th class="tc">数量</th>
+                                    <th class="tc">价格(元)</th>
+                                </tr>
+                                <tr v-for="(cart,index) in orderDetail.goodsCarts">
+                                    <td class="tc">{{cart.GoodName}}</td>
+                                    <td class="tc">{{cart.SpecInfo}}</td>
+                                    <td class="tc">{{cart.Count}}</td>
+                                    <td class="tc">{{cart.priceStr}}</td>
+                                </tr>
+                            </table>
+                            <hr>
+                            <table class="layui-table" lay-skin="nob" >
+                                <tr>
+                                    <td class="tr" style="padding-right:0px;">订单金额(元)：</td>
+                                    <td class="tf" style="padding-left:0px;">{{orderDetail.GoodsMoney}}</td>
+                                    <td class="tr" style="padding-right:0px;">优惠金额(元)：</td>
+                                    <td class="tf" style="padding-left:0px;">{{orderDetail.ReducedPriceStr}}</td>
+                                    <td class="tr" style="padding-right:0px;">实收金额(元)：</td>
+                                    <td class="tf" style="padding-left:0px;">{{orderDetail.BuyPriceStr}}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <p v-else>订单错误</p>
+                    </div>
+                    <div class="btnbox" style="text-align: center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--#endregion -->
+</div>
+
+
+
+<script>
+
+    layui.use('element', function(){
+        var $ = layui.jquery
+        ,element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+        element.tabChange('docDemoTabBrief', 'tab_element_@(tab)');
+    });
+    $('.time').datepicker({
+        format: "yyyy-mm-dd",
+        language: "zh-CN",
+        autoclose: true,
+        todayHighlight: true
+    });
+
+</script>
+
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            orderDetail:null,
+            storeList:@Html.Raw(JsonConvert.SerializeObject(ViewBag.storeList)),
+            levelList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            orderState: {
+                "daodianziqu": [
+                    { state: -999, txt: "全部" },
+                    { state: 0, txt: "待付款" },
+                    { state: 8, txt: "待自取" },
+                    { state: 3, txt: "交易成功" },
+                    { state: -2, txt: "退款" },
+                    { state: -1, txt: "已取消" },
+                    {state:30,txt:"拼团中"},
+                    {state:31,txt:"拼团成功"},
+                    {state:32,txt:"拼团失败"},
+                ],
+                "tongchengpeisong": [
+                    { state: -999, txt: "全部" },
+                    { state: 0, txt: "待付款" },
+                    { state: 9, txt: "待接单" },
+                    { state: 11, txt: "待配送" },
+                    { state: 12, txt: "待确认送达" },
+                    { state: 3, txt: "交易完成" },
+                    { state: 10, txt: "退款审核中" },
+                    { state: -2, txt: "退款" },
+                    { state: -1, txt: "已取消" },
+                    {state:30,txt:"拼团中"},
+                    {state:31,txt:"拼团成功"},
+                    {state:32,txt:"拼团失败"},
+                ],
+                "kuaidipeisong": [
+                    { state: -999, txt: "全部" },
+                    { state: 0, txt: "待付款" },
+                    { state: 1, txt: "待发货" },
+                    { state: 2, txt: "待收货" },
+                    { state: 3, txt: "交易完成" },
+                    { state: 10, txt: "退款审核中" },
+                    { state: -2, txt: "退款" },
+                    { state: -1, txt: "已取消" },
+                    {state:30,txt:"拼团中"},
+                    {state:31,txt:"拼团成功"},
+                    {state:32,txt:"拼团失败"},
+                ]
+            },
+            ExportData: {
+                orderType: 0,
+                startDate: '',
+                endDate:''
+            },
+            levelList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            orderRecordCount: {
+                daodianziqu: 0,
+                tongchengpeisong: 0,
+                kuaidipeisong: 0,
+            },
+            OrderList: {
+                "daodianziqu": [],
+                "tongchengpeisong": [],
+                "kuaidipeisong":[],
+            },
+            def_data: {
+                orderState: -999,
+                pageIndex: 1,
+                pageSize: 10,
+                orderNum: "",
+                goodsName: "",
+                buyMode: 0,
+                accName: "",
+                accPhone: "",
+                startdate: "",
+                enddate: "",
+                levelid: 0,
+                storeid: @storeId,
+            },
+            postOrderdata: {
+                tab:@tab,
+                appId:@appId,
+                orderState: -999,
+                pageIndex: 1,
+                pageSize: 10,
+                orderNum: "",
+                goodsName: "",
+                buyMode: 0,
+                accName: "",
+                accPhone: "",
+                startdate: "",
+                enddate: "",
+                levelid: 0,
+                storeid: @storeId,
+            },
+            tsTitle:"",
+            tsText:"",
+            orderid:0,
+            oldstate:-999,
+            newstate:-999,
+            CurOrderNo:'',
+            friPrice:0,
+        },
+        methods: {
+            selectState:function(state){
+                    this.postOrderdata.orderState=state;
+
+            },
+            Search:function(type)
+            {
+                this.postOrderdata.startdate = $("#startdate_"+type).val();
+                this.postOrderdata.enddate = $("#enddate_" + type).val();
+                var start = new Date(this.postOrderdata.startdate.replace("-", "/").replace("-", "/"));
+                var end = new Date(this.postOrderdata.enddate.replace("-", "/").replace("-", "/"));
+                if (end < start) {
+                    layer.msg("开始时间不能大于结束时间");
+                    return;
+                }
+                this.postOrderdata.pageIndex = 1;
+                this.GetOrderList();
+
+            },
+            ClearData: function (type) {
+                laydate.render({
+                    elem: '#startdate_'+type, //指定元素
+                    value: ' ',
+                    done: function (value, date, endDate) {
+                        app.postOrderdata.startdate = value;
+                    }
+                });
+                laydate.render({
+                    elem: '#enddate_'+type, //指定元素
+                    value: ' ',
+                    done: function (value, date, endDate) {
+                        app.postOrderdata.enddate = value;
+                    }
+                });
+                $.extend(true, this.postOrderdata, this.def_data);
+            },
+            //初始化开关，日期控件
+            InitLayer: function () {
+                layui.use(['laydate'], function () {
+                    //时间选择器
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#startdate_1', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postOrderdata.startdate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#enddate_1', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postOrderdata.enddate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#startdate_2', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postOrderdata.startdate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#enddate_2', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postOrderdata.enddate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#startdate_3', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postOrderdata.startdate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#enddate_3', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.postOrderdata.enddate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#exportStartdate', //指定元素
+                        value: '',
+                        done: function (value, date, endDate) {
+                            app.ExportData.startDate = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#exportEnddate', //指定元素
+                        value: '',
+                       done: function (value, date, endDate) {
+                            app.ExportData.endDate = value;
+                        }
+                    });
+                });
+            },
+            Tab:function(type){
+
+                this.postOrderdata.tab = type;//切换标签页更改tab属性
+                window.history.pushState(null, null, 'OrderTotalList?appId=' + @appId +'&tab=' + this.postOrderdata.tab+'&storeId=@storeId');//浏览器不跳转追加tab属性
+                $.extend(true, this.postOrderdata, this.def_data);
+                this.GetOrderList();
+            },
+            //分页器
+            resetPage: function (type,count) {
+                layui.use(['laypage', 'element'], function () {
+                    element = layui.element;
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages_'+type
+                        , count: count //数据总数，从服务端得到
+                        , curr: app.postOrderdata.pageIndex //当前页
+                        , limit: app.postOrderdata.pageSize
+                        , jump: function (obj, first) {
+                            app.postOrderdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.postOrderdata.pageIndex = obj.curr;
+                                app.GetOrderList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            GetOrderList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/OrdersManager/GetOrderList", this.postOrderdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+
+                        switch (app.postOrderdata.tab) {
+                            case 1:
+                                app.OrderList.daodianziqu = data.orderList;
+                                app.orderRecordCount.daodianziqu = data.recordCount;
+                                break;
+                            case 2:
+                                app.OrderList.tongchengpeisong = data.orderList;
+                                app.orderRecordCount.tongchengpeisong = data.recordCount;
+                                break;
+                            case 3:
+                                app.OrderList.kuaidipeisong = data.orderList;
+                                app.orderRecordCount.kuaidipeisong = data.recordCount;
+                                break;
+                        }
+                        app.resetPage(app.postOrderdata.tab, data.recordCount);
+
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //驳回申请
+            RejectRequest: function (id, state) {
+                layer.confirm("驳回后，顾客将无法收到退款，请与顾客沟通并达成一致后再操作，以避免纠纷。", {
+                    btn: ['确定驳回', '取消']
+                }, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/OrdersManager/updateState", { appid:@appId,id: id, state: state,storeid:@storeId }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            app.GetOrderList();
+                        }
+                    });
+                });
+            },
+            //修改订单的状态
+            ChangeOrder: function (id, state) {
+                var layerIndex = layer.load(2);
+                $.post("/OrdersManager/updateState", { appid:@appId,id: id, state: state, storeid:@storeId }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        app.GetOrderList();
+                    }
+                });
+            },
+            //取消订单
+            CancelOrder: function (id, state) {
+                layer.confirm("您确定要取消本订单吗？取消后用户将无法付款。", {
+                    btn: ['确定', '取消']
+                }, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/OrdersManager/updateState", { appid:@appId,id: id, state: state,storeid:@storeId }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            app.GetOrderList();
+                        }
+                    });
+                });
+            },
+            //发起退款
+            ExitOrder: function (id) {
+                layer.confirm("确定后，系统将自动发起退款，金额将原路退回到顾客账户。", {
+                    btn: ['确定', '取消']
+                }, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/OrdersManager/OutOrder", { appid:@appId,orderId: id,storeid:@storeId }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            app.GetOrderList();
+                        }
+                    });
+                });
+            },
+            //查看退款失败原因
+            OpenOutOrderFailRemarkForm: function (id) {
+                var layerIndex = layer.load(2);
+                $.post("/enterprisepro/getOutOrderFailRemark", { orderId: id }, function (data) {
+                    layer.close(layerIndex);
+                    layer.alert(data);
+                });
+            },
+            ChooseDate: function (type) {
+                this.ExportData.orderType = type;
+                this.ExportData.startDate = '';
+                this.ExportData.endDate = '';
+                laydate.render({
+                    elem: '#exportStartdate', //指定元素
+                    value: ' ',
+                    done: function (value, date, endDate) {
+                        app.ExportData.startDate = value;
+                    }
+                });
+                laydate.render({
+                    elem: '#exportEnddate', //指定元素
+                    value: ' ',
+                    min: app.ExportData.startDate,
+                    done: function (value, date, endDate) {
+                        app.ExportData.endDate = value;
+                    }
+                });
+                $('#exportModal').modal('show');
+            },
+            ExportOrder: function () {
+                window.open("/OrdersManager/ExportOrder?appId=@appId&storeId=@storeId &orderType=" + this.ExportData.orderType + "&startdate=" + this.ExportData.startDate + "&enddate=" + app.ExportData.endDate);
+                $('#exportModal').modal('hide');
+            },
+            GetDetail: function (index) {
+                switch (app.postOrderdata.tab) {
+                    case 1:
+                        this.orderDetail =app.OrderList.daodianziqu[index];
+                        break;
+                    case 2:
+                        this.orderDetail = app.OrderList.tongchengpeisong[index];
+                        break;
+                    case 3:
+                        this.orderDetail = app.OrderList.kuaidipeisong[index];
+                        break;
+                }
+                
+                $('#detailModal').modal('show');
+            }
+        }, created: function () {
+            this.InitLayer();
+            this.Tab(this.postOrderdata.tab);
+        }
+    });
+</script>

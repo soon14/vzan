@@ -1,0 +1,162 @@
+﻿@model ViewModel<DishCategory>
+@{
+    ViewBag.Title = "分类管理";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 菜品管理 <span class="c-gray en">&gt;</span> 分类管理 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray">
+        <span class="l">
+            <a onclick="batch_sort()" href="javascript:void(0);" class="btn btn-secondary radius"><i class="Hui-iconfont">&#xe675;</i> 一键排序</a>
+            <a class="btn btn-primary radius" onclick="category_add('添加分类','/DishAdmin/Category/Edit?aid=@(Model.aId)&storeid=@(Model.storeId)')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 添加分类</a>
+        </span>
+        <span class="r"></span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="100">排序</th>
+                    <th width="100">ID</th>
+                    <th width="200">分类名称</th>
+                    <th width="100">分类图标</th>
+                    <th width="100">显示</th>
+
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.DataList != null && Model.DataList.Count() > 0)
+                {
+                    foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td class="td-status"><input type="text" name="is_order[]" value="@(item.is_order)" data-id="@(item.id)" data-pre="@(item.is_order)" class="input-text is_order_val" style="width: 100px;" /></td>
+                            <td>@(item.id)</td>
+                            <td class="text-l">@item.title</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.img))
+                                {
+                                    <img src="@(item.img)" height="50" width="50" />
+                                }
+                            </td>
+                            <td>
+                                @if (item.is_show == 1)
+                                {
+                                    <span class="label label-success radius">显示</span>
+                                }
+                                else
+                                {
+                                    <span class="label radius">已隐藏</span>
+                                }
+
+
+                            </td>
+
+                            <td class="f-14 td-manage">
+                                <a style="text-decoration:none" class="btn btn-primary radius size-MINI" onclick="category_edit('编辑分类','/DishAdmin/Category/Edit?id=@(item.id)&aId=@(item.aId)&storeId=@(item.storeId)')" href="javascript:;" title="编辑"><i class="Hui-iconfont">&#xe6df;</i> 编辑</a>
+                                <a style="text-decoration:none" class="btn btn-danger radius size-MINI del" data-id="@(item.id)" title="删除"><i class="Hui-iconfont">&#xe6e2;</i> 删除</a>
+                            </td>
+                        </tr>
+                    }
+                }
+
+            </tbody>
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        function category_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(add_index);
+        }
+        function category_edit(title, url) {
+            var edit_index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(edit_index);
+        }
+        function batch_sort() {
+
+            var sort_data = [];
+            $(".is_order_val").each(function () {
+                var sort_item = $(this);
+                if (sort_item.data("pre") != sort_item.val()) {
+                    sort_data.push(sort_item.data("id") + "_" + sort_item.val());
+                }
+            })
+            if (sort_data.length <= 0) {
+                layer.msg('没有检测到要修改的行')
+                return;
+            }
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "/DishAdmin/Category/Index?act=sort",
+                data: { sortData: sort_data.join(","), t: Math.random(), storeId:@(Model.storeId)},
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+
+        $(function () {
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除该分类吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/DishAdmin/Category/Index?aId=@(Model.aId)&storeId=@(Model.storeId)",
+                        data: { act: 'del', id: id, t: Math.random() },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 2000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 2000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+        })
+
+    </script>
+
+}

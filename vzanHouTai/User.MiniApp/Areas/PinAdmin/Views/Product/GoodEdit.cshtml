@@ -1,0 +1,1324 @@
+﻿@model EditModel<PinGoods>
+@{
+    ViewBag.Title = "产编辑";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+    List<PinAttr> specificationlist =  PinAttrBLL.SingleModel.GetList(string.Format("aid={0} and state=1 and storeId={1}", Model.aId, Model.storeId));
+    List<PinGoodsUnit> unitList =  PinGoodsUnitBLL.SingleModel.GetList(string.Format("aid={0} and state=1 and storeId={1}", Model.aId, Model.storeId));
+}
+
+@section styles{
+    <style>
+        [v-cloak] { display: none; }
+        .picklabels { white-space: normal; word-break: break-all; }
+        .picklabels span { cursor: pointer; padding: 5px 10px; border: 1px solid #5B94FD; color: #5B94FD; border-radius: 5px; text-align: center; display: inline-block; margin: 10px 10px 0 0; }
+        .picklabels span.sel { background-color: #5B94FD; color: #fff; }
+        .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+        .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+
+        .goodlabels .Huialert { display: inline-block; margin-right: 10px; cursor: pointer; }
+        .gg_line { padding: 5px; }
+        .gg_line .goodlabels { padding: 10px 0; }
+        .gg_title tr td { padding: 5px; }
+        .gg_title { background-color: #E5E5E5; padding: 10px; }
+        .ggtable { border-top: 1px solid #ccc; border-left: 1px solid #ccc; }
+        .ggtable tr td { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; border-collapse: collapse; padding: 5px; }
+
+        .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+
+        .w50 { width: 50px; }
+        .w150 { width: 150px; }
+        .check-box, .radio-box { padding-left: 0; }
+    </style>
+}
+
+<div class="page-container" id="app" v-cloak>
+    @*<form class="form form-horizontal" id="form-article-add">*@
+    <div class="form form-horizontal">
+
+
+        <input type="hidden" name="act" value="edit" />
+        <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+        <input type="hidden" name="aid" value="@(Model.aId)" />
+        <input type="hidden" name="storeId" value="@(Model.storeId)" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>基本信息</span>
+            </div>
+            <div class="tabCon">
+
+                <!-- #region 添加规格值 -->
+                <div class="modal bs-example-modal" id="addSpecValueModal" tabindex="-1" role="dialog" aria-labelledby="addSpecValueLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                                <h4 class="modal-title" id="addSpecValueLabel">
+                                    添加规格值
+                                </h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="picklabels">
+                                    <span v-bind:class="{'sel':item.sel}" v-for="(item,index) in current_specificationlist" v-on:click="item.sel=!item.sel">{{item.name}}</span>
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="text-align: center;">
+                                <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="addSpecValueOK">确定</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- #endregion -->
+                <!-- #region 上传图片弹窗 -->
+                <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="pickImgLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header" style="border:0px;">
+                                <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                            </div>
+                            <div class="modal-body" style="min-height:500px;padding:0px;">
+                                <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="uploadImgs" name="uploadImgs" value="" />
+                <!-- #endregion -->
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品名称：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="name" placeholder="控制在25个字以内" v-model="p.name" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品分类：
+                    </label>
+                    <div class="formControls col-xs-4">
+                        <select class="select" v-model.number="p.cateIdOne">
+                            <option value="0">请选择一级分类</option>
+                            <option v-for="item in categoryFirstLevel" v-bind:value="item.id">{{item.name}}</option>
+                        </select>
+
+
+                    </div>
+                    <div class="formControls col-xs-4">
+                        <select name="cateId" class="select" v-model="p.cateId">
+                            <option value="0">请选择二级分类</option>
+                            <option v-for="item in categorySecondLevel" v-bind:value="item.id">{{item.name}}</option>
+                        </select>
+
+
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        @*<span class="c-red">*</span>*@
+                        产品标签：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="skin-minimal">
+                            <div class="radio-box" v-for="item in labelList">
+                                <label>
+                                    <input name="state" v-bind:value="item.name" type="checkbox" v-model="p.labelList">
+                                    {{item.name}}
+                                </label>
+                            </div>
+                            <a class="btn-link" v-on:click="addLabel">新增标签</a>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品图片：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="controls">
+                            <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="img">
+                                <input type="hidden" name="img" id="cover_id_img" value="@(Model.DataModel.img)">
+                                <div class="upload-img-box">
+                                    @if (!string.IsNullOrEmpty(Model.DataModel.img))
+                                    {
+                                        <div class="upload-pre-item2">
+                                            <img src="@(Model.DataModel.img)" width="100" height="100">
+                                            <em class="edit_img_icon"> </em>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品轮播图：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="mult_imgs">
+                            <div class="upload-img-view" id='mutl_picture_imgAlbumList'>
+                                @if (Model.DataModel.imgAlbum != null && Model.DataModel.imgAlbumList.Count > 0)
+                                {
+                                    foreach (var img in Model.DataModel.imgAlbumList)
+                                    {
+                                        <div class="upload-pre-item22">
+                                            <img width="100" height="100" src="@img" />
+                                            <input type="hidden" name="imgAlbumList[]" value="@img" />
+                                            <em>&nbsp;</em>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <div class="controls uploadrow2" id="cover_id_imgAlbumList" data-max="9" title="点击上传图片" rel="imgAlbumList">
+                                <input type="file" id="upload_picture_imgAlbumList">
+                            </div>
+                        </div>
+                        <div class="dish_m_tips">最多可上传9张</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        @*<span class="c-red">*</span>*@
+                        产品规格：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="button" class="btn btn-primary" value="添加规格项目" v-on:click="addSpecificationItem" />
+                        <div class="dish_m_tips">最多只能添加4个规格项目</div>
+                        <div class="dish_m_tips">规格项组合不能超过40</div>
+                        <div>
+                            <div v-for="(item,index) in pickspecification" class="gg_line">
+                                <div class="d-flex d-flex-center gg_title">
+                                    <table border="0" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td>
+                                                <select v-model="item.id" v-on:change="changeSpecification(item)">
+                                                    <option disabled>请选择规格</option>
+                                                    <option v-for="(gg_item,gg_index) in specificationLevel1" v-bind:value="gg_item.id">{{gg_item.name}}</option>
+                                                </select>
+                                            </td>
+                                            <td align="right">
+                                                <a class="btn-link" v-on:click="pickspecification.splice(index,1)">删除</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="goodlabels">
+                                    <div class="Huialert Huialert-info" v-for="(value_item,value_index) in item.items" v-if="item.items.length>0"><i class="Hui-iconfont" v-on:click="item.items.splice(value_index,1)">&#xe6a6;</i>{{value_item.name}}</div>
+                                    <a v-on:click="addSpecificationValue(item,index)">＋添加规格值</a>
+                                </div>
+                            </div>
+
+                            <div class="" v-if="pickspecification.length>0">
+                                <table width="100%" class="ggtable">
+                                    <tr class="gg_title">
+                                        <td align="center" v-for="(item,index) in pickspecification" v-if="item.items.length>0">
+                                            {{item.name}}
+                                        </td>
+                                        <td align="center">图片</td>
+                                        @*<td align="center" v-if="goodtype==1">原价</td>*@
+                                        <td align="center">{{goodtype==1?"单买价":"价格"}}</td>
+                                        <td align="center" v-if="goodtype==1">拼团返现</td>
+                                        <td align="center">库存</td>
+
+                                    </tr>
+                                    <template v-if="pickspecification.length==1">
+                                        <tr v-for="(item,index) in pickspecification[0].items">
+                                            <td align="center">
+                                                {{item.name}}
+                                            </td>
+                                            <td width="110" align="center">
+                                                <div style="position:relative;">
+                                                    <img class="imgUrl" style="height:80px;" src="" v-on:click="UploadImg(0,1,index)" title="点击上传" />
+                                                    <span v-on:click="clearSpecificationImg(index)" class="DelPoster" style="right:-5px;top:-8px;">
+                                                        <img src="/Areas/PinAdmin/images/gray_delete.png" />
+                                                    </span>
+
+                                                </div>
+                                                <div class="plus-button" style="height:80px;display:none;" v-on:click="UploadImg(0,1,index)">
+                                                    <div class="s-image-uploader-wrapper">
+                                                        <div>
+                                                            <div class="plus" style="font-size:80px;font-weight:500;">+</div>
+                                                            <div class="plus-label" style="top:-15px;">上传图片</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <!--原价-->
+                                            @*<td width="110" align="center" v-if="goodtype==1"><input type="text" class="original-price input-text" v-on:input="changePrice" /> </td>*@
+                                            <!--单买价/普通商品价格-->
+                                            <td width="110" align="center"><input type="text" class="price input-text" v-on:input="changePrice" /> </td>
+                                            <!--团购价-->
+                                            <td width="110" align="center" v-if="goodtype==1"><input type="text" class="group-price input-text" v-on:input="changePrice" /> </td>
+                                            <!--库存-->
+                                            <td width="110" align="center"><input type="text" class="stock input-text" v-on:input="changeStock" v-bind:disabled="!p.stockLimit" /> </td>
+
+                                        </tr>
+                                    </template>
+                                    <template v-else>
+                                        <tr v-for="(item,index) in buildSpecificationTable()">
+                                            <template v-for="(col_item,col_index) in item">
+                                                <td valign="middle" align="center" v-bind:rowspan="GetRowSpan(col_index)" v-if="GetRowSpan(col_index)>1&&index%GetRowSpan(col_index)==0">
+                                                    {{col_item.name}}
+                                                </td>
+                                                <td v-else-if="GetRowSpan(col_index)==1">
+                                                    {{col_item.name}}
+                                                </td>
+
+                                            </template>
+                                            <td width="110" align="center">
+                                                <div style="position:relative;">
+                                                    <img class="imgUrl" style="height:80px;" src="" v-on:click="UploadImg(0,1,index)" title="点击上传" />
+                                                    <span v-on:click="clearSpecificationImg(index)" class="DelPoster" style="right:-5px;top:-8px;">
+                                                        <img src="/Areas/PinAdmin/images/gray_delete.png" />
+                                                    </span>
+                                                </div>
+                                                <div class="plus-button" style="height:80px;display:none;" v-on:click="UploadImg(0,1,index)">
+                                                    <div class="s-image-uploader-wrapper">
+                                                        <div>
+                                                            <div class="plus" style="font-size:80px;font-weight:500;">+</div>
+                                                            <div class="plus-label" style="top:-15px;">上传图片</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </td>
+                                            <!--原价-->
+                                            @*<td width="110" align="center" v-if="goodtype==1"><input type="text" class="original-price input-text" v-on:input="changePrice" /> </td>*@
+                                            <!--单买价/普通商品价格-->
+                                            <td width="110" align="center"><input type="text" class="price input-text" v-on:input="changePrice" /> </td>
+                                            <!--团购价-->
+                                            <td width="110" align="center" v-if="goodtype==1"><input type="text" class="group-price input-text" v-on:input="changePrice" /> </td>
+                                            <!--库存-->
+                                            <td width="110" align="center"><input type="text" class="stock input-text " v-on:input="changeStock" v-bind:disabled="!p.stockLimit" /> </td>
+
+                                        </tr>
+                                    </template>
+                                </table>
+                                <div v-if="pickspecification.length>0" class="gg_title" style="padding:0;">
+                                    <table align="right">
+
+                                        <tr>
+                                            <td align="right">批量设置：</td>
+                                            <!--原价-->
+                                            @*<td width="110" align="center" v-if="goodtype==1"><input type="number" min="0" class="input-text" v-model="allOriginalPrice" /> </td>*@
+                                            <!--单买价/普通商品价格-->
+                                            <td width="110" align="center"><input type="number" min="0" class="input-text " v-model="allPrice" /> </td>
+                                            <!--团购价-->
+                                            <td width="110" align="center" v-if="goodtype==1"><input type="number" min="0" class="input-text " v-model="allGroupPrice" /> </td>
+                                            <!--库存-->
+                                            <td width="110" align="center"><input type="number" min="-1" class="input-text" v-model="allStock" v-bind:disabled="!p.stockLimit" /> </td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <!--原价-->
+                                            @*<td width="110" align="center" v-if="goodtype==1"><input type="button" class="btn btn-primary" value="确定" v-on:click="setAllOriginalPrice" /></td>*@
+                                            <!--单买价/普通商品价格-->
+                                            <td width="110" align="center"><input type="button" class="btn btn-primary" value="确定" v-on:click="setAllPrice" /></td>
+                                            <!--团购价-->
+                                            <td width="110" align="center" v-if="goodtype==1"><input type="button" class="btn btn-primary " value="确定" v-on:click="setAllGroupPrice" /></td>
+                                            <!--库存-->
+                                            <td width="110" align="center"><input type="button" class="btn btn-primary" value="确定" v-on:click="setAllStock" v-bind:disabled="!p.stockLimit" /></td>
+                                        </tr>
+                                    </table>
+                                    <div style="clear:both;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品原价：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="originalPrice" placeholder="0" v-model.number="p.originalPrice" class="input-text w150">
+                        <div class="dish_m_tips">展示用</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品价格：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="price" placeholder="0" v-model.number="p.price" class="input-text w150" v-bind:disabled="pickspecification.length>0">
+                        <div class="dish_m_tips">
+                            如果设置了规格价格，保存时将取规格中的最小单买价<br />
+                            最多两位小数
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品重量（kg）：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="weight" placeholder="0" v-model.number="productConf.Weight" maxlength="7" class="input-text w150">
+                        <div class="dish_m_tips">
+                            如果选择了运费模板（按重量计费），重量将列入运费计价范围<br />
+                            最多两位小数
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        运费模板：
+                    </label>
+                    <div class="formControls col-xs-4">
+                        <select class="select" v-model.number="p.FreightTemplate">
+                            <option value="0">不设置运费模板</option>
+                            <option v-for="item in freightTemplate" v-bind:value="item.Id">{{item.Name}}</option>
+                        </select>
+                        <div class="dish_m_tips skin-minimal">
+                            <a class="btn-link" href="/Tools/DeliveryTemplate?appid=@Model.aId&storeId=@Model.storeId&pagetype=@((int)TmpType.拼享惠)&SouceFrom=TemplateDecoration">新增+</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        拼团返现：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="groupPrice" placeholder="0" v-model.number="p.groupPrice" class="input-text w150">
+                        <div class="dish_m_tips">
+                            如果设置了规格，保存时将取规格中最大的返现价格<br />
+                            最多两位小数，<br />
+                            返现不能超过产品价格,<br />
+                            最低1元，最高2万，0表示不返现
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        成团人数：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" placeholder="2" v-model.number="p.groupUserLimit" class="input-text w150">
+                        <div class="dish_m_tips">
+                            默认2，最多5人团
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        每人限购：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" placeholder="0" v-model.number="p.groupUserBuyLimit" class="input-text w150">
+                        <div class="dish_m_tips">
+                            0表示不限制
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        @*<span class="c-red">*</span>*@
+                        虚拟销量：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" placeholder="0" v-model.number="p.virtualSales" class="input-text w150">
+                        <div class="dish_m_tips">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        库存：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="skin-minimal">
+                            <input type="text" class="input-text w150" v-model.number="p.stock" v-bind:disabled="!p.stockLimit||pickspecification.length>0" />
+                            <div class="radio-box">
+                                <label>
+                                    <input name="state" type="checkbox" v-model="p.stockLimit" v-on:click="changeStockLimit">
+                                    限制库存
+                                </label>
+                            </div>
+                        </div>
+                        <div class="dish_m_tips">默认不限制库存</div>
+                        <div class="dish_m_tips">如果设置了规格，库存将取所有规格库存之和</div>
+                        <div class="dish_m_tips">如果不限制库存，规格库存不可输入</div>
+                    </div>
+                </div>
+
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品描述：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <textarea name="description" placeholder="产品描述..." style="width:700px; height:200px;">@(Html.Raw(Model.DataModel.description))</textarea>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        产品单位：
+                    </label>
+                    @*<div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="unit" placeholder="件" v-model="p.unit" class="input-text" style="width: 200px;">
+                            <div class="dish_m_tips">件，条，个，双 等，1-3个字</div>
+                        </div>*@
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="skin-minimal">
+                            <div class="radio-box" v-for="item in unitList">
+                                <label>
+                                    <input name="unit" v-bind:value="item.name" type="radio" v-model="p.unit">
+                                    {{item.name}}
+                                </label>
+                            </div>
+                            <a class="btn-link" v-on:click="addUnit">新增单位</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        是否上架：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="state" value="1" v-model="p.state" type="radio" @(Model.DataModel.state == 1 ? "checked" : "")>
+                            <label for="is_shangjia-1">上架</label>
+                        </div>
+                        <div class="radio-box">
+                            <input name="state" value="0" v-model="p.state" type="radio" @(Model.DataModel.state == 0 ? "checked" : "")>
+                            <label for="is_shangjia-2">下架</label>
+                        </div>
+                        <div class="dish_m_tips">
+                            1,平台审核通过后在小程序端展示 <br />
+                            2,手动下架产品再上架需要平台审核
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        排序：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="sort" placeholder="99" v-model.number="p.sort" class="input-text w150">
+                        <div class="dish_m_tips">数字越大越靠前</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" id="submit_button" v-on:click="save"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" id="cancel_button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </div>
+    @*</form>*@
+
+
+</div>
+
+
+@section scripts{
+
+    <!--如果需要图片上传-->
+    <script src="~/Areas/PinAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+    <script src="~/Areas/PinAdmin/lib/dialog.js"></script>
+    <script src="~/Areas/PinAdmin/lib/admin_common.js"></script>
+
+    <script>
+        var UPLOAD_URL = "/tools/UpLoadImgFrm?appId=@(Model.aId)&storeId=@(Model.storeId)&multi_selection=0&frontMethod=1&maxImgSize=10&objType=1";
+        $(function () {
+            //初始化上传图片插件
+            //initUploadImg();
+        });
+    </script>
+
+
+    <script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+    <script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+    <script type="text/javascript">
+        var comeditor = null;
+        var app = null;
+        var ispost = false;
+        $(function () {
+            $(document).on("click", "#cancel_button", function () {
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+                return;
+            });
+
+
+            $('textarea[name="description"]').attr('id', 'editor_id_g_description');
+            if (comeditor != null) {
+                comeditor.reset();
+            }
+
+            var mytoolbars = [[
+                'source', 'removeformat', 'formatmatch', '|',
+                'fontsize', 'fullscreen', '|',
+                'bold', 'italic', 'underline', 'forecolor', 'backcolor', '|',
+                'indent', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|',
+                'rowspacingtop', 'rowspacingbottom', 'lineheight', '|',
+                'insertunorderedlist', 'insertorderedlist', '|',
+                'simpleupload', 'insertimage',
+            ]];
+            //编辑器
+            comeditor = UE.getEditor('editor_id_g_description', {
+                toolbars: [
+                    ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                    ['simpleupload', 'insertimage', 'insertvideo', 'paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain']
+                ],
+                imageUrl: "/Upload/Image?cityid=" + 1088,
+                autoHeight: true
+            });
+            comeditor.ready(function () {
+                //comeditor.setContent(that.p.description);
+            });
+            comeditor.addListener("contentChange", function () {
+                //if (comeditor != null) {
+                //    that.p.description = comeditor.getContent();
+                //}
+            });
+
+
+
+
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+
+            //规格项
+            var specificationItem = {
+                id: 0,
+                name: "",
+                items: [],//规格值列表
+                fId:0,
+            };
+
+            app = new Vue({
+                el: "#app",
+                data: {
+                    p:@Html.Raw(JsonConvert.SerializeObject(Model.DataModel)),
+                    categoryList:@Html.Raw(JsonConvert.SerializeObject(ViewBag.categoryList)),
+                    labelList:@Html.Raw(JsonConvert.SerializeObject(ViewBag.labelList)),
+                    unitList:@Html.Raw(JsonConvert.SerializeObject(unitList)),
+                    pickspecification: [],//选择的规格
+                    current_pickspecification_index: -1,//当前操作的规格索引
+                    current_pickspecification_id: -1,
+                    current_specificationlist: [],//当前显示的规格值列表
+                    specificationTable: [],
+                    allOriginalPrice: 0,
+                    allPrice: 0,
+                    allGroupPrice: 0,
+                    allStock: 0,
+                    goodtype: 1,//0=普通商品，1=拼团
+                    specificationlist:@(Html.Raw(JsonConvert.SerializeObject(specificationlist))),
+                    curSpecItemImg: "",
+                    freightTemplate:[],//运费模板
+                    productConf: JSON.parse('@Html.Raw(JsonConvert.SerializeObject(Model.DataModel.GetAttrbute()))')
+                },
+                watch: {
+                    curSpecItemImg: function () {
+                        var that = this;
+                        var jqggtable = $(".ggtable tr:not(.gg_title)");
+                        jqggtable.eq(that.curSpecItemIndex).find(".imgUrl").attr("src", that.curSpecItemImg).css("display", "block").next().css("display", "block");//1.显示选择的图片以及清除图片按钮
+                        jqggtable.eq(that.curSpecItemIndex).find(".imgUrl").parent().css("display", "block");
+                        jqggtable.eq(that.curSpecItemIndex).find(".imgUrl").parent().next().css("display", "none");
+                        console.log(that.curSpecItemIndex);
+                    },
+                    productConf:{
+                        handler: function (val, oldVal){
+                            changeConf = JSON.parse(JSON.stringify(val));
+                            changeConf.Weight = this.formatNum(changeConf.Weight,1000);
+                            this.p.Attrbute = JSON.stringify(changeConf);
+                        },
+                        deep: true
+                    }
+                },
+                computed: {
+                    groupedit: function () {
+                        return this.p.id > 0;
+                    },
+                    specificationLevel1: function () {
+                        return this.specificationlist.filter(function (item) {
+                            return item.fId == 0;
+                        }).sort(function (a, b) {
+                            return b.sort - a.sort;
+                        });
+                    },
+                    categoryFirstLevel: function () {
+                        return this.categoryList.filter(function (item) {
+                            return item.fId == 0;
+                        }).sort(function (a, b) {
+                            return b.sort - a.sort;
+                        });;
+
+                    },
+                    categorySecondLevel: function () {
+                        var that = this;
+                        if (this.p.cateIdOne > 0) {
+                            return this.categoryList.filter(function (item) {
+                                return item.fId == that.p.cateIdOne;
+                            });
+                        }
+                    }
+                },
+                created: function () {
+
+                    if (this.p.pickspecification != "") {
+                        this.pickspecification = JSON.parse(this.p.pickspecification);
+
+                    }
+                    if (this.p.id > 0) {
+                        this.p.originalPrice = this.p.originalPrice / 100;
+                        this.p.price = this.p.price / 100;
+                        this.p.groupPrice = this.p.groupPrice / 100;
+
+
+                    }
+
+                    this.getFreightTemplate();
+                    this.productConf.Weight = this.formatNum(this.productConf.Weight,0.001);
+                },
+                mounted: function () {
+                    initUploadImg();
+                    if (this.p.specificationdetail != "") {
+                        var detail = JSON.parse(this.p.specificationdetail);
+                        var jqggtable = $(".ggtable tr:not(.gg_title)");
+                        jqggtable.each(function (i, o) {
+
+                            $(o).find(".stock").val(detail[i].stock);
+                            if (detail[i].imgUrl == "") {
+                                jqggtable.eq(i).find(".imgUrl").parent().next().css("display", "block");
+                                $(o).find(".imgUrl").css("display", "none");
+                                $(o).find(".imgUrl").next().css("display", "none");
+                            } else {
+                                $(o).find(".imgUrl").attr("src", detail[i].imgUrl)
+                            }
+
+                            $(o).find(".price").val(detail[i].price / 100);
+                            $(o).find(".group-price").val(detail[i].groupPrice / 100);
+                        });
+                    }
+                },
+                methods: {
+                    clearSpecificationImg: function (index) {
+                        var jqggtable = $(".ggtable tr:not(.gg_title)");
+                        jqggtable.eq(index).find(".imgUrl").attr("src", "").parent().css("display", "none");
+                        jqggtable.eq(index).find(".imgUrl").parent().next().css("display", "block");
+                    },
+                    addLabel: function () {
+                        var index = layer.open({
+                            type: 2,
+                            title: "添加标签",
+                            content: "LabelEdit?aid=@(Model.aId)&storeid=@(Model.storeId)",
+                            area:['400px','300px']
+                        });
+                    },
+                    addUnit: function () {
+                         var index = layer.open({
+                            type: 2,
+                            title: "添加标签",
+                            content: "UnitEdit?aid=@(Model.aId)&storeid=@(Model.storeId)",
+                            area:['400px','300px']
+                        });
+                    },
+                    /*******************************产品规格 begin ********************************/
+                    discarts: function () {
+                        //笛卡尔积
+                        var twodDscartes = function (a, b) {
+                            var ret = [];
+                            for (var i = 0; i < a.length; i++) {
+                                for (var j = 0; j < b.length; j++) {
+                                    ret.push(ft(a[i], b[j]));
+                                }
+                            }
+                            return ret;
+                        }
+                        var ft = function (a, b) {
+                            if (!(a instanceof Array))
+                                a = [a];
+                            var ret = a.slice(0);
+                            ret.push(b);
+                            return ret;
+                        }
+                        //多个一起做笛卡尔积
+                        return (function (data) {
+                            var len = data.length;
+                            if (len == 0)
+                                return [];
+                            else {
+                                var r = data[0];
+                                for (var i = 1; i < len; i++) {
+                                    r = twodDscartes(r, data[i]);
+                                }
+                                return r;
+                            }
+                        })(arguments.length > 1 ? arguments : arguments[0]);
+                    },
+                    formatNum:function(num,mul){
+                        return parseFloat(parseFloat(num * mul).toFixed(2));
+                    },
+                    getFreightTemplate:function(){
+                        thisApp = this;
+                        $.get('/tools/GetDeliveryTemplate?appId=@Model.aId&pageType=@((int)TmpType.拼享惠)&storeId=@Model.storeId').then(function(result){
+                            if(!result.isok){
+                                layer.msg(result.msg);
+                                return;
+                            }
+                            thisApp.freightTemplate = result.dataObj;
+                        }).fail(function(){
+                            alert('运费接口异常');
+                        });
+                    },
+                    GetRowSpan: function (index) {
+                        result = this.pickspecification.reduce(function (sum, currentValue, currentIndex) {
+                            if (currentIndex > index && sum * currentValue.items.length > 0) {
+                                return sum * currentValue.items.length;
+                            }
+                            else {
+                                return sum * 1;
+                            }
+                        }, 1);
+                        return result;
+                    },
+                    //创建规格表格
+                    buildSpecificationTable: function () {
+                        //if(this.pickspecification.length==0&&this.p.specificationdetail!=""){
+                        //    return JSON.parse(this.p.specificationdetail);
+                        //}
+                        //2*3*2
+                        var _t = [];
+                        var that = this;
+                        this.pickspecification.forEach(function (o) {
+                            if (o.items.length > 0) {
+                                _t.push(o.items);
+                            }
+
+                        });
+                        var _result = [];
+                        if (_t.length > 1) {
+                            _result = this.discarts(..._t);
+                        }
+                        return _result;
+                    },
+                    changeStock: function (e) {
+                        var obj = $(e.target);
+                        if (!/^\d{0,7}$/.test(obj.val())) {
+                            layer.msg("请输入正确的库存数", { time: 1000 });
+                            obj.val("");
+                            return;
+                        }
+                        this.sumStock();
+                    },
+                    sumStock: function () {
+                        var that = this;
+                        if (that.pickspecification.length > 0 && that.p.stockLimit) {
+                            Vue.nextTick(function () {
+                                var allcount = 0;
+                                $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                                    var _citemstock = $(o).find(".stock");
+                                    if (/^\d{0,7}$/.test(_citemstock.val())) {
+                                        allcount += parseInt(_citemstock.val());
+                                    }
+                                    else {
+                                        layer.msg("请输入正确的库存数", { time: 1000 });
+                                        _citemstock.val("");
+                                        return;
+                                    }
+
+                                });
+                                that.p.stock = allcount;
+                            })
+                        }
+                    },
+                    changePrice: function (e) {
+                        var obj = $(e.target);
+                        if (!/^[0-9]{1,10}(\.\d{0,2})?$/.test(obj.val())) {
+                            layer.msg("请输入正确的价格", { time: 1000 });
+                            obj.val("");
+                            return;
+                        }
+                    },
+
+                    changeStockLimit: function () {
+                        var that = this;
+                        if (!that.p.stockLimit) {
+                            layer.confirm('不限制库存将清空现在设置的库存数！', function (index) {
+                                //do something
+                                $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                                    $(o).find(".stock").val("")
+                                });
+                                that.p.stock = 0;
+                                layer.close(index);
+
+                            }, function (index) {
+
+                                that.p.stockLimit = true;
+                                layer.close(index);
+                            });
+                        }
+
+                    },
+                    GetRowCount: function (id) {
+                        var _t = this.buildSpecificationTable();
+                        var _check = 0;
+                        for (var i = 0; i < _t.length; i++) {
+                            for (var j = 0; j < _t[i].length; j++) {
+                                if (_t[i][j].id == id) {
+                                    _check += 1;
+
+                                }
+                            }
+                        }
+                        return _check;
+
+                    },
+                    //添加规格
+                    addSpecificationItem: function () {
+                        if (this.specificationlist.length <= 0) {
+                            layer.msg("请先添加产品规格！");
+                            return;
+                        }
+                        if (this.pickspecification.length >= 4) {
+                            layer.msg("最多只能选择4种规格！");
+                            return;
+                        }
+
+                        var _specificationItem = $.extend({}, specificationItem, true);
+                        this.pickspecification.push(_specificationItem);
+                    },
+                    //添加规格值
+                    addSpecificationValue: function (item, index) {
+                        if (item.id == 0) {
+                            layer.msg("请先选择产品规格！");
+                            return;
+                        }
+
+                        $("#addSpecValueModal").modal("show");
+                        this.current_pickspecification_index = index;
+                        this.current_pickspecification_id = item.id;
+                        this.current_specificationlist = this.specificationlist.filter(function (_item) {
+                            return _item.fId == item.id;
+                        });
+                    },
+                    //确认选择的规格值
+                    addSpecValueOK: function () {
+                        var that = this;
+                        this.pickspecification[this.current_pickspecification_index].items = [];
+                        var selarray = JSON.parse(JSON.stringify(this.current_specificationlist.filter(function (item) {
+                            return item.sel;
+                        })));
+                        selarray.forEach(function (o, i) {
+                            that.pickspecification[that.current_pickspecification_index].items.push({
+                                id: o.id,
+                                name: o.name,
+                                fId: o.fId
+                            });
+                        });
+
+                        this.current_pickspecification_index = -1;
+                        this.current_pickspecification_id = -1;
+                        $("#addSpecValueModal").modal("hide");
+
+                        setTimeout(function () {
+                            var jqggtableNotImg = $(".ggtable tr:not(.gg_title)").find(".imgUrl");
+
+                            jqggtableNotImg.each(function (i, o) {
+
+                                if ($(o).attr("src") == "") {
+                                    $(o).parent().next().css("display", "block");
+                                    $(o).css("display", "none");
+                                    $(o).next().css("display", "none");//隐藏图片清除按钮此时还未上传图片
+                                }
+                            });
+                        }, 500);
+
+
+                    },
+                    changeSpecification: function (item) {
+                        var check = this.pickspecification.filter(function (_item) {
+                            return _item.id != 0 && _item.id == item.id;
+                        });
+                        if (check.length > 1) {
+                            layer.msg("不能设置重复的规格！");
+                            item.id = 0;
+                            return;
+                        }
+                        item.items = [];
+                        var selitem = this.specificationlist.find(function (_selitem) {
+                            return _selitem.id == item.id;
+                        });
+                        if (selitem) {
+                            item.name = selitem.name;
+                            item.fId = selitem.fId;
+                        }
+                        this.buildSpecificationTable();
+                    },
+                    setAllPrice: function () {
+                        var that = this;
+                        if (!/^\d*.?\d{0,2}$/.test(that.allPrice)) {
+                            layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+                        else if (parseFloat(this.p.price) > 1000000000) {
+                            layer.msg("产品价格最高只能设置为1000000000！");
+                            return;
+                        }
+                        //var table=this.buildSpecificationTable();
+                        $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                            $(o).find(".price").val(that.allPrice);
+
+                        });
+                        that.p.price = Number(that.allPrice);
+                    },
+                    setAllOriginalPrice: function () {
+                        var that = this;
+                        if (!/^\d*.?\d{0,2}$/.test(that.allOriginalPrice)) {
+                            layer.msg("产品原价请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+                        else if (parseFloat(this.p.price) > 1000000000) {
+                            layer.msg("产品原价最高只能设置为1000000000！");
+                            return;
+                        }
+                        $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                            $(o).find(".original-price").val(that.allOriginalPrice);
+
+                        });
+                    },
+                    setAllGroupPrice: function () {
+                        var that = this;
+                        if (!/^\d*.?\d{0,2}$/.test(that.allGroupPrice)) {
+                            layer.msg("团购价格请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+                        else if (parseFloat(this.p.price) > 1000000000) {
+                            layer.msg("团购价格最高只能设置为1000000000！");
+                            return;
+                        }
+                        $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                            $(o).find(".group-price").val(that.allGroupPrice);
+
+                        });
+                        that.p.groupPrice = Number(that.allGroupPrice);
+                    },
+                    setAllStock: function () {
+                        var that = this;
+                        if (this.p.stockLimit) {
+                            if (that.allStock <= 0) {
+                                layer.msg("限制库存时，库存不能为0");
+                                return;
+                            }
+                        }
+
+                        $(".ggtable tr:not(.gg_title)").each(function (i, o) {
+                            $(o).find(".stock").val(that.allStock);
+
+                        });
+                        this.sumStock();
+                    },
+                    /*******************************产品规格 end ********************************/
+                    UploadImg:function(type,isSpec,index){
+                        var that=this;
+                        that.uploadImgType=type
+                        var framSrc;
+                        var maxCount=5;
+                        var remainCount=0;
+                        if(that.uploadImgType==1){
+                            //表示轮播图
+                            if(that.bannerImg.length>=maxCount){
+                                layer.msg("轮播图最多5张");
+                                return;
+                            }
+                            remainCount=maxCount-that.bannerImg.length;
+                            framSrc="/tools/UpLoadImgFrm?appId=@(Model.aId)&storeId=@(Model.storeId)&multi_selection=1&maxImgSize=2&objKey=bannerImg&remainCount="+remainCount;
+                        }else{
+                            //表示单张图片
+                            maxCount=1;
+                            remainCount=1;
+                            if(isSpec==1){
+                                that.curSpecItemIndex=index;
+                                framSrc="/tools/UpLoadImgFrm?appId=@(Model.aId)&storeId=@(Model.storeId)&multi_selection=0&maxImgSize=2&objKey=curSpecItemImg&objType=1&remainCount="+remainCount;
+
+                            }else{
+                                framSrc="/tools/UpLoadImgFrm?appId=@(Model.aId)&storeId=@(Model.storeId)&multi_selection=0&maxImgSize=2&objKey=imgItem&objType=1&remainCount="+remainCount;
+
+                            }
+                        }
+                        $("#uploadFrame").attr("src",framSrc);
+
+                        $("#addModal_UploadImg").modal('show');
+                    },
+                    clearImg:function(type,index){
+                        var that = this;
+                        if(type>0){
+                            //表示轮播图
+                            if(that.bannerImg.length>0){
+                                that.bannerImg.splice(index,1);
+                            }
+
+                            that.p.slideimgs=that.bannerImg.join(",");
+                        }else{
+                            saveModel.img="";
+                        }
+
+                    },
+                    save:function(){
+                        var that=this;
+                        if(ispost)
+                            return;
+                        var saveModel = JSON.parse(JSON.stringify(this.p));
+                        //名称
+                        if (saveModel.name.trim().length == 0) {
+                            layer.msg("请输入“产品名称”");
+                            return;
+                        }
+                        //分类
+                        if (saveModel.cateId == 0) {
+                            layer.msg("请选择“产品分类”", { time: 1000 });
+                            return;
+                        }
+
+                        //产品图片
+                        saveModel.img = $("#cover_id_img").val();
+                        if (saveModel.img == "") {
+                            layer.msg("请上传“产品图片”", { time: 1000 });
+                            return;
+                        }
+
+                        //轮播图
+                        var imgAlbum_array = [];
+                        $(":hidden[name='imgAlbumList[]']").each(function () {
+                            imgAlbum_array.push(this.value);
+                        });
+                        saveModel.imgAlbum = imgAlbum_array.join(",");
+                        if (saveModel.imgAlbum.length == 0) {
+                            layer.msg("请上传“产品轮播图”", { time: 1000 });
+                            return;
+                        }
+
+                        //原价
+                        if (!/^\d*.?\d{0,2}$/.test(saveModel.originalPrice)) {
+                            layer.msg("“产品原价”请输入大于0的数字，最多两位小数！");
+                            return;
+                        }
+                        else if (saveModel.originalPrice <= 0 || saveModel.originalPrice > 10000000) {
+                            layer.msg("“产品原价”请输入大于0小于10000000的数字，最多两位小数！");
+                            return;
+                        }
+
+                        //价格
+                        if(this.pickspecification.length==0){
+                            if (!/^\d*.?\d{0,2}$/.test(saveModel.price)) {
+                                layer.msg("“产品价格”请输入大于0的数字，最多两位小数！");
+                                return;
+                            }
+                            else if (saveModel.price <= 0) {
+                                layer.msg("请输入“产品价格”");
+                                return;
+                            }
+                            else if (saveModel.price > 10000000) {
+                                layer.msg("“产品价格”不能高于10000000");
+                                return;
+                            }
+                        }
+                        //库存
+                        if (saveModel.stockLimit) {
+                            if (!/^\d{0,7}$/.test(saveModel.stock)||(parseInt(saveModel.stock)) < 0) {
+                                layer.msg("请输入产品库存,库存只能输入>=0的整数！");
+                                return;
+                            }
+                        }
+                        saveModel.groupUserLimit = Number(saveModel.groupUserLimit) || 2;
+                        if (saveModel.groupUserLimit > 5 || saveModel.groupUserLimit<2) {
+                            layer.msg("成团人数最少2人，最多5人！");
+                            return;
+                        }
+                        saveModel.groupUserBuyLimit = Number(saveModel.groupUserBuyLimit) || 0;
+                        if (saveModel.groupUserBuyLimit < 0) {
+                            layer.msg("每人限购数不能小于0！");
+                            return;
+                        }
+                        if (saveModel.unit.length==0||saveModel.unit.length>3) {
+                            layer.msg("“产品单位”不可空，且最多3个字！");
+                            return;
+                        }
+                        if (saveModel.sort) {
+                            if (!/^\d{0,7}$/.test(saveModel.sort)) {
+                                layer.msg("排序只能输入整数！");
+                                return;
+                            }
+                        }
+                        if (saveModel.groupUserBuyLimit > 5) {
+                            layer.msg("最多5人团！");
+                            return;
+                        }
+                        //标签
+                        saveModel.labels = saveModel.labelList.join(',');
+
+                        //规格
+                        var gglist=this.buildSpecificationTable();
+                        //规格详情列表
+                        var ggdetail=[];
+                        var jqggtable = $(".ggtable tr:not(.gg_title)");
+                        if (gglist.length > 40) {
+                            alert("最多只能添加40个产品规格组合");
+                            return;
+                        }
+                        if(gglist.length>0){
+                            for (var gi = 0; gi < gglist.length; gi++) {
+                                var _imgUrl=jqggtable.eq(gi).find(".imgUrl").attr("src");
+
+                                var _cstock=jqggtable.eq(gi).find(".stock").val();
+                                _cstock = parseInt(_cstock) || 0;
+                                var _price = Number(jqggtable.eq(gi).find(".price").val())||0;//单买价
+                                var _groupPrice = 0;
+                                //如果是拼团商品
+                                _groupPrice = Number(jqggtable.eq(gi).find(".group-price").val()) || 0;
+                                if (_groupPrice > _price) {
+                                    layer.msg("拼团返现不能大于单买价！");
+                                    return;
+                                }
+                                if (!/^\d{1,}.?(\d{0,2})?$/.test(_price) ||
+                                    !/^\d{1,}.?(\d{0,2})?$/.test(_groupPrice)){
+                                    layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                                    return;
+                                }
+                                var _cids = [];
+                                var _cnames = [];
+                                gglist[gi].forEach(function(_gi_item){
+                                    _cids.push(_gi_item.id);
+                                    _cnames.push(that.pickspecification.find(p => p.id == _gi_item.fId).name+":"+_gi_item.name);
+                                });
+                                ggdetail.push({
+                                    "id": _cids.join("_"),
+                                    "name": _cnames.join(","),
+                                    "price": _price,
+                                    "groupPrice": _groupPrice,
+                                    "stock": _cstock,
+                                    "imgUrl":_imgUrl
+                                });
+                            }
+                        }
+                        else if(this.pickspecification.length==1&&this.pickspecification[0].items.length>0){
+                            for (var gi = 0; gi < this.pickspecification[0].items.length; gi++) {
+                                var _imgUrl=jqggtable.eq(gi).find(".imgUrl").attr("src");
+
+                                var _cstock=jqggtable.eq(gi).find(".stock").val();
+                                _cstock=parseInt(_cstock)||0;
+                                var _price = jqggtable.eq(gi).find(".price").val();
+
+                                //如果是拼团商品
+                                var _groupPrice = 0;
+                                _groupPrice = Number(jqggtable.eq(gi).find(".group-price").val()) || 0;
+                                if (_groupPrice > _price) {
+                                    layer.msg("拼团返现不能大于单买价！");
+                                    return;
+                                }
+
+                                if (!/^\d{1,}.?(\d{0,2})?$/.test(_price) ||
+                                    !/^\d{1,}.?(\d{0,2})?$/.test(_groupPrice)) {
+                                    layer.msg("产品价格请输入大于0的数字，最多两位小数！");
+                                    return;
+                                }
+
+
+                                var _citem=this.pickspecification[0].items[gi];
+                                ggdetail.push({
+                                    "id": _citem.id,
+                                    "name": that.pickspecification[0].name + ":" + _citem.name,
+                                    "price": _price,
+                                    "groupPrice": _groupPrice,
+                                    "stock": _cstock,
+                                    "imgUrl":_imgUrl
+                                });
+                            }
+
+                        }
+                        //选择最小价格 作为产品的展示价格
+                        if (ggdetail.length > 0) {
+                            var ggdetail_temp = JSON.parse(JSON.stringify(ggdetail));
+                            ggdetail_temp.sort(function (a, b) {
+                                return a.price - b.price;
+                            });
+                            //最小的价格/单买价
+                            saveModel.price = ggdetail_temp[0].price;
+                            ggdetail_temp.sort(function (a, b) {
+                                return b.groupPrice - a.groupPrice;
+                            });
+                            //最高返现
+                            saveModel.groupPrice = ggdetail_temp[0].groupPrice;
+                        }
+                        saveModel.originalPrice = parseInt((Number(saveModel.originalPrice) || 0) * 100) ;
+                        saveModel.price = parseInt((Number(saveModel.price) || 0) * 100) ;
+                        saveModel.groupPrice = parseInt((Number(saveModel.groupPrice) || 0) * 100);
+
+                        if (ggdetail.length > 0) {
+                            for (var i = 0; i < ggdetail.length; i++) {
+                                ggdetail[i].price = parseInt((Number(ggdetail[i].price) || 0) * 100);
+                                ggdetail[i].groupPrice = parseInt((Number(ggdetail[i].groupPrice) || 0) * 100);
+                            }
+                        }
+                        if (saveModel.groupPrice > 0) {
+                            if (saveModel.groupPrice < 1*100 || saveModel.groupPrice > saveModel.price || saveModel.groupPrice > 20000*100) {
+                                layer.msg("返现金额不能小于1，不能大于产品价格且最高不能大于2万！");
+                                return;
+                            }
+                        }
+
+                        saveModel.specificationdetail=JSON.stringify(ggdetail);
+                        saveModel.pickspecification=JSON.stringify(this.pickspecification);
+
+                        //return;
+
+                        //滚动图片
+                        saveModel.aId = @(Model.aId);
+                        saveModel.storeId=@(Model.storeId)
+
+                        ispost=true;
+                        saveModel.description = comeditor.getContent();
+
+                        var l_index = layer.msg('数据提交中...', {
+                                icon: 16,
+                                shade: 0.5
+                        });
+
+
+
+                        $.post("/PinAdmin/Product/GoodEdit?aid=@(Model.aId)&storeid=@(Model.storeId)", $.extend(saveModel, { act:"edit"}),function(data){
+                            layer.close(l_index);
+                            ispost = false;
+                                    if (data.code == 0) {
+                                        layer.alert(data.msg, { icon: 0 });
+                                    } else {
+                                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                                            parent.layer.close(index);
+                                            parent.location.reload();
+                                        });
+                                    }
+                        });
+                    },
+                }
+            });
+        });
+
+
+
+    </script>
+
+}

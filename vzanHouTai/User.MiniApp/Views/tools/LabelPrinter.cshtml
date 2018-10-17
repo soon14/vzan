@@ -1,0 +1,166 @@
+﻿@model object
+@{
+    Layout = "";
+    ViewBag.Title = "打印表单";
+}
+
+<head>
+    <link rel="stylesheet" href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=2" />
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/printThis.js"></script>
+</head>
+
+<body>
+    <div id="printHolder">
+        <div style="padding:1rem">
+            <el-button @@click="print" type="primary" icon="el-icon-printer" style="float:left;margin-bottom:1rem">打印</el-button>
+            <span class="clearfix"></span>
+            <div class="Print_Item_List_PreView">
+                <div v-for="(Item,index) in orderData.Item">
+                    <el-card class="box-card" style="margin-bottom:.8rem">
+                        <div class="text item">
+                            <el-row v-bind:gutter="20">
+                                <el-col v-bind:span="12"><div class="grid-content bg-purple" style="float:left">#{{orderData.OrderId}}</div></el-col>
+                                <el-col v-bind:span="12"><div class="grid-content bg-purple" style="float:right">{{index+1}}/{{orderData.Item.length}}</div></el-col>
+                            </el-row>
+                            <el-row v-bind:gutter="20" style="text-align:center">
+                                <el-col v-bind:span="24"><div class="grid-content bg-purple">{{Item.Title}}</div></el-col>
+                            </el-row>
+                            <el-row v-bind:gutter="20" style="text-align:center">
+                                <el-col v-bind:span="23"><div class="grid-content bg-purple">{{Item.Spec.map(str => '['+str+']').join('')}}</div></el-col>
+                                <el-col v-bind:span="1"><div class="grid-content bg-purple"></div></el-col>
+                            </el-row>
+                            <el-row v-bind:gutter="20">
+                                <el-col v-bind:span="12"><div class="grid-content bg-purple" style="float:left">{{Item.Date }}</div></el-col>
+                                <el-col v-bind:span="12"><div class="grid-content bg-purple" style="float:right">￥{{Item.Price * Item.Amount * 0.01 }}</div></el-col>
+                            </el-row>
+                        </div>
+                    </el-card>
+                </div>
+            </div>
+        </div>
+        <div ref="form">
+            <ul v-for="(Item,index) in orderData.Item" style="height:31mm;width:36mm;display:flex;flex-direction:column;justify-content:center;overflow:hidden;" v-show="isPrint">
+                <li class="label_header">
+                    <span style="float:left;">#{{orderData.OrderId}}</span>
+                    <span style="float:right">{{index+1}}/{{orderData.Item.length}}</span>
+                    <span class="clearfix"></span>
+                </li>
+                <li style="text-align:center;">
+                    <div style="text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">{{Item.Title}}</div>
+                    <span class="clearfix"></span>
+                    <div style="display:inline;font-size:8px" v-if="Item.Spec.length">&ensp;{{Item.Spec.map(str => '['+str+']').join('')}}&ensp;</div>
+                </li>
+                <li class="label_foot">
+                    <span>{{Item.Date }}</span>
+                    <span style="float:right;font-weight:600">￥{{Item.Price * Item.Amount * 0.01 }}</span>
+                    @*<span class="clearfix"></span>*@
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+<style>
+    .label_header{
+        font-size:10px;border-bottom:solid black 1px;position:relative;bottom:3mm
+    }
+    .label_foot{
+        font-size:10px;border-top:solid black 1px;position:relative;top:3mm;
+    }
+</style>
+
+<script id="printData" type="application/json">
+    @Html.Raw(Json.Encode(Model))
+</script>
+
+<input id="printType" type="hidden" value="@ViewBag.printType" />
+
+<script>
+    var printData = document.getElementById('printData').innerHTML;
+    var printType = document.getElementById('printType').value;
+    //打印Vue组件
+    $(function () {
+        app = new Vue({
+            el: '#printHolder',
+            data: {
+                orderData: JSON.parse(printData),
+                printType: printType,
+                isPrint: false
+            },
+            computed: {
+                ItemIndex: function () {
+                    var total = 0;
+                    this.orderData.Item.map(item => item.Amount).forEach(amount => total += amount);
+                    return total;
+                },
+            },
+            created: function () {
+                var thisApp = this;
+                var orderItem = thisApp.orderData.Item;
+                orderItem.forEach((item, index) => {
+                    while (item.Amount > 1) {
+                        thisApp.orderData.Item.splice(index, 0, item);
+                        item.Amount -= 1;
+                    }
+                });
+            },
+            methods: {
+                print: function () {
+                    var thisApp = this;
+                    thisApp.isPrint = true;
+                    $(this.$refs.form).printThis({
+                        importCSS: true,
+                        importStyle: true,
+                        debug: false,
+                        //base: false,
+                        //printDelay:100,
+                        printContainer: true,
+                        header: null,
+                        footer: null,
+                        base: null,
+                        pageTitle: null,
+                        //doctypeString: '...'
+                        beforePrintEvent: function () { },
+                        afterPrint: function () { thisApp.isPrint = false; },
+                    });
+                    setTimeout(function () {
+                        window.parent.layer.closeAll();
+                    },500)
+                },
+                format: function (row, column) {
+                    return String.raw`${column.label}${row[column.property]}`;
+                }
+            }
+        })
+    })
+
+    
+</script>
+
+
+<style>
+    iframe {
+        display: none;
+    }
+    /*.PageNext{page-break-after: always;}*/
+
+    @@media print {
+        @@page {
+            size: 40mm, 30mm;
+            margin-top:0mm;
+            margin-bottom:0mm;
+            margin-left:.2cm;
+            margin-right:.2cm;
+        }
+        nav, aside {
+            display: none;
+        }
+    }
+</style>

@@ -1,0 +1,350 @@
+﻿@using User.MiniApp.comment
+@using Entity.MiniApp.Conf
+@model Moduls
+@{
+    //行业版同城配置
+    ViewBag.Title = "首页";
+    ViewBag.PageType = 1;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+ 
+
+<style>
+    .edui-modal {
+        margin-top: 150px;
+    }
+
+    .twxq-new-kuang {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-right: 10px;
+        background: #fff;
+    }
+
+    .twxq-edit-zhanshi {
+        border: 2px dashed #fc7d7d;
+        padding: 10px;
+        min-height: 108px;
+        position: relative;
+    }
+
+    .spgl-bianji-bt {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: inline-block;
+        background-color: rgba(0,0,0,0.3);
+        color: #fff;
+        padding: 0 5px;
+        margin-left: 1px;
+        font-size: 12px;
+    }
+
+    .bz {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .spxqq-f p:first-child {
+        font-size: 17px;
+    }
+
+    .spxqq-f {
+        text-align: center;
+        margin-top: 17px;
+        line-height: 25px;
+    }
+
+    #label_1 {
+        color: white;
+        display: none;
+    }
+
+    .checkKey {
+        background-color: coral;
+        color: white !important;
+        border-color: transparent;
+    }
+
+    .noCheckKey {
+        background-color: white;
+        border-color: black;
+        color: black;
+    }
+</style>
+@Html.HiddenFor(m => m.Id)
+
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            <tr>
+                <td>标题</td>
+                <td>
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control width400",maxlength=25})
+                    <label class="forinputmassage" for="Title">标题(必填)</label>
+                </td>
+            </tr>
+            @*<tr>
+                <td><p class="model_right_t_font">轮播图片</p></td>
+                <td>
+                    @Html.FileUploadFor("ImgUrl", maxFiles: 9, initImageList: (List<object>)ViewBag.ImgUrlList, controllerWidth: 360, removeCallback: "removeAttachmentFunction")
+                    <label class="forinputmassage">点击灰色区域选择上传图片 ( 640*300px )</label>
+                </td>
+                <td></td>
+            </tr>*@
+            <tr>
+                <td style="width:120px;">轮播图片</td>
+                @*<td>
+                    @Html.FileUploadFor("ImgUrl", maxFiles: 9, initImageList: (List<object>)ViewBag.ImgUrlList, maxFilesize: 9, controllerWidth: 400, removeCallback: "removeAttachmentFunction", awm: 1)
+                    <label class="forinputmassage">点击灰色区域选择上传图片 ( 640*360px )</label>
+                </td>*@
+                <td>
+                    @Html.FileUploadFor("ImgUrl", maxFiles: 9, initImageList: (List<object>)ViewBag.ImgUrlList, maxFilesize: 9, controllerWidth: 400, removeCallback: "removeAttachmentFunction", awm: 1)
+                    <label class="forinputmassage">点击灰色区域选择上传图片 ( 640*360px )</label>
+                </td>
+            </tr>
+            <tr style="display:none;">
+                <td>底部标题</td>
+                <td>
+                    @Html.TextBoxFor(m => m.Content2, new { @class = "form-control width400", maxlength = 25 })
+                    <label class="forinputmassage" for="Content2">底部标题(必填)</label>
+                </td>
+            </tr>
+            <tr>
+                <td>简介</td>
+                @*<td>@Html.TextAreaFor(m => m.Content, new { @class = "form-control width400", rows = "4" })</td>*@
+                <td>
+                    <script type="text/plain" id="editor" style="width:60%;height:260px;">
+                    </script>
+                </td>
+            </tr>
+            <!--隐藏值-->
+            <input type="hidden" id="appId" value="@ViewBag.appId" />
+            <input type="hidden" id="Level" value="@ViewBag.Level" />
+            <input type="hidden" id="keyid" value="@Model.Id" />
+        </table>
+    </form>
+</div>
+<div class="col-md-offset-2">
+    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+    <input type="button" class="btn btn-default width100" onclick="self.location=document.referrer;" value="返回" />
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- #region 百度编辑器 -->
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<!-- #endregion -->
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.Content)
+</script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+@section script{
+    <script>
+
+        $(function () {
+            //#region 在线富文本编辑器
+            var ue = UE.getEditor('editor', {
+                //toolbar: [
+                //    ' undo redo | bold italic underline strikethrough |  forecolor backcolor |',
+                //    '| justifyleft justifycenter justifyright justifyjustify | image ',
+
+                //],
+                toolbars: [
+                    ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                    ['paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain'],
+                    ['simpleupload', 'insertimage']
+                ],
+                imageUrl: "/Upload/Image?cityid=" + localStorage.cityInfoId,
+                autoHeight: false
+            });
+            //对编辑器的操作最好在编辑器ready之后再做
+            ue.ready(function () {
+                if ($("#js_article_content").html() != "") {
+                    var vHtml = $("#js_article_content").html();
+                    ue.setContent(vHtml);
+                }
+            });
+            //当富文本框内容发生改变时,展示框也要发生改变
+            ue.addListener('selectionchange', function (editor) {
+                if (ue.hasContents()) {
+                    jQuery(".spgl-bianji-bt").siblings().remove();
+                    jQuery(".spgl-bianji-bt").before(ue.getContent());
+                } else {
+                    var html = '<div class="spxqq-f"><p>内容</p><p>可自由编辑</p></div><a class="spgl-bianji-bt">编辑</a>'
+                    jQuery('.twxq-edit-zhanshi').html(html);
+                }
+            });
+            //#endregion
+
+
+            $("a").on('click', function () {
+                if ($(this).attr("Class").indexOf("checkKey") > -1) {
+                    $(this).removeClass("checkKey");
+                    $(this).addClass("noCheckKey");
+                } else if ($(this).attr("Class").indexOf("noCheckKey") > -1) {
+                    $(this).removeClass("noCheckKey");
+                    $(this).addClass("checkKey");
+                }
+
+            })
+
+            if ($('#ddStoreTypeDetail option').length === 0) {
+                $('#ddStoreTypeDetail').hide();
+            }
+
+            // #region 保存
+            $('#saveBtn').click(function () {
+                if ($('#Title').val().length < 1) {
+                    $('#Title').focus().select();
+                    AppTools.Alert("请输入标题");
+                    return;
+                }
+                if ($('input[name="ImgUrl"]') == undefined)
+                {
+                    AppTools.Alert("请输入商城轮播图");
+                    return;
+                }
+                //if ($('#Content2').val().length < 1 || $('#Content2').val().length > 25) {
+                //    $('#Content2').focus().select();
+                //    AppTools.Alert("请输入底部标题 (必填, 长度25字)");
+                //    return;
+                //}
+
+                var Content = ue.getContent();
+                if (Content.length < 1) {
+                    AppTools.Alert("请输入简介 (必填)");
+                    return;
+                }
+
+                $('#saveBtn').attr('disabled', "true");
+                $('#loadModal').modal('show');
+
+                var imgArray = [];
+                saveStore(imgArray.join());
+            });
+
+            function saveStore(imgUrlString) {
+                var appId = $('#appId').val();
+                var Level = $("#Level").val();
+                var LogoUrl = $('div[class="dz-image"]>img');
+                var imgArray = [];
+                var imgs = $('input[name="ImgUrl"]');
+                for (var j = 0; j < imgs.length; j++) {
+                    imgArray.push($(imgs[j]).val());
+                }
+                var ImgUrl = imgArray.join();
+                var Hidden = 1;
+                var keyid = $("#keyid").val();
+                var Content2 = $("#Content2").val();
+                var title = $("#Title").val();
+
+                var Content = ue.getContent();
+                //Base64加密
+                var b = new Base64();
+                if (Content.length > 0)
+                {
+                    Content = b.encode(Content);
+                }
+
+                $.post('/officialweb/AddOrEdit',
+                    {
+                        Id: keyid,
+                        appId: appId,
+                        Level: Level,
+                        Hidden: Hidden,
+                        Content: Content,
+                        ImgUrl: ImgUrl,
+                        Content2: Content2,
+                        Title: title,
+                        State: 1,
+                        isdecode: true,
+                    },
+                    function (data) {
+                        $('#saveBtn').removeAttr('disabled');
+                        $('#loadModal').modal('hide');
+                        AppTools.Alert(data.Message);
+                        window.location.reload();
+                    });
+            }
+            // #endregion
+        });
+
+        function removeAttachmentFunction(file) {
+            if (file && file.id) {
+                if (confirm("删除后不可恢复，确认删除吗？")) {
+                    // 删除Logo
+                    $.get('/officialweb/DeleteImgIndex?id=' + file.id,
+                        function (data) {
+                            if (!data.Success) {
+                                AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                                return e.ee;
+                            }
+                        });
+                }
+                else
+                {
+                    window.location.reload();
+                }
+            }
+        }
+    </script>
+}

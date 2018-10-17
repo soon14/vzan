@@ -1,0 +1,693 @@
+﻿@model ViewModel<EntNews>
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == (int)TmpType.小程序专业模板)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "编辑资讯";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+
+    List<EntNewsType> newstypelist =  EntNewsTypeBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid), 12, 1, "*", "id asc");
+
+    var pagemodel = Model.DataModel;
+
+    List<VipLevel> userClass = ViewBag.userClass;
+}
+
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" />
+<script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+<style>
+    .picklabels { white-space: normal; word-break: break-all; }
+    .picklabels span { cursor: pointer; padding: 5px 10px; border: 1px solid #5B94FD; color: #5B94FD; border-radius: 5px; text-align: center; display: inline-block; margin: 10px 10px 0 0; }
+    .picklabels span.sel { background-color: #5B94FD; color: #fff; }
+    .btn-primary { background-color: rgba(16, 142, 233, 1) !important; color: #fff; border-color: rgba(16, 142, 233, 1) !important; }
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+    .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+    .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+    .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .el-transfer-panel__body { height: 336px; }  .el-transfer-panel__list { min-height: 284px; }
+</style>
+<div id="app" v-cloak>
+    <div>
+        <input type="button" value="保存" class="btn btn-primary" v-on:click="save" />
+
+        <a href="/@(dirName)/news?appId=@appid" class="btn btn-default">返回</a>
+    </div>
+    <div class="wrap mt10">
+        <h2 class="region-head">基础信息</h2>
+        <table width="50%" class="formtable">
+            <tr>
+                <td width="125" align="right"><span class="danger">*</span>标题：</td>
+                <td align="left">
+                    <input type="text" name="" id="" v-model="p.title" class="form-control" placeholder="必填，100个字以内" size="100" maxlength="100" />
+                </td>
+            </tr>
+            <tr>
+                <td width="125" align="right">简介：</td>
+                <td align="left">
+                    <textarea maxlength="255" v-model="p.description" class="form-control" rows="5"></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td align="right" valign="top">图片：</td>
+                <td align="left">
+                    <div class="pimg">
+                        <img style="height:150px;width:150px;" v-bind:src="p.img" v-if="p.img!=''" v-on:click="UploadImg(0)" />
+                        <div class="plus-button" v-on:click="UploadImg(0)" v-else>
+                            <div class="s-image-uploader-wrapper">
+                                <div>
+                                    <div class="plus">+</div>
+                                    <div class="plus-label">上传图片</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <b class="warn">建议尺寸：750*750px</b>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"><span class="danger">*</span>所属分类：</td>
+                <td align="left">
+                    <div class="d-flex d-flex-center">
+                        <select class="form-control flex" v-model="p.typeid">
+                            <option disabled value="">请选择</option>
+                            <option v-for="(item,index) in newstypelist" v-bind:value="item.id">{{item.name}}</option>
+                        </select>
+                        <input type="button" class="btn btn-primary ml10" value="＋增加分类" v-on:click="addnewptype" />
+                    </div>
+                </td>
+            </tr>
+            @if (Model.PageType == (int)TmpType.小程序专业模板)
+            {
+                <tr>
+                    <td width="125" align="right">访问量：</td>
+                    <td align="left"><input type="text" class="form-control" style="width:100px" v-model.number="p.PV"/>
+                    <span class="warn">小程序端显示时访问量=访问量+虚拟访问量</span></td>
+                </tr>
+                <tr>
+                    <td width="125" align="right">虚拟访问量：</td>
+                    <td align="left"><input type="text" class="form-control" style="width:100px" v-model.number="p.VirtualPV"/></td>
+                </tr>
+            }
+        </table>
+        <br />
+        @if (Model.PageType == (int)TmpType.小程序专业模板)
+        {
+
+            <h2 class="region-head">付费相关</h2>
+            <table width="50%" class="formtable">
+                <tr>
+                    <td width="125" align="right">是否付费：</td>
+                    <td align="left">
+
+                        <label for="free" style="padding-right:1rem;">
+                            <input id="free" type="radio" v-bind:value="false" v-model="p.ispay" />
+                            否
+                        </label>
+
+                        <label for="pay">
+                            <input id="pay" type="radio" v-bind:value="true" v-model="p.ispay" title="是" />
+                            是
+                        </label>
+                    </td>
+                </tr>
+                <tr v-show="p.ispay">
+                    <td width="125" align="right"><span class="danger">*</span>销售金额：</td>
+                    <td align="left">
+                        <input type="text" v-model="payContent.Amount" class="form-control" placeholder="付费必填" style="width:auto" maxlength="7" />
+                    </td>
+                </tr>
+                <tr v-show="p.ispay">
+                    <td width="125" align="right">免费会员：</td>
+                    <td align="left">
+                        <div class="d-flex d-flex-center">
+                            <select v-model="selUserClass" class="form-control flex">
+                                <option disabled v-bind:value="null">请选择</option>
+                                <option v-for="(item,index) in userclass" v-bind:value="item.Id">{{item.name}}</option>
+                            </select>
+                            <input v-show="!selUserClass" type="button" class="btn btn-primary ml10" value="＋确认" onclick="layer.msg('请选择会员')" />
+                            <input v-show="selUserClass" type="button" class="btn btn-primary ml10" value="＋确认" v-on:click="addUserClass(userclass.find(item => item.Id === selUserClass))" />
+                        </div>
+                        <div style="color:red;">
+                            <br />
+                            注意：视频付费可设置免费会员等级，但不支持使用优惠券或会员折扣购买。
+                        </div>
+                    </td>
+                </tr>
+                <tr v-show="p.ispay">
+                    <td width="125" align="right"></td>
+                    <td align="left">
+                        <div class="d-flex d-flex-center">
+                            <input v-for="(item,index) in selHolder"
+                                   v-bind:value="item.name"
+                                   v-bind:style="item.state ? 'text-decoration:line-through' : 'text-decoration:none'"
+                                   @@mouseover="item.state = 1"
+                                   @@mouseout="item.state = 0"
+                                   @@click="item.state = 0;selHolder.splice(index,1)"
+                                   type="button" class="btn btn-secondary ml10" style="margin-left:0;margin-right:1rem" />
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <br />
+        }
+        <h2 class="region-head">详情</h2>
+        <table width="50%" class="formtable">
+            @if (Model.PageType == (int)TmpType.小程序专业模板)
+            {
+                <tr>
+                    <td width="125" align="right">资讯类型：</td>
+                    <td align="left">
+                        <label for="articleContent" style="margin-right:1rem;">
+                            <input id="articleContent" type="radio" v-bind:value="@((int)PaidContentType.专业版图文)" v-model="payContent.ContentType" />
+                            文章
+                        </label>
+                        <label for="videoContent" style="margin-right:1rem;">
+                            <input id="videoContent" type="radio" v-bind:value="@((int)PaidContentType.专业版视频)" v-model="payContent.ContentType" />
+                            视频
+                        </label>
+                        <label for="audioContent">
+                            <input id="audioContent" type="radio" v-bind:value="@((int)PaidContentType.专业版音频)" v-model="payContent.ContentType" />
+                            音频
+                        </label>
+                    </td>
+                </tr>
+                <tr v-show="payContent.ContentType === @((int)PaidContentType.专业版视频)">
+                    <td width="125" align="right"><span class="danger">*</span>视频封面：</td>
+                    <td align="left">
+                        <div class="pimg">
+                            <img style="height:150px;width:150px;" v-bind:src="payContent.VideoCover" v-if="isHasVideoCover" v-on:click="UploadImg(2)" />
+                            <div class="plus-button" v-on:click="UploadImg(2)" v-else>
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <b class="warn">建议尺寸：750*400px</b>
+                    </td>
+                </tr>
+                <tr v-show="payContent.ContentType === @((int)PaidContentType.专业版视频)">
+                    <td width="125" align="right"><span class="danger">*</span>上传视频：</td>
+                    <td align="left">
+                        <input v-bind:disabled="videoUploadPercent > 0 && videoUploadPercent <= 99" id="videUploadBtn" type="button" class="btn btn-primary ml10" v-bind:value="uploaderMsg" />
+                        <a v-show="!!payContent.VideoURL" v-bind:href="payContent.VideoURL" target="_blank" class="btn btn-danger ml10" style="max-width:395px;text-overflow:ellipsis;white-space:normal">
+                            <i class="layui-icon">&#xe6ed;</i>
+                            查看视频
+                        </a>
+                        <b class="warn" style="margin-left:10px">视频尺寸：必须小于1GB</b>
+                    </td>
+                </tr>
+                <tr v-show="payContent.ContentType === @((int)PaidContentType.专业版音频)">
+                    <td width="125" align="right"><span class="danger">*</span>上传视频：</td>
+                    <td align="left">
+                        <input v-bind:disabled="audioUploadPercent > 0 && audioUploadPercent <= 99" id="audioUploadBtn" type="button" class="btn btn-primary ml10" v-bind:value="audioUploaderMsg" />
+                        <a v-show="!!payContent.AudioURL" v-bind:href="payContent.AudioURL" target="_blank" class="btn btn-danger ml10" style="max-width:395px;text-overflow:ellipsis;white-space:normal">
+                            <i class="layui-icon">&#xe688;</i>
+                            查看音频
+                        </a>
+                        <b class="warn" style="margin-left:10px">音频尺寸(MP3)：必须小于500MB</b>
+                    </td>
+                </tr>
+            }
+            <tr v-show="!payContent.ContentType">
+                <td align="right" width="125">轮播图：</td>
+                <td>
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-for="(item,index) in bannerImg">
+                                <img :src="item" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(1,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">内容详情：</td>
+                <td>
+                    <div id="editor" style="width:375px;height:360px;"></div>
+                </td>
+            </tr>
+            @if (Model.PageType == (int)TmpType.小程序专业模板)
+            {
+            <tr>
+                <td align="right">推荐商品：</td>
+                <td>
+                    <el-transfer style="text-align: left; display: inline-block;margin-bottom:2rem"
+                                 v-model="recommendedItem"
+                                 filterable
+                                 v-bind:props="{key: 'Id',label: 'Name'}"
+                                 v-bind:titles="['可选商品', '已选商品']"
+                                 v-bind:button-texts="['移除', '新增']"
+                                 v-bind:format="{可选: '${total}',选中: '${checked}/${total}'}"
+                                 v-bind:data="allItem.products">
+                    </el-transfer>
+                </td>
+            </tr>
+            }
+        </table>
+        <!-- #region 添加分类 -->
+        <div class="modal bs-example-modal" id="addModal_ptype" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            添加分类
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex d-flex-center">
+                            <div>新增分类名称：</div>
+                            <div class="flex"><input maxlength="10" placeholder="分类名称" id="nameVal" v-model="editptypeitem.name" type="text" class="form-control"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align: center;">
+                        <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="addnewptypeOK">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- #endregion -->
+
+
+    </div>
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+</div>
+<script>
+
+    var slideimg=@Html.Raw(JsonConvert.SerializeObject(Model.DataModel.slideimgs.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList()));
+
+    var ispost=false;
+    var aid=@appid;
+    var ptypeitem = {
+        id:0,
+        name: "",
+        aid:aid,
+        state:1,
+    };
+    var plabelitem = {
+        id:0,
+        name: "",
+        aid:aid,
+        state:1,
+    };
+    var punititem = {
+        id:0,
+        name: "",
+        aid:aid,
+        state:1,
+    };
+    var comeditor=null;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            p: @Html.Raw(JsonConvert.SerializeObject(pagemodel)),
+            newstypelist:JSON.parse('@Html.Raw(JsonConvert.SerializeObject(newstypelist))'),
+            editptypeitem:JSON.parse(JSON.stringify(ptypeitem)),
+            userclass: JSON.parse('@Html.Raw(JsonConvert.SerializeObject(userClass))'),
+            plabeladd:false,
+            picklabel:[],
+            comeditor:null,
+            bannerImg:slideimg,
+            uploadImgType:0,
+            imgItem:"",
+            videoCover:'',
+            selUserClass: null,
+            selHolder:[],
+            payContent: JSON.parse('@Html.Raw(JsonConvert.SerializeObject(pagemodel.updatecontent ?? new Entity.MiniApp.Tools.PayContent()))'),
+            videoUploadPercent:0,
+            audioUploadPercent: 0,
+            videoFileName:'',
+            allItem:[],
+            recommendedItem:[],
+            isloadingItem:false,
+            isSelectItem:false,
+        },
+        mounted: function () {
+            var that=this;
+            if ($(".edui-container").length == 0) {
+                //that.comeditor.destroy();
+                that.BuildEditor();
+            }
+            this.selHolder = this.userclass.filter(user => (this.payContent.Exclusive || '').split(',').map(userId => Number(userId)).indexOf(user.Id) > -1);
+            this.videoUploadINI();
+            this.audioUploadINI();
+            this.payContent.Amount = Number((this.payContent.Amount / 100).toFixed(2));
+            this.getItem();
+            if(this.p.RecommendedItem){
+                this.recommendedItem = this.p.RecommendedItem.split(',').map(id => Number(id));
+            }
+            console.log("mounted");
+        },
+        computed:{
+            isHasVideoCover:function(){
+                return !!this.payContent.VideoCover;
+            },
+            uploaderMsg:function(){
+                return !!this.videoUploadPercent ? String.raw`+上传：${this.videoUploadPercent}%`: '+上传';
+            },
+            audioUploaderMsg:function(){
+                return !!this.audioUploadPercent ? String.raw`+上传：${this.audioUploadPercent}%`: '+上传';
+            }
+        },
+        watch:{
+            imgItem:function(){
+                var that=this;
+                that.p.img=that.imgItem;
+            },
+            videoCover:function(value){
+                this.payContent.VideoCover = value;
+            },
+            recommendedItem:function(selectedItem){
+                if(selectedItem.length > 10){
+                    this.p.RecommendedItem = selectedItem.slice(0,10).join(',');
+                    this.recommendedItem = selectedItem.slice(0,10);
+                    return;
+                }
+                this.p.RecommendedItem = selectedItem.join(',');
+            },
+        },
+        methods:{
+            addUserClass:function(newItem){
+                if(this.selHolder.find(item => item.Id === newItem.Id)){
+                    return;
+                }
+                this.selHolder.push(newItem);
+            },
+            save:function(){
+                var that=this;
+                if(ispost)
+                    return;
+                if($.trim(this.p.title).length==0){
+                    layer.msg("标题不能为空！");
+                    return;
+                }
+                if($.trim(this.p.title).length>100){
+                    layer.msg("标题不能超过100个字！");
+                    return;
+                }
+
+                //分类
+                if(this.p.typeid==0){
+                    layer.msg("请选择分类！",{time:1000});
+                    return;
+                }
+                if (that.p.ispay && that.payContent.Amount <= 0)
+                {
+                    layer.msg("销售金额设置必须大于零"); return;
+                }
+                if(that.payContent.ContentType == 1 && !that.payContent.VideoCover)
+                {
+                    layer.msg("您还没有上传视频封面"); return;
+                }
+                if(that.payContent.ContentType == 1 && !that.payContent.VideoURL)
+                {
+                    layer.msg("您还没有上传视频"); return;
+                }
+                if(that.payContent.ContentType == 2 && !that.payContent.AudioURL)
+                {
+                    layer.msg("您还没有上传音频"); return;
+                }
+
+                //滚动图片
+                that.p.slideimgs=that.bannerImg.join(",");
+                that.p.aid=aid;
+                if (comeditor != null) {
+                    that.p.content=comeditor.getContent();
+                }
+
+                var updateContent = JSON.parse(JSON.stringify(that.payContent));
+                updateContent.Exclusive = that.selHolder.map(user => user.Id).join(',');
+                updateContent.Amount = Number((that.payContent.Amount * 100).toFixed(0));
+
+                ispost=true;
+                $.post("/@(dirName)/newsedit", $.extend(that.p,{appId:aid,updatecontent:updateContent}),function(data){
+                    console.log(data);
+                    if(data&&data.isok){
+                        layer.msg(data.msg,{time:1000});
+                        window.location.href="/@(dirName)/news?appId="+aid;
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                        ispost = false;
+                    }
+                });
+            },
+            addnewptype:function(){
+                if(this.newstypelist.length>=12){
+                    layer.alert("最多只能添加12个分类，请编辑已有的分类或删除部分分类后再进行新增。");
+                    return;
+                }
+                $('#addModal_ptype').modal('show');
+
+            },
+            //点击添加单位
+            addnewunit:function(){
+                $("#addModal_punit").modal("show");
+            },
+            addnewptypeOK:function(){
+                var that=this;
+                var _typename=$.trim(that.editptypeitem.name);
+                if(_typename.length==0||_typename.length>10){
+                    layer.msg("分类名称不能为空，且不能超过10个字",{time:1000});
+                    return;
+                }
+                $.post("/@(dirName)/newstype", $.extend(that.editptypeitem,{appId:aid}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            $('#addModal_ptype').modal('hide');
+                            layer.msg("保存成功",{time:1000});
+                            if(ptypeitem.id==0){
+                                that.newstypelist.push(data.msg);
+                            }
+                            that.editptypeitem=JSON.parse(JSON.stringify(ptypeitem));
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            BuildEditor: function () {
+                console.log("BuildEditor");
+                var that = this;
+
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','insertvideo','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image?cityid=" + aid,
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.p.content);
+                });
+                comeditor.addListener("contentChange", function () {
+                    console.log("change");
+                    if (comeditor != null) {
+                        that.p.content=comeditor.getContent();
+                    }
+                });
+            },
+            getUploadGetConf:function(callBack){
+                $.get('/upload/initupload', {
+                    type: callBack.fileType
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+
+                    var uploadConf = {
+                        'url': data.host,
+                        'multipart_params': multipartParams,
+                    };
+
+                    callBack.ini($.extend(uploadConf,callBack))
+
+                }).fail(function (data) {
+                    layer.msg('上传配置初始化失败，upload接口异常');
+                });
+            },
+            iniUploadGetEntity:function(uploadConf){
+                //实例化一个plupload上传对象
+                var uploader = new plupload.Uploader({
+                    browse_button : uploadConf.uploadBtn, //触发文件选择对话框的按钮，为那个元素id
+                    url: 'http://oss.aliyuncs.com',//服务器端的上传页面地址
+                    flash_swf_url: 'http://j.vzan.cc/dz/content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',//swf文件，当需要使用swf方式进行上传时需要配置该参数
+                    silverlight_xap_url: 'http://j.vzan.cc/dz/content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',//silverlight文件，当需要使用silverlight方式进行上传时需要配置该参数
+                    filters: {
+                        mime_types : [ //只允许上传图片和zip文件
+                            { title : uploadConf.fileType , extensions : uploadConf.ext },
+                        ],
+                    },
+                    max_file_size : uploadConf.size, //最大只能上传400kb的文件
+                    prevent_duplicates : true, //不允许选取重复文件
+                    multi_selection: false, //不允许多选
+                });
+                //在实例对象上调用init()方法进行初始化
+                uploader.init();
+                //绑定接口授权信息
+                uploader.setOption(uploadConf);
+                //新增文件
+                uploader.bind('FilesAdded',function(uploader){uploader.start();});
+                //上传之前
+                //uploader.bind('BeforeUpload',uploadConf.beforeUpload);
+                //上传进行中
+                uploader.bind('UploadProgress',uploadConf.uploadProgress);
+                //上次完成
+                uploader.bind('UploadComplete', uploadConf.uploadComplete);
+                //保存对象/配置
+                //this.videoUploadConf = conf;
+                //this.videoUploader = uploader;
+            },
+            videoUploadINI:function(){
+                thisApp = this;
+                thisApp.getUploadGetConf({
+                    fileType : 'video',
+                    ext: 'mp4,m3u8',
+                    size: '1gb',
+                    uploadBtn:'videUploadBtn',
+                    ini: thisApp.iniUploadGetEntity,
+                    uploadProgress:thisApp.videoUploadProgressing,
+                    uploadComplete: thisApp.videoUploadComplete
+                });
+            },
+            videoUploadProgressing:function(uploader,files){
+                this.videoUploadPercent = files.percent;
+            },
+            videoUploadComplete:function(uploader,files){
+                this.payContent.VideoURL = String.raw`${uploader.settings.url}/${uploader.settings.multipart_params.key}`;
+            },
+            audioUploadINI:function(){
+                thisApp = this;
+                thisApp.getUploadGetConf({
+                    fileType : 'audio',
+                    ext: 'mp3',
+                    size:'500mb',
+                    uploadBtn:'audioUploadBtn',
+                    ini: thisApp.iniUploadGetEntity,
+                    uploadProgress:thisApp.audioUploadProgressing,
+                    uploadComplete: thisApp.audioUploadComplete,
+                });
+            },
+            audioUploadProgressing:function(uploader,files){
+                this.audioUploadPercent = files.percent;
+            },
+            audioUploadComplete:function(uploader,files){
+                this.payContent.AudioURL = String.raw`${uploader.settings.url}/${uploader.settings.multipart_params.key}`;
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=5;
+                var remainCount=0;
+                if(that.uploadImgType===1){
+                    //表示轮播图
+                    if(that.bannerImg.length>=maxCount){
+                        layer.msg("轮播图最多5张");
+                        return;
+                    }
+                    remainCount=maxCount-that.bannerImg.length;
+                    framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=1&maxImgSize=2&objKey=bannerImg&maxCount="+maxCount+"&remainCount="+remainCount+"";
+
+                }else if(that.uploadImgType === 0){
+                    maxCount=1;
+                    remainCount=1;
+                    framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=0&maxImgSize=2&objKey=imgItem&objType=1&maxCount="+maxCount+"&remainCount="+remainCount+"";
+
+                }else{
+                    maxCount=1;
+                    remainCount=1;
+                    framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=0&maxImgSize=2&objKey=videoCover&objType=1&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }
+
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+
+            },
+            clearImg:function(type,index){
+                var that = this;
+                if(type>0){
+                    //表示轮播图
+                    if(that.bannerImg.length>0){
+                        that.bannerImg.splice(index,1);
+                    }
+
+                    that.p.slideimgs=that.bannerImg.join(",");
+                }else{
+                    that.p.img="";
+                }
+            },
+            getItem: function () {
+                thisApp = this;
+                thisApp.isloadingItem = true;
+                $.get('/Tools/GetProductList?appId=@appid').then(function (result) {
+                    if (!result.isok) {
+                        layer.msg(result.Msg);
+                        return;
+                    }
+                    thisApp.allItem = result.dataObj;
+                    thisApp.isloadingItem = false;
+                }).fail(function (result) {
+                    alert(String.raw`error:${result.statusText}`);
+                    thisApp.isloadingItem = false;
+                });
+            },
+        }
+    });
+
+</script>

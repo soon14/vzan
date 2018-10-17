@@ -1,0 +1,862 @@
+﻿@using Entity.MiniApp
+@using Entity.MiniApp.ViewModel
+@using User.MiniApp.comment
+
+@model ConfigViewModel
+@{
+    ViewBag.Title = "小程序管理";
+
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.tid = Model.XcxTemplate == null ? 0 : Model.XcxTemplate.Id;
+    var needpay = 1;
+    if (ViewBag.PageType == 10 || ViewBag.PageType == 12 || ViewBag.PageType == 3 || ViewBag.PageType == 1 || ViewBag.PageType == 4)
+    {
+        needpay = 0;
+    }
+}
+<style>
+    table th { text-align: center; }
+
+    td { word-break: break-all; word-wrap: break-word; border-top: none !important; margin: 0px 10px; }
+
+    table tr td, th { vertical-align: middle; }
+
+    img { max-width: 100%; }
+
+    .td_templateinfo_leftcss { width: 100px; text-align: right; }
+    .bordertop tr { border-top: 1px solid #E5E5E5 !important; }
+    .servicetd { display: inline-block; margin: 10px 0px; width: 100%; text-align: left; }
+    a { color: #337ab7; text-decoration: none; }
+    .width300 { width:300px!important;}
+</style>
+<script src="@(WebSiteConfig.cdnurl)js/dowlodimg/canvas2image.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/dowlodimg/jquery.base64.js"></script>
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed cancel-table-td-border">
+    @if (Model.Openconfig != null)
+    {
+    <tr>
+        <td style="width: 180px;text-align:right;">小程序名称：</td>
+        <td>
+            <div class="input-group width300">
+                @Model.Openconfig.nick_name
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 180px;text-align:right;">小程序AppId：</td>
+        <td>
+            <div class="input-group width300">
+                @Model.Openconfig.appid
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">小程序认证：</td>
+        <td>
+            <label>@Enum.GetName(typeof(XcxMiniAppAuthoType), Model.Openconfig.verify_type_info)</label>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">模板名称：</td>
+        <td>
+            @if (Model.XcxTemplate != null)
+                {
+            <label>@Model.XcxTemplate.TName</label>
+            <a style="" id="clicktemplate">查看模板详情</a>
+                }
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">发布状态：</td>
+        <td>
+            @if (Model.UserXcxTemplate != null && Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd") != "0001-01-01")
+                {
+            <input type="hidden" id="uid" value="@Model.UserXcxTemplate.Id" />
+            <label>@Enum.GetName(typeof(XcxTypeEnum), Model.UserXcxTemplate.State)</label>
+            <a style="" id="clickfabuinfo">查看发布详情</a>
+            @*if (Model.UserXcxTemplate.State == 3)
+                {
+                    <a style="" id="clickfabuinfo">查看发布详情</a>
+                }*@
+                }
+                else
+                {
+            <label>未发布</label>
+                }
+            <a style="" id="clickserviceinfo">服务器配置</a>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">提交时间：</td>
+        <td>
+            @if (Model.UserXcxTemplate != null && Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd")!= "0001-01-01")
+            {
+            <label>@Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd HH:mm:ss")</label>
+            }
+            else
+            {
+                <label>未提交</label>
+            }
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">小程序二维码：</td>
+        <td>
+            @if (!string.IsNullOrEmpty(Model.miniappqrcode))
+                {
+            <img src="@Model.miniappqrcode" style="width:50px;height:50px;" />
+            <a style="" id="clicklockbigimg">查看大图</a>
+            <a href="@Model.miniappqrcode" target="_blank" download="filename.jpg">下载图片</a>
+            }
+            else
+            {
+                <div style="color:red;">二维码过期，请重新授权</div>
+            }
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">微信体验号：</td>
+        <td>
+            <input id="tester" type="text" class="form-control" style="display: inline-block;width: inherit;" value="" />
+
+            <input type="button" class="btn btn-primary width100" id="savetester" value="设置体验者" />
+            @*<a style="" id="memberauth">查看体验者</a>*@
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">小程序底部logo：</td>
+        <td>
+            @Html.FileUploadFor("bottomlogo", initImageList: (List<object>)ViewBag.LogoImgList, controllerWidth: 120, removeCallback: "removeAttachmentFunction")
+            <label class="forinputmassage">限制1M以内，建议上传图片大小 ( 80*40px )的透明背景图片</label>
+            <br />
+            <input type="button" class="btn btn-primary width100 mt10" id="savelogo" value="保存" />
+        </td>
+    </tr>
+
+        if (needpay == 1)
+        {
+    <tr>
+        <td style="text-align:right;">小程序商户号：</td>
+        <td class="form-inline">
+
+            @if (Model.UserXcxTemplate != null && Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd") != "0001-01-01" && Model.paycenter != null)
+                    {
+            <input id="mc_id" type="text" class="width300 form-control" value="@Model.paycenter.Mch_id" />
+                    }
+                    else
+                    {
+            <input id="mc_id" type="text" class="width300 form-control" value="" />
+                    }
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right;">商户号秘钥：</td>
+        <td class="form-inline">
+
+            @if (Model.UserXcxTemplate != null && Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd") != "0001-01-01" && Model.paycenter != null)
+                    {
+            <input id="mc_key" type="text" class="width300 form-control" value="@Model.paycenter.Key" />
+            <br />
+            <input type="button" class="btn btn-primary width100 mt10" id="saveappstr" value="保存" />
+                    }
+                    else
+                    {
+            <input id="mc_key" type="text" class="width300 form-control" value="" />
+            <br />
+            }
+            <input type="button" class="btn btn-primary width100 mt10" id="checkMck" value="检测商户号" />
+        </td>
+    </tr>
+        }
+    <tr>
+        <td></td>
+        <td>
+            <div class="">
+                <input type="button" class="btn btn-primary width150" id="gettestqrcode" value="获取体验二维码" />
+                @*<input type="button" class="btn btn-default width100" id="commitCode" value="上传小程序"/>*@
+                <input type="button" class="btn btn-default width100 ml10" id="commit" value="发布小程序" />
+                <input type="button" class="btn btn-default width100 ml10" id="delbangding" value="解除绑定" />
+                <input type="button" class="btn btn-default width100 ml10" id="UndocodeAudit" value="撤销审核" />
+                @*<a  target="_blank" class="btn  btn-default width100" href="@Model.AuthodUrl">重新授权</a>*@
+            </div>
+        </td>
+    </tr>
+    }
+    else
+    {
+    <tr>
+        <td> </td>
+        <td>
+            <div>
+                你还没进行小程序授权，请先进行授权
+            </div>
+            <div>
+                <a style="font-size: 18px;background-color: #108EE9;border-radius: 5px;height: 50px;display: block;color: #fff;line-height: 50px;width: 300px;text-align: center;margin-top: 10px;margin-bottom: 10px;" target="_blank" id="AuthodUrl" href="@Model.AuthodUrl">我已有小程序账号，马上去授权</a>
+            </div>
+            <div>
+                <a style="font-size: 18px;color: #4BA1D8; " target="_blank" href="https://mp.weixin.qq.com/debug/wxadoc/introduction/#注册小程序帐号">我还没有小程序账号，如何申请？</a>
+            </div>
+            @if (needpay==1)
+                {
+            <div style=" margin-top:10px;">
+                <a style="font-size: 18px;color: #4BA1D8;" target="_blank" href="https://mp.weixin.qq.com/debug/wxadoc/introduction/#小程序申请微信认证">我已有小程序，如何认证？</a>
+            </div>
+            <div style=" margin-top:10px;">
+                <a style="font-size: 18px;color: #4BA1D8; margin-top:20px;" target="_blank" href="https://mp.weixin.qq.com/debug/wxadoc/introduction/#小程序申请微信支付">我已有认证小程序账号，如何申请微信支付？</a>
+            </div>
+            <div style="margin-top:20px;">
+                <div>温馨提示：</div>
+                <div>1. 您的小程序必须<i style="color:red;">认证后</i>才能使用<i style="color:red;">微信支付</i>。</div>
+            </div>
+                }
+        </td>
+    </tr>
+    }
+</table>
+<canvas id="drawing" style="display:none;"></canvas>
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*小程序模板详情*@
+<div class="modal bs-example-modal-md" id="templateinfoModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>小程序模板详情</h4>
+            </div>
+            <div class="modal-body text-center">
+                @if (Model.XcxTemplate != null)
+                {
+                <table class="tr-highlight bordertop" style="width:100%;">
+                    <tr style="border-top: none !important;">
+                        <td class="text-right" style="width:30%;">模板名称：</td>
+                        <td class="servicetd">@Model.XcxTemplate.TName</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">模板ID：</td>
+                        <td class="servicetd">@Model.XcxTemplate.TId</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">版本：</td>
+                        <td class="servicetd">@Model.XcxTemplate.Version</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">服务类目：</td>
+                        <td class="servicetd" id="category">@Model.XcxTemplate.First_class - @Model.XcxTemplate.Second_class</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">简介：</td>
+                        <td class="servicetd">
+                            @Model.XcxTemplate.Desc
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">添加时间：</td>
+                        <td class="servicetd">@Model.XcxTemplate.AddTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">修改时间：</td>
+                        <td class="servicetd">@Model.XcxTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                </table>
+                }
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetemplateinfo">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*小程序发布详情*@
+<div class="modal bs-example-modal-sm" id="fabuinfoModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>小程序发布详情</h4>
+            </div>
+            <div class="modal-body text-center">
+                @if (Model.UserXcxTemplate != null)
+                {
+                    if (Model.UserXcxTemplate.State == 3)
+                    {
+                <table class="tr-highlight">
+                    <tr>
+                        <td class="text-right width150">发布模板名称：</td>
+                        <td class="text-left width200">@Model.UserXcxTemplate.TName</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">发布的版本：</td>
+                        <td class="text-left">@Model.UserXcxTemplate.Version</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">小程序appID：</td>
+                        <td class="text-left">@Model.UserXcxTemplate.AppId</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">小程序秘钥：</td>
+                        <td class="text-left">@Model.UserXcxTemplate.Appsr</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">审核时间：</td>
+                        <td class="text-left">@Model.UserXcxTemplate.AddTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">发布时间：</td>
+                        <td class="text-left">@Model.UserXcxTemplate.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                </table>
+                    }
+                    else
+                    {
+                <label>@Html.Raw(string.IsNullOrEmpty(Model.UserXcxTemplate.Reason)? "无数据" : Model.UserXcxTemplate.Reason)</label>
+                    }
+                }
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closefabuinfo">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*服务器配置*@
+<div class="modal bs-example-modal-md" id="serviceModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>服务器配置</h4>
+            </div>
+            <div class="modal-body text-center servicetable">
+                <table style="width:100%;">
+                    <tr>
+                        <td style="text-align:right;width:30%;">request合法域名：</td>
+                        <td class="servicetd">
+                            <input id="requesthost" type="text" class="form-control width300" value="" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:right;">socket合法域名：</td>
+                        <td class="servicetd">
+                            <input id="sockethost" type="text" class="form-control width300" value="" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:right;">uploadFile合法域名：</td>
+                        <td class="servicetd">
+                            <input id="uploadFilehost" type="text" class="form-control width300" value="" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:right;">downloadFile合法域名：</td>
+                        <td class="servicetd">
+                            <input id="downloadFilehost" type="text" class="form-control width300" value="" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveapphost">保存</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('#serviceModal').hide();">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal bs-example-modal-sm" id="testqrcodModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>图片</h4>
+            </div>
+            <div class="modal-body text-center">
+                <img id="testqrcodeimg" style="" src="" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetestqrcode">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*小程序体验者*@
+<div class="modal bs-example-modal-md" id="templatememberauth" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>小程序模板详情</h4>
+            </div>
+            <div class="modal-body text-center">
+                <table class="tr-highlight bordertop" style="width:100%;">
+                    <tr style="border-top: none !important;">
+                        <th>微信号</th>
+                        <td class="text-right">操作</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('#templatememberauth').hide();">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section script{
+    <script>
+        var mask;
+        var _layer = parent.layer;
+        var imghave = "@ViewBag.isshouquan";
+        var logoimg = "@ViewBag.LogoImg";
+
+
+        $(function () {
+            if (imghave == 0)
+            {
+                mask=layer.load(1, {shade: [0.8, '#393D49']});//进行遮罩,防止授权链接还没出来就进行操作，导致授权后跳转失败
+                //获取授权链接
+                Getauthorierurl();
+            }
+            else
+            {
+                //小程序服务类目
+                GetCategoryTyleList();
+                //服务器地址
+                getserverhost()
+            }
+
+            //保存秘钥,商户号，商户秘钥
+            $('#saveappstr').on('click', function () {
+                var appstr = "";
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                var uid = $("#uid").val();
+                if(mc_id.trim()=="")
+                {
+                    layer.msg("请输入小程序商户号");
+                    return;
+                }
+                if(mc_key.trim()=="")
+                {
+                    layer.msg("请输入商户秘钥");
+                    return;
+                }
+
+                $.post('/config/SaveMiniappBaseInfo',
+                { Id: @ViewBag.Id, appstr: appstr,uid:uid,mc_id:mc_id,mc_key:mc_key }, function (result) {
+                    layer.msg(result.msg);
+                });
+            });
+            //检测商户号，商户秘钥
+            $('#checkMck').on('click', function () {
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(mc_id.trim()=="")
+                {
+                    layer.msg("请输入小程序商户号");
+                    return;
+                }
+                if(mc_key.trim()=="")
+                {
+                    layer.msg("请输入商户秘钥");
+                    return;
+                }
+
+                $.post('/config/CheckMerchanInfo',
+                { aid: @ViewBag.appId, mc_id:mc_id,mc_key:mc_key }, function (result) {
+                    layer.msg(result.Msg);
+                });
+            });
+
+            //配置服务器地址
+            $('#clickserviceinfo').on('click', function () {
+                $("#serviceModal").show();
+            });
+            $('#saveapphost').on('click', function () {
+                var requesthost = $("#requesthost").val();
+                var sockethost = $("#sockethost").val();
+                var uploadFilehost = $("#uploadFilehost").val();
+                var downloadFilehost = $("#downloadFilehost").val();
+                $.post('/config/UpdateServerHost',
+               { Id: @ViewBag.Id,requesthost:requesthost,sockethost:sockethost,uploadFilehost:uploadFilehost,downloadFilehost:downloadFilehost}, function (result) {
+                   layer.msg(result.msg);
+                   window.location.reload();
+               });
+            });
+
+            //模板详情
+            $('#clicktemplate').on('click', function () {
+                $("#templateinfoModal").show();
+            });
+            $('#closetemplateinfo').on('click', function () {
+                $("#templateinfoModal").hide();
+            });
+
+            //查看大图
+            $('#clicklockbigimg').on('click', function () {
+                $("#testqrcodeimg").attr("src", '@Model.miniappqrcode');
+                $("#testqrcodModal").show();
+            });
+
+            //下载图片
+            $('#dowloadimg').on('click', function () {
+
+                $.get('/config/Dowloadfile',
+                { dataurl: '@Model.miniappqrcode'}, function (result) {
+                    var drawing=document.getElementById("drawing");
+                    //确定浏览器支持<canvas>元素
+                    if(drawing.getContext){
+                        //取得绘图上下文对象的引用，“2d”是取得2D上下文对象
+                        var context=drawing.getContext("2d");
+                        //显示图像
+                        var image=document.createElement("img");
+                        image.src="data:image/jpeg;base64,"+result.obj;
+                        drawing.width = image.width;
+                        drawing.height = image.height;
+                        context.drawImage(image,0,0);
+                        //下载图片到本地
+                        Canvas2Image.saveAsJPEG(drawing); // 这将会提示用户保存JPG图片
+                    }
+                });
+            });
+
+            function convertBase64UrlToBlob(urlData,type){
+                var bytes=window.atob(urlData.split(',')[1]);        //去掉url的头，并转换为byte
+                //处理异常,将ascii码小于0的转换为大于0
+                var ab = new ArrayBuffer(bytes.length);
+                var ia = new Uint8Array(ab);
+                for (var i = 0; i < bytes.length; i++) {
+                    ia[i] = bytes.charCodeAt(i);
+                }
+                return new Blob( [ab] , {type : 'image/'+type});
+            }
+
+
+            //发布详情
+            $('#clickfabuinfo').on('click', function () {
+                $("#fabuinfoModal").show();
+            });
+            $('#closefabuinfo').on('click', function () {
+                $("#fabuinfoModal").hide();
+            });
+
+
+            //查看体验者
+            $('#memberauth').on('click', function () {
+
+                $.post('/config/GetMemberAuth',
+               { Id: @ViewBag.Id}, function (result) {
+                   var memberlist = [];
+                   if(result.isok)
+                   {
+                       if(result.dataObj!=null && result.dataObj.length>0)
+                       {
+                           for (var i = 0; i < result.dataObj.length; i++) {
+                               memberlist[memberlist.length]='<tr style="border-top: none !important;"><th>'+result.dataObj[i].userstr+'</th><td class="text-right"></td></tr>';
+                           }
+                       }
+                   }
+                   $("#templatememberauth").show();
+               });
+            });
+            //设置体验者
+            $('#savetester').on('click', function () {
+                var tester = $("#tester").val();
+                if(tester.trim()=='')
+                {
+                    layer.msg("请输入微信号")
+                    return;
+                }
+                $.post('/config/SetWxTester',
+                { Id: @ViewBag.Id, tester: tester}, function (returnData) {
+                    if(returnData.isok>0)
+                   {
+                       layer.msg(returnData.msg, { anim: 0, time: 1000 }, function () {
+                           window.location.reload();
+                       });
+                   }
+                   else{
+                       layer.msg(returnData.msg);
+                   }
+                });
+            });
+
+            //保存底部logo图片
+            $('#savelogo').on('click', function () {
+                var imgArray = [];
+                var imgs = $('input[name="bottomlogo"]');
+                for (var j = 0; j < imgs.length; j++) {
+                    imgArray.push($(imgs[j]).val());
+                }
+                var ImgUrl = imgArray.join();
+                if (ImgUrl == "")
+                {
+                    ImgUrl = logoimg;
+                }
+
+                var appid = "@ViewBag.appId";
+                var data = [{ "Value": ImgUrl, "Param": "logoimg" }];
+                var datajson = JSON.stringify(data);
+
+                $.post('/config/SaveConfig',
+               { id: appid, datajson: datajson }, function (returnData) {
+                   if(returnData.isok>0)
+                   {
+                       layer.msg(returnData.msg, { anim: 0, time: 1000 }, function () {
+                           window.location.reload();
+                       });
+                   }
+                   else{
+                       layer.msg(returnData.msg);
+                   }
+               });
+            });
+
+            //获取体验二维码
+            $('#gettestqrcode').on('click', function () {
+                var tid = '@ViewBag.tid';
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+                if(@needpay==1)
+                {
+                    if(mc_id.trim()=="")
+                    {
+                        layer.msg("请输入小程序商户号");
+                        return;
+                    }
+                    if(mc_key.trim()=="")
+                    {
+                        layer.msg("请输入商户秘钥");
+                        return;
+                    }
+                }
+
+                $.post('/config/GettestQrcode',
+                { Id: @ViewBag.Id,tid:tid,appsr:appstr,mc_id:mc_id,mc_key:mc_key,needpay:@needpay }, function (result) {
+
+                    if(result.isok>0)
+                    {
+                        $("#testqrcodModal").show();
+                        $("#testqrcodeimg").attr("src", "data:image/jpeg;base64," + result.imgdata);
+                    }
+                    else{
+                        layer.msg(result.msg);
+                    }
+                });
+            });
+            $('#closetestqrcode').on('click', function () {
+                $("#testqrcodModal").hide();
+            });
+
+            //发布小程序
+            $('#commit').on('click', function () {
+                var tid = '@ViewBag.tid';
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+
+                if(@needpay  ==1)
+                {
+                    if(mc_id.trim()=="")
+                    {
+                        layer.msg("请输入小程序商户号");
+                        return;
+                    }
+                    if(mc_key.trim()=="")
+                    {
+                        layer.msg("请输入商户秘钥");
+                        return;
+                    }
+                }
+
+                $.post('/config/UploadCodenew',
+                { Id: @ViewBag.Id,tid:tid,appsr:appstr,mc_id:mc_id,mc_key:mc_key,needpay:@needpay}, function (returnData) {
+                    if(returnData.isok>0)
+                    {
+                        layer.msg(returnData.msg, { anim: 0, time: 1000 }, function () {
+                            window.location.reload();
+                        });
+                    }
+                    else{
+                        layer.msg(returnData.msg);
+                    }
+                });
+            });
+            //发布小程序
+            $('#commitCode').on('click', function () {
+                var tid = '@ViewBag.tid';
+                var appstr = $("#appstr").val();
+                var mc_id = $("#mc_id").val();
+                var mc_key = $("#mc_key").val();
+
+                if(@needpay  ==1)
+                {
+                    if(mc_id.trim()=="")
+                    {
+                        layer.msg("请输入小程序商户号");
+                        return;
+                    }
+                    if(mc_key.trim()=="")
+                    {
+                        layer.msg("请输入商户秘钥");
+                        return;
+                    }
+                }
+
+                $.post('/config/UploadCodenew',
+                { Id: @ViewBag.Id,tid:tid,appsr:appstr,mc_id:mc_id,mc_key:mc_key,needpay:@needpay,isshenhe:0}, function (returnData) {
+                    if(returnData.isok>0)
+                    {
+                        layer.msg(returnData.msg, { anim: 0, time: 1000 }, function () {
+                            window.location.reload();
+                        });
+                    }
+                    else{
+                        layer.msg(returnData.msg);
+                    }
+                });
+            });
+
+            //解绑
+            $('#delbangding').on('click', function () {
+                _layer.confirm('此操作不可逆，确定解绑该小程序？', {
+                    btn: ['确定', '取消'], //按钮
+                    title:'解绑提示',
+                }, function () {
+                    $.post("/config/DelBangding", { Id: @ViewBag.Id}, function (returnData) {
+                        if (returnData.isok) {
+                            layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                                window.location.reload();
+                            });
+                        }
+                        else {
+                            layer.msg(returnData.Msg);
+                        }
+                    });
+                }, function () {
+                });
+            });
+
+
+            //撤销审核
+            $('#UndocodeAudit').on('click', function () {
+                _layer.confirm('此操作不可逆，每天审核撤回次数最多不超过1次，一个月不超过10次，确定撤销该小程序的审核？', {
+                    btn: ['确定', '取消'], //按钮
+                    title:'撤销提示',
+                }, function () {
+                    $.post("/config/UndocodeAudit", { rid: @ViewBag.Id}, function (returnData) {
+                        if (returnData.isok) {
+                            layer.msg(returnData.Msg, { anim: 0, time: 1000 }, function () {
+                                window.location.reload();
+                            });
+                        }
+                        else {
+                            layer.msg(returnData.Msg);
+                        }
+                    });
+                }, function () {
+                });
+            });
+        })
+
+        function DownLoadReportIMG(imgPathURL) {
+            //如果隐藏IFRAME不存在，则添加
+            if (!document.getElementById("IframeReportImg"))
+                $('<iframe style="display:none;" id="IframeReportImg" name="IframeReportImg" onload="DoSaveAsIMG();" width="0" height="0" src="about:blank"></iframe>').appendTo("body");
+            if (document.all.IframeReportImg.src != imgPathURL) {
+                //加载图片
+                document.all.IframeReportImg.src = imgPathURL;
+            }
+            else {
+                //图片直接另存为
+                DoSaveAsIMG();
+            }
+        }
+        function DoSaveAsIMG() {
+            if (document.all.IframeReportImg.src != "about:blank")
+                window.frames["IframeReportImg"].document.execCommand("SaveAs");
+        }
+        //判断是否为ie浏览器
+        function browserIsIe() {
+            if (!!window.ActiveXObject || "ActiveXObject" in window)
+                return true;
+            else
+                return false;
+        }
+
+        //获取服务器地址
+        function getserverhost() {
+            $.get('/config/GetServerHostAddress',
+            { Id:@ViewBag.Id}, function (result) {
+                if(result.isok>0 && result.data!=null && result.data.host!=null)
+                {
+                    $("#requesthost").val(result.data.host.requestdomain.join());
+                    $("#sockethost").val(result.data.host.wsrequestdomain.join());
+                    $("#uploadFilehost").val(result.data.host.uploaddomain.join());
+                    $("#downloadFilehost").val(result.data.host.downloaddomain.join());
+                }
+            })
+        }
+        //获取授权跳转地址
+        function Getauthorierurl() {
+            var hosturl = window.location.origin;
+            var postdata={
+                appId:@ViewBag.Id,
+                Id:@ViewBag.Id,
+                type:@ViewBag.PageType,
+                hosturl:hosturl,
+            };
+            $.get('/config/Getauthorierurl', postdata,function (result) {
+                var url = result.url;
+                $("#AuthodUrl").attr("href",url);
+
+                //关闭遮罩
+                layer.close(mask);
+            })
+        }
+        function removeAttachmentFunction(file) {
+            logoimg = "";
+        }
+
+        //获取服务类目
+        function GetCategoryTyleList() {
+            var hosturl = window.location.origin;
+            var postdata={
+                rid:@ViewBag.Id,
+            };
+            $.get('/config/GetCategoryTyleList', postdata,function (result) {
+                if(result.isok==1)
+                {
+                    var servicename = result.data[0]
+                    $("#category").html(servicename.first_class+"-"+servicename.second_class+(servicename.third_class!='' && servicename.third_class!=null?"-"+servicename.third_class:""));
+                }
+                else
+                {
+                    $("#category").html(result.msg);
+                    $("#category").css("color","red");
+                }
+            })
+        }
+    </script>
+}
+

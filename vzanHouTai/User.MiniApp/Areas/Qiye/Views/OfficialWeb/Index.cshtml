@@ -1,0 +1,393 @@
+﻿@using Entity.MiniApp.Conf
+@model Miniapp
+@{
+    ViewBag.Title = "企业智推版";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+
+<link href="/content/newhome/css/dzbase.css?2018-3-27" rel="stylesheet" />
+
+<style>
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    .colorTxt > li { display: inline-block;; margin: 0 10px;cursor:pointer; }
+        .colorTxt > li > span { width: 60px; height: 40px; display: inline-block; }
+   
+        .colorTxt .sel .ck-io{display:inline-block;}
+    .warn { color: red; }
+        .ck-io { display: none; position: absolute; top: 0; right: 0; width: 60px; height: 40px; background: url(/Content/check.png) no-repeat; }
+    td {border-top:none !important;}
+</style>
+
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff" id="app" v-cloak>
+    <div>
+        <table class="table" style="margin-top:10px;">
+            <tr>
+                <td align="right" style="width:6%;">
+                    <label>企业名称:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" maxlength="40" placeholder="不超过20个汉字" style="display:block;width:500px;" v-model="datainfo.StoreName" />
+                </td>
+            </tr>
+            <tr style="display:none;">
+                <td align="right">
+                    <label>企业简述:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <textarea class="form-control" style="display:block;width:500px;height:50px;" v-model="datainfo.Sketch" ></textarea>
+                    <span>简单描述企业品牌/业务/口号等，建议不超过100字</span>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>企业介绍:<span class="warn">*</span></label>
+                </td>
+                @*<td align="left">
+                    <textarea class="form-control" style="display:block;width:500px;height:100px;" v-model="datainfo.Description"></textarea>
+                </td>*@
+                <td align="left">
+                    <div id="editor" style="width:500px;height:360px;"></div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">形象大图:<span class="warn">*</span></td>
+                <td>
+                    <div>不超过5张，建议尺寸750*600，不大于1M</div>
+                    <div class="pslideimgs" style="display:block;">
+                        <div class="pslideimgs">
+                            <div class="i_Posters rel">
+
+                                <div style="position:relative;" v-for="(item,index) in Banners">
+                                    <img :src="item" style="display:block;height:150px;width:150px;" />
+                                    <span v-on:click="clearImg(0,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                                </div>
+                                <div class="plus-button" v-on:click="UploadImg(0)" v-if="Banners.length<5">
+                                    <div class="s-image-uploader-wrapper">
+                                        <div>
+                                            <div class="plus">+</div>
+                                            <div class="plus-label">上传图片</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>联系电话:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="20" class="form-control" style="display:block;width:500px;" v-model="datainfo.Phone" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>企业地址:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="30" class="form-control" style="display:block;width:500px;" v-model="datainfo.Address"/>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>地址经纬度:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="30" class="form-control" style="display:inline-block;width:300px;cursor:pointer;" v-model="datainfo.Location" readonly="readonly" v-on:click="ChooseLocation()" /><label style="color:#d2cfcf">选择一个附近的位置供导航使用</label>
+
+                </td>
+            </tr>
+            <tr>
+                <td align="right">底部图片：</td>
+                <td>
+                    <div>200*200px可上传公司，或关注二维码等（二维码只能通过扫一扫才能识别使用）</div>
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-for="(item,index) in BottomImgUrl">
+                                <img :src="item" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(1,0)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)" v-if="BottomImgUrl.length<=0">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"></td>
+                <td>
+                    <button type="button" class="btn btn-primary ml10" v-on:click="save()">
+                        保存
+                    </button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg dd" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe"  src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocationOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+
+</div>
+
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.Description)
+</script>
+<script>
+        $(function () {
+            //#region 在线富文本编辑器
+            var ue = UE.getEditor('editor', {
+                toolbars: [
+                    ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                    ['paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain'],
+                    ['simpleupload', 'insertimage']
+                ],
+                imageUrl: "/Upload/Image?cityid=" + localStorage.cityInfoId,
+                autoHeight: false
+            });
+            //对编辑器的操作最好在编辑器ready之后再做
+            ue.ready(function () {
+                if ($("#js_article_content").html() != "") {
+                    var vHtml = $("#js_article_content").html();
+                    ue.setContent(vHtml);
+                }
+            });
+            //当富文本框内容发生改变时,展示框也要发生改变
+            ue.addListener('selectionchange', function (editor) {
+                if (ue.hasContents()) {
+                    jQuery(".spgl-bianji-bt").siblings().remove();
+                    jQuery(".spgl-bianji-bt").before(ue.getContent());
+                } else {
+                    var html = '<div class="spxqq-f"><p>内容</p><p>可自由编辑</p></div><a class="spgl-bianji-bt">编辑</a>'
+                    jQuery('.twxq-edit-zhanshi').html(html);
+                }
+            });
+            //#endregion
+        });
+</script>
+<script>
+    var Banners=@Html.Raw(JsonConvert.SerializeObject(Model.BannersImgUrls));
+    var BottomImgUrl=@Html.Raw(JsonConvert.SerializeObject(string.IsNullOrEmpty(Model.ImgUrl)?new List<string>():new List<string>() { Model.ImgUrl }));
+    var comeditor=null;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            datainfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            comeditor:null,
+            Banners:Banners,
+            BottomImgUrl:BottomImgUrl,
+            uploadImgType:0,
+        },
+        mounted: function () {
+            var that=this;
+            if ($(".edui-container").length == 0) {
+                //that.comeditor.destroy();
+                that.BuildEditor();
+            }
+
+            console.log("mounted");
+        },
+        created:function(){
+            var that=this;
+        },
+        methods:{
+            /************************地图*****************************/
+            ChooseLocationOK: function () {
+                var that=this;
+                var addr=mapframe.window.document.getElementById("addr_cur").value;
+                var _location = mapframe.window.document.getElementById("poi_cur").value;
+                var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+                if (_location == "") {
+                    layer.msg("您还未选择地理位置！");
+                    return;
+                }
+                //_location = _location.split(",");
+                that.datainfo.Location=_location;
+              //  that.datainfo.Address = addr;
+                $("#ChooseLocationModal").modal("hide");
+            },
+            ChooseLocation:function(){
+                $("#ChooseLocationModal").modal("show");
+            },
+            save:function(){
+                var that=this;
+                if(that.datainfo.StoreName==null||that.datainfo.StoreName==""||that.datainfo.StoreName.length<=0){
+                    layer.msg("企业名称不能为空",{time:1000});
+                    return;
+                }
+
+                //if(that.datainfo.Sketch==null||that.datainfo.Sketch==""||that.datainfo.Sketch.length<=0){
+                //    layer.msg("企业简述不能为空",{time:1000});
+                //    return;
+                //}
+                that.datainfo.Description = comeditor.getContent();
+                if(that.datainfo.Description==null||that.datainfo.Description==""||that.datainfo.Description.length<=0){
+                    layer.msg("企业介绍不能为空",{time:1000});
+                    return;
+                }
+
+                if(that.Banners==null||that.Banners.length<=0||that.Banners.length>5){
+                    layer.msg("形象大图图至少一张最多5张",{time:1000});
+                    return;
+                }
+                that.datainfo.Banners=that.Banners.join(",");
+
+                if(that.datainfo.Phone==null||that.datainfo.Phone.length<=0){
+                    layer.msg("企业联系电话不能为空",{time:1000});
+                    return;
+                }
+
+                if(that.datainfo.Address==null||that.datainfo.Address==""||that.datainfo.Address.length<=0){
+                    layer.msg("企业地址不能为空",{time:1000});
+                    return;
+                }
+                if(that.datainfo.Location==null||that.datainfo.Location==""||that.datainfo.Location.length<=0){
+                    layer.msg("地址经纬度不能为空",{time:1000});
+                    return;
+                }
+                //if(that.BottomImgUrl==null||that.BottomImgUrl.length<=0){
+                //    layer.msg("底部图片至少一张",{time:1000});
+                //    return;
+                //}
+                that.datainfo.ImgUrl=that.BottomImgUrl[0];
+
+                $.post("/Qiye/OfficialWeb/SaveDataInfo", {model:that.datainfo,aid:@Model.xcxRelationId,Banners:that.Banners},function(data){
+                    if(data&&data.isok){
+                        layer.msg(data.Msg,{time:1000});
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                    else{
+                        layer.msg(data.Msg,{time:1000});
+                    }
+                });
+            },
+
+            BuildEditor: function () {
+                var that = this;
+
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image?cityid=" + @ViewBag.appId,
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.datainfo.Description);
+                });
+                //comeditor.addListener("contentChange", function () {
+                //    console.log("change");
+                //    if (comeditor != null) {
+                //        that.datainfo.Description=comeditor.getContent();
+                //    }
+                //});
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=5;
+                var remainCount=0;
+                if(that.uploadImgType==0){
+                    //表示轮播图
+
+                    if(that.Banners.length>=maxCount){
+                        layer.msg("轮播图最多5张");
+                        return;
+                    }
+                    remainCount=maxCount-that.Banners.length;
+                    framSrc="/tools/UpLoadImgFrm?Id=@Model.xcxRelationId&appId=@Model.xcxRelationId&multi_selection=1&maxImgSize=1&objKey=Banners&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }else{
+                    maxCount=1;
+                    remainCount=maxCount-that.BottomImgUrl.length;
+                    if(that.BottomImgUrl.length>=maxCount){
+                        layer.msg("店铺图最多10张");
+                        return;
+                    }
+                    framSrc="/tools/UpLoadImgFrm?Id=@Model.xcxRelationId&appId=@Model.xcxRelationId&multi_selection=0&maxImgSize=1&objKey=BottomImgUrl&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+            },
+            clearImg:function(type,index){
+                var that = this;
+                if(type==0){
+                    //表示店铺轮播图
+                    if(that.Banners.length>0){
+                        that.Banners.splice(index,1);
+                    }
+
+                    that.datainfo.Banners=that.Banners.join(",");
+
+                }else{
+                    //表示店铺大图
+                    that.datainfo.BottomImgUrl="";
+
+                    //表示店铺大图
+                    if(that.BottomImgUrl.length>0){
+                        that.BottomImgUrl.splice(index,1);
+                    }
+
+                    //that.store.BottomImgUrl=that.BottomImgUrl;
+                }
+            }
+        }
+    });
+</script>

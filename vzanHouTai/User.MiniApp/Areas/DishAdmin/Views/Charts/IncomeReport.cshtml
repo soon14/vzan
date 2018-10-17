@@ -1,0 +1,159 @@
+﻿
+@model System.Data.DataTable
+
+@{
+    ViewBag.Title = "IncomeReport";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+    int aId = ViewBag.aId;
+    int storeId = ViewBag.storeId;
+}
+
+@section styles{
+    <style type="text/css">
+        .four-grid { color: #ffffff; }
+        .four-agileits { background: #ff4a43; text-align: center; padding: 2em 0; }
+        .four-agileinfo { background: #22beef; padding: 2em 0; text-align: center; }
+        .four-w3ls { background: #a2d200; padding: 2em 0; text-align: center; }
+        .four-text h3 { font-size: 16px; }
+        .four-text h4 { font-size: 30px; }
+        .data-list { }
+        .data-list li { float: left; background: #f1f1f1; margin-right: 10px; padding: 10px 50px; }
+    </style>
+
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 收入报表 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div>
+        <div class="text-c"><h1>@(ViewBag.s_year)年@(ViewBag.s_month)月每日收入报表</h1></div>
+        <div class="text-c">
+            <form method="post" class="search-form" action="/DishAdmin/Charts/IncomeReport?aId=@aId&storeId=@storeId">
+                <div class="">
+                    日期查询：
+                    <span class="select-box inline">
+                        <select name="s_year" id="s_s_year" class="select">
+                            <option value="2017" @(ViewBag.s_year == 2017 ? "selected" : "")>2017</option>
+                            <option value="2018" @(ViewBag.s_year == 2018 ? "selected" : "")>2018</option>
+                            <option value="2019" @(ViewBag.s_year == 2019 ? "selected" : "")>2019</option>
+                            <option value="2020" @(ViewBag.s_year == 2020 ? "selected" : "")>2020</option>
+                            <option value="2021" @(ViewBag.s_year == 2021 ? "selected" : "")>2021</option>
+                            <option value="2022" @(ViewBag.s_year == 2022 ? "selected" : "")>2022</option>
+                            <option value="2023" @(ViewBag.s_year == 2023 ? "selected" : "")>2023</option>
+                            <option value="2024" @(ViewBag.s_year == 2024 ? "selected" : "")>2024</option>
+                            <option value="2025" @(ViewBag.s_year == 2025 ? "selected" : "")>2025</option>
+                            <option value="2026" @(ViewBag.s_year == 2026 ? "selected" : "")>2026</option>
+                            <option value="2027" @(ViewBag.s_year == 2027 ? "selected" : "")>2027</option>
+                            <option value="2028" @(ViewBag.s_year == 2028 ? "selected" : "")>2028</option>
+                            <option value="2029" @(ViewBag.s_year == 2029 ? "selected" : "")>2029</option>
+                            <option value="2030" @(ViewBag.s_year == 2030 ? "selected" : "")>2030</option>
+                        </select>
+                    </span>
+                    <span class="select-box inline">
+                        <select name="s_month" id="s_s_month" class="select">
+                            <option value="1" @(ViewBag.s_month == 1 ? "selected" : "")>1</option>
+                            <option value="2" @(ViewBag.s_month == 2 ? "selected" : "")>2</option>
+                            <option value="3" @(ViewBag.s_month == 3 ? "selected" : "")>3</option>
+                            <option value="4" @(ViewBag.s_month == 4 ? "selected" : "")>4</option>
+                            <option value="5" @(ViewBag.s_month == 5 ? "selected" : "")>5</option>
+                            <option value="6" @(ViewBag.s_month == 6 ? "selected" : "")>6</option>
+                            <option value="7" @(ViewBag.s_month == 7 ? "selected" : "")>7</option>
+                            <option value="8" @(ViewBag.s_month == 8 ? "selected" : "")>8</option>
+                            <option value="9" @(ViewBag.s_month == 9 ? "selected" : "")>9</option>
+                            <option value="10" @(ViewBag.s_month == 10 ? "selected" : "")>10</option>
+                            <option value="11" @(ViewBag.s_month == 11 ? "selected" : "")>11</option>
+                            <option value="12" @(ViewBag.s_month == 12 ? "selected" : "")>12</option>
+                        </select>
+                    </span>
+                    <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 查询</button>
+                </div>
+            </form>
+        </div>
+        <table class="table table-border table-bordered table-bg table-hover table-sort" style="margin-top: 10px;">
+            <thead>
+                <tr class="text-c">
+                    <th width="100">日期</th>
+                    <th width="100">营业额</th>
+                    <th width="60">订单数(单)</th>
+                    <th width="60">店内(单)</th>
+                    <th width="80">外卖(单)</th>
+
+                    <th width="60">@(DishEnums.PayMode.微信支付)(单/金额)</th>
+                    <th width="60">@(DishEnums.PayMode.线下支付)(单/金额)</th>
+                    <th width="60">@(DishEnums.PayMode.余额支付)(单/金额)</th>
+                    <th width="80">买单数(单)</th>
+                    <th width="60">微信买单(单/金额)</th>
+                    <th width="60">余额买单(单/金额)</th>
+                </tr>
+                <tr class="text-c">
+                    <th width="100" align="right">合计</th>
+                    <th width="100">
+                        @{
+                            object sum = Model.Compute("sum(total_total_fee)+sum(wx_maidan_total_fee)+sum(ye_maidan_total_fee)-sum(ye_total_fee)", "");
+                            string sumResult = "0.00";
+                            if (!Convert.IsDBNull(sum))
+                            {
+                                sumResult = Convert.ToDouble(sum).ToString("F");
+                            }
+                        }
+                        @(sumResult)
+                    </th>
+                    <th width="60">
+                        @(Model.Compute("sum(order_count)", ""))
+                    </th>
+                    <th width="60">@(Model.Compute("sum(dn_order_count)", ""))</th>
+                    <th width="80">@(Model.Compute("sum(wm_order_count)", ""))</th>
+
+                    <th width="60">@(Model.Compute("sum(wx_order_count)", ""))/@(Model.Compute("sum(wx_total_fee)", ""))</th>
+                    <th width="60">@(Model.Compute("sum(xj_order_count)", ""))/@(Model.Compute("sum(xj_total_fee)", ""))</th>
+                    <th width="60">@(Model.Compute("sum(ye_order_count)", ""))/@(Model.Compute("sum(ye_total_fee)", ""))</th>
+                    <th width="80">@(Model.Compute("sum(wx_maidan_order_count)+sum(ye_maidan_order_count)-sum(ye_order_count)", ""))</th>
+                    <th width="60">@(Model.Compute("sum(wx_maidan_order_count)", ""))/@(Model.Compute("sum(wx_maidan_total_fee)", ""))</th>
+                    <th width="60">
+                        @{
+                            object sum2 = Model.Compute("sum(ye_maidan_total_fee)-sum(ye_total_fee)", "");
+                            string sum2Result = "0.00";
+                            if (!Convert.IsDBNull(sum2))
+                            {
+                                sum2Result= Convert.ToDouble(sum2).ToString("F");
+                            }
+                        }
+                        @(Model.Compute("sum(ye_maidan_order_count)-sum(ye_order_count)", ""))/@(sum2Result)
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @{System.Data.DataRow dr = null;}
+                @for (int index = 0; index < Model.Rows.Count; index++)
+                {
+                    dr = Model.Rows[index];
+                    <tr class="text-c">
+                        <td>@dr["order_date"]</td>
+                        <td style="color: #ff0000;font-weight: bold;">
+                            @(Convert.ToDouble(Convert.ToDouble(dr["total_total_fee"]) + Convert.ToDouble(dr["wx_maidan_total_fee"]) + Convert.ToDouble(dr["ye_maidan_total_fee"]) - Convert.ToDouble(dr["ye_total_fee"])).ToString("F")) 元
+                        </td>
+                        <td>
+                            @(Convert.ToInt32(dr["order_count"]))单
+                        </td>
+                        <td>@dr["dn_order_count"]单</td>
+                        <td>@dr["wm_order_count"]单</td>
+
+                        <td>@dr["wx_order_count"]单 / @dr["wx_total_fee"]元</td>
+                        <td>@dr["xj_order_count"]单 / @dr["xj_total_fee"]元</td>
+                        <td>@dr["ye_order_count"]单 / @dr["ye_total_fee"]元</td>
+                        <td>
+                            <!--买单-->
+                            @(Convert.ToInt32(dr["wx_maidan_order_count"]) + Convert.ToInt32(dr["ye_maidan_order_count"]) - Convert.ToInt32(dr["ye_order_count"]))单
+                        </td>
+                        <td>@dr["wx_maidan_order_count"]单 / @dr["wx_maidan_total_fee"]元</td>
+                        <td>
+                            <!--ye_maidan_order_count包含了买单和下单所以要减去下单-->
+                            @(Convert.ToInt32(dr["ye_maidan_order_count"]) - Convert.ToInt32(dr["ye_order_count"]))单 / @((Convert.ToDouble(@dr["ye_maidan_total_fee"]) - Convert.ToDouble(dr["ye_total_fee"])).ToString("F"))元
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

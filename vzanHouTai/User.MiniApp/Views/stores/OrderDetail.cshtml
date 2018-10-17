@@ -1,0 +1,218 @@
+﻿@using Entity.MiniApp.Conf;
+@using Entity.MiniApp.Stores;
+@using Entity.MiniApp;
+@model StoreGoodsOrder
+@{
+    //小程序商城订单详情
+    ViewBag.Title = "订单详情";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    List<StoreOrderCardDetail> CartList = ViewBag.CartList;
+    List<StoreGoodsOrderLog> OrderLogList = ViewBag.OrderLogList;
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/shopping-mall-backstage.css">
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/shopping-mall-jiaoyiguanli.css">
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/backstage-nav.css">
+
+
+<style type="text/css">
+    .jygl-all-table tr .name {
+        color: #333;
+    }
+
+    .order-detail-czll span {
+        display: block;
+    }
+    ul, li {
+    list-style: none;
+}
+    .fl {
+    float: left;
+}
+</style>
+
+<div class="bz sm-dpsj-hidden" style="padding:  10px;">
+    <div class="bz sm-dpsj-overflow">
+        <!--发布商品-->
+        <div class="sm-dpsj-content">
+            <div class="sc-dpsz-content">
+                <div style="padding: 15px;">
+                    <!--订单详情-->
+                    <div>
+                        <div class="bz gray-bg">
+                            <div class="sc-title" style="margin-bottom: 0;">
+                                订单详情
+                            </div>
+                        </div>
+                        <div style="padding: 15px 0;">
+                            <ul class="clearfix order-detail">
+                                <li>订单状态：<span style="color: #ff4343;">@(Enum.GetName(typeof(OrderState), Model.State))</span></li>
+                                <li>
+                                    订单编号：@(Model.OrderNum)
+                                </li>
+                                <li>下单时间：@(Model.CreateDate.ToString("yyyy-MM-dd HH:mm:ss"))</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!--订单信息-->
+                    <div>
+                        <div class="bz gray-bg">
+                            <div class="sc-title" style="margin-bottom: 0;">
+                                订单信息
+                            </div>
+                        </div>
+                        <div style="padding: 15px 0 15px 24px;">
+                            <ul class="clearfix order-infor-ul">
+                                <li>运费：¥@((Model.FreightPrice * 0.01).ToString())@*@(ViewBag.FreightT)*@</li>
+                                <li>订单总价：<span class="yuan" style="color: #f60;">@((Model.BuyPrice * 0.01).ToString("0.00"))</span></li>
+                            </ul>
+                            <!--所有订单-->
+                            <table class="jygl-all-table" style="margin-top: 15px;width: 800px;">
+                                <thead>
+                                    <tr style="background: #e5e5e5;">
+                                        <th style="width: 50%;">商品</th>
+                                        <th>单价/数量</th>
+                                        <th>价格</th>
+                                        <th>合计 </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in CartList)
+                                    {
+                                        <tr>
+                                            <td class="sp-pic">
+                                                <ul class="d-flex">
+                                                    <li class="fl pic">
+                                                        <img src="@item.ImgUrl">
+                                                    </li>
+                                                    <li class="flex">
+                                                        <a class="name" href="jygl-all-good-detail.html">
+                                                            @item.GoodsName
+                                                        </a>
+                                                        <p style="text-align: left;margin: 5px 0 0 10px;">@item.SpecInfo</p>
+                                                    </li>
+                                                </ul>
+                                            </td>
+                                            <td>@((item.Price * 0.01).ToString("0.00"))<br>(@(item.Count)件)</td>
+                                            <td>
+                                                <p class="price">@((item.Price * item.Count * 0.01).ToString("0.00"))</p>
+                                            </td>
+                                            @if (item == CartList[0])
+                                            {
+                                                <td rowspan="@CartList.Count()">
+                                                    <p class="price">@((Model.BuyPrice * 0.01).ToString("0.00"))</p>
+                                                    <p>(含运费<span class="price" style="color: #555;">@((Model.FreightPrice * 0.01).ToString("0.00"))</span>)</p>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!--物流信息-->
+                    <div>
+                        <div class="bz gray-bg">
+                            <div class="sc-title" style="margin-bottom: 0;">
+                                物流信息
+                            </div>
+                        </div>
+                        <div style="padding: 15px 0;">
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">收货人：</li>
+                                <li>@(Model.AccepterName)</li>
+                            </ul>
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">收货地址：</li>
+                                <li>@(Model.Address)</li>
+                            </ul>
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">邮政编码：</li>
+                                <li>@(Model.ZipCode)</li>
+                            </ul>
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">手机号码：</li>
+                                <li>@(Model.AccepterTelePhone)</li>
+                            </ul>
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">配送方式：</li>
+                                <li>@(ViewBag.FreightT)</li>
+                            </ul>
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">配送时间：</li>
+                                @{  var pssj = Model.DistributeDate.ToString("yyyy-MM-dd HH:mm:ss"); }
+                                <li>@(pssj.Equals("0001-01-01 00:00:00") ? "" : pssj )</li>
+                            </ul>
+                            <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                <li class="order-width">买家留言：</li>
+                                <li>
+                                    @(Model.Message)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!--物流动态-->
+                    <div>
+                        <div class="bz gray-bg">
+                            <div class="sc-title" style="margin-bottom: 0;">
+                                物流动态
+                            </div>
+                        </div>
+                        <div>
+                            <div style="padding: 15px 0;">
+                                <ul class="d-flex d-flex-center sc-dpsj-infor">
+                                    <i style="margin-left:23px">暂无物流动态</i>
+                                </ul>
+                            </div>
+                            <!-- <ul class="bz order-detail-wlzt">
+                                <li>[深圳市]中通快递福田新福星已揽收</li>
+                                <i></i>
+                                <span></span>
+                            </ul>
+                            <ul class="bz order-detail-wlzt">
+                                <li>包裹等待揽收</li>
+                                <i></i>
+                                <span></span>
+                            </ul> -->
+                        </div>
+                    </div>
+
+                    <!--操作历史-->
+                    <div style="margin-top:15px">
+                        <div class="bz gray-bg">
+                            <div class="sc-title" style="margin-bottom: 0;">
+                                操作历史
+                            </div>
+                        </div>
+                        @foreach (var item in OrderLogList)
+                        {
+                            <div style="padding: 15px 0;">
+                                <div class="order-detail-czll d-flex">
+                                    <span class="name">@(item.UserName)&nbsp;&nbsp;</span>
+                                    <span class="yu">于&nbsp;&nbsp;@(item.CreateDate.ToString("yyyy-MM-dd HH:mm:ss"))&nbsp;&nbsp;</span>
+                                    <span class="cz">@(item.LogInfo) </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <!-- 退款日志  -->
+
+                </div>
+                <!--返回  -->
+                <div style="padding: 10px 0;">
+                    <a href="javascript:history.go(-1);" class="bz save-bt save-bt-jq" value="返回" style="text-align: center;margin-left: 140px;">返回</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,188 @@
+﻿@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/PlatBusiness/Views/Shared/_LayoutAdmin.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (aid <= 0)
+    {
+        aid = Utility.IO.Context.GetRequestInt("appId", 0);
+    }
+  
+    int type= Utility.IO.Context.GetRequestInt("type", 0);
+}
+<body class="fixed-sidebar full-height-layout gray-bg" style="overflow:hidden">
+    <div id="wrapper">
+        <!-- 顶部 -->
+        <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="admin-logo">
+                <img src="~/Areas/Plat/static/images/logo.png" height="50" />
+            </div>
+            <ul class="nav navbar-top-links main-menu">
+                <li class="hidden-xs">
+                    <a href="/dzhome/casetemplate"><i class="fa fa-mail-reply"></i> 查看所有模板</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- #region 左侧导航 -->
+        <nav class="navbar-default navbar-static-side" role="navigation">
+            <div class="nav-close">
+                <i class="fa fa-times-circle"></i>
+            </div>
+            <div class="sidebar-collapse">
+                <ul class="nav" id="side-menu">
+                    <li class="active">
+                        <a href="#">
+                            <i class="fa fa-home"></i> <span class="nav-label">小未管理平台</span><span class="fa arrow"></span>
+                        </a>
+                        <ul class="nav nav-second-level">
+                            <li><a class="J_menuItem" href="/config/MiniAppConfig?appId=@aid&SouceFrom=TemplateDecoration&type=@TmpType.小未平台">小程序授权</a></li>
+                            <li><a class="J_menuItem" href="/Plat/Config/Setting?aid=@aid">运营情况</a></li>
+                            <li>
+                                <a href="#">
+                                    <span class="nav-label">店铺管理</span><span class="fa arrow"></span>
+                                </a>
+                                <ul class="nav nav-second-level">
+                                    <li><a class="J_menuItem" href="/Plat/Store/Index?aid=@aid">店铺列表</a></li>
+                                    <li><a class="J_menuItem" href="/Plat/SyncData/Index?aid=@aid">数据同步</a></li>
+                                    <li><a class="J_menuItem" href="/Plat/Store/Category?aid=@aid">店铺分类</a></li>
+                                </ul>
+                            </li>
+                            <li><a class="J_menuItem" href="/Plat/Category/Index?aid=@aid">优选商品</a></li>
+                            <li>
+                                <a href="#">
+                                    <span class="nav-label">分类信息</span><span class="fa arrow"></span>
+                                </a>
+                                <ul class="nav nav-second-level">
+                                    <li><a class="J_menuItem" href="/Plat/Msg/Conf?aid=@aid">配置管理</a></li>
+                                    <li><a class="J_menuItem" href="/Plat/Msg/TypeList?aid=@aid">信息分类</a></li>
+                                    <li><a class="J_menuItem" href="/Plat/Msg/Index?aid=@aid">信息管理</a></li>
+                                    <li><a class="J_menuItem" href="/Plat/Msg/PostUser?aid=@aid">发帖用户</a></li>
+                                    <li><a class="J_menuItem" href="/Plat/Msg/ReportMsg?aid=@aid">举报管理</a></li>
+                                </ul>
+                            </li>
+                            <li><a class="J_menuItem" href="/Plat/Category/Index?aid=@aid">首页设置</a></li>
+                            <li><a class="J_menuItem" href="/Plat/MyCard/Index?aid=@aid">会员管理</a></li>
+                            <li><a class="J_menuItem" href="/Plat/Config/Setting?aid=@aid">平台配置</a></li>
+                            <li><a class="J_menuItem" href="/Plat/ApplyApp/Index?aid=@aid">独立小程序</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <!-- #endregion -->
+        <!--右侧部分开始-->
+        <div id="page-wrapper" class="gray-bg dashbard-1">
+            <div class="J_mainContent" id="content-main">
+                @if (type > 0)
+    {
+            <iframe class="J_iframe" name="J_iframe" width="100%" height="100%" src="/config/MiniAppConfig?appId=@aid&SouceFrom=TemplateDecoration&type=@TmpType.小未平台" frameborder="0" data-id="" seamless></iframe>
+}
+else
+{
+            <iframe class="J_iframe" name="J_iframe" width="100%" height="100%" src="/Plat/Config/Index?aid=@aid" frameborder="0" data-id="" seamless></iframe>
+}
+            </div>
+            <!-- 底部 -->
+            <div class="footer">
+                <div class="pull-right">
+                    <p class="copyright">小未程序 © <a href="http://www.xiaochengxu.com.cn" target="_blank">http://www.xiaochengxu.com.cn</a></p>
+                </div>
+            </div>
+        </div>
+        <!--右侧部分结束-->
+
+    </div>
+
+
+
+</body>
+@section scripts{
+    <script>
+        $(function () {
+
+            //点击左侧菜单
+            $(".J_menuItem").click(function () {
+                var url = $(this).attr("href");
+                $(".J_iframe").attr("src", url);
+            });
+            var currentPageSrc = $(".J_iframe").attr("src");
+            var currentMenu = $("#side-menu .J_menuItem[href='" + currentPageSrc + "']");
+            if (currentMenu) {
+                currentMenu.parent().addClass("active").siblings().removeClass("active");
+                currentPageSrc = null;
+            }
+
+            $("body").bind("keydown", function (e) {
+                e = window.event || e;
+
+                //屏蔽F5刷新键
+                if (event.keyCode == 116) {
+                    $(".J_iframe").attr("src", $(".J_iframe").attr("src"));
+                    e.keyCode = 0; //IE下需要设置为keyCode为false
+                    return false;
+                }
+
+                //屏蔽ctrl+R
+                if ((event.ctrlKey) && (event.keyCode == 82)) {
+                    $(".J_iframe").attr("src", $(".J_iframe").attr("src"));
+                    e.keyCode = 0;
+                    return false;
+                }
+            });
+            var addon_name = "";
+            //				if(addon_name != '') {
+            //					$("#mkgl").trigger('click');
+            //				}
+
+        });
+    </script>
+    <script type="text/javascript">
+        // new menu
+        $(".nav-l-menu").on("click", "h3", function () {
+            var menuUl = $(this).next("ul");
+            if (menuUl.is(":hidden")) {
+                menuUl.slideDown().closest("li").siblings().find("ul").slideUp();
+                menuUl.closest("li").siblings().find("i").removeClass("active");
+                $(this).find("i").addClass("active");
+                if (menuUl.find("a").hasClass("active")) {
+                    $(this).removeClass("active");
+                } else {
+                    $(".nav-l-menu a.active").closest("ul").prev("h3").addClass("active");
+                }
+            } else {
+                menuUl.slideUp().siblings("ul").slideUp();
+                $(this).find("i").removeClass("active");
+                if (menuUl.find("a").hasClass("active")) {
+                    $(this).addClass("active");
+                }
+            }
+
+        })
+        $(".nav-l-menu").on("click", "a", function () {
+            $(this).addClass("active")
+            var aLi = $(this).closest("li").siblings();
+            var aLiDrop = $(this).closest(".nav-l-drop").siblings();
+            aLi.find("a").removeClass("active");
+            aLi.find("h3").removeClass("active");
+            aLi.find("i").removeClass("active");
+            aLi.find("ul").slideUp();
+            aLiDrop.find("a").removeClass("active");
+            aLiDrop.find("h3").removeClass("active");
+            aLiDrop.find("i").removeClass("active");
+            aLiDrop.find("ul").slideUp();
+            return false;
+        })
+
+        function myTab(tabTit, tabCon, events) {
+            $(tabTit).find("li:first").addClass("active");
+            $(tabCon).find(".nav-l-item:first").show();
+            $(tabTit).on(events, "li", function () {
+                $(this).addClass("active").siblings("li").removeClass("active");
+                var tIndex = $(tabTit).find("li").index(this);
+                $(tabCon).find(".nav-l-item").eq(tIndex).show().siblings().hide();
+            })
+        }
+
+        myTab(".nav-l-main", ".nav-l-menu", "click");
+    </script>
+}

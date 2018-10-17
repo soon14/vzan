@@ -1,0 +1,221 @@
+﻿
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Areas/Dish/Views/Shared/_LayoutAdmin.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aId", 0);
+}
+@model LunboEditViewModel
+<style>
+    .layui-table th { text-align: center !important }
+</style>
+<body class="gray-bg">
+    <div id="app" v-cloak>
+        <div class="wrapper wrapper-content animated fadeInUp">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="ibox-title">
+                        @if (Model.picture.Id > 0)
+                        {
+                            <h5>修改轮播图</h5>
+                        }
+                        else
+                        {
+                            <h5>新增轮播图</h5>
+                        }
+                    </div>
+                    <div class="ibox-content xcx-list">
+
+                        <form method="post" action="http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Swiper/edit.html" class="form-horizontal" id="post_from">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">标题名称</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" name="title" v-model="model.title">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">缩略图</label>
+                                <div class="col-sm-10" v-if="model.img.length<=0">
+                                    <div class="controls uploadrow2" data-max="1" title="点击添加图片" rel="img" v-on:click="UploadImg()">
+                                    </div>
+                                    <span class="help-block m-b-none">图片建议尺寸：700px*350px</span>
+                                </div>
+                                <div class="col-sm-10" v-else>
+                                    <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="img" v-on:click="UploadImg()">
+
+                                        @*<input type="hidden" name="img" id="cover_id_img" value="5539401" />*@
+                                        <div class="upload-img-box">
+                                            <div class="upload-pre-item2">
+                                                <img :src="model.img" width="100" height="100">
+                                            </div>
+                                            <em class="edit_img_icon"> </em>
+                                        </div>
+                                    </div>
+                                    <span class="help-block m-b-none">图片建议尺寸：700px*350px</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">链接地址</label>
+                                <div class="col-sm-10">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control"  v-model="model.url" readonly="" style="display:none;">
+                                        <input type="text" class="form-control"  v-model="url_fmt" readonly="">
+                                        <span class="input-group-btn">
+                                            <a class="btn btn-primary" href="javascript:;" v-on:click="SelLink()">选 择</a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">是否显示</label>
+                                <div class="col-sm-10">
+                                    <label class="radio-inline">
+                                        <input type="radio" name="is_show" value="1" v-model="model.is_show">显示
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="is_show" value="0" v-model="model.is_show">关闭
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">排序（数字越大越靠前）</label>
+                                <div class="col-sm-10">
+                                    <input type="number" class="form-control" name="is_order" v-model="model.is_order">
+                                </div>
+                            </div>
+
+                            <div class="hr-line-dashed"></div>
+                            <input type="hidden" name="id" value="2388">
+                            <div class="form-group">
+                                <div class="col-sm-4 col-sm-offset-2">
+                                    <button class="btn submit-btn ajax-post btn-primary"  type="button" target-form="form-horizontal" v-on:click="SaveInfo()">确 定</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- #region 上传图片弹窗 -->
+        <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="border:0px;">
+                        <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                    </div>
+                    <div class="modal-body" style="min-height:500px;padding:0px;">
+                        <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="uploadImgs" name="uploadImgs" value="" />
+        <!-- #endregion -->
+        <!--#region 选择跳转链接-->
+        <div class="modal fade" id="selLink" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: #e5e5e5;">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+
+                    </div>
+                    <div class="modal-body">
+                        <table class="layui-table" lay-skin="line" style="text-align:center;">
+                            <thead style="text-align:center;">
+                                <tr><th>Id</th><th>店铺名称</th><th>选择</th></tr>
+                            </thead>
+                            <tr v-for="store in storeList"><td>{{store.id}}</td><td>{{store.dish_name}}</td><td><button type="button" class="btn btn-primary" v-on:click="SelStore(store.id)">选择</button></td></tr>
+                        </table>
+                    </div>
+                    @*<div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary">Save changes</button>
+                        </div>*@
+                </div>
+            </div>
+        </div>
+        <!--#endregion-->
+    </div>
+</body>
+
+@section scripts{
+
+    <script>
+        var model =@Html.Raw(JsonConvert.SerializeObject(Model));
+        var aid=@aid;
+        var app = new Vue({
+            el: '#app',
+            data: {
+                model: model.picture,
+                storeList: model.storeList,
+                aid: aid,
+                ImgInfo:null,
+            },
+            computed: {
+                url_fmt: function () {
+                    return this.model.url ? "/pages/restaurant/restaurant-home-info/index?dish_id=" + this.model.url:"";
+                }
+            },
+            methods: {
+                UploadImg: function () {
+                    var that = this;
+                    var framSrc;
+                    var maxCount = 1;
+                    var remainCount = 1;
+                    framSrc = "/tools/UpLoadImgFrm?Id=" + that.aid + "&appId=" + that.aid + "&multi_selection=0&maxImgSize=2&objKey=" + "ImgInfo" + "&objType=3&remainCount=" + remainCount;
+
+                    $("#uploadFrame").attr("src", framSrc);
+                    $("#addModal_UploadImg").modal('show');
+                },
+                SelLink: function () {
+                    var that = this;
+                    $("#selLink").modal('show');
+                },
+                SelStore: function (id) {
+                    var that = this;
+                    $("#selLink").modal('hide');
+                    that.model.url = id;
+                },
+                SaveInfo: function () {
+                    var that = this;
+                   
+                    that.model.title = $.trim(that.model.title);
+                    if (that.model.title === '') {
+                        layer.msg("请输入标题");
+                        return;
+                    }
+                    if (that.model.img < 0) {
+                        layer.msg("请选择图片");
+                        return;
+                    }
+                    
+                    if (parseInt(that.model.is_order) < 0) {
+                        layer.msg("排序值请输入不小于0的整数");
+                        return;
+                    }
+                    var layerIndex = layer.load(2);
+                    $.post("/Dish/Swiper/SavePicture", { picture: that.model, aid: that.aid }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.isok) {
+                            layer.msg(data.Msg, { time: 700, anim: 5 }, function () {
+                                layer.load(2);
+                                window.location.href = "Index?aid=" + that.aid;
+                            });
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                }
+            }
+        })
+        $('#addModal_UploadImg').on('hidden.bs.modal', function (e) {
+            app.model.img = app.ImgInfo.materialPath;
+        })
+    </script>
+}

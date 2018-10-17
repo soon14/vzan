@@ -1,0 +1,595 @@
+﻿@using Entity.MiniApp.Tools
+@using User.MiniApp.comment
+@model Bargain
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "发布砍价";
+
+    int deliveryTemplateId = 0;
+    string enableTemplate = string.Empty;
+    float weight = 0f;
+    DeliveryConfig deliveryConfig = ViewBag.DeliveryConfig;
+    if (deliveryConfig != null)
+    {
+        deliveryTemplateId = deliveryConfig.Attr.DeliveryTemplateId;
+        enableTemplate = deliveryConfig.Attr.Enable ? "checked" : string.Empty;
+        weight = (float)(deliveryConfig.Attr.Weight * 0.001);
+    }
+    List<DeliveryTemplate> deliveryTemplate = ViewBag.DeliveryTemplate ?? new List<DeliveryTemplate>();
+
+    string readOnly = Model.Id > 0 ? "readosnly" : "";
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+
+<style>
+    .twxq-new-kuang { border: 1px solid #ccc; padding: 10px; margin-right: 10px; background: #fff; }
+
+    .twxq-edit-zhanshi { border: 2px dashed #fc7d7d; padding: 10px; min-height: 108px; position: relative; }
+
+    .spgl-bianji-bt { position: absolute; bottom: 0; right: 0; display: inline-block; background-color: rgba(0,0,0,0.3); color: #fff; padding: 0 5px; margin-left: 1px; font-size: 12px; }
+
+    .bz { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+    .spxqq-f p:first-child { font-size: 17px; }
+
+    .spxqq-f { text-align: center; margin-top: 17px; line-height: 25px; }
+    .form-control{width:300px !important;}
+    #myImg { position: relative; z-index: 1; width: 100px; min-height: 100px; background: #444 url(/Areas/DishAdmin/images/add.png) no-repeat center center; }
+</style>
+@Html.HiddenFor(m => m.Id, new { name = "Id" })
+@Html.HiddenFor(m => m.ImgUrl, new { name = "ImgUrl" })
+
+<div>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td align="right" valign="top"><span class="danger">*</span>产品图片：</td>
+            <td align="left">
+                <div class="col-sm-10">
+                    <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="dish_logo">
+                       
+                        <div class="upload-img-box">
+                            
+                                <div class="upload-pre-item2">
+                                    <img src="@ViewBag.CarouselList" width="100" height="100" id="myImg">
+                                    <em class="edit_img_icon"> </em>
+                                </div>
+                            
+                        </div>
+                        <b class="warn">建议尺寸：750*750px</b>
+                    </div>
+                </div>
+
+               
+            </td>
+
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">砍价名称：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.BName, new { @class = "form-control width300", palcehlder = "1-40字", maxlength = "40", style = "width:300px;" })
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">底价：<label style="color: red">*</label></td>
+            <td>
+                <input name="FloorPrice" @readOnly id="FloorPrice" maxlength="6" placeholder="底价" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@(Model.FloorPrice == 0 ? "0" : (Model.FloorPrice*0.01).ToString())" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">原价：<label style="color: red">*</label></td>
+            <td>
+
+                <input name="OriginalPrice" @readOnly id="OriginalPrice" maxlength="6" placeholder="原价" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@(Model.OriginalPrice == 0 ? "" : (Model.OriginalPrice*0.01).ToString())" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">砍价最小值：<label style="color: red">*</label></td>
+            <td>
+                <input name="ReduceMin" id="ReduceMin" maxlength="5" placeholder="砍价最小值" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@(Model.ReduceMin == 0 ? "" : (Model.ReduceMin*0.01).ToString())" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">砍价最大值：<label style="color: red">*</label></td>
+            <td>
+                <input name="ReduceMax" id="ReduceMax" maxlength="5" placeholder="砍价最大值" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@(Model.ReduceMax == 0 ? "" : (Model.ReduceMax*0.01).ToString())" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">重量(kg)：</td>
+            <td>
+                <input name="weight" id="weight" maxlength="7" @readOnly placeholder="kg" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@weight" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">运费：</td>
+            <td>
+                <input name="Freight" id="Freight" maxlength="5" @readOnly placeholder="运费" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@(Model.GoodsFreight == 0 ? "0" : (Model.GoodsFreight*0.01).ToString())" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">运费模板：</td>
+            <td>
+                <select id="templateId" name="templateId" @(readOnly == "readonly" ? "disabled" : "") class="form-control width300" >
+                    <option value="0">不设置</option>
+                    @foreach (var template in deliveryTemplate)
+                    {
+                        <option value="@template.Id" @(template.Id == deliveryTemplateId ? "selected" : "")>@template.Name</option>
+                    }
+                </select>
+                <label class="checkbox-inline">
+                    <input id="enableTemplate" name="enableTemplate" type="checkbox" value="1" @enableTemplate @(readOnly == "readonly" ? "disabled" : "") />启用
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">自己砍价间隔小时数：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" maxlength="2" placeholder="自己砍价间隔小时数" id="IntervalHour" onkeyup="value=value.replace(/[^\d]/g,'')" onbeforepaste="clipboardData.setData('text',clipboardData.getData('text').replace(/[^\d]/g,''))" value="@(Model.Id > 0 ? Model.IntervalHour : 12)" class="form-control width300">
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">初始化砍价人数：</td>
+            <td>
+                <input name="InitSaleCount" id="InitSaleCount" maxlength="9" onkeyup="value = value.replace(/[^\d\.]/g, '')" value="@(Model.InitSaleCount)" class="form-control width300" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">砍价描述：</td>
+            <td>
+
+
+                <div style="display:flex">
+                    <div style="flex-grow:0.1">
+                      <div id="editor" style="height:460px;width:90%">
+
+                      </div>
+                    </div>
+                    <div style="flex-grow:1">
+                        <div style="width:345px;height:100%;max-height:650px;overflow:auto" class="twxq-new-kuang">
+                            <img src="http://i.vzan.cc/image/jpg/2017/7/28/121121bc5990e3d39140db91a07db4f02114fb.jpg">
+                            <div class="bz twxq-edit-zhanshi">
+                                <p>内容</p><a class="spgl-bianji-bt">编辑</a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                @*<label class="forinputmassage" style="color:red;">后台编辑过的砍价，微信端再编辑拼团会把文本中的样式和图片去掉</label>*@
+            </td>
+
+        </tr>
+        <tr>
+            <td style="text-align: right;">详情图片：</td>
+            <td class="DescImgList">
+                @Html.FileUploadFor("DescImgList", maxFiles: 9, controllerWidth: 360, initImageList: (List<object>)ViewBag.DescImgList, removeCallback: "removeFun")
+                <label class="forinputmassage">点击灰色区域选择上传图片</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">开始时间：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" class="form-control width300" id="datetimepicker1" readOnly="readOnly" style="background-color:white;height:100%;" value="@(Model.Id>0?Model.StartDate:DateTime.Now.AddHours(1))" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">结束时间：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" class="form-control width300" id="datetimepicker2" readOnly="readOnly" style="background-color:white;height:100%;" value="@(Model.Id>0?Model.EndDate:DateTime.Now.AddHours(1).AddDays(7))" />
+
+            </td>
+        </tr>
+
+        <tr>
+            @{
+                if (ViewBag.BargainType > 0)
+                {
+                    <td style="text-align: right;">库存：<label style="color: red">*</label></td>
+                }
+                else
+                {
+                    <td style="text-align: right;">生成数量：<label style="color: red">*</label></td>
+                }
+            }
+           
+            <td>
+                <input type="text" maxlength="5" placeholder="生成数量" id="CreateNum" onkeyup="value = value.replace(/[^\d\.]/g, '')" onafterpaste="this.value=this.value.replace(/D/g, '')" value="@(Model.Id > 0 ? Model.CreateNum : 20)" class="form-control width300">
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" id="btnSave" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+    </table>
+</div>
+<!-- loading -->
+<div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body" id="modelMsg">
+                请稍候,正在处理你的请求.....
+            </div>
+        </div>
+    </div>
+</div>
+
+  <!-- #region 上传图片弹窗 -->
+<div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="border:0px;">
+                <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+            </div>
+            <div class="modal-body" style="min-height:500px;padding:0px;">
+                <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- #endregion -->
+
+<input id="SigImgUrl" type="file" name="SigImgUrl" onchange="UploadSigImgUrl()" style="height: 0px; width: 0px;opacity:0;" />
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<script type="text/html" id="js_article_content">@Html.Raw(Model.Description)</script>
+
+<script>
+
+  
+
+    $(function () {
+        $("#myImg").on("click",function(){
+            
+           
+            var framSrc="/tools/UpLoadImgFrm?appId=@ViewBag.appId&multi_selection=0&maxImgSize=1&objKey=myImg&objType=1&frontMethod=1&remainCount=1&imgWidth=750&imgHeight=750";
+    
+            $("#uploadFrame").attr("src",framSrc);
+
+            $("#addModal_UploadImg").modal('show');
+        });
+
+
+        $('#datetimepicker1').datetimepicker({
+            language: 'zh-CN',
+            format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+            startDate: new Date(),//开始日期时间，在此之前的都不可选，同理也有endDate
+            weekStart: 1,
+            todayBtn: 0,
+            autoclose: 1,
+            todayHighlight: 1,
+            startView: 2,
+            forceParse: true,
+            showMeridian: 1,
+            minuteStep:1
+        });
+        $('#datetimepicker2').datetimepicker({
+            language: 'zh-CN',
+            format: 'yyyy/mm/dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+            startDate: new Date(),//开始日期时间，在此之前的都不可选，同理也有endDate
+            weekStart: 1,
+            todayBtn: 0,
+            autoclose: 1,
+            todayHighlight: 1,
+            forceParse: true,
+            showMeridian: 1,
+            minuteStep:1
+        });
+
+
+
+
+
+
+
+        //编辑器
+        comeditor = UE.getEditor('editor',{
+            toolbars: [
+                ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                ['paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+            ],
+            imageUrl: "/Upload/Image?cityid=" + @ViewBag.appId,
+            autoHeight: true
+        });
+        comeditor.ready(function () {
+            if ($("#js_article_content").html() != "") {
+                comeditor.setContent($("#js_article_content").html());
+            }
+           
+        });
+        comeditor.addListener("contentChange", function () {
+            console.log("change");
+            if (comeditor != null) {
+                jQuery(".spgl-bianji-bt").siblings().remove();
+                jQuery(".spgl-bianji-bt").before(comeditor.getContent());
+            } else {
+                var html = '<div class="spxqq-f"><p>内容</p><p>可自由编辑</p></div><a class="spgl-bianji-bt">编辑</a>'
+                jQuery('.twxq-edit-zhanshi').html(html);
+            }
+        });
+
+
+        // #region 保存
+        $('#btnSave').on('click', function () {
+           
+        
+
+
+            var BName = $('#BName').val();
+            if (BName.length === 0) return AppTools.Alert("请填写砍价名称");
+            if (BName.length > 40) {
+                return AppTools.Alert("砍价名称最多40个字！");
+            }
+
+            var FloorPrice = 0;
+            var bmoney = $('#FloorPrice').val();
+
+            if (bmoney!="") {
+                if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(bmoney)) {
+                    AppTools.Alert("砍价底价必须为数字，且最多为2位小数,最大为6位整数！");
+                    return false;
+                } else {
+                    var price_save = bmoney * 1000000 / 10000;
+                    //修改为：底价可为零元
+                    //if (0 == price_save || parseInt(price_save) < 1) {
+                    //    AppTools.Alert("砍价底价不能低于1分钱！");
+                    //    return false;
+                    //} else
+                        FloorPrice = price_save;
+                }
+            }
+
+            var OriginalPrice = 0;
+            var omoney = $('#OriginalPrice').val();
+            if (omoney.length === 0) return AppTools.Alert("请填写原价");
+            if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(omoney)) {
+                AppTools.Alert("原价必须为数字，且最多为2位小数,最大为6位整数！");
+                return false;
+            } else {
+                var price_save = omoney * 1000000 / 10000;
+                if (parseInt(price_save) < 1) {
+                    AppTools.Alert("原价不能低于1分钱！");
+                    return false;
+                } else
+                    OriginalPrice = price_save;
+            }
+            if (parseInt(omoney * 100) <= parseInt(bmoney * 100)) {
+                AppTools.Alert("原价必须大于底价！");
+                return false;
+            }
+
+            var ReduceMin = 0;
+            var minmoney = $('#ReduceMin').val();
+            if (minmoney.length === 0) return AppTools.Alert("请填写砍价最小金额");
+            if (!/^[0-9]{1,5}(\.\d{0,2})?$/.test(minmoney)) {
+                AppTools.Alert("砍价最小金额必须为数字，且最多为2位小数,最大为5位整数！");
+                return false;
+            } else {
+                var price_save = minmoney * 1000000 / 10000;
+                if (parseInt(price_save) < 1) {
+                    AppTools.Alert("砍价最小金额不能低于1分钱！");
+                    return false;
+                } else
+                    ReduceMin = price_save;
+            }
+            if (parseInt(omoney * 100) <= parseInt(minmoney * 100)) {
+                AppTools.Alert("砍价最小金额必须小于砍价原价！");
+                return false;
+            }
+
+            var ReduceMax = 0;
+            var cmoney = $('#ReduceMax').val();
+            if (cmoney.length === 0) return AppTools.Alert("请填写砍价最大金额");
+            if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(cmoney)) {
+                AppTools.Alert("砍价最大金额必须为数字，且最多为2位小数,最大为6位整数！");
+                return false;
+            } else {
+                var price_save = cmoney * 1000000 / 10000;
+                if (parseInt(price_save) < 1) {
+                    AppTools.Alert("砍价最大金额不能低于1分钱！");
+                    return false;
+                } else
+                    ReduceMax = price_save;
+            }
+            if (parseInt(cmoney * 100) <= parseInt(minmoney * 100)) {
+                AppTools.Alert("砍价最大金额必须大于砍价最小金额！");
+                return false;
+            }
+            if (parseInt(omoney * 100) <= parseInt(cmoney * 100)) {
+                AppTools.Alert("砍价最大金额必须小于砍价原价！");
+                return false;
+            }
+
+            var ValidDateStart = $('#datetimepicker1').val();
+            var ValidDateEnd = $('#datetimepicker2').val();
+            if(@(Model.Id) == 0){
+                if (new Date(ValidDateStart) < new Date()) {
+                    AppTools.Alert('开始时间要大于当前时间！');
+                    return false;
+                }
+            }
+            if (new Date(ValidDateEnd) < new Date(ValidDateStart)) {
+                AppTools.Alert('结束时间要大于开始时间！');
+                return false;
+            }
+
+
+
+            var imgListAlert = false;
+            if ($('.DescImgList .dz-image-preview').length > 0) {
+                $('.DescImgList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        imgListAlert = true;
+                    }
+                });
+            }
+            if (imgListAlert) {
+                return AppTools.Alert('详情图上传失败 ! ').html();
+            }
+
+            var CreateNum = $('#CreateNum').val();
+            if (0 == CreateNum || CreateNum.length == 0 || CreateNum=="") {
+                AppTools.Alert('请输入生成数量！');
+                return false;
+            }
+            if (CreateNum < 1 || CreateNum > 99999) {
+                AppTools.Alert('生成数量必须在1-99999！');
+                return false;
+            }
+
+            var IntervalHour = $('#IntervalHour').val();
+            if (0 == IntervalHour || IntervalHour.length == 0 || IntervalHour == "") {
+                AppTools.Alert('请输入自己砍价间隔时间！');
+                return false;
+            }
+
+            if (IntervalHour < 1 ) {
+                AppTools.Alert('自己砍价间隔时间最少一小时！');
+                return false;
+            }
+
+            var Description = comeditor.getContent();//ue.getContent();
+            var imgReg = /<img.*?(?:>|\/>)/gi;
+            var arr = Description.match(imgReg);
+            if(arr!=null&&arr.length>0)
+            {
+                AppTools.Alert('编辑器里只允许文字！');
+                return false;
+            }
+            //Base64加密
+            //var b = new Base64();
+            //Description = b.encode(Description);
+
+            //主图
+            var ImgList = $("#myImg").attr("src");
+            if(ImgList==undefined||ImgList==""){
+                AppTools.Alert('请上传主图！');
+                return false;
+            }
+
+            //编辑图
+            var DescImgList = '';
+            $('input[name="DescImgList"]').each(function (i, n) {
+                DescImgList += '|' + $(n).val();
+            });
+
+
+            var Id = $('#Id').val();
+
+            var ImgUrl = $("#ImgUrl").val();
+            //var ValidAddress = $("#ValidAddress").val();
+            //var ValidPhone = $("#ValidPhone").val();
+            //if(ValidAddress==''||ValidPhone==''){
+            //    AppTools.Alert('领奖时间或地址不能为空！');
+            //    return false;
+            //}
+
+
+            ////音乐
+            //var voicepath = $("#voiceid").attr("data-path");
+            ////视频
+            //var videopath = $("#videopath").val();
+            //var oldvid = $("#oldvedio").val();
+
+
+            var FreightVal=$("#Freight").val();
+
+            if (!/^[0-9]{1,3}(\.\d{0,2})?$/.test(FreightVal)) {
+                FreightVal = 0;
+                //AppTools.Alert("运费必须为数字，且最多为2位小数,最大为3位整数！");
+                //return false;
+            }
+
+            FreightVal = FreightVal * 1000000 / 10000;
+            templateId = $('#templateId').val();
+            enableTemplate = !!$('#enableTemplate:checked').length;
+            weight = $('#weight').val();
+            if(enableTemplate && !Number(templateId || 0)){
+                AppTools.Alert("必须选择一个运费模板，才能开启运费模板！");
+                return false;
+            }
+
+            //销售量
+            var InitSaleCount =$("#InitSaleCount").val();
+
+            $('#loading').modal('show');
+            $.post('/tools/AddOrUpdateBargain',
+                {
+                    Id: Id,
+                    ImgUrl: ImgUrl,
+                    BName: BName,
+                    FloorPrice: FloorPrice,
+                    OriginalPrice: OriginalPrice,
+                    ReduceMax: ReduceMax,
+                    ReduceMin: ReduceMin,
+                    StartDate: ValidDateStart,
+                    EndDate: ValidDateEnd,
+                    CreateNum: CreateNum,
+                    IntervalHour: IntervalHour,
+                    Description: Description,
+                    InitSaleCount:InitSaleCount,
+                    //ValidDate:ValidDate,
+                    //ValidAddress:ValidAddress,
+                    //ValidPhone:ValidPhone,
+                    ImgList: ImgList,
+                    DescImgList: DescImgList,
+                    //oldhvid:oldvid,
+                    //videopath:videopath,
+                    //voicepath:voicepath,
+                    StoreId:@ViewBag.StoreId,
+                    BargainType:@ViewBag.BargainType,
+                    GoodsFreight:FreightVal,
+                    enableTemplate: enableTemplate,
+                    templateId: templateId,
+                    weight:weight
+                },
+                function (result) {
+                    if (result.code > 0) {
+
+                        $("#modelMsg").html("操作成功!2秒后自动跳转...");
+
+                        window.setTimeout(function(){
+                            $('#loading').modal('hide');
+                            var c="/tools";
+                            if(@ViewBag.PageType==22){//表示专业版
+                                c="/enterprisepro";
+                            }
+                            window.location.href=c+'/Bargain?appId=@ViewBag.appId&PageType=@ViewBag.PageType';
+                        },2000);
+                    } else {
+                        $('#loading').modal('hide');
+                        AppTools.Alert(result.msg);
+                    }
+                });
+        });
+        // #endregion
+
+
+
+
+
+
+    });
+
+    // #region 删除图片
+    function removeFun(file) {
+        if (file) {
+            $.post('/tools/DeleteImg', { id: file.id }, function (result) {
+                if (!result.Success) {
+                    AppTools.Alert(result.Msg);
+                }
+            });
+        }
+    }
+    // #endregion
+
+
+</script>
+

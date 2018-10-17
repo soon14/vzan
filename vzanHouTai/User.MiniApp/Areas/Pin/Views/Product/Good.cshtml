@@ -1,0 +1,383 @@
+﻿
+@model ViewModel<PinGoods>
+@{
+    string name = "产品";
+    ViewBag.Title = name + "管理";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    PinCategoryBLL categoryBLL = PinCategoryBLL.SingleModel;
+    PinStoreBLL storeBLL = PinStoreBLL.SingleModel;
+
+    List<PinCategory> firstCategory = categoryBLL.GetList(string.Format("aid={0} and state=1 and fid=0 and storeid=0", Model.aId), 2000, 1, "*", "sort desc");
+    List<PinCategory> subCategory = null;
+    int cateIdOne = Utility.IO.Context.GetRequestInt("cateIdOne", 0);
+    int cateId = Utility.IO.Context.GetRequestInt("cateId", 0);
+    string goodsName = Utility.IO.Context.GetRequest("name", string.Intern(""));
+    string shopName = Utility.IO.Context.GetRequest("shopName", string.Intern(""));
+    string shopTel = Utility.IO.Context.GetRequest("shopTel", string.Intern(""));
+    int auditState = Utility.IO.Context.GetRequestInt("auditState", -10);//默认-10=全部
+    string orderBy = Utility.IO.Context.GetRequest("orderBy", string.Intern("indexrank"));
+    string orderMode = Utility.IO.Context.GetRequest("orderMode", string.Intern("desc"));
+
+    if (cateIdOne > 0)
+    {
+        subCategory = categoryBLL.GetListBySql("select * from PinCategory where fid=" + cateIdOne + " and state=1 and  storeid=0 order by sort desc");
+    }
+}
+@section styles{
+<style>
+    .fa.on { color: #3eb94e !important; }
+</style>
+}
+<body class="gray-bg">
+    
+    <div class="wrapper wrapper-content">
+        @*animated fadeInUp*@
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5>@ViewBag.Title</h5>
+                </div>
+                <div class="ibox-content ">
+                    <div class="alert alert-info alert-dismissable">
+                        <button type="button" class="close" data-dismiss="alert"
+                                aria-hidden="true">
+                            &times;
+                        </button>
+                        1，默认所有产品的显示权重都为99 <br />
+                        2，显示权重越大越靠前
+                    </div>
+                    <div class="">
+                        <form action="?" method="get" id="searchForm">
+                            <input type="hidden" name="aId" value="@(Model.aId)" />
+                            <input type="hidden" name="orderBy" id="orderBy" value="indexrank" />
+                            <input type="hidden" name="orderMode" id="orderMode" value="desc" />
+
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td>
+                                        产品分类：
+                                        <select name="cateIdOne" class="form-control" style="width:150px;display:inline-block;" onchange="getSubCategory(this)">
+                                            <option value="0">请选择一级分类</option>
+                                            @if (firstCategory != null && firstCategory.Count > 0)
+                                            {
+                                                foreach (var item in firstCategory)
+                                                {
+                                                    <option value="@(item.id)" @(cateIdOne == item.id ? "selected='selected'" : "")>@(item.name)</option>
+                                                }
+                                            }
+                                        </select>
+                                        <select name="cateId" class="form-control" style="width:150px;display:inline-block;" id="subCategory">
+                                            <option value="0">请选择二级分类</option>
+                                            @if (cateIdOne > 0 && subCategory != null && subCategory.Count > 0)
+                                            {
+                                                foreach (var item in subCategory)
+                                                {
+                                                    <option value="@(item.id)" @(cateId == item.id ? "selected='selected'" : "")>@(item.name)</option>
+                                                }
+                                            }
+                                        </select>
+                                        &nbsp;&nbsp;
+                                        产品名称：
+                                        <input type="text" name="name" class="form-control" style="display:inline-block;width:150px;" value="@(goodsName)" />
+                                        &nbsp;&nbsp;
+                                        店铺名称：
+                                        <input type="text" name="shopName" class="form-control" style="display:inline-block;width:150px;" value="@(shopName)" />
+                                        &nbsp;&nbsp;
+                                        店铺电话：
+                                        <input type="text" name="shopTel" class="form-control" style="display:inline-block;width:150px;" value="@(shopTel)" />
+                                        &nbsp;&nbsp;
+                                        <select name="auditState" class="form-control" style="width:100px;display:inline-block;">
+                                            <option value="-10" @(auditState == -10 ? "selected='selected'" : "")>审核状态</option>
+                                            <option value="1" @(auditState == 1 ? "selected='selected'" : "")>通过</option>
+                                            <option value="0" @(auditState == 0 ? "selected='selected'" : "")>待审核</option>
+                                            <option value="-1" @(auditState == -1 ? "selected='selected'" : "")>拒绝</option>
+                                        </select>
+                                        <input type="submit" class="btn btn-primary" value="查询" />
+                                    </td>
+                                    <td align="right">
+                                        <div class="m-b-sm m-t-sm">
+                                            <a class="btn btn-primary" onclick="batch_sort()"><i class="fa fa-sort"></i> 批量保存显示权重</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </form>
+                    </div>
+
+                    <table id="categorys" class="table table-hover table-condensed table-bordered">
+                        <thead>
+                            <tr>
+
+                                <th width="60">ID</th>
+                                <th>产品名称</th>
+                                <th>产品分类</th>
+                                <th>图片</th>
+                                <th>价格(元)</th>
+                                <th>库存</th>
+                                <th>销量(虚拟+实际)</th>
+                                <th width="60">状态</th>
+                                <th>所属店铺</th>
+                                <th>
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="cursor:pointer;" onclick="sortField('updatetime','@(orderMode)')">
+                                        <tr style="line-height:1;">
+                                            <td rowspan="2">更新时间</td>
+                                            <td width="30" align="center"><span class='fa fa-sort-up @(orderBy=="updatetime"&&orderMode=="asc"?"on":"")'></span> </td>
+                                        </tr>
+                                        <tr style="line-height:1;">
+                                            <td align="center">
+                                                <span class='fa fa-sort-down @(orderBy=="updatetime"&&orderMode=="desc"?"on":"")'></span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </th>
+                                <th>审核状态</th>
+                                <th>
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="cursor:pointer;" onclick="sortField('indexrank','@(orderMode)')">
+                                        <tr style="line-height:1;">
+                                            <td rowspan="2">显示权重</td>
+                                            <td width="30" align="center"><span class="fa fa-sort-up @(orderBy=="indexrank"&&orderMode=="asc"?"on":"")"></span> </td>
+                                        </tr>
+                                        <tr style="line-height:1;">
+                                            <td align="center">
+                                                <span class='fa fa-sort-down @(orderBy=="indexrank"&&orderMode=="desc"?"on":"")'></span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </th>
+                                <th width="100">操作</th>
+                        </thead>
+                        <tbody>
+                            @foreach (PinGoods item in Model.DataList)
+                            {
+                                PinCategory cate1 = categoryBLL.GetModel(item.cateIdOne);
+                                PinCategory cate2 = categoryBLL.GetModel(item.cateId);
+                                <tr>
+
+                                    <td>@item.id</td>
+                                    <td><a href="GoodInfo?aId=@item.aId&id=@(item.id)">@item.name</a></td>
+                                    <td>
+                                        @if (cate1 != null && cate2 != null)
+                                        {
+                                            <span>@(cate1.name)-@(cate2.name)</span>
+                                        }
+
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.img))
+                                        {
+                                            <img src="@ImgHelper.ResizeImg(item.img,50,50)" width="50" />
+                                        }
+                                    </td>
+                                    <td>@(item.price / 100)</td>
+                                    <td>@(item.stockLimit ? item.stock.ToString() : "不限库存")</td>
+                                    <td>@(item.virtualSales)+@(item.sales)</td>
+                                    <td>
+                                        @(item.state == 1 ? "上架" : "")
+                                        @(item.state == 0 ? "下架" : "")
+                                    </td>
+                                    <td>@((storeBLL.GetModel(item.storeId) ?? new PinStore()).storeName)</td>
+                                    <td>@(item.updateTime.ToString("G"))</td>
+                                    <td>
+                                        @if (item.auditState == (int)PinEnums.GoodsAuditState.审核通过)
+                                        {
+                                            <a class="btn btn-primary btn-xs audit-cancel" onclick="updateAuditState(@(item.id),@((int)PinEnums.GoodsAuditState.已拒绝))">取消审核</a>
+                                        }
+                                        else if (item.auditState == (int)PinEnums.GoodsAuditState.待审核)
+                                        {
+                                            if (item.state == 1)
+                                            {
+                                                <a class="btn btn-primary btn-xs audit-ok" onclick="updateAuditState(@(item.id),@((int)PinEnums.GoodsAuditState.审核通过))">通过</a>
+                                                <a class="btn btn-danger btn-xs audit-no" onclick="updateAuditState(@(item.id),@((int)PinEnums.GoodsAuditState.已拒绝))">拒绝</a>
+                                            }
+                                            else
+                                            {
+                                                @(item.auditStateStr)
+                                            }
+                                        }
+                                        else
+                                        {
+                                            @(Enum.GetName(typeof(PinEnums.GoodsAuditState), item.auditState))
+                                        }
+                                    </td>
+                                    <td>
+                                        <input type="text" name="sort[]" value="@(item.IndexRank)" data-id="@(item.id)" data-pre="@(item.IndexRank)" class="form-control sort" style="width: 100px;" />
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="GoodInfo?aId=@item.aId&id=@(item.id)" class="btn btn-outline btn-default" target="_blank">
+                                                <i class="fa fa-info"></i> 查看详情
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <ul class="pagination pagination-lg">
+                            <li>
+                            </li>
+                        </ul>
+                    </nav>
+                    @if (Model.TotalCount > Model.PageSize)
+                    {
+                        <div class="page">
+                            @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+    <script>
+        //删除分类
+        function del(id){
+            layer.confirm('确定删除该分类吗？', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var layindex = layer.load(2);
+
+                $.post("?",
+                {
+                    id: id,
+                    aid:@Model.aId,
+                    act: "del"
+                }, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                    if(data.code = 1)
+                    {
+                        window.location.reload();
+                    }
+                });
+            }, function(){
+
+            });
+        }
+        function batch_sort() {
+
+            var sort_data = [];
+            $(".sort").each(function () {
+                var sort_item = $(this);
+                if (sort_item.data("pre") != sort_item.val()) {
+                    sort_data.push(sort_item.data("id") + "_" + sort_item.val());
+                }
+            })
+            if (sort_data.length <= 0) {
+                layer.msg('没有检测到要修改的行')
+                return;
+            }
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "?act=sort",
+                data: { sortData: sort_data.join(","), t: Math.random(), aId:@(Model.aId) },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.msg(data.msg, { time: 1500 }, function () {
+
+                        });
+                        window.location.reload();
+                    } else {
+                        layer.msg(data.msg, { time: 1500 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+
+        //切换分类是否显示
+        function ModifyCategoryShow(id,that){
+            var state;
+            if($(that).is(':checked'))
+            {
+                state = 1;
+            }
+            else
+            {
+                state = 0;
+            }
+            var layindex = layer.load(2);
+            $.ajax({
+                type: 'POST',
+                dataType: "json",
+                url: "?",
+                data: {
+                    aid:@Model.aId,
+                    id: id,
+                    state: state,
+                    act: "updateState"
+                },
+                success: function(data)
+                {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                },
+                error: function()
+                {
+                    layer.msg("网络异常");
+                }
+            });
+        }
+
+        function updateAuditState(id, state) {
+            if (confirm("确认操作")) {
+                var layindex = layer.load(2);
+                $.ajax({
+                type: 'POST',
+                dataType: "json",
+                url: "?",
+                data: {
+                    aid:@Model.aId,
+                    id: id,
+                    state: state,
+                    act: "updateAuditState"
+                },
+                success: function(data)
+                {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                    window.location.reload();
+                },
+                error: function()
+                {
+                    layer.msg("网络异常");
+                }
+            });
+            }
+        }
+
+
+        function getSubCategory(that) {
+            $.post("/pin/Product/getSubCategory", { aid:@(Model.aId), fid: that.value }).then(function (result) {
+                if (result.code == 1 && result.obj) {
+                    $("#subCategory").html("");
+                    var items = '<option value="0">请选择二级分类</option>';
+                    for (var i = 0; i < result.obj.length; i++) {
+                        items += '<option value="' + result.obj[i].id + '" >' + result.obj[i].name + '</option>';
+                    }
+                    $("#subCategory").html(items);
+                }
+            });
+        }
+
+        function sortField(sortField, sortMode) {
+            $("#orderBy").val(sortField);
+            $("#orderMode").val(sortMode == "desc" ? "asc" : "desc");
+            $("#searchForm").submit();
+        }
+    </script>
+}
+

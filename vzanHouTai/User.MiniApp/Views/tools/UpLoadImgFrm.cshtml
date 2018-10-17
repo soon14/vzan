@@ -1,0 +1,710 @@
+﻿
+@{
+    /**/
+
+    /**/
+
+    Layout = null;
+    int appId = ViewBag.appId;
+    int storeId = ViewBag.storeId;
+    int multi_selection = ViewBag.multi_selection;
+    int maxImgSize = ViewBag.maxImgSize;
+    string objKey = Utility.IO.Context.GetRequest("objKey", string.Empty);//对象名称
+    int imgWidth = Utility.IO.Context.GetRequestInt("imgWidth", 750);//图片建议宽度
+    int imgHeight = Utility.IO.Context.GetRequestInt("imgHeight", 750);//图片建议高度
+    int frontMethod = Utility.IO.Context.GetRequestInt("frontMethod", 0);//前端框架 0为vue.js
+    int objType = Utility.IO.Context.GetRequestInt("objType", 0);//赋值对象的类型 0 字符串数组,1字符串,2json 数组,3 json 对象{id,url}
+    int remainCount = Utility.IO.Context.GetRequestInt("remainCount", 0);//剩余可添加数量
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>上传</title>
+
+    <link href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=1" />
+    <link href="~/Content/plugin/cropper/cropper.min.css" rel="stylesheet" />
+    <link href="~/Content/plugin/cropper/font-awesome.min.css" rel="stylesheet" />
+    <style>
+        .upload_dialog_bar { background: #eee; height: 50px; padding: 10px 0; text-align: center; position: fixed; bottom: 0; right: 0; left: 0; }
+        .btn { display: inline-block; padding: 6px 12px; font-size: 14px; line-height: 20px; color: #fff; text-align: center; vertical-align: middle; cursor: pointer; background: #09bb07; border: none; transition: all .25s ease; border-radius: 3px; }
+        .btn:hover { color: #fff; background-color: #0dd60a; }
+        .btn:active, .btn.active { color: #fff; background-color: #06a605; }
+        .btn.disabled, .btn[disabled] { color: #fff; background-color: #ccc; cursor: default; }
+        a { color: #09BB07; text-decoration: none; }
+        .border-btn { border: 1px solid #ccc; border-radius: 3px; color: #888; padding: 5px 12px; vertical-align: middle; }
+
+        .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+        .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+        .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 100px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 100px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+        .plus-label { font-size: 14px; position: relative; text-align: center; top: -20px; }
+
+
+        .materialsItem { display: inline-block; margin-left: 5px; margin-top: 10px; cursor: pointer; width: 100px; height: 100px; }
+        .materialsItem img:hover { border: dashed 1px #ccc }
+        .materialsItem img { width: 100%; height: 100%; }
+
+        .ck-io { position: absolute; bottom: 3px; right: 3px; width: 30px; height: 30px; background: url(http://wx.ixiaochengxu.cc/Public/Home/images/radio_check.png) no-repeat; }
+
+        .layui-layer-footer { position: absolute; left: 50%; margin-left: -85px; bottom: -20px; z-index: 999; text-align: center; }
+
+        .layui-btn-group { background-color: rgba(255, 255, 255, 0.9); border-radius: 2px; box-shadow: 3px 7px 15px rgba(0, 0, 0, 0.3); display: inline-block }
+
+        .layui-btn { padding: 0 15px; -webkit-appearance: none; appearance: none; background: none; line-height: 36px; height: 36px; border: none; }
+
+        .layui-btn:hover { cursor: pointer; background: #f5f5f5; }
+
+        .layui-btn:nth-child(n+2) { border-left: 1px solid #eee; }
+
+        .status-text { position: absolute; top: 0; right: 0; background: rgba(0, 0, 0, 0.5); color: #fff; padding: 2px 8px; border-radius: 2px; z-index: 999; }
+
+        .tips-text { position: absolute; top: 0; left: 0; background: rgba(0, 0, 0, 0.5); color: #fff; padding: 2px 8px; border-radius: 2px; z-index: 999; }
+
+        .hidden { display: none !important; }
+
+        .layui-layer-content-container { position: absolute; left: 20px; top: 20px; right: 20px; bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+            <ul class="layui-tab-title">
+                <li class="tab_element layui-this" lay-id="tab_element_1" v-on:click="Tab(0)">本地上传</li>
+                <li class="tab_element" lay-id="tab_element_2" v-on:click="Tab(1)">最近上传</li>
+            </ul>
+            <div class="layui-tab-content">
+                <div class="layui-tab-item layui-show">
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-for="(item,index) in imgList">
+                                <img :src="item.materialPath" style="display:block;height:100px;width:100px;" v-on:click="choiceDelMaterial(item.Id,item.materialPath,$event)" />
+                                <span class="ck-io" style="display:none;"></span>
+                                <span v-on:click="clearImg(index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-tab-item">
+                    <div style="position:relative;" class="materialsItem" v-for="(item,index) in materials">
+                        <img v-bind:src="item.materialPath" v-on:click="choiceDelMaterial(item.Id,item.materialPath,$event)" />
+                        <span class="ck-io" style="display:none;"></span>
+                    </div>
+                    <div v-if="materials==null || materials.length==0">
+                        <p>没有数据</p>
+                    </div>
+                    <div id="pagesMaterial" style="text-align: center;margin-top: 0.5rem;" v-show="materialsRecordCount>15"></div>
+                </div>
+
+
+            </div>
+        </div>
+        <div class="upload_dialog_bar">
+            <a id="conBtn" class="btn" href="javascript:void(0);" v-on:click="confirmImage();">确定</a>&nbsp;&nbsp;&nbsp;&nbsp;
+            <a class="border-btn" href="javascript:void(0);" v-on:click="closeModel()">取消</a>&nbsp;&nbsp;&nbsp;&nbsp;
+            <a class="border-btn" href="javascript:void(0);" v-if="tabType==1" v-on:click="delMaterials()">删除</a>&nbsp;&nbsp;&nbsp;&nbsp;
+        </div>
+
+        <div style="display: none;">
+            <button id="browse_file_img">上传图片</button>
+            <button id="start_upload_img" v-on:click="uploadFile('img')">开始上传</button>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/jsPolyfill/Polyfill.js?v=@WebSiteConfig.cdnVersion"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+<script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap/js/bootstrap.js"></script>
+<script src="//j.vzan.cc/miniapp/layui/layui.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<script src="~/Content/plugin/cropper/cropper.min.js"></script>
+<script src="~/Content/plugin/cropper/canvas-to-blob.min.js"></script>
+
+<script>
+    var mask;
+    var imgWidth=@(imgWidth);
+    var imgHeight=@(imgHeight);
+    var objKey='@(objKey)';
+    var maxImgSize=@(maxImgSize);
+    var appId='@(appId)';
+    var storeId='@(storeId)';
+    var remainCount=@(remainCount);
+    var frontMethod=@(frontMethod);
+    var objType=@(objType);
+    var multi_selection=@(multi_selection);
+</script>
+<script>
+    layui.use('element', function () {
+        var $ = layui.jquery
+        , element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+    });
+    var app = new Vue({
+        el: "#app",
+        data: {
+            appId:appId,
+            storeId:storeId,
+
+            imgList: [],
+            choiceImgs:[],
+            uploader: {
+                img: {
+                    instalce: null,
+                    filePath: ''
+                }
+
+            },
+            maxImgSize:maxImgSize,
+            materialsPostData: {
+                pageIndex: 1,
+                pageSize: 15,
+                appId:appId,
+                storeId:storeId,
+                },
+            materialsRecordCount: 0,
+            materials:[],
+            tabType:0,
+            remainCount:remainCount,
+            isCrop:0
+        },
+        created: function () {
+
+        }, mounted: function () {
+            var that=this;
+            that.initUploader('img');
+        }, methods: {
+            closeModel:function(){
+                window.parent.$("#closeUpload").click();
+                if (window.parent.$.Dialog) {
+                    window.parent.$.Dialog.close();
+                }
+            },
+            confirmImage:function(){
+                var that=this;
+                if(that.choiceImgs.length<=0){
+                    layer.msg("请先选择图片");
+                    return;
+                }
+                if (that.remainCount <= 0) {
+                    layer.msg("可添加图片数已达上限");
+                    return;
+                }
+                if (that.remainCount>0&&that.choiceImgs.length>that.remainCount){
+                    layer.msg("图片数量超过限制,只能添加"+that.remainCount+"张");
+                    return;
+                }
+
+                var imgs=[];
+                if (frontMethod==0) {
+                    //表示vue.js写的
+                    for (var i = 0; i < that.choiceImgs.length; i++) {
+                        switch (objType)
+                        {
+                            case 0:
+                                window.parent.app[objKey].push(that.choiceImgs[i].materialPath);
+                                break;
+                            case 1:
+                                window.parent.app[objKey] = that.choiceImgs[i].materialPath;
+                                break;
+                            case 2:
+                                window.parent.app[objKey].push(that.choiceImgs[i]);
+                                break;
+                            case 3:
+                                window.parent.app[objKey] = that.choiceImgs[i];
+                                break;
+                        }
+                    }
+
+                } else {
+                    var imgs = [];
+                    that.choiceImgs.forEach(function (o, i) {
+                        imgs.push(o.materialPath);
+                    })
+                    window.parent.$("#uploadImgs").val(imgs.join(","));
+                    window.parent.$("#"+objKey).attr("src",imgs.join(","));
+                    /*if (maxImgSize==1) {
+                        window.parent.$(".upload-img-box .upload-pre-item2").eq(0).find("img").attr("src", that.choiceImgs[0].materialPath).show();
+                    }*/
+                    var fieldName =objKey;
+                    var src = that.choiceImgs[0].materialPath;
+
+                    if (window.parent.$('#cover_id_' + fieldName).data('nosetimg') == undefined) {
+                        if (window.parent.$('#cover_id_' + fieldName).data('max') > 1) {
+                            $.each(imgs, function (i, v) {
+                                window.parent.$('#cover_id_' + fieldName).siblings(".upload-img-view").append(' <div class="upload-pre-item22">' +
+                                    '<img width= "100" height= "100" src= "' + v + '" />' +
+                                    ' <input type="hidden" name="' + fieldName+'[]" value="' + v + '" />'+
+                                    '<em>&nbsp;</em></div >');
+                            })
+
+                        } else {
+                            //console.log(window.parent.$('#cover_id_' + fieldName).parent().find('.upload-img-box'));
+                            window.parent.$('#cover_id_' + fieldName).parent().find('.upload-img-box')
+                                .html('<div class="upload-pre-item2" style="width:100%;height:100%;">' +
+                                '<img width="100%" height="100%" src="' + src + '"/>' +
+                                '</div><em class="edit_img_icon">&nbsp;</em>').show();
+                            window.parent.$('#cover_id_' + fieldName).val(src);
+                        }
+                    }
+
+                    //window.parent.$('#cover_id_' + fieldName).val(imgs.join(","));
+
+                    if (window.parent.$('#'+objKey) != undefined && window.parent.$('#'+objKey+'upload') != undefined) {
+                        window.parent.$('#'+objKey).attr("src", src);
+                        window.parent.$("#"+objKey).show();
+                        window.parent.$("#"+objKey+"upload").hide();
+                        window.parent.$("#"+objKey+"value").val(imgs.join(","))
+                    }
+                    else if (window.parent.$('#modelimgurl') != undefined && window.parent.$('#modelupload') != undefined) {
+                        window.parent.$('#modelimgurl').attr("src", src);
+                        window.parent.$("#modelimgurl").show();
+                        window.parent.$("#modelupload").hide();
+                    }
+                }
+                that.choiceImgs=[];
+                window.parent.$("#closeUpload").click();
+                if (window.parent.$.Dialog) {
+                    window.parent.$.Dialog.close();
+                }
+
+            },
+            delMaterials:function(){
+                //删除图片
+
+
+                var that=this;
+                var delDBImgs=[];
+                var delImgs=[];
+                if(that.choiceImgs.length<=0){
+                    layer.msg("请先选择要删除的图片");
+                    return;
+                }
+                for(var i=0;i<that.choiceImgs.length;i++){
+                    if(that.choiceImgs[i].id>0){
+                        //表示标记数据库为删除状态
+                        delDBImgs.push(that.choiceImgs[i]);
+                    }else{
+                        delImgs.push(that.choiceImgs[i]);
+                    }
+                }
+                if(that.tabType==1){
+                    if(delDBImgs.length<=0){
+                        layer.msg("请先选择要删除的图片");
+                        return;
+                    }
+                    var postData={
+                        appId:that.materialsPostData.appId,
+                        storeId:that.materialsPostData.storeId,
+                        materialsStr:JSON.stringify(delDBImgs)
+                    }
+                    var index = layer.load(1);
+                    $.post("/tools/DelMaterials", postData, function (data) {
+                        layer.close(index);
+                        layer.msg(data.Msg);
+                        setTimeout(function(){
+                            that.Tab(that.tabType);
+                        },1000);
+
+                    });
+                }else{
+                    if(delImgs.length<=0){
+                        layer.msg("请先选择要删除的图片");
+                        return;
+                    }
+                    if(that.imgList.length>0){
+                        var index,delIndex;
+                        for(var i=0;i<delImgs.length;i++){
+                            index=that.imgList.findIndex(x=>x.id==delImgs[i].id&&x.materialPath==delImgs[i].materialPath);
+                            that.imgList.splice(index,1);//删除显示集合
+                            delIndex=that.choiceImgs.findIndex(x=>x.id==delImgs[i].id&&x.materialPath==delImgs[i].materialPath);
+                            that.choiceImgs.splice(delIndex,1);//删除选中集合
+                        }
+
+                    }
+                }
+            },
+            pd:function(id,materialPath){
+                var that=this;
+                var curIndex=that.choiceImgs.findIndex(x=>x.id==id&&x.materialPath==materialPath);
+                return curIndex;
+            },
+            choiceDelMaterial:function(id,materialPath,event){
+                var that=this;
+                var el = event.currentTarget;
+
+                if( that.choiceImgs.length>0){
+                    var curIndex=that.choiceImgs.findIndex(x=>x.id==id&&x.materialPath==materialPath);
+                    if(curIndex>-1){
+                        //表示存在了 不用加入删除队列
+                        that.choiceImgs.splice(curIndex,1);
+                        $(el).next().css("display","none");
+                        return;
+                    }
+                }
+
+
+                $(el).next().css("display","block");
+                that.choiceImgs.push({id:id,materialPath:materialPath});
+
+
+            },
+            Tab:function(tabType){
+                var that=this;
+                that.tabType=tabType;
+                $(".ck-io").css("display","none");
+                that.choiceImgs=[];
+                if(tabType==1){
+                    that.materialsPostData.pageIndex=1;
+                    that.getMaterials();
+
+                }
+
+            },
+            //列表分页
+            resetPageMaterials: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pagesMaterial'
+                        , count: that.materialsRecordCount //数据总数，从服务端得到
+                        , curr: that.materialsPostData.pageIndex //当前页
+                        , limit:that.materialsPostData.pageSize
+                        , jump: function (obj, first) {
+                            that.materialsPostData.pageIndex = obj.curr;
+                            $(".ck-io").css("display","none");
+                            that.choiceImgs=[];
+                            //首次执行
+                            if (!first) {
+                                that.getMaterials();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            getMaterials:function(){
+                var that=this;
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                that.materialsPostData.appId=that.appId;
+                that.materialsPostData.storeId=that.storeId;
+                var index = layer.load(1);
+                $.post("/cityminiapp/getMaterials", that.materialsPostData, function (data) {
+                    layer.close(index);
+                    if(data.isok)
+                    {
+                        that.materialsRecordCount = data.dataObj.totalCount;
+                        that.materials = data.dataObj.list;
+                        that.resetPageMaterials();
+                        for(var i=0;i<that.materials.length;i++){
+                            var curIndex=that.pd(that.materials[i].Id,that.materials[i].materialPath);
+                            if(curIndex>-1){
+                                //表示存在选择中
+                                $($(".ck-io")[i]).css("display","block");
+                            }
+                        }
+                    }
+                });
+
+
+
+            },
+            addCity_Materials:function(materialPath){
+                var that  = this;
+                var materialsId = 0;
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/cityminiapp/addCity_Materials',
+                    data: {appId:that.appId,storeId:that.storeId,materialPath:materialPath },
+                    dataType: 'json',
+                    async:false,
+                    success: function (data) {
+                        console.log(data.Msg);
+                        if(data.isok)
+                        {
+                            materialsId = data.dataObj.Id;
+                        }
+                    },
+                    error: function (data) {
+                        console.log('与服务器通讯错误');
+                    }
+                });
+
+                return materialsId;
+            },
+            UploadImg: function () {
+                $('#browse_file_img').click();
+            },
+            clearImg: function (index) {
+                var that = this;
+                if(that.imgList.length>0){
+                    that.imgList.splice(index,1);
+                }
+            },
+            initUploader: function (type) {
+                var that = this;
+                var options = {
+                    browse_button: 'browse_file_' + type,
+                    url: 'http://oss.aliyuncs.com',
+                    flash_swf_url: 'http://j.vzan.cc/dz/content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                    silverlight_xap_url: 'http://j.vzan.cc/dz/content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                    filters: {
+
+                    },
+                    multi_selection: multi_selection,
+
+                    };
+                switch (type) {
+                    case 'img':
+                        options.filters = {
+                            mime_types: [
+                                {
+                                    title: that.imgTitle,
+                                    extensions: "jpg,jpeg,gif,png"
+                                },
+                            ],
+                            // max_file_size: '1mb'
+                        }
+                        break;
+                }
+                //如果还有当前类型的上传组件实例的话则先把其销毁
+                if (that.uploader[type].instance) {
+                    console.log('destroy uploader :' + type);
+                    that.uploader[type].instance.destroy();
+                }
+                that.uploader[type].instance = new plupload.Uploader(options);
+
+                that.uploader[type].instance.init();
+
+                that.uploader[type].instance.bind('BeforeUpload', function (d, f) {
+
+                    //if (that.uploadImgType == 0 && that.p.img.length > 0) {
+                    //    //只允许上传一张
+                    //    layer.msg("产品图片最多为1张", { time: 1000 });
+                    //    d.stop();
+                    //    that.initUploader(type);
+                    //    return;
+                    //}
+
+
+
+                    //取到文件后缀名
+
+                    var fileName = f.name;
+                    var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                    //转成Mb
+                    var fileSize = f.size / 1024 / 1024;
+                    var flag = true;
+
+                    switch (type) {
+                        case 'img':
+                            if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                                layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                                flag = false;
+                            }
+                            if (fileSize > that.maxImgSize) {
+                                layer.msg('文件最大支持 ' + that.maxImgSize + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+
+                    }
+                    //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                    if (!flag) {
+                        that.initUploader(type);
+                    }
+
+                    that.uploader.token.key += new Date().getTime() + '.' + ext;
+                    f.name = that.uploader.token.key;
+                    that.uploader[type].instance.setOption(that.uploader.token);
+                });
+
+                that.uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                    if(files.length==1&&that.isCrop==0){
+
+                        layer.open({
+                            type: 1, closeBtn: 0, anim: 2, area: ['100%', '100%'], title: false, shadeClose: true,
+                            success: function (layero, handlerId) {
+                                var imageCropper = null;
+                                var layerContent = layero.find('.layui-layer-content').css('overflow', 'hidden'),
+                                    content = $('<div class="layui-layer-content-container"/>').appendTo(layerContent),
+                                    footer = $('<div class="layui-layer-footer"/>').appendTo(content),
+                                    footerBtnGroup = $('<div class="layui-btn-group"/>').appendTo(footer),
+                                    statusText = $('<div class="status-text"></div>').appendTo(content);
+                                //$('<div class="tips-text">温馨提示：点击下面的×按钮上传原图</div>').appendTo(content);
+
+                                //保存编辑
+                                $('<button class="layui-btn" style="color:black;!important"><i class="fa fa-save"></i> 保存</button>').appendTo(footerBtnGroup).click(function () {
+                                  //  var canvasImg=  imageCropper.cropper('getImageData');
+                                  var  cjArea=  imageCropper.cropper('getCropBoxData');
+                                  var canvas = imageCropper.cropper('getCroppedCanvas',{ "width": parseInt(cjArea.width), "height": parseInt(cjArea.height) });
+                                    canvas.toBlob(function (blobOrFile) {
+
+                                        $.each(that.uploader[type].instance.files,function(i,v){//清除原先的上传队列
+
+                                            that.uploader[type].instance.removeFile(that.uploader[type].instance.files[0].id)
+                                        })
+                                        that.uploader[type].instance.addFile(blobOrFile)//回炉重造
+                                        that.isCrop=1;
+                                        $('#start_upload_' + type).click();
+                                        imageCropper.cropper('destroy');
+                                        layer.close(handlerId);
+
+                                    }, 'image/png');
+                                });
+                                //取消编辑
+                                $('<button class="layui-btn" style="color:black;!important"><i class="fa fa-times"></i></button>').appendTo(footerBtnGroup).click(function () {
+                                    $('#start_upload_' + type).click();
+                                    imageCropper.cropper('destroy');
+                                    layer.close(handlerId);
+                                });
+                                /*  //左旋转
+                                $('<button class="layui-btn" style="color:black;!important"><i class="fa fa-rotate-left"></i></button></button>').appendTo(footerBtnGroup).click(function () {
+                                    imageCropper.cropper('rotate', -90);
+                                });
+                                //右旋转
+                                $('<button class="layui-btn" style="color:black;!important"><i class="fa fa-rotate-right"></i></button>').appendTo(footerBtnGroup).click(function () {
+                                    imageCropper.cropper('rotate', 90);
+                                });*/
+
+                                getImgUrlByFile(that.uploader[type].instance.files[0], function (result) {
+                                    imageCropper = $('<img/>').attr('src',result).appendTo(content);
+                                    var cjArea,canvasImg;
+                                    imageCropper.cropper({
+                                        dragMode : "move",
+                                        aspectRatio:parseFloat(imgWidth/imgHeight).toFixed(2),
+                                       //autoCropArea:.5,
+                                        wheelZoomRatio:0.1,
+                                        movable:true,
+                                        //scalable:false,
+                                        resizable:false,
+                                        cropBoxResizable:false,
+                                        minCropBoxWidth:imgWidth,
+                                        minCropBoxHeight:imgHeight,
+                                        crop: function (data) {
+                                            canvasImg=  imageCropper.cropper('getImageData');
+                                            cjArea=  imageCropper.cropper('getCropBoxData');
+                                            statusText.text("滚动鼠标滚轮缩放图片，裁剪区宽高比为:1比"+ parseFloat(cjArea.width/cjArea.height).toFixed(1)+";原图宽高比为:1比"+parseFloat(canvasImg.naturalWidth/canvasImg.naturalHeight).toFixed(1));
+
+
+                                        },
+    ready:function(){
+
+    },
+                                    });
+
+
+
+                                });
+                            }
+                        });
+                    }else{
+
+                        $('#start_upload_' + type).click();
+                    }
+
+                });
+                that.uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+                    mask = layer.load(0, {
+                        content: file.percent + "%", shade: [0.8, '#393D49'],
+                        success: function (layero) {
+                            layero.find('.layui-layer-content').css('color', 'white').css('font-size', '2rem').css('background', 'none');
+                        }
+                    });
+                });
+                that.uploader[type].instance.bind('FileUploaded', function (uploader, file, responseObject) {
+
+                    if (responseObject.status == 200) {
+                        var id = 0;
+                        var fPath = that.uploader[type].filePath + file.name;
+                        id = that.addCity_Materials(fPath);
+                        that.imgList.push({Id:id,materialPath:fPath});
+                            that.$nextTick(function () {
+                             that.choiceImgs.push({id:id,materialPath:fPath});
+                             $(".pslideimgs .ck-io:last").show();
+                        })
+                    }
+
+                })
+                that.uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+
+                    //上传完成后重新初始上传组件
+                    that.isCrop=0;
+                    layer.close(mask);
+                    that.initUploader(type);
+
+                });
+
+            },
+            uploadFile: function (type) {
+                var that = this;
+                $.get('/upload/InitUpload', {
+                    type: that.type
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+                    that.uploader[type].filePath = data.host + '/';
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    that.uploader.token = multipartParams;
+                    that.uploader[type].instance.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+                    that.uploader[type].instance.start();
+                }).fail(function (data) {
+                });
+            },
+
+        }
+
+
+
+    });
+
+
+    function getImgUrlByFile(file,callback) {
+        //var reader = new FileReader();
+        //reader.onload = callback;
+        //reader.readAsDataURL(file);
+
+        var fr = new mOxie.FileReader();
+        fr.onload = function(){
+            callback(fr.result);
+            //  fr.destroy();
+            fr = null;
+        };
+        fr.readAsDataURL(file.getSource());
+    }
+
+</script>

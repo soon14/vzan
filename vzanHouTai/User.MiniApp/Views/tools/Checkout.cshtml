@@ -1,0 +1,164 @@
+﻿@model Tuple<int, List<CityMorders>>
+@{
+    ViewBag.Title = "Order";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    string tradeNo = Utility.IO.Context.GetRequest("tradeNo", null);
+    string start = Utility.IO.Context.GetRequest("start", null);
+    string end = Utility.IO.Context.GetRequest("end", null);
+}
+
+@section styles{
+    <style>
+        .layui-table th, .layui-table td {
+            text-align: center !important;
+        }
+
+        .layui-form-switch {
+            margin-top: 0px !important;
+            width: 56px !important;
+            line-height: 25px !important;
+            height: 25px !important;
+        }
+    </style>
+}
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <div class="col-xs-4">
+                流水单号：
+                <input type="text" id="tradeNo" placeholder="流水单号" value="@(tradeNo)" class="form-control" style="width:300px;display:inline-block;" />
+            </div>
+            <div class="col-xs-8">
+                买单时间：
+                <input type="text" id="start" placeholder="开始日期" data-date readonly value="@(start)" class="form-control" style="width:300px;display:inline-block;" />
+                至
+                <input type="text" id="end" placeholder="结束日期" data-date readonly value="@(end)" class="form-control" style="width:300px;display:inline-block;" />
+                <input type="button" onclick="search()" value="搜索" class="btn btn-sm  btn-primary radius" />
+                <input type="button" onclick="clearPara()" value="清空" class="btn btn-sm  btn-primary radius" />
+            </div>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list">
+            <table class="layui-table" lay-skin="line">
+                <thead>
+                    <tr>
+                        <th>流水单号</th>
+                        <th>买单时间</th>
+                        <th>原价</th>
+                        <th>支付方式</th>
+                        <th>状态</th>
+                        <th>会员折扣</th>
+                        <th>优惠券</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Item2 != null && Model.Item2.Count > 0)
+                    {
+                        BLL.MiniApp.Tools.CouponLogBLL couponBLL =  BLL.MiniApp.Tools.CouponLogBLL.SingleModel;
+                        foreach (CityMorders order in Model.Item2)
+                        {
+                            CityMordersAttach attachData = JsonConvert.DeserializeObject<CityMordersAttach>(order.AttachPar);
+                            <tr>
+                                <td>@order.trade_no</td>
+                                <td>@order.payment_time</td>
+                                <td>@(attachData.payMoney / 100f)元</td>
+                                <td>实际@(order.ShowNote)</td>
+                                <td>@(order.StatusStr)</td>
+                                <td>
+                                    @if (attachData.levelInfo != null && attachData.levelInfo.type == 1 && attachData.discountType == 0)
+                                    {
+                                        float vipDiscount = (attachData.payMoney / 100f) * ((100 - attachData.levelInfo.discount) / 100f);
+                                        attachData.payMoney -= Convert.ToInt32(vipDiscount * 100);
+                                        <p>
+                                            <span>@(attachData.levelInfo.name)（@(attachData.levelInfo.discount / 10f)折）：</span>
+                                            <span>-@(vipDiscount.ToString("F2"))元</span>
+                                        </p>
+                                    }
+                                </td>
+                                <td>
+                                    @if (attachData.coupon != null)
+                                    {
+                                        <p>
+                                            <span>
+                                                @attachData.coupon.CouponName@(couponBLL.GetCouponPriceStr(attachData.coupon, attachData.payMoney))
+                                            </span>
+                                        </p>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" style="text-align:center;">暂无记录</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div id="pager"></div>
+        </div>
+    </div>
+
+</body>
+
+<input id="orderCount" type="hidden" value="@Model.Item1" />
+
+@section scripts{
+    <script type="text/javascript">
+        urlMethod = {
+            urlPara: window.location.search,
+            getParaVal: function (name) {
+                return decodeURI(this.urlPara.replace(new RegExp("^(?:.*[&\\?]" + encodeURI(name).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+            },
+            setParaVal: function (name, val) {
+                matchRegExp = eval('/(' + name + '=)([^&]*)/gi');
+                if (this.urlPara.search(matchRegExp) === -1) {
+                    this.urlPara += String.raw`&${name}=${val}`;
+                    return;
+                }
+                this.urlPara = this.urlPara.replace(matchRegExp, String.raw`${name}=${val}`);
+            },
+            getUrl: function () {
+                return 'http://' + window.location.host + window.location.pathname + this.urlPara;
+            }
+        }
+
+        layui.use(['element', 'laypage', 'form'], function () {
+            var form = layui.form;
+            var laypage = layui.laypage;
+            laypage.render({
+                elem: 'pager'
+                , count: Number($('#orderCount').val()) //数据总数，从服务端得到
+                , curr: urlMethod.getParaVal('pageIndex')//当前页
+                , limit: 15
+                , jump: function (obj, first) {
+                    //首次执行
+                    if (first) {
+                        return;
+                    }
+                    urlMethod.setParaVal('pageIndex', obj.curr);
+                    window.location.href = urlMethod.getUrl();
+                }
+               , theme: '#3eb94e'
+                , layout: ['prev', 'page', 'next', 'skip']
+            });
+        });
+
+        function search() {
+            urlMethod.setParaVal('tradeNo', $('#tradeNo').val());
+            urlMethod.setParaVal('start', $('#start').val());
+            urlMethod.setParaVal('end', $('#end').val());
+            urlMethod.setParaVal('pageIndex', 1);
+            location.href = urlMethod.getUrl();
+        }
+
+        function clearPara() {
+            $('#tradeNo').val('');
+            $('#start').val('');
+            $('#end').val('');
+            search();
+        }
+    </script>
+}

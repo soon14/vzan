@@ -1,0 +1,167 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="/Content/pxhfang/css/base.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/reset.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/normalize.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/fontcss.css">
+    <script src="/Content/newhome/lib/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+  <script src="/Content/newhome/lib/layer-v3.1.0/layer/layer.js"></script>
+    <title>绑定手机号</title>
+    <style>
+        body {
+            padding: 9.066666666666666vw 5.866666666666666vw 0 5.866666666666666vw;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+
+        .input-phone {
+            color: #333;
+            background: transparent;
+            border: none;
+        }
+
+        .bb-black {
+            border-bottom: 0.13333333333333333vw solid black;
+
+        }
+
+        .bind-phone {
+            height: 10.666666666666666vw;
+            line-height: 10.666666666666666vw;
+            width: 85.33333333333333vw;
+            margin: 9.333333333333334vw auto;
+            background-color: #f20033;
+            border-radius: 5.333333333333333vw;
+            color: white;
+            font-size: 4vw;
+        }
+        .shuiyin-div{position: fixed;bottom: 9.333333333333334vw;left: 39.46666666666667vw;}
+    </style>
+    <script>     
+
+    </script>
+</head>
+
+<body>
+    <span class="t44 l46 c333">请确保手机号与拼享惠授权手机号一致，否则无法同步返现金额。</span>
+    <!-- 手机号码 -->
+    <div class="f c pb30 bb-black mt100">
+        <input type="text" placeholder="请输入手机号码" class="t30 input-phone" id="uphone" v-model="phone">
+    </div>
+    <!-- 验证码 -->
+    <div class="f c pb30 bobof2 mt50">
+        <div class="fsb w-full">
+            <input type="text" placeholder="短信验证码" class="t30 input-phone" id="pcode" v-model="code">
+            <span class="c333 t30" onclick="getCode()" id='getCode'>获取验证码</span>
+        </div>
+    </div>
+    <!-- 确认绑定 -->
+    <div class="bind-phone tc" onclick="checkPhone()">确认绑定</div>
+
+    <!-- 水印 -->
+    <div class="fc mt100">
+        <img src="http://i.vzan.cc/image/png/2018/7/19/150734facd33146ed6461d97dbc1a991bf8239.png" class="h78 w160" alt="">
+    </div>
+    <script>
+    var type ='@ViewBag.type'; //0用户 1商家
+        var openId = '@ViewBag.OpenId';
+        var _id = 0;
+    //$(function () {
+    //    var url = location.search;
+    //    if (url.indexOf("?") != -1) {
+    //        var str = url.substr(1);
+    //        strs = str.split("=");
+    //        type = strs[1];
+    //    }
+    //})
+
+    var Gajax = function (url, data, callback) {
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            dataType: "json",
+            success: function (data) {
+                console.log(data)
+                if (data.isok) {
+                    _id = data.dataObj;
+                    callback(data)
+                } else {
+                    alert(data.Msg)
+                }
+            }
+        });
+    }
+
+    // 输入手机号码
+    var inputPhone = new Vue({
+        el: '#uphone',
+        data: {
+            phone: '',
+        }
+    })
+
+    // 输入手机验证码
+    var inputCode = new Vue({
+        el: '#pcode',
+        data: {
+            code: ''
+        }
+    })
+
+    // 获取手机验证码
+    function getCode() {
+        if (this.inputPhone.phone.length != 11) {
+            layer.msg('请输入正确的手机号码！')
+            return
+        }
+        var time = document.getElementById('getCode');
+        if (time.innerText != '获取验证码') return
+        if (time.innerText == '获取验证码') time.innerText = 60
+        var timer = setInterval(() => {
+            time.innerText--
+            if (time.innerText == 0) {
+                time.innerText = '获取验证码'
+                clearInterval(timer)
+            }
+        }, 1000);
+        Gajax("/pxhfang/SendCode", {
+            phone: this.inputPhone.phone
+        }, (callback) => {
+        })
+    }
+    // 验证手机号码
+    function checkPhone() {
+        if (this.inputCode.code == '') {
+            layer.msg('请输入验证码')
+            return
+        }
+        Gajax("/pxhfang/Submitauth", {
+            phone: this.inputPhone.phone,
+            openId: openId,
+            authCode: this.inputCode.code,
+        }, (callback) => {
+            if (type == '0') {
+                location.href = '/pxhfang/TiXianRecord?openId='+openId+ '&phone=' + this.inputPhone.phone+'&appid=wx64f161aa79a6801b'
+            } else {
+                location.href = '/pxhfang/TiXian?openId=' + openId + '&phone=' + this.inputPhone.phone + '&appid=wx64f161aa79a6801b&id=' + _id;
+            }
+        })
+    }
+
+    </script>
+
+</body>
+
+
+</html>

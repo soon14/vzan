@@ -1,0 +1,83 @@
+﻿@model testSqlModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>miniapp数据库查询</title>
+
+    <link href="~/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=1" />
+    <style>
+        .pager span { border: 1px solid #ddd; background-color: #fff; padding: 6px 12px; position: relative; display: inline-block; margin-left: -1px; }
+        .pager span:first-child { margin-left: 0; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+        .pager span:last-child { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+        .pager span.active { background-color: #337ab7; border-color: #337ab7; color: #fff; }
+        .pager span.active > a { background-color: #337ab7 !important; border: 0 !important; }
+        .pager .page-picker { padding: 0; }
+        .pager .page-picker > span { border: 0; margin-left: 1px; }
+        .pager .page-picker input { height: 20px; border: 1px solid #ccc; width: 40px; margin-left: 10px; }
+        #logDetailContent { background-color: #ffffcc; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app" style="width:1200px;">
+        <br /><br />
+        <form style="text-align:center;">
+            <textarea class="form-control" name="sql" style="height:179px;width: 48%; float: left; margin-right: 10px;">@Model.sql</textarea>
+            <textarea class="form-control" name="bfsql" style="height:179px;width: 48%;">@Model.bfsql</textarea>
+            <br /><br />
+            <button type="submit" class="btn btn-primary">查询</button>
+        </form>
+
+        <div style="width:100%;height:500px; overflow:scroll">
+            <table class="layui-table" lay-size="sm" >
+                <thead>
+                    <tr>
+                        <th v-for="name in listname">{{name}}</th>
+                    </tr>
+                </thead>
+                <tr v-for="row in table">
+                    <td v-for="name in listname">{{row[name]}}</td>
+                </tr>
+            </table>
+            @if (!string.IsNullOrEmpty(Model.msg))
+            {
+                <p>@Model.msg</p>
+            }
+        </div>
+        <p style="text-align:right;" v-if="table!=null">总数：{{table.length}}</p>
+
+    </div>
+ 
+
+
+    <script src="~/js/jquery-2.1.4.min.js"></script>
+    <script src="~/Content/assets/global/plugins/bootstrap/js/bootstrap.min.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+
+    <script>
+        var app = new Vue({
+            el: "#app",
+            data: {
+                table:@Html.Raw(JsonConvert.SerializeObject(Model.table)),
+                listname:[],
+            },
+            created: function () {
+                if (this.table != null && this.table.length > 0) {
+                    for (var item in this.table[0]) {
+                        this.listname.push(item);
+                    }
+                }
+
+            }
+        })
+    </script>
+</body>
+</html>

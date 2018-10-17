@@ -1,0 +1,188 @@
+﻿@model ViewModel<DishPrint>
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@section styles{
+    <style>
+        .print_list a { color: #3bb4f2; }
+    </style>
+}
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 打印机管理 <span class="c-gray en">&gt;</span> 打印设备 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="panel panel-default">
+        <div class="panel-header">支持打印机&nbsp;&nbsp;<span class="label label-danger radius">(打印机均由第三方提供，有问题可直接联系第三方进行处理)</span></div>
+        <div class="panel-body print_list">
+            @*<p>飞鹅打印机(支持WIFI、流量卡)　<a href="https://item.taobao.com/item.htm?id=535337310820" target="_blank">购买地址</a> <span class="label label-danger radius">配置简单，价格适中，有喇叭(声音大)</span></p>
+                <p>365打印机(支持WIFI、流量卡)　<a href="https://item.taobao.com/item.htm?id=537200099936" target="_blank">购买地址</a> <span class="label label-danger radius">配置简单，价格适中，有喇叭(声音较小)</span></p>*@
+            <p>易联云K4打印机(支持WIFI、流量卡)　<a href="https://s.click.taobao.com/PcpYJhw" target="_blank">购买地址</a> @*<span class="label label-danger radius">配置较复杂，价格稍贵，有喇叭(声音大)</span>*@</p>
+        </div>
+    </div>
+    <div class="cl pd-5 bg-1 bk-gray mt20">
+        <span class="l">
+            <a class="btn btn-primary radius" onclick="print_add('添加打印机','/DishAdmin/Printer/Edit?aid=@Model.aId&storeid=@Model.storeId')" href="javascript:;"><i class="Hui-iconfont">&#xe600;</i> 添加打印机</a>
+        </span>
+        <span class="r"></span>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="50">ID</th>
+                    <th width="200">打印机名称</th>
+                    <th width="100">类型</th>
+                    <th width="100">设备编码</th>
+                    <th width="100">打印标签</th>
+                    <th width="150">状态</th>
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr>
+                            <td>@(item.id)</td>
+                            <td>@(item.print_name)</td>
+                            <td>@(item.print_name_type == 1 ? "飞鹅打印机" : item.print_name_type == 2 ? "365打印机" : "易联云(K4)")</td>
+                            <td>@item.print_bianma</td>
+                            <td>@item.tags</td>
+                            <td>@(item.state == 1 ? "已启用" : "已禁用")</td>
+                            <td>
+                                @switch (item.state)
+                                {
+                                    case 1://启用
+                                        <a href="javascript:;" class="btn btn-danger radius size-MINI" onclick="updateState(@item.id,'ban')">禁用</a>
+                                        break;
+                                    case 0://禁用
+                                        <a href="javascript:;" class="btn btn-primary radius size-MINI" onclick="updateState(@item.id,'start')">
+                                            启用
+                                        </a>
+                                        <a href="javascript:;" class="btn btn-danger radius size-MINI" onclick="Del(@item.id)">
+                                            删除
+                                        </a>
+                                        break;
+                                }
+                                <a href="javascript:;" class="btn btn-primary radius size-MINI" onclick="print_add('编辑打印机','/DishAdmin/Printer/Edit?aid=@Model.aId&storeid=@Model.storeId&id=@item.id')">
+                                    编辑
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            }
+
+        </table>
+    </div>
+</div>
+
+@section scripts{
+<script type="text/javascript">
+        function print_add(title, url) {
+            var add_index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(add_index);
+        }
+        function print_ceshi(title, url) {
+            var ceshi_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+                area: ['600px', '200px']
+            });
+        }
+        function print_edit(title, url) {
+            var edit_index = layer.open({
+                type: 2,
+                title: title,
+                content: url,
+            });
+            layer.full(edit_index);
+        }
+        function category_sort() {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            var sort_data = '';
+            $(".is_order_val").each(function () {
+                sort_data = sort_data + $(this).val() + ',';
+            })
+            $.ajax({
+                type: "POST",
+                url: "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_category/setsort.html",
+                data: { sort_data: sort_data, t: Math.random() },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+        function updateState(id, act) {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "/DishAdmin/Printer/index",
+                data: { id: id, act: act,aId:@Model.aId,storeid:@Model.storeId},
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.alert(data.msg, { icon: 1 }, function (index) {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+
+        }
+        function Del(id) {
+            if (confirm('确定要删除该打印机吗?')) {
+                $.ajax({
+                    type: "POST",
+                    url: "/DishAdmin/Printer/index",
+                    data: { act: 'del',id: id,aId:@Model.aId,storeid:@Model.storeId},
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { time: 2000 }, function () {
+                                window.location.reload();
+                            });
+                        } else {
+                            layer.msg(data.msg, { time: 2000 });
+                        }
+                    },
+                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        layer.alert('系统错误，请重试', { icon: 5 });
+                    }
+                });
+
+            }
+        }
+</script>
+
+}

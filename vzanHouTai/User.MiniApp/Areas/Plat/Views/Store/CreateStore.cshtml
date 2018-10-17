@@ -1,0 +1,547 @@
+﻿@using Entity.MiniApp.Plat
+@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+
+@model PlatStore
+<link href="/content/newhome/css/dzbase.css?2018-3-27" rel="stylesheet" />
+
+<style>
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+    .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+    .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+    .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+    td { border: none !important; }
+    .warn { color: red; }
+</style>
+
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff" id="app" v-cloak>
+    <div>
+        <table class="table viplevel ml_19">
+
+
+            <tr>
+
+                <td align="right">轮播图(750*500)<span class="warn">*</span></td>
+                <td>
+                    <div class="pslideimgs" style="display:block;">
+                        <div class="pslideimgs">
+                            <div class="i_Posters rel">
+
+                                <div style="position:relative;" v-for="(item,index) in Banners">
+                                    <img :src="item" style="display:block;height:150px;width:150px;" />
+                                    <span v-on:click="clearImg(0,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                                </div>
+                                <div class="plus-button" v-on:click="UploadImg(0)">
+                                    <div class="s-image-uploader-wrapper">
+                                        <div>
+                                            <div class="plus">+</div>
+                                            <div class="plus-label">上传图片</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">店铺图(224*224)：<span class="warn">*</span></td>
+                <td>
+                    <div class="pslideimgs">
+                        <div class="i_Posters rel">
+
+                            <div style="position:relative;" v-for="(item,index) in StoreImgs">
+                                <img :src="item" style="display:block;height:150px;width:150px;" />
+                                <span v-on:click="clearImg(1,index)" class="DelPoster"><i class="glyphicon glyphicon-remove"></i></span>
+                            </div>
+                            <div class="plus-button" v-on:click="UploadImg(1)">
+                                <div class="s-image-uploader-wrapper">
+                                    <div>
+                                        <div class="plus">+</div>
+                                        <div class="plus-label">上传图片</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+
+                <td align="right">
+                    <label>门店名称:<span class="warn">*</span></label>
+                </td>
+
+                <td align="left">
+                    <input type="text" class="form-control" maxlength="20" style="display:block;width:500px;" v-model="store.Name" />
+                </td>
+            </tr>
+            <tr>
+
+                <td align="right">
+                    <label>店铺类别:<span class="warn">*</span></label>
+                </td>
+
+                <td align="left" v-if="@ViewBag.CategoryLevel==1">
+                    @*表示只开启可一级分类,只显示店铺小类*@
+
+                    <select style="display: block; width: 500px;" class="form-control" v-model="firstCategoryId" v-if="categoryList!=null">
+                        <option v-for="(item,index) in categoryList" :value="item.Id">{{item.Name}}</option>
+                    </select>
+                </td>
+                <td align="left" v-else>
+                    @*表示开启二级分类,先显示店铺大类选择大类后再显示店小类*@
+
+                    <select style="display: block; width: 500px;" class="form-control" v-if="categoryList!=null" v-model="firstCategoryId" v-on:change="GetScondCategory(firstCategoryId)">
+                        <option v-for="(item,index) in categoryList" :value="item.Id">{{item.Name}}</option>
+                    </select>
+                    <select style="display: block; width: 500px;" class="form-control" v-model="store.Category">
+                        <option v-bind:value="item.Id" v-for="(item,index) in secondCategory">{{item.Name}}</option>
+                    </select>
+
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>营业时间:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" maxlength="20" style="display:block;width:500px;" v-model="store.OpenTime" />
+                </td>
+
+            </tr>
+            <tr>
+
+                <td align="right">
+                    <label>门店地址:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <table>
+                        <tr>
+                            <td>
+                                <input type="text" v-if="store.UseBaidu" readonly="readonly" maxlength="30" class="form-control" style="display:block;width:500px;cursor:pointer;" v-model="store.Location" v-on:click="ChooseLocationBaidu()" />
+                                <input type="text" v-else maxlength="30" class="form-control" style="display:block;width:500px;cursor:pointer;" v-model="store.Location" readonly="readonly" v-on:click="ChooseLocation()" />
+                            </td>
+                            <td>&nbsp;&nbsp;<label><input type="checkbox" on:click="ClickUseBaidu" v-model="store.UseBaidu" />使用百度坐标选择器（默认使用腾讯坐标选择器）</label></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>客服电话:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="11" class="form-control" style="display:block;width:500px;" v-model="store.Phone" />
+                </td>
+
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>虚拟人气:</label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="11" class="form-control" style="display:block;width:500px;" v-model="store.StoreVirtualPV" />
+                </td>
+
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>实际人气:</label>
+                </td>
+                <td align="left">
+                    <input type="text" maxlength="11" class="form-control" style="display:block;width:500px;" readonly="readonly" v-model="store.StorePV" />
+                </td>
+
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>门店公告:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" v-model="store.StoreRemark" />
+                </td>
+
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>门店设施:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <div style="width:800px;display:inline-block;">
+                        <div v-for="(item,index) in store.StoreServiceModelList" style="display:inline-block;margin-left:10px;margin-top:5px;">
+                            <input type="checkbox" name="Service" :checked="item.ServiceState" v-model="item.ServiceState" style="margin-top:10px;" />
+                            <input type="text" class="form-control" style="display:inline-block;width:160px;" v-model="item.ServiceName" placeholder="例如:Wifi,免费停车" />
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>业务描述:<span class="warn">*</span></label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" v-model="store.BusinessDescription" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right">店铺描述：<span class="warn">*</span></td>
+                <td>
+                    <div id="editor" style="width:500px;height:360px;"></div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right"></td>
+                <td>
+                    <button type="button" class="btn btn-primary ml10" v-on:click="save()">
+                        保存
+                    </button>
+                </td>
+            </tr>
+
+        </table>
+
+
+
+
+    </div>
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe" src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocationOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ChooseLocationBaiduModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationBaiduModal_label">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationBaiduModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body" style="padding:0 10px;">
+                    <iframe name="mapframebaidu" src="/content/plugin/chooselocation-bd/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocationBaiduOK">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+
+</div>
+<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.StoreDescription)
+</script>
+<script>
+    var Banners=@Html.Raw(JsonConvert.SerializeObject(Model.Banners.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList()));
+    var StoreImgs=@Html.Raw(JsonConvert.SerializeObject(Model.StoreImgs.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList()));
+    var comeditor=null;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            store:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            comeditor:null,
+            Banners:Banners,
+            StoreImgs:StoreImgs,
+            uploadImgType:0,
+            categoryList:@Html.Raw(JsonConvert.SerializeObject(ViewBag.CategoryList)),
+            firstCategoryId:@ViewBag.firstCategoryId,
+            secondCategory:[],
+
+        },
+        mounted: function () {
+            var that=this;
+            if ($(".edui-container").length == 0) {
+                //that.comeditor.destroy();
+                that.BuildEditor();
+            }
+
+            console.log("mounted");
+        },
+        created:function(){
+            var that=this;
+            if(@ViewBag.CategoryLevel==1){
+                that.firstCategoryId=that.store.Category;
+            }else{
+                //表示开启二级
+                that.GetScondCategory(that.firstCategoryId);
+            }
+
+        },
+        methods:{
+            GetScondCategory:function(parentId){
+                var that=this;
+                $.post("/Plat/Store/GetCategoryList", {appId:@ViewBag.appId,isFirstType:0,isList:-1,parentId:parentId,pageSize:200}, function (data) {
+                    that.secondCategory = data.dataObj.list;
+
+                })
+            },
+
+            /************************地图*****************************/
+            ChooseLocationOK: function () {
+                var that=this;
+                var addr=mapframe.window.document.getElementById("addr_cur").value;
+                var _location = mapframe.window.document.getElementById("poi_cur").value;
+                var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+                if (_location == "") {
+                    layer.msg("您还未选择地理位置！");
+                    return;
+                }
+                _location = _location.split(",");
+                that.store.Location=addr;
+                that.store.Lat = parseFloat(_location[0]);
+                that.store.Lng = parseFloat(_location[1]);
+               // _selMap.scale = parseInt(_zoom) || 15;
+
+                console.log(_location);
+                $("#ChooseLocationModal").modal("hide");
+            },
+            ChooseLocationBaiduOK: function () {
+                var that = this;
+                var _location = mapframebaidu.window.document.getElementById("pointInput").value;
+                var _addr = mapframebaidu.window.document.getElementById("currentAddress").value;
+                if (_location == "") {
+                    layer.msg("您还未选择地理位置！");
+                    return;
+                }
+                //_location = _location.split(",");
+                $.post("/Plat/Store/ConvertBaiduPointToTencent?aid=@(ViewBag.appId)", { lnglat: _location}).then(function (data) {
+                    console.log(data);
+                    if (data) {
+                        data = JSON.parse(data);
+                    }
+                    if (data.status !== 0) {
+                        alert("百度地图坐标转换失败，请尝试腾讯地图");
+                        return;
+                    }
+                    that.store.Location = _addr;
+                    that.store.Lat = data.result[0].y;
+                    that.store.Lng = data.result[0].x;
+                    $("#ChooseLocationBaiduModal").modal("hide");
+                });
+                //$.getJSON("http://api.map.baidu.com/geoconv/v1/?jsoncallback=?", {
+                //    coords: _location,
+                //    from:5,
+                //    to:3,
+                //    ak: 'QGXVNnuXjEinccPzuAYPNq5wynQw3nT2'
+                //}).then(function (data) {
+                //    console.log(data);
+                //    });
+
+            },
+            ChooseLocation:function(){
+                $("#ChooseLocationModal").modal("show");
+            },
+            ChooseLocationBaidu: function () {
+                $("#ChooseLocationBaiduModal").modal("show");
+            },
+            ChangeSkin: function (index) {
+                var that=this;
+                that.skinList.forEach(function (o, i) {
+                    o.sel = false;
+                });
+                that.skinList[index].sel = true;
+                that.store.ColorTxt= that.skinList[index].bgcolor;
+
+            },
+            save:function(){
+                var that=this;
+
+                if (comeditor != null) {
+                    that.store.StoreDescription=comeditor.getContent();
+                }
+
+                if(that.Banners==null||that.Banners.length<=0||that.Banners.length>5){
+                    layer.msg("轮播图至少一张最多5张",{time:1000});
+                    return;
+                }
+
+                that.store.Banners=that.Banners.join(",");
+
+                if(that.StoreImgs==null||that.StoreImgs.length<=0||that.StoreImgs.length>10){
+                    layer.msg("店铺图至少一张最多10张",{time:1000});
+                    return;
+                }
+                that.store.StoreImgs=that.StoreImgs.join(",");
+                if(that.store.Name==null||that.store.Name==""||that.store.Name.length<=0){
+                    layer.msg("店铺名称不能为空",{time:1000});
+                    return;
+                }
+
+                if(@ViewBag.CategoryLevel==1){
+                    that.store.Category=that.firstCategoryId;
+                }
+
+                if(that.store.Category<=0||that.store.Category==undefined){
+                    layer.msg("请先选择店铺类别",{time:1000});
+                    return;
+                }
+
+
+                if(that.store.OpenTime==null||that.store.OpenTime==""||that.store.OpenTime.length<=0){
+                    layer.msg("店铺营业时间描述不能为空",{time:1000});
+                    return;
+                }
+                if(that.store.Location==null||that.store.Location==""||that.store.Location.length<=0){
+                    layer.msg("店铺地址描述不能为空",{time:1000});
+                    return;
+                }
+
+                //var ret = /^(\d{3,4}-)?\d{6,8}$/;
+                //var ret2 = /^(((13[0-9]{1})|(15[0-9]{1})|(18[0-9]{1})|(17[0-9]{1}))+\d{8})$/;
+                //if (!ret.test(that.store.Phone)&&!ret2.test(that.store.Phone)) {
+                //    layer.msg("请填写正确的联系号码");
+                //    return;
+                //}
+
+
+                var ret = /\d/;
+                if (!ret.test(that.store.Phone)||that.store.Phone.length>11) {
+                    layer.msg("请填写正确的联系号码");
+                    return;
+                }
+                if (!ret.test(that.store.StoreVirtualPV)) {
+                    layer.msg("请填写正确的虚拟人气值");
+                    return;
+                }
+
+                if(that.store.BusinessDescription==null||that.store.BusinessDescription==""||that.store.BusinessDescription.length<=0){
+                    layer.msg("店铺业务描述不能为空",{time:1000});
+                }
+
+                if(that.store.StoreDescription==null||that.store.StoreDescription==""||that.store.StoreDescription.length<=0){
+                    layer.msg("店铺描述不能为空",{time:1000});
+                    return;
+                }
+                if(that.store.StoreRemark==null||that.store.StoreRemark==""||that.store.StoreRemark.length<=0){
+                    layer.msg("公告不能为空",{time:1000});
+                    return;
+                }
+
+                $.post("/PlatChild/Store/SaveStore", {fromPlat:1,store:that.store,appId:@ViewBag.appId,agentinfoId:@ViewBag.AgentinfoId},function(data){
+
+                    if(data&&data.isok){
+                        layer.msg(data.Msg,{time:1000});
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                    else{
+                        layer.msg(data.Msg,{time:1000});
+                    }
+
+                });
+            },
+            BuildEditor: function () {
+                console.log("BuildEditor");
+                var that = this;
+
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','insertvideo','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image?cityid=" + @Model.Aid,
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.store.StoreDescription);
+                });
+                comeditor.addListener("contentChange", function () {
+                    console.log("change");
+                    if (comeditor != null) {
+                        that.store.StoreDescription=comeditor.getContent();
+                    }
+                });
+            },
+            UploadImg:function(type){
+                var that=this;
+                that.uploadImgType=type
+                var framSrc;
+                var maxCount=5;
+                var remainCount=0;
+                if(that.uploadImgType==0){
+                    //表示轮播图
+
+                    if(that.Banners.length>=maxCount){
+                        layer.msg("轮播图最多5张");
+                        return;
+                    }
+                    remainCount=maxCount-that.Banners.length;
+                    framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=1&maxImgSize=1&objKey=Banners&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }else{
+                    maxCount=10;
+                    remainCount=maxCount-that.StoreImgs.length;
+                    if(that.StoreImgs.length>=maxCount){
+                        layer.msg("店铺图最多10张");
+                        return;
+                    }
+                    framSrc="/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=0&maxImgSize=1&objKey=StoreImgs&maxCount="+maxCount+"&remainCount="+remainCount+"";
+                }
+                $("#uploadFrame").attr("src",framSrc);
+
+                $("#addModal_UploadImg").modal('show');
+
+            },
+            clearImg:function(type,index){
+                var that = this;
+                if(type==0){
+                    //表示店铺轮播图
+                    if(that.Banners.length>0){
+                        that.Banners.splice(index,1);
+                    }
+
+                    that.store.Banners=that.Banners.join(",");
+
+                }else{
+                    //表示店铺大图
+                    if(that.StoreImgs.length>0){
+                        that.StoreImgs.splice(index,1);
+                    }
+
+                    that.store.StoreImgs=that.StoreImgs.join(",");
+                }
+            }
+
+        }
+    });
+</script>

@@ -1,0 +1,61 @@
+﻿@{
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+    ViewBag.Title = "产品案例";
+}
+@model List<XcxTemplate>
+@section cssSection{
+    @*<link href="@(WebSiteConfig.cdnurl)content/newhome/css/productCase.css" rel="stylesheet" />*@
+}
+
+<div id="app" class="product-case-wrap" v-cloak>
+    <!--banner-->
+    <div class="banner-img f fc-h fc ">
+        <img src="@(WebSiteConfig.cdnurl)content/newhome/image/produtCase-banner.png?@(WebSiteConfig.cdnVersion)" />
+        <h1 class="banner-text fz-56 c-fff">产品案例</h1>
+    </div>
+
+    <!--案例列表-->
+    <section class="caseList f fv fc">
+        <div class="caseContent">
+            <!--小程序模板-->
+            <ul class="versions-list f fc fw rv">
+                <li><a href="javascript:;" v-on:click="GetDataByTid(-1)" v-bind:class="{'green-line':selTemplateIndex==-1}">全部</a></li>
+                <li v-for="(xcxTemplate,index) in xcxTemplates" v-if="xcxTemplate.Id!=40&&xcxTemplate.Id!=41&&xcxTemplate.Id!=54"><a href="javascript:;" v-on:click="GetDataByTid(index)" v-bind:class="{'green-line':index==selTemplateIndex}">{{xcxTemplate.TName}}</a></li>
+            </ul>
+            <!--不同案例版本下显示隐藏-->
+            <ul class="label-list f fc fw rv" v-if="tags.length>0">
+                <li v-if="tags.length>1" v-on:click="GetDataByTagId(-1)"><div v-bind:class="['btn-label',{'current-btn':tagId==0}]">全部</div></li>
+                <li v-for="(tag,index) in tags" v-if="tag!=''" v-on:click="GetDataByTagId(index)"><div v-bind:class="['btn-label',{'current-btn':tagId==tag.id||tags.length==1}]">{{tag.tagname}}</div></li>
+            </ul>
+            <div class="case-tpl f fv fc rv">
+                <ul class="case-list f fw">
+                    <li v-for="caseItem in cases">
+                        <div class="case">
+                            <div class="case-img">
+                                <img v-bind:src="caseItem.coverPath" />
+                                <div class="case-shade f fc-h fc">
+                                    <img v-bind:src="caseItem.QrcodePath" />
+                                </div>
+                            </div>
+
+                            <p class="case-name">{{caseItem.casename}}</p>
+                        </div>
+                    </li>
+                </ul>
+                <div class="btn-more" v-on:click="LoadMoreData()" v-if="cases!=null && recordCount>cases.length">加载更多</div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section script{
+    <script>
+        var initData = {
+            templateList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            initTemplateIndex:-1
+        }
+    </script>
+    <script src="@(WebSiteConfig.cdnurl)content/newhome/js/getcaselist.js"></script>
+}
+
+

@@ -1,0 +1,176 @@
+﻿
+@{
+    ViewBag.Title = "重置密码";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (aid == 0)
+    {
+        aid = 6933593;
+    }
+}
+@section styles{
+    <link href="~/Content/css/dzbase.css" rel="stylesheet" />
+    <link href="~/Areas/PinAdmin/css/base.css" rel="stylesheet" />
+    <link href="~/Areas/PinAdmin/css/animate.css" rel="stylesheet" />
+    <link href="~/Areas/PinAdmin/css/login.css" rel="stylesheet" />
+    <style>
+        .mainbody { width: 600px; height: 100%; margin: 0 auto; }
+        .Validform_error, input.error, select.error { background-color: transparent; border-color: #c66161; color: #c00; }
+        label.error { color: #fff; }
+    </style>
+}
+<body class="main food">
+    <div class="mainbody rel" id="app">
+
+        <div>
+            <form method="post" id="post-form">
+                <input type="hidden" name="act" value="reset" />
+                <input type="hidden" name="aid" value="@(aid)"/>
+                <div class="float-mid">
+                    <h2 class="tit">密码重置</h2>
+                    <ul>
+                        <li class="rel"><input type="text" id="loginname" name="loginname" placeholder="请输入您的手机号码"></li>
+                        <li class="rel">
+                            <table border="0" cellpadding="0" cellspacing="0" style="margin:0;">
+                                <tr>
+                                    <td class="rel">
+                                        <input type="text" name="authCode" placeholder="请输入验证码">
+                                    </td>
+                                    <td><input type="button" value="获取验证码" id="getCode" style="cursor:pointer;" /></td>
+                                </tr>
+                            </table>
+                        </li>
+                        <li class="rel"><input type="password" name="password" id="password" placeholder="请输入新密码"></li>
+                        <li><button type="submit" id="submit_button">确定</button></li>
+                        <li><a href="/pinadmin/main/login"><button type="button">已开通，去登陆</button></a></li>
+                    </ul>
+                </div>
+            </form>
+            <span class="c1"></span>
+            <span class="c2"></span>
+            <span class="c3"></span>
+        </div>
+    </div>
+
+</body>
+
+
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            var timer = null;
+            var ispost = false;
+            $(document).on("click", "#getCode", function () {
+                
+
+                var phone = $("#loginname").val();
+                if (!/^1[\d]{10}$/.test(phone)) {
+                    layer.msg('请输入正确的手机号码', { time: 1000 });
+                    return;
+                }
+                if (ispost)
+                    return;
+                if (!ispost)
+                    ispost = true;
+
+                $.post("/pinAdmin/main/GetAuthCode", { telphone: phone,act:"reset" }).then(function (result) {
+                    if (result.code==1) {//
+                        $("#getCode").attr("disabled", "disabled").val("59");
+                        if (timer)
+                            clearInterval(timer)
+                        timer = setInterval(function () {
+                            var num = Number($("#getCode").val());
+                            num -= 1;
+                            if (num < 0) {
+                                $("#getCode").removeAttr("disabled").val("获取验证码");
+                                clearInterval(timer);
+                                return;
+                            }
+                            else {
+                                $("#getCode").val(num);
+                            }
+                            
+                        },1000);
+                    }
+                    else {
+                        ispost = false;
+                        layer.msg(result.msg, { time: 1000 });
+                        return;
+                    }
+                });
+            });
+            //表单验证
+            $("#post-form").validate({
+                rules: {
+                    loginname: {
+                        required: true,
+                    },
+                    password: {
+                        required: true
+                    },
+                    authCode: {
+                        required: true
+                    }
+                    //verify: {
+                    //    required: true
+                    //}
+                },
+                messages: {
+                    loginname: {
+                        required: "请输入用户名"
+                    },
+                    password: {
+                        required: "请输入密码"
+                    },
+                    authCode: {
+                        required: "请输入验证码"
+                    }
+                    //verify: {
+                    //    required: "请输入验证码"
+                    //}
+                },
+                onkeyup: false,
+                //focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {
+                    var l_index = layer.msg('数据提交中');
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+
+                            if (data.code == 0) {
+                                layer.msg(data.msg, { time: 1000 });
+                            } else {
+                                layer.msg(data.msg, { time: 1500 });
+                                //var url = window.location.host;
+                                //var domain = "";
+                                //if (url.indexOf("www.") != -1) {
+                                //    domain = url.replace("www.", ".");
+                                //}
+                                //else {
+                                //    domain = "." + url;
+                                //}
+
+                                //$.cookie("dzPinAdmin", data.msg, {
+                                //    expires: 7,
+                                //    path: '/',
+                                //    domain: domain
+                                //});
+                                setTimeout(function () {
+                                    window.location = "/pinadmin/main/login";
+                                }, 2000);
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+    </script>
+}

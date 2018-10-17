@@ -1,0 +1,547 @@
+﻿
+@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    List<object> listBindMyCard = ViewBag.listBindMyCard;
+    if (listBindMyCard == null)
+    {
+        listBindMyCard.Add(new {Id=-1,Name="暂无可绑定会员" });
+    }
+   
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; margin: 10px 0; }
+
+    .form-control { width: 35%; display: inline-block; }
+
+    .edit { color: cornflowerblue; }
+    .del { color: red; }
+    .tipSpan { color: #ccc; margin-left: 5px; }
+
+    .layui-laypage span { background-color: #eff0f4; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+
+    <div id="app_StoreList" v-cloak>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <div>
+                        <label for="plist-pname">店铺名称：</label>
+                        <input type="text" name="storeName" class="form-control" value="" v-model="postdata.storeName" />
+                        <label for="plist-pname">绑定的小程序：</label>
+                        <input type="text" name="appName" class="form-control" value="" v-model="postdata.appName" />
+                        <label for="plist-pname">分销商名称：</label>
+                        <input type="text" name="agentName" class="form-control" value="" v-model="postdata.agentName" />
+                        <label for="plist-pname">原平台分类：</label>
+                        <input type="text" name="category" class="form-control" value="" v-model="postdata.categoryName" />
+                        <label for="plist-pname">会员账号：</label>
+                        <input type="text" name="storeOwnerPhone" class="form-control" value="" v-model="postdata.userPhone" />
+                    </div>
+
+                    <div style="display:inline-block;margin-top:20px;">
+                        <label for="plist-pname">店铺状态：</label>
+                        <select class="form-control" v-model="postdata.storeState">
+                            <option value="-1">全部</option>
+                            <option value="0">屏蔽</option>
+                            <option value="1">显示</option>
+
+                        </select>
+
+                        <label for="plist-pname">绑定小程序状态：</label>
+                        <select class="form-control" v-model="postdata.haveAid">
+                            <option value="-1">全部</option>
+                            <option value="0">未绑定</option>
+                            <option value="1">已绑定</option>
+
+                        </select>
+                        <label for="plist-pname">来源：</label>
+                        <select class="form-control" v-model="postdata.fromType">
+                            <option value="-1">全部</option>
+                            <option value="0">本平台入驻</option>
+                            <option value="1">数据同步</option>
+
+                        </select>
+
+                        <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                        <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                        <a href="/Plat/Store/CreateStore?aid=@ViewBag.appId" class="btn btn-primary ml10">添加店铺</a>
+                    </div>
+
+                </div>
+
+
+
+            </div>
+        </div>
+        <div style="margin-top:20px;">
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext">序号</th>
+                    <th class="centertext">平台类别</th>
+                    <th class="centertext">原平台类别</th>
+                    <th class="centertext">店铺名称</th>
+                    <th class="centertext">会员账号</th>
+                    <th class="centertext">数据来源</th>
+                    <th class="centertext">店铺状态</th>
+                    <th class="centertext">店铺访问量</th>
+                    <th class="centertext">绑定小程序</th>
+                    <th class="centertext">新增时间</th>
+                    <th class="centertext">使用年限</th>
+                    <th class="centertext">过期时间</th>
+                    <th class="centertext">是否过期</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in storeList">
+                    <td class="centertext nowrap">
+                        <label>
+                            <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                        </label>
+                    </td>
+
+                    <td class="centertext">
+
+                        <a href="javascript:;" style="color:#4a86e8;" v-on:click="updateCategory(item.Category,item.FirstCategory,item.Id)"> {{item.CurFirstCategoryName}}-{{item.CurSecondCategoryName}}</a>
+
+                    </td>
+
+                    <td class="centertext nowrap">
+                        <span v-if="item.FromType==0">
+                            ——
+                        </span>
+                        <span v-else>
+                            {{item.OwnerFirstCategoryName}}-{{item.OwnerSecondCategoryName}}
+                        </span>
+
+
+                    </td>
+
+                    <td class="centertext nowrap">
+                        {{item.StoreName}}
+                    </td>
+                   
+                    <td class="centertext nowrap" v-if="item.MyCardId>0">
+                        {{item.StoreOwnerPhone}}
+                    </td>
+                    <td class="centertext nowrap" v-else>
+
+                        <a href="javascript:;" style="color:#4a86e8;" v-on:click="bindStore(item.StoreId)">绑定账号</a>
+                    </td>
+                    <td class="centertext">
+                        {{item.FromTypeStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.IsViewStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.StorePV}}
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.BindAppIdName}}
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.AddTimeStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.YearCount}}月
+                    </td>
+                    <td class="centertext nowrap">
+                        {{item.ExpireTimeStr}}
+                    </td>
+                    <td class="centertext nowrap">
+                        <span class="label label-danger" v-if="item.IsExpired">已过期</span>
+                        <span class="label label-success" v-else>未过期</span>
+                    </td>
+                    <td class="centertext">
+                        <a href="javascript:;" class="btn btn-primary ml10" v-on:click="updateState(0,item.Id,1)" v-if="item.State==0">显示</a>
+                        <a href="javascript:;"  class="btn btn-default ml10" v-on:click="updateState(0,item.Id,0)" v-else>屏蔽</a>
+                        @*<a href="javascript:;" class="btn btn-primary ml10"  v-on:click="viewStore(item.Id)">查看</a>*@
+                        <a :href="'/Plat/Store/CreateStore?aid=@ViewBag.appId&storeId=' + item.StoreId " class="btn btn-default ml10">编辑</a>
+                    </td>
+                </tr>
+
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;"></div>
+            <div class="ml_19">
+                <a href="javascript:;" class="btn btn-primary ml10 " v-on:click="updateState(-1,0,1)" >批量显示</a>
+                <a href="javascript:;" class="btn btn-default ml10" v-on:click="updateState(-1,0,0)" >批量屏蔽</a>
+                
+            </div>
+        </div>
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            分类编辑
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+
+                                    <div style="margin-top: 5px;">
+                                        <span>所属大类：<span style="color:red;">*</span></span>
+                                        <select class="form-control" v-model="curCategory.parentId" style="width: 200px; margin-left: 5px;" v-on:change="GetScondCategory(curCategory.parentId)">
+                                            <option v-bind:value="item.Id" v-for="(item,index) in firstCategoryList">{{item.Name}}</option>
+
+                                        </select>
+                                    </div>
+
+                                    <div style="margin-top: 5px;">
+                                        <span>所属小类：<span style="color:red;">*</span></span>
+                                        <select class="form-control" v-model="curCategory.Id" style="width: 200px; margin-left: 5px;">
+                                            <option v-bind:value="item.Id" v-for="(item,index) in secondCategory">{{item.Name}}</option>
+
+                                        </select>
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveCategory()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+        <div class="modal fade" id="viewStoreModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content" style="min-height:700px;min-width:700px;">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="viewStoreModalLabel">
+                            店铺详情
+                        </h4>
+                    </div>
+                    <div class="modal-body" >
+                        <div>
+
+                            <div style="margin-top:10px;">
+                              <iframe src="" id="storeDetail" style="min-height:700px;width:100%;border:none;"></iframe>
+
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            返回
+                        </button>
+                        
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+        <div class="modal fade" id="bindStoreModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            绑定账号
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+
+                            <div style="margin-top:10px;">
+                              
+                                <label>会员:</label>
+                                <select style="display:inline-block; width: 300px;" class="form-control" v-model="bindMyCardId">
+                                    <option v-for="(item,index) in listBindMyCard" :value="item.Id">{{item.Name}}</option>
+                                </select>
+                            </div>
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="text-align:center;">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            关闭
+                        </button>
+                        <button type="button" class="btn btn-primary" v-on:click="saveBind()">
+                            保存
+                        </button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!--/.modal-->
+
+
+    </div>
+
+   
+</div>
+
+
+<script>
+    var ckids=[];
+    var app = new Vue({
+        el: "#app_StoreList",
+        data: {
+            recordCount: 0,
+            storeList:[],
+            postdata: {
+                aid:@ViewBag.appId,
+                storeName:"",
+                appName:"",
+                agentName:"",
+                categoryName:"",
+                storeState:-1,
+                haveAid:-1,
+                fromType:-1,
+                pageIndex: 1,
+                pageSize: 10,
+                userPhone:""
+            },
+            curCategory:{
+                Id:0,
+                parentId:0,
+                storeRelationId:0,
+                appId:@ViewBag.appId
+            },
+            firstCategoryList:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            secondCategory:[],
+            listBindMyCard:@Html.Raw(JsonConvert.SerializeObject(listBindMyCard)),
+            bindMyCardId:0,
+            bindStoreId:0
+        },
+
+        methods: {
+            saveBind:function(){
+                var that=this;
+                if(that.bindStoreId<=0){
+                    layer.msg("请先选择需要绑定的店铺!");
+                    return;
+                }
+                if(that.bindMyCardId<=0){
+                    layer.msg("请先选择需要绑定的会员!");
+                    return;
+                }
+                var index = layer.load(1);
+                $.ajax({
+                    type: 'POST',
+                    url: '/PlatChild/Store/BindMyCard',
+                    data: {fromPlat:1,platMyCardId:that.bindMyCardId,storeId:that.bindStoreId,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.close(index);
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+
+                    },
+                    error: function (rdata) {
+                        layer.msg("与服务器通讯错误");
+                    }
+                });
+            },
+            bindStore:function(bindStoreId){
+                var that=this;
+                that.bindStoreId=bindStoreId;
+                $("#bindStoreModal").modal('show');
+            },
+            ckSave:function(id){
+                for(var i = 0; i < ckids.length; i++){
+                    if(id === ckids[i]){
+                        ckids.splice(i,1);
+                        return ;
+                    }
+                }
+                return ckids.push(id);
+            },
+            viewStore:function(storeRelationId){
+                $("#storeDetail").attr("src","/Plat/Store/StoreDetail?aid=@ViewBag.appId&storeRelationId="+storeRelationId);
+                $('#viewStoreModal').modal('show');
+            },
+            saveCategory:function(){
+                //修改店铺在平台的显示类别
+                var that=this;
+                var index = layer.load(1);
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/UpdateStoreRelationCategory',
+                    data: that.curCategory,
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.close(index);
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+
+                    },
+                    error: function (rdata) {
+                        layer.msg("与服务器通讯错误");
+                    }
+                });
+            },
+            updateState:function(type,id,act){
+                layer.open({
+                    content: '确认进行该操作?'
+            ,btn: ['确认', '取消']
+            ,yes: function(index, layero){
+            
+                var that=this;
+                if(type==0){
+                    ckids.push(parseInt(id));
+                }
+                if(ckids.length<=0){
+                    layer.msg("请选择要操作的数据");
+                    return;
+                }
+
+
+                var index2 = layer.load(1);
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/UpdateStoreRelationState',
+                    data: {appId:@ViewBag.appId,ids:ckids.join(","),act:act},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.close(index2);
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+
+                    },
+                    error: function (rdata) {
+                        layer.msg("与服务器通讯错误");
+                    }
+                });
+
+
+            }
+            ,btn2: function(index, layero){
+
+                // layer.msg("点击取消");
+            }
+
+                });
+            },
+            updateCategory:function(Category,FirstCategory,StoreRelationId){
+                //如果是本平台入驻的则需要更改platStore 里的分类 还要更改PlatStoreRelation 里的分类
+                //如果是同步过来的则只需要更改PlatStoreRelation 里的分类
+
+                var that=this;
+                that.curCategory.Id=Category;
+                that.curCategory.storeRelationId=StoreRelationId;
+                that.curCategory.parentId=FirstCategory;
+
+                //获取大类下的小类
+
+                $.post("/Plat/Store/GetCategoryList", {appId:@ViewBag.appId,isFirstType:0,isList:-1,parentId:FirstCategory}, function (data) {
+                    that.secondCategory = data.dataObj.list;
+                    $('#myModal').modal('show');
+                })
+
+
+            },
+            GetScondCategory:function(parentId){
+                var that=this;
+                that.curCategory.Id=0;
+                $.post("/Plat/Store/GetCategoryList", {appId:@ViewBag.appId,isFirstType:0,isList:-1,parentId:parentId}, function (data) {
+                    that.secondCategory = data.dataObj.list;
+                 
+                })
+            },
+            search:function(){
+                var that=this;
+                that.postdata.pageIndex=1;
+                that.getList();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+
+            //获取店铺列表
+            getList: function () {
+                var that=this;
+                var index = layer.load(1);
+                $.post("/Plat/Store/GetStoreList", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.storeList = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getList();
+
+                            }
+                        }
+                            , theme: '#3eb94e'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            }
+        },created:function(){
+            var that=this;
+            that.getList();
+
+        }
+    });
+</script>

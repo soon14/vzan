@@ -1,0 +1,404 @@
+﻿
+@{
+    ViewBag.Title = "RefundApplyList";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+}
+@model ViewModel<PinRefundApply>
+@section styles{
+    <style>
+        .search-box { width: 80% !important; min-width: 991px; }
+        .search-box td { padding: 5px; }
+        .mt-20 { min-width: 1012px; }
+        .orderdetail { width: 970px; display: inline-block; }
+        .orderdetail li { width: 30%; float: left; }
+        .btn-box { width: 20%; float: right; margin-top: 25px; }
+        .detail-box { display: none; }
+        .check-box { display: inline; padding-right: 0px; }
+        .icheckbox-blue { margin-top: -5px; }
+    </style>
+}
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 订单管理 <span class="c-gray en">&gt;</span> 退换货管理<a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <form method="get" class="search-form">
+            <input type="hidden" name="aid" value="@Model.aId" />
+            <input type="hidden" name="storeId" value="@Model.storeId" />
+            <table class="search-box">
+                <tr>
+                    <td>服务单号：</td>
+                    <td><input type="text" style="width:200px" class="input-text" value="@ViewBag.ServiceNo" name="serviceNo" /></td>
+                    <td>用户昵称:</td>
+                    <td><input type="text" style="width:200px" class="input-text" value="@ViewBag.NickName" name="nickName" /></td>
+                    <td>商品名称:</td>
+                    <td><input type="text" style="width:200px" class="input-text" value="@ViewBag.GoodsName" name="goodsName" /></td>
+                    <td>审核状态：</td>
+                    <td>
+                        <span class="select-box">
+                            <select class="select" name="state">
+                                <option value="-999" @((int)ViewBag.State == -999 ? "checked" : "")>全部</option>
+                                <option value="0" @((int)ViewBag.State == 0 ? "selected " : "")>待处理</option>
+                                <option value="1" @((int)ViewBag.State == 1 ? "selected " : "")>申请通过</option>
+                                <option value="2" @((int)ViewBag.State == 2 ? "selected " : "")>已重新发货</option>
+                                <option value="-1" @((int)ViewBag.State == -1 ? "selected " : "")>申请失败</option>
+                            </select>
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>收货人:</td>
+                    <td><input type="text" style="width:200px" class="input-text" value="@ViewBag.Consignee" name="consignee" /></td>
+                    <td>收货电话:</td>
+                    <td><input type="text" style="width:200px" class="input-text" value="@ViewBag.Phone" name="phone" /></td>
+                    <td>配送方式:</td>
+                    <td>
+                        <span class="select-box">
+                            <select class="select" name="sendWay" style="width:189px;">
+                                <option value="-999" @((int)ViewBag.SendWay == -999 ? "selected " : "")>全部</option>
+                                <option value="0" @((int)ViewBag.SendWay == 0 ? "selected " : "")>商家配送</option>
+                                <option value="1" @((int)ViewBag.SendWay == 1 ? "selected " : "")>到店自取</option>
+                                <option value="2" @((int)ViewBag.SendWay == 2 ? "selected " : "")>面对面交易</option>
+                            </select>
+                        </span>
+                    </td>
+                    <td>售后类型：</td>
+                    <td>
+                        <span class="select-box">
+
+                            <select class="select" name="groupState">
+                                <option value="-999" @((int)ViewBag.Type == -999 ? "checked" : "")>全部</option>
+                                <option value="1" @((int)ViewBag.Type == 1 ? "selected " : "")>仅退款</option>
+                                <option value="2" @((int)ViewBag.Type == 2 ? "selected " : "")>退货退款</option>
+                                <option value="3" @((int)ViewBag.Type == 3 ? "selected " : "")>换货/维修</option>
+                            </select>
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+
+                    <td colspan="8" style="text-align:center;">
+                        <a id="search" href="javascript:void(0);" class="btn btn-secondary radius">搜索</a>
+                        <a onclick="resetData()" href="javascript:void(0);" class="btn radius">重置</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l">
+            <input class="btn btn-primary radius" type="button" value="通过" onclick="UpdateRefundApplyState(1)">
+            <input class="btn btn-primary radius" type="button" value="已重新发货" onclick="UpdateRefundApplyState(2)">
+            <input class="btn btn-success radius" type="button" value="不通过" onclick="UpdateRefundApplyState(-1)">
+            <input class="btn btn-danger radius" type="button" value="删除" onclick="UpdateRefundApplyState(-2)">
+        </span>
+        <span class="r">共有数据：<strong>@Model.TotalCount</strong> 条</span>
+    </div>
+    <div class="mt-20">
+        <table id="Huifold1" class="table table-border table-bordered table-bg table-hover table-sort Huifold">
+            <tr class="text-c">
+                <th width="50">选择</th>
+                <th width="100">服务单号</th>
+                <th width="80">商品名称</th>
+                <th width="60">退货数量</th>
+                <th width="80">退款金额</th>
+                <th width="50">售后类型</th>
+                <th width="60">退货原因</th>
+                <th width="60">退货说明</th>
+                <th width="80">图片凭证</th>
+                <th width="80">处理状态</th>
+                <th width="80">申请时间</th>
+                <th width="80">处理时间</th>
+                <th width="80">物流公司</th>
+                <th width="80">物流单号</th>
+                <th width="100">操作</th>
+            </tr>
+            @foreach (PinRefundApply item in Model.DataList)
+            {
+                <tr class="text-c detail-btn">
+                    <td>
+                        <div>
+                            <div class="check-box">
+                                <input type="checkbox" name="Id" value="@item.id">
+                            </div>
+                        </div>
+                    </td>
+                    <td>@item.serviceNo</td>
+                    <td>@item.order.goodsPhotoModel.name (下单时商品名称)</td>
+                    <td>@item.count</td>
+                    <td>@item.money 元</td>
+                    <td>@item.typeStr</td>
+                    <td>@item.reason 元</td>
+                    <td>@item.remark</td>
+                    <td>
+                        @if (item.imgList != null && item.imgList.Count > 0)
+                        {
+                            foreach (var img in item.imgList)
+                            {
+                                <img src="@img" width="100" style="display:inline;" />
+                            }
+                        }
+                        else
+                        {
+                            <p>——</p>
+                        }
+                    </td>
+                    <td>@item.stateStr</td>
+                    <td>@item.addTimeStr</td>
+                    <td>@item.updateTime</td>
+                    <td>@(string.IsNullOrEmpty(item.wuliuName) ? "——" : item.wuliuName)</td>
+                    <td>@(string.IsNullOrEmpty(item.wuliuOrder) ? "——" : item.wuliuOrder)</td>
+                    <td>
+                        <a href="javascript:;">详情</a>&nbsp;&nbsp;
+                        @if (item.state == (int)PinEnums.RefundApplyState.待处理)
+                        {
+                            <a href="javascript:;" class="cancel-click" onclick="UpdateState(1,@item.id)" style="color:#28a745;">通过</a><span>&nbsp;&nbsp;</span>
+                            <a href="javascript:;" class="cancel-click" onclick="UpdateState(-1,@item.id)"style="color:#dc3545;">不通过</a><span>&nbsp;&nbsp;</span>
+                        }
+                        else if (item.state == (int)PinEnums.RefundApplyState.申请失败)
+                        {
+                            <a href="javascript:;" class="cancel-click" onclick="UpdateState(1,@item.id)" style="color:#28a745;">通过</a><span>&nbsp;&nbsp;</span>
+                        }
+                        else
+                        {
+                            <a href="javascript:;" class="cancel-click" onclick="UpdateState(-1,@item.id)" style="color:#dc3545;">不通过</a>Html.Raw("&nbsp;&nbsp;");
+                        }
+                        <a href="javascript:;" class="cancel-click" onclick="UpdateState(-2,@item.id)" style="color:#007bff;">删除</a>&nbsp;&nbsp;
+                        @if (item.state == (int)PinEnums.RefundApplyState.申请成功 && item.type != 3 )
+                        {
+
+                            <a href="javascript:;" class="cancel-click" onclick="UpdateState(1,@item.id)" style="color:#dc3545;">退款</a><span>&nbsp;&nbsp;</span>
+                        }
+                        @if (item.state == (int)PinEnums.RefundApplyState.申请成功 && item.type == 3)
+                        {
+                            <a href="javascript:;" class="cancel-click" onclick="UpdateState(2,@item.id)" style="color:#17a2b8;">重新发货</a><span>&nbsp;&nbsp;</span>
+                        }
+                    </td>
+                </tr>
+                <tr class="detail-box">
+                    <td colspan="15" style="background: #fdf59a;">
+                        <ul class="orderdetail">
+                            <li>商品单价：@(item.order.specificationPhotoModel == null ? item.order.goodsPhotoModel.priceStr : item.order.specificationPhotoModel.priceStr)</li>
+                            <li>购买数量：@item.order.count</li>
+                            <li>@(item.order.specificationPhotoModel != null ? "商品规格：" + item.order.specificationPhotoModel.name : "")</li>
+                            <li>运费：@((item.order.freight * 0.01).ToString("F2"))</li>
+                            <li>收件人：@item.order.consignee</li>
+                            <li>联系电话：@item.order.phone</li>
+                            <li>配送地址：@item.order.address</li>
+                            <li>拼团号：@item.order.groupId</li>
+                            <li>拼立减金额：@item.order.returnMoneyStr (@(item.order.groupInfo == null ? "拼团失败" : item.order.groupInfo.stateStr))</li>
+                            <li>买家备注：@item.order.buyerRemark</li>
+                            <li>支付方式：@item.order.paywayStr</li>
+                            <li>下单时间：@item.order.addtimeStr</li>
+                            <div class="clearfix"></div>
+                        </ul>
+
+                    </td>
+                </tr>
+            }
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts{
+    <script>
+            //折叠
+            jQuery.Huifold = function (obj, obj_c, speed, Event) {
+                $(obj).bind(Event, function () {
+                    if ($(this).next().is(":visible")) {
+                        $(this).next().hide();
+                        $(this).removeClass("selected");
+                    }
+                    else {
+
+                        $(obj_c).hide();
+                        $(obj).removeClass("selected");
+                        $(this).next().show();
+                        $(this).next().addClass("selected");
+                    }
+                })
+            }
+            $(function () {
+                $.Huifold(".detail-btn", ".detail-box", "fast", "click");
+
+            });
+
+        function fahuo(title, url) {
+            var index = layer.open({
+                type: 2,
+                title: title,
+                content: url
+            });
+            layer.full(index);
+        }
+
+            $(function () {
+                $("#search").click(function () {
+                    var url = "/PinAdmin/Order/RefundApplyList";
+                    var form = $(".search-form");
+                    var param = form.serialize();
+                    url = url.indexOf("?") != -1 ? url + "&" + param : url + "?" + param;
+                    window.location.href = url;
+                    return false;
+                })
+            })
+            function resetData() {
+                $('.search-form').find('input[type=text]').each(function () {
+                    $(this).val('');
+                });
+                $('.search-form').find('select').each(function () {
+                    $(this).val('-999');
+                });
+            }
+            $(function () {
+                $('.text-c input').iCheck({
+                    checkboxClass: 'icheckbox-blue',
+                    radioClass: 'iradio-blue',
+                    increaseArea: '20%'
+                });
+
+                $(".icheckbox-blue").click(function () {
+                    var curCheckedBox = $(this);
+                    if (curCheckedBox.hasClass("checked")) {
+                        curCheckedBox.removeClass("checked");
+                        curCheckedBox.addClass("hover");
+                        curCheckedBox.find("input[name=check_id]").prop("checked", false);
+                    }
+                    else {
+                        curCheckedBox.removeClass("hover");
+                        curCheckedBox.addClass("checked");
+                        curCheckedBox.find("input[name=check_id]").prop("checked", true);
+                    }
+
+                });
+            });
+            function SendGoods() {
+                var orders = $("input[name='orderId']:checked");
+                if (orders.length <= 0) {
+                    layer.msg("请选择要操作的订单");
+                    return;
+                }
+                var outTradeNos = new Array();
+                var orderIds = new Array();
+                $.each(orders, function (i, v) {
+                    outTradeNos.push($(v).attr("outTradeNo"));
+                    orderIds.push($(v).val());
+                })
+                var outTradeNoStr = outTradeNos.join(',');
+                var orderIdsStr = orderIds.join(',');
+                layer.confirm("确定要将以下订单状态改为发货状态吗？</br>" + outTradeNoStr, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/pinAdmin/order/UpdateState", { aid:@Model.aId,storeId:@Model.storeId,state:@((int)PinEnums.PinOrderState.待发货),orderIds: orderIdsStr }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { anim: 0,time:500}, function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                });
+            }
+            function OrderSuccess() {
+                var orders = $("input[name='orderId']:checked");
+                if (orders.length <= 0) {
+                    layer.msg("请选择要操作的订单");
+                    return;
+                }
+                var outTradeNos = new Array();
+                var orderIds = new Array();
+                $.each(orders, function (i, v) {
+                    outTradeNos.push($(v).attr("outTradeNo"));
+                    orderIds.push($(v).val());
+                })
+                var outTradeNoStr = outTradeNos.join(',');
+                var orderIdsStr = orderIds.join(',');
+
+                layer.confirm("确定要将以下订单状态改为交易完成吗？（交易完成的订单将无法再操作）</br>" + outTradeNoStr, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/pinAdmin/order/UpdateState", { aid:@Model.aId,storeId:@Model.storeId,state:@((int)PinEnums.PinOrderState.交易成功),orderIds: orderIdsStr }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { anim: 0, time: 500 }, function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                });
+            }
+            function CancelOrder() {
+                var orders = $("input[name='orderId']:checked");
+                if (orders.length <= 0) {
+                    layer.msg("请选择要操作的订单");
+                    return;
+                }
+                var outTradeNos = new Array();
+                var orderIds = new Array();
+                $.each(orders, function (i, v) {
+                    outTradeNos.push($(v).attr("outTradeNo"));
+                    orderIds.push($(v).val());
+                })
+                var outTradeNoStr = outTradeNos.join(',');
+                var orderIdsStr = orderIds.join(',');
+                layer.confirm("确定要取消以下订单吗？</br>" + outTradeNoStr, function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/pinAdmin/order/UpdateState", { aid:@Model.aId,storeId:@Model.storeId,state:@((int)PinEnums.PinOrderState.交易取消),orderIds: orderIdsStr }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { anim: 0,time:500}, function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                });
+            }
+            function Refund(orderId) {
+                layer.confirm("确定要给此订单退款吗？", function () {
+                    var layerIndex = layer.load(2);
+                    $.post("/pinAdmin/order/Refund", { aid:@Model.aId,storeId:@Model.storeId,state:@((int)PinEnums.PinOrderState.交易取消),orderId: orderId }, function (data) {
+                        layer.close(layerIndex);
+                        if (data.code == 1) {
+                            layer.msg(data.msg, { anim: 0, time: 500 }, function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            layer.msg(data.msg);
+                        }
+                    })
+                });
+        }
+
+        function CheckDelivery(orderId, orderType) {
+            var openUrl = '/tools/ViewDeliveryFeed?appid=@(Model.aId)&orderId=' + orderId + '&orderType=' + orderType;
+            layer.open({ type: 2, content: openUrl, area: ['430px', '630px'], title: '查看物流信息' });
+            }
+        $(".cancel-click").click(function () {
+            return false;
+        })
+        function UpdateState(state,id) {
+            var layerIndex = layer.load(2);
+            $.post("/pinAdmin/order/updateRefundApplyState", { aid:@Model.aId,storeId:@Model.storeId,state: state, id: id }, function (data) {
+                layer.close(layerIndex);
+                if (data.code == 1) {
+                    layer.msg(data.msg, { anim: 0, time: 500 }, function () {
+                        window.location.reload();
+                    })
+                } else {
+                    layer.msg(data.msg);
+                }
+            })
+        }
+    </script>
+}
+

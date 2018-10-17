@@ -1,0 +1,150 @@
+﻿@using Entity.MiniApp.Plat
+@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+
+@model PlatStore
+    <style>
+        #edui1_toolbarboxouter{display:none;}
+        .nowrap { white-space: nowrap; }
+        td { border: none !important; }
+    </style>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+    <div style="margin-top:20px;">
+        <table class="table table-bordered viplevel ml_19">
+
+            <tr>
+                <td align="right" class="nowrap">产品轮播图：</td>
+                <td>
+                    <div class="pslideimgs" style="display:block;">
+                      @{
+                          string[] banners = Model.Banners.Split(',');
+                          foreach (string img in banners)
+                          {
+                            <img src="@img" style="height: 150px; width: 150px;">
+                          }
+                    }
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right" class="nowrap">店铺图：</td>
+                <td>
+                    <div class="pslideimgs" style="display:block;">
+                        @{
+                            string[] storeImgs = Model.StoreImgs.Split(',');
+                            foreach (string img in storeImgs)
+                            {
+                                <img src="@img" style="height: 150px; width: 150px;">
+                            }
+                        }
+                    </div>
+                </td>
+            </tr>
+            <tr>
+
+                <td align="right" class="nowrap">
+                    <label>门店名称:</label>
+                </td>
+
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" value="@Model.Name" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" class="nowrap">
+                    <label>营业时间:</label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" value="@Model.OpenTime" />
+                </td>
+
+            </tr>
+            <tr>
+
+                <td align="right" class="nowrap">
+                    <label>门店地址:</label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" value="@Model.Location" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" class="nowrap">
+                    <label>客服电话:</label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" value="@Model.Phone" />
+                </td>
+
+            </tr>
+            <tr>
+                <td align="right" class="nowrap">
+                    <label>门店设施:</label>
+                </td>
+                <td align="left">
+                    <div style="width:500px;display:inline-block;">
+                        @{
+                            if (!string.IsNullOrEmpty(Model.StoreService))
+                            {
+                                List<StoreServiceModel> storeServiceModelList = JsonConvert.DeserializeObject<List<StoreServiceModel>>(Model.StoreService);
+                                if (storeServiceModelList != null && storeServiceModelList.Count > 0)
+                                {
+                                    foreach (StoreServiceModel item in storeServiceModelList)
+                                    {
+                                        <div  style="display:inline-block;margin-left:10px;margin-top:5px;">
+                                            <input type="checkbox" name="Service" checked="@item.ServiceState"  style="margin-top:10px;" />
+                                            <input type="text" class="form-control" style="display:inline-block;width:160px;" value="@item.ServiceName" />
+                                        </div>
+                                    }
+                                }
+                            }
+                        }
+                        
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="right" class="nowrap">
+                    <label>业务描述:</label>
+                </td>
+                <td align="left">
+                    <input type="text" class="form-control" style="display:block;width:500px;" value="@Model.BusinessDescription" />
+                </td>
+            </tr>
+            <tr>
+                <td align="right" class="nowrap">店铺描述：</td>
+                <td>
+                    <div id="editor" style="width:500px;height:360px;"></div>
+                </td>
+            </tr>
+          
+
+            </table>
+        </div>
+    </div>
+<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.StoreDescription)
+</script>
+<script>
+    //编辑器
+   var comeditor = UE.getEditor('editor', {
+        toolbars: [
+            ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+            ['simpleupload', 'insertimage', 'insertvideo', 'paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain']
+        ],
+        imageUrl: "/Upload/Image?cityid=",
+        autoHeight: true
+    });
+    comeditor.ready(function () {
+            if ($("#js_article_content").html() != "") {
+                comeditor.setContent($("#js_article_content").html());
+            }
+
+        });
+
+</script>

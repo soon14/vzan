@@ -1,0 +1,165 @@
+﻿
+@{
+    ViewBag.Title = "Chong";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@model DishVipCardSetting
+@section styles{
+    <style>
+        .nr_con:nth-child(n+1) { margin-top: 10px; }
+        .table-1120 .table_input { border: 1px solid #ccc; border-radius: 2px; display: inline-block; margin-right: 10px; }
+        .table-1120 .table_input_no { border: 0px; }
+        .table-1120 span { padding: 0 10px; }
+        .table-1120 input { border: none; border-left: 1px solid #ccc; border-right: 1px solid #ccc; }
+        .table-1120 input:hover { border-color: #ccc; }
+    </style>
+
+
+}
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    会员卡管理
+    <span class="c-gray en">&gt;</span>
+    充值配置
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="aid" value="@Model.aid" />
+        <input type="hidden" name="storeId" value="@Model.storeId" />
+        <input type="hidden" name="id" value="@Model.id" />
+        <input type="hidden" name="act" value="save" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>充值配置</span>
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        充值规则
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 table-1120">
+                        @if (Model.rechargeConfig != null && Model.rechargeConfig.Count > 0)
+                    {
+                        foreach (var rule in Model.rechargeConfig)
+                        {
+                            <div class="nr_con">
+                                <div class="table_input"><span>满</span><input type="text" name="rc_man[]" placeholder="" value="@rule.rc_man" class="input-text" style="width: 150px"><span>元</span></div>
+                                <div class="table_input"><span>送</span><input type="text" name="rc_song[]" placeholder="" value="@rule.rc_song" class="input-text" style="width: 150px"><span>元</span></div>
+                                <div class="table_input table_input_no"><button type="button" onclick="del_rc(this)" class="btn btn-default radius">删除</button></div>
+                            </div>
+                    }
+                }
+                else
+                {
+                    <div class="nr_con">
+                        <div class="table_input"><span>满</span><input type="text" name="rc_man[]" placeholder="" value="" class="input-text" style="width: 150px"><span>元</span></div>
+                        <div class="table_input"><span>送</span><input type="text" name="rc_song[]" placeholder="" value="" class="input-text" style="width: 150px"><span>元</span></div>
+                        <div class="table_input table_input_no"><button type="button" onclick="del_rc(this)" class="btn btn-default radius">删除</button></div>
+                    </div>
+            }
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red"></span>
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <button type="button" onclick="add_rc()" class="btn btn-primary radius">添加新规则</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button" id="cancel_button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+    <script>
+        function add_rc() {
+            if ($(".nr_con").length > 4) {
+                layer.alert("最多可设置5条充值规则", { icon: 0 });
+                return false;
+            }
+            var rc_html = '<div class="nr_con">\n' +
+                '\t\t\t\t\t\t\t<div class="table_input"><span>满</span><input type="text" name="rc_man[]" placeholder="" value="" class="input-text" style="width: 150px"><span>元</span></div>\n' +
+                '\t\t\t\t\t\t\t<div class="table_input"><span>送</span><input type="text" name="rc_song[]" placeholder="" value="" class="input-text" style="width: 150px"><span>元</span></div>\n' +
+                '\t\t\t\t\t\t\t<div class="table_input table_input_no"><button type="button" class="btn btn-default radius" onclick="del_rc(this)">删除</button></div>\n' +
+                '\t\t\t\t\t\t</div>';
+            $(".table-1120").append(rc_html);
+
+        }
+        function del_rc(e) {
+            $(e).parent().parent().remove();
+        }
+    </script>
+    <script type="text/javascript">
+        $(function () {
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+            //表单验证
+            $("#form-article-add").validate({
+                rules: {
+                    dish_name: {
+                        required: true,
+                        minlength: 2
+                    },
+                    dish_yingye_btime: {
+                        required: true,
+                        min: 0,
+                        max: 24
+                    },
+                    dish_yingye_etime: {
+                        required: true,
+                        min: 0,
+                        max: 24
+                    },
+                    dish_con_mobile: {
+                        required: true,
+                        isMobile: true
+                    }
+                },
+                onkeyup: false,
+                focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {   //表单提交句柄,为一回调函数，带一个参数：form
+                    var l_index = layer.msg('数据更新中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, { icon: 0 });
+                            } else {
+                                layer.alert(data.msg, { icon: 1 }, function (index) {
+                                    window.location.reload();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            //$("#cancel_button").click(function () {
+            //    parent.layer.closeAll();
+            //})
+        });
+    </script>
+
+}

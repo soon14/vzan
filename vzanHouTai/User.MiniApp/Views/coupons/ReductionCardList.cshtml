@@ -1,0 +1,163 @@
+﻿@using Entity.MiniApp;
+@model  List<Entity.MiniApp.Tools.Coupons>
+@{
+    ViewBag.Title = "社交立减金";
+    if (ViewBag.SouceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+    int reductionCardSwtich = ViewBag.reductionCardSwtich;
+}
+<style>
+    td,th{
+        text-align:center;
+    }
+</style>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="form-inline">
+            <span>立减金名称：</span>
+            <input id="couponname" type="text" class="form-control" value="@ViewBag.couponname">
+            <span>立减金状态：</span>
+            <select id="couponstate" class="form-control">
+                <option value="-1" @(ViewBag.couponstate == -1 ? "selected" : "")>全部</option>
+                <option value="1" @(ViewBag.couponstate == 1 ? "selected" : "")>未开始</option>
+                <option value="2" @(ViewBag.couponstate == 2 ? "selected" : "")>进行中</option>
+                <option value="3" @(ViewBag.couponstate == 3 ? "selected" : "")>已结束</option>
+                <option value="4" @(ViewBag.couponstate == 4 ? "selected" : "")>已失效</option>
+                <option value="0" @(ViewBag.couponstate == 0 ? "selected" : "")>已关闭</option>
+
+            </select>
+            <input id="" onclick="shreach()" type="button" class="btn btn-primary" value="搜索">
+            @{
+                if (ViewBag.PageType == 22 && reductionCardSwtich == 1)
+                {
+                    <div title="请升级到更高版本" style="display:inline-block;">
+                        <a href="#" class="btn btn-success" id="notUse" disabled="disabled">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            添加立减金
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <a href="/coupons/AddOrEditReductionCard?appId=@ViewBag.appId&PageType=@ViewBag.PageType&sgid=0&storeId=@ViewBag.StoreId&SouceFrom=@ViewBag.SouceFrom" class="btn btn-success" id="btnBatch_Pass">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        添加立减金
+                    </a>
+                }
+            }
+           
+        </div>
+    </div>
+</div>
+
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th>序号</th>
+        <th style="display:none;">ID</th>
+        <th>立减金名称</th>
+        <th>份数</th>
+        <th>每份个数</th>
+        <th>立减金价值</th>
+        <th>领取限制</th>
+        <th>已领取个数</th>
+        <th>有效期</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="3%"><label>@(i++)</label> </td>
+                <td style="display:none;">@item.Id</td>
+                <td width="5%">@item.CouponName</td>
+                <td width="5%">@item.CreateNum</td>
+                <td width="5%">@item.SatisfyNum</td>
+                <td width="5%">@(item.MoneyStr + (item.CouponWay == 0 ? "" : "折"))<br />@(item.LimitMoney > 0 ? "最低消费 " + item.LimitMoneyStr : "")</td>
+                <td width="5%">@(item.LimitReceive>0?"一人" +item.LimitReceive+"张":"不限张")<br />@("库存:"+item.RemNum)</td>
+                <td width="5%">@(item.PersonNum + "/" + item.CouponNum)</td>
+                <td width="6%">@Html.Raw(item.ValType==0?(item.StartUseTimeStr+ " <br/>至<br/>" + item.EndUseTimeStr):item.ValType==1? "领到券次日开始"+item.ValDay+"天内有效" : "领到券当日开始"+item.ValDay+"天内有效")</td>
+                <td width="5%">@item.StateStr</td>
+                <td width="10%" style="text-align:left;">
+                    @if (item.State ==(int)CouponState.已失效)
+                    {
+                        <label style="color:#808080">已失效</label>
+                    }
+                    else
+                    {
+                        <a href="/coupons/AddOrEditReductionCard?appId=@ViewBag.appId&PageType=@ViewBag.PageType&storeId=@ViewBag.StoreId&couponid=@item.Id&SouceFrom=@ViewBag.SouceFrom" class="btn btn-xs btn-primary " style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-pencil"></span>
+                            编辑
+                        </a>
+                        <a href="javascript:Returnpay(@item.Id);" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            使失效
+                        </a>
+                        if (item.State == (int)CouponState.已关闭)
+                        {
+                            <a href="javascript:ChangeState(@item.Id,@((int)CouponState.已开启));" class="btn btn-info btn-xs" style="margin-top:5px;">
+                                <span class="glyphicon glyphicon-eye-open" ></span>
+                                开启
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="javascript:ChangeState(@item.Id,@((int)CouponState.已关闭));" class="btn btn-danger btn-xs" style="margin-top:5px;">
+                                <span class="glyphicon glyphicon-eye-close"></span>
+                                关闭
+                            </a>
+                        }
+
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+
+<script>
+    $("#notUse").click(function () {
+        layer.msg("请升级更高版本");
+        return;
+    });
+    function shreach()
+    {
+        window.location.href = "/coupons/ReductionCardList?appId=@ViewBag.appId&PageType=@ViewBag.PageType&SouceFrom=@ViewBag.SouceFrom&couponname=" + $("#couponname").val() + "&couponstate=" + $("#couponstate").val();
+    }
+    function Returnpay(id) {
+        if(confirm("确定让这组优惠券失效？"))
+        {
+            $.ajax({
+                type: "post",
+                url: "/coupons/DeleteCoupons",
+                data: { id: id, appId: '@ViewBag.appId' },
+                success: function (data) {
+                    alert(data.msg);
+                    if (data.isok) {
+                        window.location.reload();
+                    }
+                }
+            })
+        }
+    }
+    function ChangeState(id, state) {
+        var layerIndex = layer.load(2);
+        $.post("/coupons/OpenOrClose", { id: id, state: state, appId: '@ViewBag.appId' }, function (data) {
+            layer.close(layerIndex);
+            console.log(data.msg);
+            layer.msg(data.msg, { isOutAnim: false, time: 1000 }, function () {
+                if (data.isok) {
+                    window.location.reload();
+                }
+            });
+            
+        });
+    }
+</script>

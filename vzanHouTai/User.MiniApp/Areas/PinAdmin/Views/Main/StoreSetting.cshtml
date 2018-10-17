@@ -1,0 +1,466 @@
+﻿@{
+    ViewBag.Title = "StoreSetting";
+    Layout = "~/Areas/PinAdmin/Views/Shared/_LayoutPinAdmin.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+    int storeId = Utility.IO.Context.GetRequestInt("storeId", 0);
+    int index = ViewBag.Index;
+    List<PickPlace> placeList = (List<PickPlace>)ViewData["placeList"] ?? new List<PickPlace>();
+}
+@model PinStore
+@section styles{
+    <style>
+        .frm_input_box { display: inline-block; position: relative; height: 36px; line-height: 30px; vertical-align: middle; width: 268px; font-size: 14px; padding-left: 15px; border: 1px solid #e7e7eb; box-shadow: none; -moz-box-shadow: none; -webkit-box-shadow: none; border-radius: 2px; -moz-border-radius: 2px; -webkit-border-radius: 2px; background-color: #fff; }
+        .frm_input_box input { border: none; line-height: 34px; width: 198px; }
+        .frm_input_box a { text-decoration: none; color: #777; margin-top: 3px; }
+
+        #place-box { width: 100%; }
+        #place-box li { width: 25%; min-width: 300px; padding: 10px 20px 15px 20px; border: 1px solid #888; margin: 15px; display: inline-block; box-shadow: 3px 4px 5px #ccc; border-radius: 3px; float: left; }
+        #place-box li:hover { box-shadow: 5px 4px 3px #888888; cursor: pointer; }
+        #place-box li a { float: right; margin: 0 5px; }
+    </style>
+}
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span> 系统管理
+    <span class="c-gray en">&gt;</span> 门店信息
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container" id="app">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="aid" value="@aid" />
+        <input type="hidden" name="Id" value="@storeId" />
+        <input type="hidden" name="kfUserIds" value="@Model.kfUserIds" />
+
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>店铺配置</span>
+                <span>到店自取</span>
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        新订单提示音：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="voiceTips" value="1" type="radio" @(Model.setting.voiceTips == 1 ? "checked" : "") />
+                            <label for="voiceTips_switch-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="voiceTips" @(Model.setting.voiceTips != 1 ? "checked" : "") />
+                            <label for="voiceTips_switch-2">关闭</label>
+                        </div>
+                    </div>
+                    <br /><br />
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        退货地址：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <input type="text" name="place" value="@Model.setting.place" class="input-text" style="max-width:200px;">
+                    </div>
+                    <br /><br />
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        退货收件人：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <input type="text" name="name" value="@Model.setting.name" class="input-text" style="max-width:200px;">
+                    </div>
+                    <br /><br />
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        退货收件号码：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <input type="text" name="phone" value="@Model.setting.phone" class="input-text" style="max-width:200px;">
+                    </div>
+
+                </div>
+                <div class="row cl" style="display:none;">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        客服私信：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="openIm" value="1" type="radio" @(Model.setting.openIm == 1 ? "checked" : "") />
+                            <label for="openIm_switch-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="openIm" @(Model.setting.openIm != 1 ? "checked" : "") />
+                            <label for="openIm_switch-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl" style="display:none;">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        自动问候语：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="autoWelcome" value="1" type="radio" @(Model.setting.autoWelcome == 1 ? "checked" : "") />
+                            <label for="autoWelcome_switch-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="autoWelcome" @(Model.setting.autoWelcome != 1 ? "checked" : "") />
+                            <label for="autoWelcome_switch-2">关闭</label>
+                        </div>
+                        <input type="text" name="welcome" placeholder="控制在25个字、50个字节以内" value="@Model.setting.welcome" class="input-text" style="max-width:200px;">
+                    </div>
+                </div>
+                <div class="row cl" style="display:none;">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        客服电话：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="openKfPhone" value="1" type="radio" @(Model.setting.openKfPhone == 1 ? "checked" : "")>
+                            <label for="openKfPhone_switch-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="openKfPhone" @(Model.setting.openKfPhone != 1 ? "checked" : "") />
+                            <label for="openKfPhone_switch-2">关闭</label>
+                        </div>
+                        <input type="text" name="kfPhone" placeholder="请输入客服号码" value="@Model.setting.kfPhone" class="input-text" style="max-width:200px;">
+                    </div>
+                </div>
+                <div class="row cl" style="display:none;">
+                    @if (Model.kfUserInfo == null)
+                    {
+                        <label class="form-label col-xs-4 col-sm-2">
+                            <span class="c-red">*</span>
+                            添加客服人员：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                            <div id="search-box">
+                                <span class="frm_input_box" id="js_search_panel">
+                                    <input type="text" placeholder="输入会员昵称" class="frm_input js_search_input" onkeyup="searchInfo()" id="nickname" />
+                                    <a href="javascript:;" id="clear-btn"><i class="Hui-iconfont" onclick="clearSearch()">&#xe6a6;</i></a>
+                                    <a href="javascript:;" onclick="searchInfo(true)"><i class="Hui-iconfont" style="font-size: 22px;float:right; margin-top:3px; margin-right:9px;">&#xe709;</i></a>
+                                </span>
+                                <p id="tips" style="color:#e15f63;"></p>
+                            </div>
+                            <div style="width:100px; text-align:center; display:none" id="kfInfo">
+                                <img src="" width="100" style="margin-top: 15px; border-radius:5px;" />
+                                <input type="button" class="btn btn-primary width100" value="设为客服" style="font-size:12px;margin-top: 5px;" onclick="SetKf()" userId="" id="setBtn" />
+                                <input type="button" class="btn width100" value="取消客服" style="font-size:12px;margin-top: 5px; display:none;" onclick="CancelKf()" id="cancelBtn" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <label class="form-label col-xs-4 col-sm-2">
+                            添加客服人员：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                            <div id="search-box" style="display:none;">
+                                <span class="frm_input_box" id="js_search_panel">
+                                    <input type="text" placeholder="输入会员昵称" class="frm_input js_search_input" onkeyup="searchInfo()" id="nickname" />
+                                    <a href="javascript:;" id="clear-btn"><i class="Hui-iconfont" onclick="clearSearch()">&#xe6a6;</i></a>
+                                    <a href="javascript:;" onclick="searchInfo(true)"><i class="Hui-iconfont" style="font-size: 22px;float:right; margin-top:3px; margin-right:9px;">&#xe709;</i></a>
+                                </span>
+                                <p id="tips" style="color:#e15f63;"></p>
+                            </div>
+                            <div style="width:100px; text-align:center;" id="kfInfo">
+                                <img src="@Model.kfUserInfo.HeadImgUrl" width="100" style="margin-top: 15px; border-radius:5px;" />
+                                <input type="button" class="btn btn-primary width100" value="设为客服" style="font-size:12px;margin-top: 5px; display:none;" onclick="SetKf()" userId="" id="setBtn" />
+                                <input type="button" class="btn width100" value="取消客服" style="font-size:12px;margin-top: 5px;" onclick="CancelKf()" id="cancelBtn" />
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="row cl">
+                    <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                        <button class="btn btn-primary radius submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        开启到店自提：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="openZq" value="1" type="radio" @(Model.setting.openZq == 1 ? "checked" : "") />
+                            <label for="openZq_switch-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="openZq" @(Model.setting.openZq != 1 ? "checked" : "") />
+                            <label for="openZq_switch-2">关闭</label>
+                        </div>
+                        <button class="btn btn-primary radius submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <ul id="place-box clearfix">
+                        <li v-for="(item,index) in placeList">
+                            <div>
+                                <a href="javascript:;" v-on:click="DeletePlaceInfo(index)">删除</a>
+                                <a href="javascript:;" v-on:click="EditPlace(index)">编辑</a>
+                                <div class="clearfix"></div>
+                            </div>
+                            <p style="color: #2196F3;">店铺名称：{{item.name}}</p>
+                            <p>店铺地址：{{item.address}}</p>
+                        </li>
+                        <li style="line-height: 57px;" v-on:click="addNewPlace()">
+
+                            <p style="color: #2196F3;text-align: center;">+新增支持到店取货的店铺地址</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </form>
+    <!--#region 添加自取门店-->
+    <div class="modal fade" id="EditPickPlace" tabindex="-1" role="dialog" aria-labelledby="EditPickPlace_label">
+        <div class="modal-dialog modal-lg" role="document" style="width:350px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="EditPickPlace_label">自取门店设置</h4>
+                </div>
+                <div class="modal-body">
+                    <table>
+                        <tr>
+                            <td>店铺名称：</td>
+                            <td><input type="text" class="input-text" v-model="placeInfo.name" style="width:200px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>地址：</td>
+                            <td><label id="Address">{{placeInfo.address}}</label> <a id="btnMap"><label id="checkMapStr" v-on:click="GetMap()">{{placeInfo.address.length>0?"重新选择" : "从地图选择"}}</label></a></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="SavePlaceInfo()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg" role="document" style="width:1000px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe" src="/Content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocation()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+            $("#clear-btn").hide();
+            $(".bind_select_time").hunterTimePicker();
+
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#tab-system").Huitab({ index: @index })
+
+            //选择坐标地址
+            $('#gps').on('click', function () {
+                $("#ChooseLocationModal").modal("show");
+            });
+            $('#address').on('click', function () {
+                $("#ChooseLocationModal").modal("show");
+            });
+        });
+
+        function zq_del_table() {
+            $(".zq_table_box tr").eq($(this).index()).remove();
+        }
+
+        var ChooseLocationOK = function () {
+            var _location = mapframe.window.document.getElementById("poi_cur").value;
+            var _addr_cur = mapframe.window.document.getElementById("addr_cur").value;
+            var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+            if (_location == "") {
+                layer.msg("您还未选择地理位置！");
+                return;
+            }
+            _location = _location.split(",");
+            $("#gps").val(_location);
+            $("#dish_gps_lat").val(_location[0]);
+            $("#dish_gps_lng").val(_location[1]);
+            $("#address").val(_addr_cur);
+            $("#ChooseLocationModal").modal("hide");
+        }
+
+        function searchInfo(isSearch) {
+            if ($("#nickname").val().length > 0) {
+                $("#clear-btn").show();
+            } else {
+                $("#clear-btn").hide();
+            }
+            if (event.keyCode == 13 || isSearch) {
+                var nickName = $("#nickname").val();
+                if (nickName.length <= 0) {
+                    layer.msg("请输入会员昵称");
+                    return;
+                }
+                $("#tips").text('');
+                var layerIndex = layer.load(2);
+                $.post("/pinAdmin/main/SearchUserInfo", { aid:@aid, nickName: nickName, storeId:@storeId }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.code == 1) {
+                        if (data.obj == null) {
+                            $("#tips").text("搜索不到该会员。请输入正确的昵称");
+                        } else {
+                            $("#kfInfo").find("img").attr("src", data.obj.HeadImgUrl);
+                            $("#kfInfo").find("input").attr("userId", data.obj.Id);
+                            $("#kfInfo").show();
+                        }
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+                return false;
+
+            }
+        }
+        function clearSearch() {
+            $("#tips").text('');
+            $("#nickname").val('');
+            $("#clear-btn").hide();
+        }
+        function SetKf() {
+            var userId = $("#kfInfo").find("input").attr("userId");
+            $("input[name='kfUserIds'").val(userId);
+            $("#setBtn").hide();
+            $("#cancelBtn").show();
+            $("#search-box").hide();
+        }
+        function CancelKf() {
+            $("input[name='kfUserIds'").val('');
+            $("#setBtn").show();
+            $("#cancelBtn").hide();
+            $("#search-box").show();
+        }
+        $("input").on("keydown", function () {
+            if(event.keyCode==13){return false;}
+        })
+        $(function () {
+            $(".submit_button").click(function () {
+                var l_index = layer.msg('数据更新中', {
+                    icon: 16,
+                    shade: 0.5
+                });
+                $(".submit_button").attr("disabled", true);
+                $("#form-article-add").ajaxSubmit({
+                    dataType: "json",
+                    url: "/pinadmin/main/saveStoreInfo",
+                    success: function (data) {
+                        $(".submit_button").attr("disabled", false);
+                        layer.close(l_index);
+                        layer.msg(data.msg);
+                    }
+                });
+            });
+        })
+
+        //门店自取
+        var app = new Vue({
+            el: "#app",
+            data: {
+                placeInfo: {
+                    aid: @aid,
+                    storeId:@storeId,
+                    Id: 0,
+                    name: '',
+                    address: '',
+                    lat: 0.00,
+                    lng: 0.00,
+                },
+                placeList:@Html.Raw(JsonConvert.SerializeObject(placeList)),
+            },
+            methods: {
+                //删除自取地点
+                DeletePlaceInfo: function (index) {
+                    var that = this;
+                    layer.confirm("确定删除此信息吗？", function () {
+                        var layerIndex = layer.load(2);
+                        $.post("/pinadmin/main/updatePickPlaceState", { act: "del", aid: @aid,storeId:@storeId,  id: that.placeList[index].Id }, function (data) {
+                            layer.close(layerIndex);
+                            layer.msg(data.msg);
+                            if (data.code == 1) {
+                                that.placeList.splice(index, 1);
+                            }
+                        })
+                    })
+                },
+                //添加编辑自取地点
+                addNewPlace: function () {
+                    $("#EditPickPlace").modal("show");
+                },
+                EditPlace: function (index) {
+                    var that = this;
+                    $.extend(that.placeInfo, that.placeList[index], true);
+                    $("#EditPickPlace").modal("show");
+                },
+                GetMap: function () {
+                    $("#ChooseLocationModal").modal("show");
+                },
+                ChooseLocation: function () {
+                    var that = this;
+                    var _location = mapframe.window.document.getElementById("poi_cur").value;
+                    var _addr_cur = mapframe.window.document.getElementById("addr_cur").value;
+                    var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+                    if (_location == "") {
+                        layer.msg("您还未选择地理位置！");
+                        return;
+                    }
+                    _location = _location.split(",");
+                    that.placeInfo.lat = parseFloat(_location[0]);
+                    that.placeInfo.lng = parseFloat(_location[1]);
+                    that.placeInfo.address = _addr_cur;
+                    $("#checkMapStr").text("重新选择");
+                    $("#ChooseLocationModal").modal("hide");
+                },
+                //保存自取地点信息
+                SavePlaceInfo: function () {
+                    var that = this;
+                    that.placeInfo.name = $.trim(that.placeInfo.name);
+                    if (that.placeInfo.name.length <= 0) {
+                        layer.msg("请填写店铺名称");
+                        return;
+                    }
+                    if (that.placeInfo.address.length <= 0) {
+                        layer.msg("请选择店铺地址");
+                        return;
+                    }
+                    var layerIndex = layer.load(2);
+                    $.post("/pinadmin/main/SavePlaceInfo", that.placeInfo, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.code==1) {
+                            $("#EditPickPlace").modal("hide");
+                            that.placeList = data.obj;
+                        }
+                    })
+                },
+
+            }
+        })
+    </script>
+}

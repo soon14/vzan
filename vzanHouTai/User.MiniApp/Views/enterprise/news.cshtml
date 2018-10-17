@@ -1,0 +1,346 @@
+﻿
+@model ViewModel<EntNews>
+@{
+    //小程序商城店铺配置
+    ViewBag.Title = "内容列表";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    List<object> imglist = (List<object>)ViewBag.CarouselList;
+    List<EntNewsType> newsTypeList =  EntNewsTypeBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid));
+    if (imglist == null)
+    {
+        imglist = new List<object>();
+    }
+    int industr = 4;
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+        industr = Convert.ToInt32(ViewBag.industr);
+    }
+
+    int typeid = Utility.IO.Context.GetRequestInt("typeid", 0);
+    int newsContentSwtich = ViewBag.newsContentSwtich;
+}
+<style>
+    .search{margin:20px;}
+</style>
+<div id="app" class="container-fluid">
+
+    <div>
+        <div class="search ">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">内容标题：</label>
+                    <select class="form-control" id="selGoodType">
+                        <option value="">全部</option>
+                        @if (newsTypeList != null && newsTypeList.Count > 0)
+                        {
+                            foreach (EntNewsType item in newsTypeList)
+                            {
+                                <option value="@(item.id)" @(item.id == typeid ? "selected" : "")>@(item.name)</option>
+                            }
+                        }
+                    </select>
+                    <input type="text" name="search" class="form-control" id="plist-pname" value="@(Utility.IO.Context.GetRequest("search",""))" />
+                </div>
+                <div class="form-group" style="margin-left:1rem">
+                    <label for="plist-pname">资讯类型：</label>
+                    <select class="form-control" id="contentType">
+                        <option value="">全部</option>
+                        <option value="@((int)PaidContentType.专业版图文)" @(Utility.IO.Context.GetRequest("contentType","") == ((int)PaidContentType.专业版图文).ToString() ? "selected" : "")>文章</option>
+                        <option value="@((int)PaidContentType.专业版视频)" @(Utility.IO.Context.GetRequest("contentType", "") == ((int)PaidContentType.专业版视频).ToString() ? "selected" : "")>视频</option>
+                        <option value="@((int)PaidContentType.专业版音频)" @(Utility.IO.Context.GetRequest("contentType","") == ((int)PaidContentType.专业版音频).ToString() ? "selected" : "")>音频</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-left:1rem">
+                    <label for="plist-pname">是否付费：</label>
+                    <select class="form-control" id="isPay">
+                        <option value="">全部</option>
+                        <option value="True" @(Utility.IO.Context.GetRequest("isPay", "") == "True" ? "selected" : "")>是</option>
+                        <option value="False" @(Utility.IO.Context.GetRequest("isPay", "") == "False" ? "selected" : "")>否</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" id="searchbtn">搜索</button>
+            </div>
+        </div>
+
+        @{
+            if (Model.PageType == 22 && newsContentSwtich == 1)
+            {
+                <div title="请升级到更高版本">
+                    <a href="#" class="btn btn-success" id="btnBatch_Pass" disabled="disabled">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        添加资讯
+                    </a>
+                    &nbsp;
+                    <a class="btn btn-danger" id="btnBatch_Delete">
+                        批量删除
+                    </a>
+                    <button class="btn btn-success" data-id="0">
+                        批量改排序
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <a href="/@(dirName)/newsedit?appId=@appid&id=0" class="btn btn-success" id="btnBatch_Pass">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        添加资讯
+                    </a>
+                    &nbsp;
+                    <a class="btn btn-danger" id="btnBatch_Delete">
+                        批量删除
+                    </a>
+                    &nbsp;
+                    <button class="btn btn-success savesort" data-id="0">
+                        批量改排序
+                    </button>
+                </div>
+            }
+        }
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th width="30"></th>
+                        <th width="80">ID</th>
+                        <th width="400">标题</th>
+                        <th>描述</th>
+                        <th>资讯类型</th>
+                        <th>是否收费</th>
+                        <th>排序</th>
+                        <th width="150">创建时间</th>
+                        <th width="120">所属分类</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="item_sel" value="@(item.id)" />
+                            </td>
+                            <td>@(item.id)</td>
+                            <td>
+                                <a href="/@(dirName)/newsedit?appId=@appid&id=@item.id" title="@item.title">@item.title</a>
+                            </td>
+                            <td>@Utility.StringHelper.CutString(item.description, 20)</td>
+                            <td>@(item.contenttype == (int)PaidContentType.专业版图文 ? "文章" : item.contenttype == (int)PaidContentType.专业版视频 ? "视频" : "音频")</td>
+                            <td>@(item.ispay ? "是" : "否")</td>
+                            <td class="showorclose centertext" data-state="0">
+                                <div>@item.SortNumber</div>
+                                <div style="display:none;">
+                                    <input type="text" class="form-control" name="sort_@item.id" style="width:50px;display:inline-block;" value="@item.SortNumber" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" data-sort="@item.SortNumber" data-id="@item.id" />
+                                    <a href="javascript:;" class="btn btn-primary btn-xs savesort" data-id="@item.id">保存</a>
+                                    <a href="javascript:;" data-state="1" class="btn btn-danger btn-xs showorclose">关闭</a>
+                                </div>
+                            </td>
+                            <td>@(item.addtime)</td>
+                            <td>@item.typename</td>
+                            <td>
+
+                                <a class="delp btn-sm btn-danger" data-id="@(item.id)">删除</a>
+                                <a class="btn-sm btn-primary ml10" href="/@(dirName)/newsedit?appId=@appid&id=@item.id">编辑</a>
+                                <a class="copygood btn-sm btn-info ml10" data-id="@(item.id)">复制</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+
+
+    </div>
+    <script>
+        var aid=@appid;
+        $(function () {
+            $(document)
+                .on("click", ".copygood", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "复制确认",
+                        content: "确定要复制该内容吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/@(dirName)/newsedit", { act: "copy", id: pid, appId: aid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    if (data.isok) {
+                                        layer.msg("复制成功", { time: 1000 });
+                                        window.location.href="/@(dirName)/newsedit?appId="+aid+"&id="+data.msg;
+                                    }
+                                    else {
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                })
+                .on("click", ".delp", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该内容吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/@(dirName)/newsedit", { act: "del", id: pid, appId: aid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    if (data.isok) {
+                                        layer.msg("删除成功", { time: 1000 });
+                                        setTimeout(function(){window.location.reload();},1000);
+                                    }
+                                    else {
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                })
+                .on("click","#searchbtn",function(){
+                    var skey = $("#plist-pname").val() || "";
+                    var typeid = $("#selGoodType").find("option:selected").val()||"";
+                    var isPay = $("#isPay").val() || "";
+                    var contentType = $("#contentType").val() || "";
+                    window.location.href = String.raw`/@(dirName)/news?appId=${aid}&search=${skey}&typeid=${typeid}&contentType=${contentType}&isPay=${isPay}`;
+                }).on("click","#btnBatch_Delete",function()
+                {
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除选中的内容吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            var selitems = $(".item_sel:checked");
+                            var ids = [];
+                            $.each(selitems, function (i, obj) {
+                                ids.push($(obj).val());
+                            });
+
+                            $.post("/@(dirName)/newsedit", { act: "batch_del", id: ids.join(","), appId: aid })
+                            .then(function (data) {
+                                console.log(data);
+                                if (typeof data == "object") {
+                                    if (data.isok) {
+                                        layer.msg("删除成功", { time: 1000 });
+                                        setTimeout(function(){window.location.reload();},1000);
+                                    }
+                                    else {
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else {
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                })  .on("click",".showorclose",function(even){
+                    var state = $(this).attr("data-state");
+                    if(state==0)
+                    {
+                        var div1 = $(this)[0].children[0]
+                        var div2 = $(this)[0].children[1]
+                        $(div1).hide();
+                        $(div2).show();
+                    }
+                    else{
+                        var div1 = $(this.offsetParent)[0].children[0]
+                        var div2 = $(this.offsetParent)[0].children[1]
+
+                        $(div2).hide();
+                        $(div1).show();
+                    }
+
+                    //js阻止事件冒泡
+                    even.cancelBubble = true;
+                    even.stopPropagation();
+                })
+             .on("click",".savesort",function(even){
+                 var itemid = $(this).attr("data-id");
+
+                 var data = [];
+                 if(itemid<=0)
+                 {
+                     var inputlist = $("input[name^='sort_']");
+                     if(inputlist!=undefined && inputlist.length>0)
+                     {
+                         for (var i = 0; i < inputlist.length; i++) {
+                             var value = inputlist[i];
+                             if($(value).val().length<=0)
+                             {
+                                 layer.msg("请输入排序值",{time:1000});
+                                 return;
+                             }
+                             if($(value).val().length>0 && $(value).attr("data-sort") != $(value).val())
+                             {
+                                 data[data.length]={id:$(value).attr("data-id"),sort:$(value).val()};
+                             }
+                         }
+                     }
+                 }
+                 else{
+                     var inputitemval = $("input[name='sort_"+itemid+"']").val();
+                     if(inputitemval.length<=0)
+                     {
+                         layer.msg("请输入排序值",{time:1000});
+                         return;
+                     }
+                     data[data.length]={id:itemid,sort:inputitemval};
+                 }
+
+                 if(data.length<=0)
+                 {
+                     layer.msg("保存成功",{time:1000},function(){
+                         window.location.reload();
+                     });
+
+                     return;
+                 }
+
+                 var datajson = JSON.stringify(data);
+
+                 $.post("/@(dirName)/updatesort", {appId:aid,datajson:datajson,type:6},function(data){
+                     if(typeof data=="object"){
+                         if(data.isok){
+                             layer.msg("保存成功",{time:1000},function(){
+                                 window.location.reload();
+                             });
+                         }
+                         else{
+                             layer.msg(data.msg,{time:1000});
+                         }
+                     }
+                     else{
+                         layer.msg(data.msg,{time:1000});
+                     }
+                 });
+
+                 //js阻止事件冒泡
+                 even.cancelBubble = true;
+                 even.stopPropagation();
+             });
+        });
+    </script>
+</div>

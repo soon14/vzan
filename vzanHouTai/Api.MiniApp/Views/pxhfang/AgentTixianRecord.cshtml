@@ -1,0 +1,132 @@
+﻿@using Entity.MiniApp.Pin
+@model PinAgent
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="divport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="/Content/pxhfang/css/base.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/reset.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/normalize.css">
+    <link rel="stylesheet" href="/Content/pxhfang/css/fontcss.css">
+    <script src="http://j.vzan.cc/dz/content/newhome/lib/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <title>代理提现记录</title>
+    <style>
+        .bottom-line { border-bottom: 0.13333333333333333vw solid #e0e0e0; }
+    </style>
+</head>
+
+<body>
+    <div id='data'>
+
+        <div class='bgcfff l44' v-if="list.length>0">
+            <div v-for="item in list">
+                <div class='ml20 padl20 h130 f-c jsc bottom-line'>
+                    <div class='fsb t32 c333'>
+                        <span>提现-{{item.DrawCashWayStr}}</span>
+                        <span class='f-B'>{{item.applyMoneyStr}}</span>
+                    </div>
+                    <div class='fsb'>
+                        <span class='c999 t24'>{{item.AddTimeStr}}</span>
+                        <span v-bind:class="item.stateStr=='待审核'?'cf0033':'c666'" class="t28" v-if="item.drawState!=-1">{{item.stateStr}}</span>
+                        <span v-bind:class="item.stateStr=='待审核'?'cf0033':'c666'" class="t28" v-else>{{item.drawStateStr}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div v-else>
+            <div class='f-cc mt250'>
+                <img src="~/Content/pxhfang/image/emptydata.png" class='w450 mb36'></img>
+                <span class='ccc t30'>没有相关数据哦</span>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+<script>
+    var Gajax = function (url, data, callback) { //请求方法
+        $.ajax({
+            type: 'GET',
+            url: url,
+            data: data,
+            dataType: "json",
+            success: function (data) {
+                if (data.code == 1) {
+                    callback(data);
+                } else {
+                    alert(data.msg);
+                }
+            }
+        });
+    }
+    function DrawCashRecord(data) {
+        var that = this
+        Gajax('http://testwtapi.vzan.com/api/apiPin/DrawCashRecord', data, function (callback) {
+            if (data.isreachBottom == 0) {
+                that.data.list = callback.obj.list;
+                that.data.requestData.pageIndex++;
+            } else {
+                that.data.canLoadMore = true;
+                if (callback.obj.list.length > 0) {
+                    that.data.requestData.pageIndex++;
+                    that.data.list = that.data.list.concat(callback.obj.list)
+                }
+            }
+        })
+    }
+    var data = new Vue({
+        el: '#data',
+        data: {
+            canLoadMore: true,
+            requestData: {
+                isreachBottom: 0,
+                storeId: @ViewBag.storeId,
+                pageIndex: 1,
+                pageSize: 20,
+                applyType: 5,
+                aid: @Model.aId,
+                utoken: '@ViewBag.utoken',
+            },
+            list: []
+        },
+        mounted() {
+            $(function () {
+                var url = location.search; //获取url中"?"符后的字串
+                var theRequest = new Object();
+                if (url.indexOf("?") != -1) {
+                    var str = url.substr(1);
+                    strs = str.split("&");
+                    for (var i = 0; i < strs.length; i++) {
+                        theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+                    }
+                }
+                data.requestData.isreachBottom = 0;
+                DrawCashRecord(data.requestData);
+
+                $(window).scroll(function (e) {
+                    var sT = $(window).scrollTop();
+                    var tH = $(window).height();
+                    if (sT + 250 > tH * 0.60 && data.canLoadMore) {
+                        data.canLoadMore = false;
+                        data.requestData.isreachBottom = 1;
+                        DrawCashRecord(data.requestData);
+                    }
+                })
+
+            })
+        },
+        methods: {}
+    })
+
+</script>
+
+</html>
+

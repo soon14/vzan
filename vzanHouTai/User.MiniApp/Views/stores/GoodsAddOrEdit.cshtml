@@ -1,0 +1,1411 @@
+﻿@using Entity.MiniApp.Stores
+@using User.MiniApp.comment
+@model StoreGoods
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "编辑商品";
+    List<object> imglist = (List<object>)ViewBag.CarouselList;
+    if (imglist == null)
+    {
+        imglist = new List<object>();
+    }
+    var freightIdArray = Model.FreightIds.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+    List<StoreFreightTemplate> FreightList = ViewBag.FreightList;
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/css/shopping-mall-backstage.css">
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/css/shopping-mall-shangpinguanli.css">
+<style>
+    .twxq-new-kuang {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-right: 10px;
+        background: #fff;
+    }
+
+    .twxq-edit-zhanshi {
+        border: 2px dashed #fc7d7d;
+        padding: 10px;
+        min-height: 108px;
+        position: relative;
+    }
+
+    .spgl-bianji-bt {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: inline-block;
+        background-color: rgba(0,0,0,0.3);
+        color: #fff;
+        padding: 0 5px;
+        margin-left: 1px;
+        font-size: 12px;
+    }
+
+    .bz {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .spxqq-f p:first-child {
+        font-size: 17px;
+    }
+
+    .spxqq-f {
+        text-align: center;
+        margin-top: 17px;
+        line-height: 25px;
+    }
+    /*多规格增加样式*/
+    .fr {
+        float: right;
+    }
+
+    .fl {
+        float: left;
+    }
+
+    ul, li {
+        list-style: none;
+    }
+
+    .rel {
+        position: relative;
+    }
+
+    .new-spgg {
+        margin-left: 0;
+        display: inline-block;
+        padding: 15px;
+        background: #fff;
+    }
+
+    .plus-pic-f {
+        background: #fff;
+    }
+
+    .spec_add {
+        border-top: none;
+        margin-top: -3px;
+    }
+
+    .bg_spec {
+        background-color: #3283fa;
+    }
+
+    .sc-syzx-show1 table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .sc-syzx-show1 th, td {
+        border: 1px solid #DDD !important;
+    }
+    .dropzone.dz-clickable{width:360px!important;}
+    .noboder td{border: none !important;}
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<input name="appId" type="hidden" id="appId" value="@ViewBag.appId" />
+@Html.HiddenFor(m => m.Id, new { name = "Id" })
+@Html.HiddenFor(m => m.StoreId, new { name = "StoreId" })
+<input name="goods_spec_ids" type="hidden" id="goods_spec_ids" />
+<input type="hidden" value="@Model.AttrDetail" id="AttrDetail" />
+<input type="hidden" value="@Model.Inventory" id="tempInventory" />
+<input type="hidden" value="@Model.Stock" id="tempStock" />
+<input type="hidden" value="@Model.ImgUrl" id="ImgUrl" />
+<div>
+    <table class="table table-condensed table-hover cancel-table-td-border noboder">
+        <tr>
+            <td style="text-align: right;" width="30%">轮播图片：<label style="color: red">*</label></td>
+            <td class="CarouselList">
+                @Html.FileUploadFor("CarouselList", maxFiles: 9, initImageList: (List<object>)ViewBag.CarouselList, controllerWidth: 360, removeCallback: "removeAttachmentFunction")
+                <label class="forinputmassage">点击灰色区域选择上传图片 ( 建议上传750*600px，大小不超过1M，格式为jpg或png的图片 )</label>
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">商品标题：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.GoodsName, new { @class = "form-control width400", palcehlder = "1-40字", maxlength = "50", style = "width:300px;" })
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">售卖价格：<label style="color: red">*</label></td>
+            <td>
+                <input name="Price" id="Price" maxlength="10" placeholder="请输入售卖价格" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.Price == 0 ? "0" : (Model.Price*0.01).ToString("0.00"))" class="form-control width400" />
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">商品原价：</td>
+            <td>
+                <input name="OriginalPrice" id="OriginalPrice" maxlength="10" placeholder="请输入商品原价" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.OriginalPrice == 0 ? "0" : (Model.OriginalPrice*0.01).ToString("0.00"))" class="form-control width400" />
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">添加商品规格：</td>
+            <td>
+                <div class="sc-syzx-show1 new-spgg" id="specs">
+                    <div class="rel mt-spacing">
+                        <a id="plus_guige" class="tianjiaguige-bt">添加规格项目</a>
+                        <span>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </span>
+
+                    </div>
+                    <!--规格与规格值-->
+                </div>
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">商品总库存：<label style="color: red">*</label></td>
+            <td>
+                <input name="Inventory" id="Inventory" maxlength="7" placeholder="请输入商品总库存" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.Inventory==0?"":Model.Inventory.ToString())" class="form-control width400" />
+            </td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">商品当前销量：</td>
+            <td>
+                <input name="salesCount" id="salesCount" maxlength="7" placeholder="请输入0~999的整数" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@(Model.salesCount)" class="form-control width400" />
+                <input name="salesCount_old" id="salesCount_old" value="@(Model.salesCount)" maxlength="7" hidden/>
+                <label class="forinputmassage" for="salesCount">修改商品当前的销量,修改后.商品确认收货后会继续在此销量上继续累加.</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">商品分类：<label style="color: red">*</label></td>
+            <td>
+                <select id="TypeId" class="form-control width400">
+                    <option value="0">请选择商品分类</option>
+                    @foreach (var item in (List<StoreGoodsType>)ViewBag.GoodTypeList)
+                    {
+                        <option value="@item.Id" @(Model.TypeId == item.Id ? "selected" : "")>@item.Name</option>
+                    }
+                </select>
+                <input type="button" class="btn btn-primary width100" id="addGoodTypeInfo" value="新增商品分类" />
+            </td>
+        </tr>
+        @*<tr hidden>
+            <td style="text-align: right;">简介：<label style="color: red">*</label></td>
+            <td class="DescImgList">
+                @Html.TextAreaFor(m => m.Introduction, new { @class = "form-control width500", style = "height:180px;" })
+            </td>
+        </tr>*@
+        <tr>
+            <td style="text-align: right;">描述一下你的宝贝：</td>
+            <td>
+                <textarea id="Description" style="width:610px; height: 240px;" name="editor">@Model.Description</textarea>
+                @*<div style="display:flex">
+                    <div style="flex-grow:0.1">
+                        <script type="text/plain" id="editor" style="height:460px;width:90%">
+                        </script>
+                    </div>
+                    <div style="flex-grow:1">
+                        <div style="width:345px;height:100%;max-height:650px;overflow:auto" class="twxq-new-kuang">
+                            <img src="http://i.vzan.cc/image/jpg/2017/7/28/121121bc5990e3d39140db91a07db4f02114fb.jpg">
+                            <div class="bz twxq-edit-zhanshi">
+
+                                <p>
+                                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+                                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;	内容
+                                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+                                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+                                </p><a class="spgl-bianji-bt">编辑</a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>*@
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">详情图片：</td>
+            <td class="DescCarouselList">
+                @Html.FileUploadFor("DescCarouselList", maxFiles: 9, initImageList: (List<object>)ViewBag.DescCarouselList, controllerWidth: 360, removeCallback: "removeAttachmentFunction")
+                <label class="forinputmassage">点击灰色区域选择上传图片( 建议上传宽度为750px，大小不超过1M，格式为jpg或png的图片 )</label>
+            </td>
+            <td></td>
+        </tr>
+        <tr name="tr_active">
+            <td style="text-align: right;">排序：<label style="color: red">*</label></td>
+            <td>
+                <input name="Sort" id="Sort" maxlength="7" title="整数,数字越大越靠前" placeholder="整数,数字越大越靠前" onkeyup="keyPress(this)" onafterpaste="keyPress(this)" value="@Model.Sort" class="form-control width400" />
+            </td>
+        </tr>
+        @*<tr>
+                <td style="text-align: right;">详情图片：</td>
+                <td class="DescImgList">
+                    @Html.FileUploadFor("DescImgList", maxFiles: 9, controllerWidth: 360, initImageList: (List<object>)ViewBag.DescImgList, removeCallback: "removeFun", awm: 1)
+                    <label class="forinputmassage">点击灰色区域选择上传图片</label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">上传视频：</td>
+                <td>
+                    @RenderPage("~/Views/Shared/_UploadVideo.cshtml")
+                </td>
+            </tr>*@
+        @*<tr>
+                <td style="text-align: right;">运费：<label style="color: red">*</label></td>
+                <td>
+                    <div class="form-group">
+                        <input type="checkbox" value="0" class="checkbox-ickeck" id="check_f_0" @(Model.Id > 0 && freightIdArray.Any(m => m == "0") ? "checked" : "")>
+                        <label for="check_f_0" class="checkbox-label">到店自提</label>
+                    </div>
+                    @if (FreightList != null)
+                    {
+                        foreach (var item in FreightList)
+                        {
+                            <div class="form-group">
+                                <input type="checkbox" value="@(item.Id)" class="checkbox-ickeck" id="check_f_@(item.Id)" @(Model.Id > 0 && freightIdArray.Any(m => m == item.Id.ToString()) ? "checked" : "")>
+                                <label for="check_f_@(item.Id)" class="checkbox-label">
+                                    @item.Name
+                                <span style="color:#666;">(详情：@(item.BaseCount)件内@(item.BaseCost * 0.01)元， 每增加一件，运费增加@(item.ExtraCost * 0.01)元)</span>
+                            </label>
+                        </div>
+                        }
+                    }
+                </td>
+            </tr>*@
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <input type="button" class="btn btn-primary width100" id="btnSave" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!--添加规格值-->
+<ul class="clearfix bz tjgg-tk ggz_tk_js" style="display:none; left: -170px;height: 50px;z-index: 1500;width: 367px;">
+    <li class="fl" style="height: 200px;overflow-x:hidden;overflow-y:auto;">
+        <input maxlength="20" class="bz click-turn" type="text" placeholder="添加规格值">
+    </li>
+    <li class="fl m-left10">
+        <a class="blue-sure-bt" onclick="add_goods_gsp('',this)">确定</a>
+    </li>
+    <li class="fl m-left10">
+        <a class="cancel-bt">取消</a>
+    </li>
+    <span class="white-triangle" style="left: 180px;"></span>
+</ul>
+<!--添加规格弹框-->
+<ul id="plus_guige_tk" class="clearfix bz tjgg-tk" style="display: none;height: 50px;z-index: 1500;width: 367px">
+    <li class="fl" style="height: 200px;overflow-x:hidden;overflow-y:auto; ">
+        <input maxlength="10" class="bz click-turn" type="text" placeholder="请输入规格" id="specf">
+    </li>
+    <li class="fl m-left10">
+        <a class="blue-sure-bt" onclick="add_goods_spec('')">确定</a>
+    </li>
+    <li class="fl m-left10">
+        <a class="cancel-bt">取消</a>
+    </li>
+    <span class="white-triangle"></span>
+</ul>
+<div style="border: solid 1px;z-index: 1000;position: absolute;left: 0%;top: 0%;width: 100%;height: 100%;background-color: rgba(25, 24, 24, 0.35);display:none;" id="cover_black"></div>
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+@*<script type="text/html" id="js_article_content">
+    @Html.Raw(Model.Description)
+</script>*@
+@*添加商品分类*@
+<script type="text/html" id="addoredita">
+    <span>新建分类名称：</span>
+    <input id='goodtypename' type="text" class="form-control" placeholder="名称少于8个字" value='' maxlength="8" />
+</script>
+<script>
+    $(function () {
+
+        //#region 在线富文本编辑器
+        var ue = UM.getEditor('editor', {
+            toolbar: [
+                'source | undo redo | bold italic underline strikethrough |  forecolor backcolor |',
+                '| justifyleft justifycenter justifyright justifyjustify | image ',
+
+            ],
+            imageUrl: "/Upload/Image?cityid="+ localStorage.cityInfoId,
+            autoHeight: false
+        });
+        //对编辑器的操作最好在编辑器ready之后再做
+        ue.ready(function () {
+            if ($("#js_article_content").html() != "") {
+                var vHtml = $("#js_article_content").html();
+                ue.setContent(vHtml);
+            }
+        });
+        //当富文本框内容发生改变时,展示框也要发生改变
+        ue.addListener('selectionchange', function (editor) {
+            if (ue.hasContents()) {
+                jQuery(".spgl-bianji-bt").siblings().remove();
+                jQuery(".spgl-bianji-bt").before(ue.getContent());
+            } else {
+                var html = '<div class="spxqq-f"><p>内容</p><p>可自由编辑</p></div><a class="spgl-bianji-bt">编辑</a>'
+                jQuery('.twxq-edit-zhanshi').html(html);
+            }
+        });
+        //#endregion
+
+        // #region 保存
+        $('#btnSave').on('click', function () {
+
+            var Id = $('#Id').val();
+            var appId = $("#appId").val();
+
+            var carouselAlert = false;
+            if ($('.CarouselList .dz-image-preview').length > 0) {
+                $('.CarouselList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        carouselAlert = true;
+                    }
+                });
+            }
+            if (carouselAlert) {
+                return layer.msg('轮播图上传失败 ! ').html();
+            }
+
+            var desccarouselAlert = false;
+            if ($('.CarouselList .dz-image-preview').length > 0) {
+                $('.CarouselList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        desccarouselAlert = true;
+                    }
+                });
+            }
+            if (desccarouselAlert) {
+                return layer.msg('详情轮播图上传失败 ! ').html();
+            }
+
+            var GoodsName = $('#GoodsName').val();
+            if (GoodsName.length === 0) return layer.msg("请填写商品标题");
+            if (GoodsName.length > 50) {
+                return layer.msg("商品标题最多50个字！");
+            }
+
+            var imgListAlert = false;
+            if ($('.DescImgList .dz-image-preview').length > 0) {
+                $('.DescImgList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        imgListAlert = true;
+                    }
+                });
+            }
+            if (imgListAlert) {
+                return layer.msg('详情图上传失败 ! ').html();
+            }
+
+            var Price = 0;
+            var OriginalPrice = 0;
+            var Inventory = $('#Inventory').val();
+            var Stock = $('#Inventory').val();
+            
+            var salesCount = $("#salesCount").val();
+            var salesCount_old = $("#salesCount_old").val();
+            if(salesCount == "")
+            {
+                return layer.msg("请输入销量 !");
+            }
+            var regSalesCount = new RegExp("^[0-9]*$");
+            if(!regSalesCount.test(salesCount))
+            {
+                return layer.msg("销量只能是正整数！");
+            }
+            if(salesCount != salesCount_old)
+            {
+                if(salesCount <0 || salesCount  > 999)
+                {
+                    return layer.msg("修改商品销量的范畴只能在 0~999");
+                }
+            }
+
+
+            var needjudge = 0;
+            var bmoney = $('#Price').val();
+            if (bmoney.length === 0) return layer.msg("请输入售卖价格");
+            if (bmoney!="") {
+                var price_save = bmoney * 1000000 / 10000;
+                if (parseInt(price_save) <= 0) {
+                    layer.msg("售卖价格不能低于1分钱！");
+                    return false;
+                }
+                else if(parseInt(price_save) > 999999999)
+                {
+                    layer.msg("售价封顶9999999.99元！");
+                    return false;
+                }
+                else
+                    Price = price_save;
+
+
+                needjudge = 1;
+            }
+
+            var cmoney = $('#OriginalPrice').val();
+            if (cmoney.trim()=="") cmoney=0;
+            var price_save = cmoney * 1000000 / 10000;
+            OriginalPrice = price_save;
+            if (1 == needjudge && OriginalPrice!=0) {
+
+                if (parseInt(cmoney * 100) <= parseInt(bmoney * 100)) {
+                    layer.msg("商品原价必须大于售卖价格！");
+                    return false;
+                }
+                else if(parseInt(price_save) > 999999999)
+                {
+                    layer.msg("商品原价封顶9999999.99元！");
+                    return false;
+                }
+
+            }
+            //商品分类
+            var TypeId = $("#TypeId").val();
+            if (TypeId <= 0)
+            {
+                layer.msg('请选择商品分类！');
+                return false;
+            }
+
+            //缩略图
+            var ImgUrl = $("#ImgUrl").val();
+            //轮播图
+            var ImgList = '';
+            var doimglist = $('input[name="CarouselList"]');
+            if(doimglist.length>0)
+            {
+                doimglist.each(function (i, n) {
+                    ImgList += '|' + $(n).val();
+                });
+                ImgUrl = doimglist[0].value;
+            }
+            else if(@imglist.Count<=0){
+                layer.msg('必须上传最少一张轮播图！');
+                return false;
+            }
+
+            //轮播图
+            var descImgList = '';
+            var descdoimglist = $('input[name="DescCarouselList"]');
+            if(descdoimglist.length>0)
+            {
+                descdoimglist.each(function (i, n) {
+                    descImgList += '|' + $(n).val();
+                });
+                descImgUrl = descdoimglist[0].value;
+            }
+
+
+            var imgListAlert = false;
+            if ($('.DescImgList .dz-image-preview').length > 0) {
+                $('.DescImgList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        imgListAlert = true;
+                    }
+                });
+            }
+            if (imgListAlert) {
+                return layer.msg('详情图上传失败 ! ').html();
+            }
+
+            //var Description = ue.getContent();
+
+            var Description = $("#Description").val();
+            //if(Description == "")
+            //{
+            //    Description = " ";
+            //}
+            //Base64加密
+            var b = new Base64();
+            Description = b.encode(Description);
+            //编辑图
+            var DescImgList = '';
+            $('input[name="DescImgList"]').each(function (i, n) {
+                DescImgList += '|' + $(n).val();
+            });
+
+            var StoreId = $("#StoreId").val();
+            var freightIds = "";
+            $(".checkbox-ickeck").each(function(){
+                if($(this).prop("checked")){
+                    freightIds+=$(this).val() +",";
+                }
+            });
+            //if(freightIds==""){
+            //    layer.msg('必须选择一种运费模板');
+            //    return false;
+            //}
+            var flag =true;
+            //规格价格值校验
+            jQuery(".spec_price").each(function(index,data){
+                var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+                var price = jQuery(this).val();
+                jQuery(this).css('border','')
+                jQuery(this).closest("td").find("p").remove();
+                if (price == null || price == undefined || price == '') {
+                    jQuery(this).css('border','1px solid #b94a48')
+                    jQuery(this).parent().append("<p class='ts'>请输入价格</p>");
+                    flag =false;
+                }else if(!reg.test(price)){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    jQuery(this).parent().append("<p class='ts'>只能输入小数后两位的正数</p>");
+                    jQuery(this).val("");
+                    flag =false;
+                }else{
+                    var i = parseFloat(1000000);
+                    price = parseFloat(price);
+                    if(price>i || price<=0){
+                        jQuery(this).css('border','1px solid #b94a48')
+                        jQuery(this).parent().append("<p class='ts'>范围为0.01-1000000</p>");
+                        jQuery(this).val("");
+                        flag =false;
+                    }
+                }
+            });
+
+            //规格库存校验
+            jQuery(".spec_count").each(function(index,data){
+                var reg = new RegExp("^[0-9]*$");
+                var count = jQuery(this).val();
+                jQuery(this).css('border','')
+                jQuery(this).closest("td").find("p").remove();
+                if (count == null || count == undefined || count == '') {
+                    jQuery(this).css('border','1px solid #b94a48')
+                    jQuery(this).parent().append("<p class='ts'>请输入库存</p>");
+                    flag =false;
+                }else if(!reg.test(count)){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    jQuery(this).parent().append("<p class='ts'>库存只能是正整数</p>");
+                    jQuery(this).val("");
+                    flag =false;
+                }else{
+                    var num = parseInt(count);
+                    if(num>9999){
+                        jQuery(this).css('border','1px solid #b94a48')
+                        jQuery(this).parent().append("<p class='ts'>规格库存最高为9999</p>");
+                        jQuery(this).val("");
+                        flag =false;
+                    }
+                }
+
+                var Inventory=0;
+                jQuery(".spec_count").each(function(index,data){
+                    if(jQuery(this).val()){
+                        Inventory=parseInt(jQuery(this).val())+parseInt(Inventory);
+                    }
+                });
+                jQuery("#Inventory").val(Inventory);
+            });
+            if(flag==false)
+            {
+                layer.msg('商品多规格有误，请重新填写！');
+                return false;
+            }
+            //总库存校验
+            var count = jQuery("#Inventory").val();
+            if (count == null || count == undefined || count == '' || count==0) {
+                //jQuery("#Inventory").css('border','')
+                //jQuery("#Inventory").closest("div").siblings(".error-red-alert").remove();
+                //jQuery("#Inventory").css('border','1px solid #b94a48')
+                //jQuery("#Inventory").parent().after('<p class="error-red-alert">请输入库存</p>');
+                //flag =false;
+                layer.msg('请输入总库存！');
+                return false;
+            }else{
+                var reg = new RegExp("^[0-9]*$");
+                if(!reg.test(count)){
+                    //jQuery("#Inventory").css('border','1px solid #b94a48')
+                    //jQuery("#Inventory").parent().after('<p class="error-red-alert">库存只能是正整数</p>');
+                    //jQuery("#Inventory").val("");
+                    //flag =false;
+                    layer.msg('库存只能是正整数！');
+                    return false;
+                }else{
+                    var num = parseFloat(count);
+                    if(num>1000000){
+                        //jQuery("#Inventory").css('border','1px solid #b94a48')
+                        //jQuery("#Inventory").parent().after('<p class="error-red-alert">库存最高为1000000</p>');
+                        //jQuery("#Inventory").val("");
+                        //flag =false;
+                        layer.msg('库存最高为1000000！');
+                        return false;
+                    }
+                }
+            }
+            //var spec_price_length = jQuery(".spec_price").length;
+            //商品价格校验
+            //if(spec_price_length==0){
+            //    var price = jQuery("#Price").val();
+            //    var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            //    if (price == null || price == undefined || price == '') {
+            //        jQuery("#Price").css('border','')
+            //        jQuery("#Price").closest("div").find(".error-red-alert").remove();
+            //        jQuery("#Price").css('border','1px solid #b94a48')
+            //        jQuery("#Price").parent().append('<p class="error-red-alert">请输入价格</p>');
+            //        flag =false;
+            //    }else{
+            //        if(!reg.test(price)){
+            //            jQuery("#Price").css('border','1px solid #b94a48')
+            //            jQuery("#Price").parent().append('<p class="error-red-alert">只能输入两位小数点的正数</p>');
+            //            jQuery("#Price").val("");
+            //            flag =false;
+            //        }else{
+            //            var num = parseFloat(price);
+            //            if(num>100000000 || num<=0){
+            //                jQuery("#Price").css('border','1px solid #b94a48')
+            //                jQuery("#Price").parent().append('<p class="error-red-alert">价格范围为0.01-1000000</p>');
+            //                jQuery("#Price").val("");
+            //                flag =false;
+            //            }
+            //        }
+            //    }
+            //}
+
+            var goods_spec_ids = "";
+            jQuery(".guige-zhi").each(function(index,data){
+                var spec_id = jQuery(this).find(".guige-zhi-close").attr("spec_id");
+                goods_spec_ids+=spec_id+",";
+            });
+            //规格值id
+            jQuery("#goods_spec_ids").val(goods_spec_ids);
+            //规格字符串
+            var AttrDetail="";
+            jQuery(".spec_price").each(function(index,data){
+                var id = jQuery(this).attr("gsp_ids");
+                var price = jQuery(this).val();
+                var count = jQuery(this).closest("tr").find(".spec_count").val();
+                AttrDetail=id+","+count+","+price+";"+AttrDetail;
+            });
+            jQuery("#AttrDetail").val(AttrDetail);
+
+            //视频
+            var videopath = $("#videopath").val();
+            var oldvid = $("#oldvedio").val();
+            //简介
+            //var Introduction = $('#Introduction').val();
+            //if (Introduction.length === 0) return layer.msg("请填写商品简介");
+            //Base64加密
+            //var c = new Base64();
+            //AttrDetail = c.encode(AttrDetail);
+
+
+            var sort = $("#Sort").val();
+            if (!/^-?[0-9]\d*$/.test(sort)) {
+                layer.msg("请输入0~9999999之间的数字");
+                return false;
+            }
+            if (sort < 0 || sort > 999999999) {
+                layer.msg("请输入0~9999999之间的数字");
+                return false;
+            }
+
+            $.post('/stores/addGoodsAsync',
+                {
+                    Id: Id,
+                    GoodsName: GoodsName,
+                    Price: parseInt(Price),
+                    OriginalPrice: parseInt(OriginalPrice),
+                    AttrDetail: AttrDetail,
+                    Description: Description,
+                    StoreId: StoreId,
+                    TypeId:TypeId,
+                    ImgUrl:ImgUrl,
+                    Inventory:Inventory,
+                    salesCount:salesCount,
+                    Stock:Stock,
+                    ImgList: ImgList,
+                    DescImgList: DescImgList,
+                    FreightIds:freightIds,
+                    oldhvid:oldvid,
+                    videopath:videopath,
+                    //Introduction:Introduction,
+                    goods_spec_ids:goods_spec_ids,
+                    descdoimglist:descImgList,
+                    Sort:sort
+                },
+                function (result) {
+                    if (result.code > 0) {
+                        layer.msg('更新成功');
+                        $('#loadModal .modal-body').html(result.msg);
+
+                        window.location.href = "/stores/GoodsList?appId=" + appId;
+
+                    } else {
+                        layer.msg(result.msg);
+                    }
+                });
+        });
+        // #endregion
+    });
+
+    //新增商品分类
+    $('#addGoodTypeInfo').on('click', function () {
+        var StoreId = $("#StoreId").val();
+        layer.open({
+            content: $("#addoredita").html(),
+            btn: ["保存", "取消"],
+            yes: function () {
+                //分类名称
+                var goodtypename = $("#goodtypename").val();
+                if(goodtypename=='')
+                {
+                    alert("请输分类名称！");
+                    return;
+                }
+
+                $.ajax({
+                    type: "Post",
+                    url: "/stores/AddGoodType",
+                    data: { appId: @(ViewBag.appId), Name: goodtypename, StoreId: StoreId},
+                    success: function (data) {
+                        if (data.isok) {
+                            layer.msg("添加成功");
+                            $("#TypeId").append("<option value='"+data.msg+"'>"+goodtypename+"</option>");
+                            layer.closeAll();
+                        }
+                        else {
+                            alert(data.msg);
+                        }
+                    }
+                });
+            },
+            no: function () { layer.closeAll(); },
+            cancel: function () {
+                layer.closeAll();
+            }
+        });
+    });
+    // #endregion
+
+    // #region 删除图片
+    function removeFun(file) {
+        if (file) {
+            $.post('/CityPost/DeleteImg', { id: file.id }, function (result) {
+                if (!result.Success) {
+                    layer.msg(result.Msg);
+                }
+            });
+        }
+    }
+    // #endregion
+    function keyPress(ob) {
+        if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+            if (ob.t_value == undefined || ob.t_value.length == 1) {
+                ob.value = "";
+            }
+            else {
+                ob.value = ob.t_value;
+            }
+        }
+        else
+            ob.t_value = ob.value;
+    }
+</script>
+<script type="text/javascript">
+    var StoreId = $('#StoreId').val();
+    $(function () {
+        var id = $("#Id").val();
+        //页面加载读取规格
+        if(id!=null && id.length>0){
+            jQuery.ajax({
+                type:'POST',
+                url:'/stores/AttrSpec_detail',
+                data:{goods_id:id},
+                dataType:"text",
+                success:function(data){
+                    jQuery(".spgl-spgg-table").remove();
+                    jQuery(".removespec").remove();
+                    jQuery("#specs").append(data);
+                    var rowspan1 = jQuery("input[name=rowspan1]").val();
+                    var rowspan2 = jQuery("input[name=rowspan2]").val();
+                    var rowspan3 = jQuery("input[name=rowspan3]").val();
+
+                    jQuery(".spec_td_value").each(function(index,data){
+                        var rows_value = jQuery(this).attr("id");
+                        var spec_value = jQuery(this).attr("rows");
+                        if(parseInt(rows_value)==parseInt(spec_value)){
+                            jQuery(this).remove();
+                        }
+                    });
+
+                    if(jQuery(".spec_count").length==0){
+                        jQuery("#Inventory").attr("disabled",false);
+                        jQuery("#Price").attr("disabled",false);
+                    }else{
+                        jQuery("#Inventory").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').closest("li").find(".error-red-alert").remove();
+                        jQuery("#Price").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').parent().find(".error-red-alert").remove();
+
+                    }
+
+                }
+            });
+        }
+
+        //规格属性
+        $("#plus_guige").click(function(){
+            if($(".removespec").length>=3){
+                return layer.msg("最多只能添加3个规格");
+            }else{
+                var top = $(this).offset().top;
+                var left = $(this).offset().left+80;
+                var heigt = $(this).outerHeight();
+                top = top + heigt+10;
+                //需要减去头部蓝色高度
+                top=top-80;
+                var width = $('#plus_guige_tk').outerWidth();
+                left = left - width+180;
+                $('#plus_guige_tk').css('top',''+top+'px').css('left',''+left+'px');
+                $.ajax({
+                    type:'POST',
+                    url:'/stores/GetAttrByStoreId',
+                    data:{storeid:StoreId},
+                    dataType:"json",
+                    success:function(data){
+                        if(data.datas.length>0){
+                            $(".spec_add").remove();
+                            $("#plus_guige").attr("style","border-bottom: none;");
+                            for (var i = 0; i < data.datas.length; i++) {
+                                $("#specf").parent().append('<input class="bz click-turn spec_add" type="text" style="border-top: none;" onclick="spec_add(this)" readonly="readonly" onmousemove="move_sepc(this)" onmouseout="out_spec(this)"  value="'+data.datas[i].AttrName+'" gs_id="'+data.datas[i].Id+'">');
+
+                            }
+                        }
+                        $("#specf").val('');
+                        $('#plus_guige_tk').show();
+                        $('#cover_black').show();
+                    }
+                });
+            }
+        });
+
+        $('.cancel-bt').click(function(){
+            $('#plus_guige_tk').hide();
+            $('#cover_black').hide();
+        });
+    });
+    //从数据库选择规格
+    function spec_add(data){
+        var name = $(data).val();
+        var id = $(data).attr("gs_id");
+        var flag = true;
+        $(".fr").each(function(index,data){
+            if(id==$(this).attr("gs_id")){
+                layer.msg("已经选择了相同的规格");
+                flag = false;
+            }
+        });
+        if(flag){
+            add_goods_spec(id);
+        }
+    }
+    //鼠标移上事件
+    function move_sepc(data){
+        $(data).addClass("bg_spec");
+    }
+    //鼠标移出事件
+    function out_spec(data){
+        $(data).removeClass("bg_spec");
+    }
+    //添加规格
+    function add_goods_spec(id){
+        var name = $("#specf").val();
+        var webPath = $("body").attr("webPath");
+        var flag = true;
+        if ((id == null || id == undefined || id == '')&&(name == null || name == undefined || name == '')) {
+            layer.msg("请输入规格名");
+            flag=false;
+        }
+        if(!id && name){
+            $.ajax({
+                type:'POST',
+                async:false,
+                url:'/stores/AddAttr',
+                data:{storeid:StoreId,AttrName:name},
+                dataType:"json",
+                success:function(data){
+                    if(!data.isok){
+                        layer.msg(data.msg);
+                        flag=false;
+                    }
+                }
+            });
+        }
+        if(flag){
+            $.ajax({
+                type:'POST',
+                async:false,
+                url:'/stores/AttrSpec_detail',
+                data:{gs_id:id,AttrName:name,storeid:StoreId},
+                dataType:"text",
+                success:function(data){
+                    $("#specf").val('');
+                    $('#plus_guige_tk').hide();
+                    $('#cover_black').hide();
+                    $(".spgl-spgg-table").remove();
+                    $(".removespec").remove();
+                    $("#specs").append(data);
+                }
+            });
+        }
+    }
+
+    $(function () {
+        //点击批量设置价格和库存
+        //$("#batch_price").click(function(){
+        $(document).on("click", "#batch_price", function () {
+            $("#bt_inp").show();
+            $("input[name=batch_count]").hide();
+            $("input[name=batch_price]").show();
+            $("input[name=batch_price]").val('');
+            $("input[name=batch_count]").css('border','')
+            $("input[name=batch_count]").closest("td").find("p").remove();
+            $("input[name=batch_price]").css('border','')
+            $("input[name=batch_price]").closest("td").find("p").remove();
+            $("#bt_btn").hide();
+        });
+        //$("#batch_count").click(function(){
+        $(document).on("click", "#batch_count", function () {
+            $("#bt_inp").show();
+            $("input[name=batch_price]").hide();
+            $("input[name=batch_count]").show();
+            $("input[name=batch_count]").val('');
+            $("input[name=batch_count]").css('border','')
+            $("input[name=batch_count]").closest("td").find("p").remove();
+            $("input[name=batch_price]").css('border','')
+            $("input[name=batch_price]").closest("td").find("p").remove();
+            $("#bt_btn").hide();
+        });
+        //$("#batch_cancel").click(function(){
+        $(document).on("click", "#batch_cancel", function () {
+            $("#bt_inp").hide();
+            $("#bt_btn").show();
+        });
+        //全局设置校验
+        $("input[name=batch_price]").blur(function(){
+            var data = $("input[name=batch_price]");
+            var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            var price = $(this).val();
+
+            $(this).css('border','')
+            $(this).closest("td").find("p").remove();
+            if (price == null || price == undefined || price == '') {
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>请输入价格</p>");
+                return;
+            }else if(!reg.test(price)){
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>只能输入小数后两位的正数</p>");
+                return;
+            }else{
+                var i = parseFloat(1000000);
+                price = parseFloat(price);
+                if(price>i || price<=0){
+                    $(this).css('border','1px solid #b94a48')
+                    $(this).parent().append("<p>范围为0.01-1000000</p>");
+
+                    return;
+                }
+            }
+        });
+        $("input[name=batch_count]").blur(function(){
+            var reg = new RegExp("^[0-9]*$");
+            var data = $("input[name=batch_count]");
+            var count = $(this).val();
+            $(this).css('border','')
+            $(this).closest("td").find("p").remove();
+            if (count == null || count == undefined || count == '') {
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>请输入库存</p>");
+                return;
+            }else if(!reg.test(count)){
+                $(this).css('border','1px solid #b94a48')
+                $(this).parent().append("<p>库存只能是正整数</p>");
+
+                return;
+            }else{
+                var num = parseInt(count);
+                if(num>9999){
+                    $(this).css('border','1px solid #b94a48')
+                    $(this).parent().append("<p>规格库存最高为9999</p>");
+                    return;
+                }
+            }
+        });
+        //全局设置价格和库存
+        //$("#batch_save").click(function(){
+        $(document).on("click", "#batch_save", function () {
+            //库存
+            var flag = true;
+            if($("input[name=batch_price]").is(":hidden")){
+                var reg = new RegExp("^[0-9]*$");
+                var data = $("input[name=batch_count]");
+                var count = $(data).val();
+                $(data).css('border','')
+                $(data).closest("td").find("p").remove();
+                if (count == null || count == undefined || count == '') {
+                    $(data).css('border','1px solid #b94a48')
+                    $(data).parent().append("<p>请输入库存</p>");
+                    flag = false;
+                }else if(!reg.test(count)){
+                    $(data).css('border','1px solid #b94a48')
+                    $(data).parent().append("<p>库存只能是正整数</p>");
+                    flag = false;
+                }else{
+                    var num = parseInt(count);
+                    if(num>9999){
+                        $(data).css('border','1px solid #b94a48')
+                        $(data).parent().append("<p>规格库存最高为9999</p>");
+                        flag = false;
+                    }
+                    if(flag){
+                        var count = $("input[name=batch_count]").val();
+                        $(".spec_count").val(count);
+                        var total_count = $(".spec_count").length * count;
+                        $("#Inventory").val(total_count);
+                        $(".spec_count").css('border','');
+                        $(".spec_count").parent().find("p").remove();
+                    }
+
+                }
+            }
+            //价格
+            if($("input[name=batch_count]").is(":hidden")){
+                var data = $("input[name=batch_price]");
+                var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+                var price = $(data).val();
+                $(data).css('border','')
+                $(data).closest("td").find("p").remove();
+                if (price == null || price == undefined || price == '') {
+                    $(data).css('border','1px solid #b94a48')
+                    $(data).parent().append("<p>请输入价格</p>");
+                    flag = false;
+                }else if(!reg.test(price)){
+                    $(data).css('border','1px solid #b94a48')
+                    $(data).parent().append("<p>只能输入小数后两位的正数</p>");
+                    flag = false;
+                }else{
+                    var i = parseFloat(1000000);
+                    price = parseFloat(price);
+                    if(price>i || price<=0){
+                        $(data).css('border','1px solid #b94a48')
+                        $(data).parent().append("<p>范围为0.01-1000000</p>");
+                        flag = false;
+                    }
+                }
+                if(flag){
+                    var count = $("input[name=batch_price]").val();
+                    $(".spec_price").val(count);
+                    $("#Price").val(count);
+                    $(".spec_price").css('border','');
+                    $(".spec_price").parent().find("p").remove();
+
+                }
+            }
+            if(flag){
+                $("#bt_inp").hide();
+                $("#bt_btn").show();
+            }
+        });
+        //规格价格库存框点击效果
+        jQuery(".spgl-spgg-table input").focus(function(){
+            jQuery(this).css('border','1px solid #74b9ef')
+                    .css('box-shadow','0 0 3px #74b9ef');
+            jQuery(this).removeClass("input_error");
+            jQuery(this).parent().find("p").remove();
+        });
+        jQuery(".spgl-spgg-table input").blur(function(){
+            jQuery(this).css('border','1px solid #ccc')
+                    .css('box-shadow','none');
+        });
+
+        //规格值价格校验
+        //jQuery(".spec_price").blur(function(){
+        $(document).on("blur", ".spec_price", function () {
+            var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+            var price = jQuery(this).val();
+            jQuery(this).css('border','');
+            jQuery(this).parent().find(".ts").remove();
+            if (price == null || price == undefined || price == '') {
+                jQuery(this).css('border','1px solid #b94a48')
+                jQuery(this).parent().append("<p class='ts'>请输入价格</p>");
+                return;
+            }
+            if(!reg.test(price)){
+                jQuery(this).css('border','1px solid #b94a48')
+                jQuery(this).parent().append("<p class='ts'>只能输入两位小数点的正数</p>");
+                jQuery(this).val("0.00");
+                return;
+            }else{
+                var i = parseFloat(1000000);
+                price = parseFloat(price);
+                if(price>i || price<=0){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    jQuery(this).parent().append("<p class='ts'>范围为0.01-1000000</p>");
+                    jQuery(this).val("0.00");
+                    return;
+                }
+            }
+            var goods_price=0.00;
+            jQuery(".spec_price").each(function(index,data){
+                if(!index){
+                    goods_price=parseFloat(jQuery(this).val());
+                }else{
+                    if(jQuery(this).val()){
+                        if(parseFloat(jQuery(this).val())<parseFloat(goods_price)){
+                            goods_price=parseFloat(jQuery(this).val());
+                        }
+                    }
+                }
+            });
+            jQuery("#Price").val(goods_price);
+        });
+        //库存校验
+        //jQuery(".spec_count").blur(function(){
+        $(document).on("blur", ".spec_count", function () {
+            var reg = new RegExp("^[0-9]*$");
+            var count = jQuery(this).val();
+            jQuery(this).css('border','');
+            jQuery(this).parent().find(".ts").remove();
+            if (count == null || count == undefined || count == '') {
+                jQuery(this).css('border','1px solid #b94a48')
+                jQuery(this).parent().append("<p class='ts'>请输入库存</p>");
+                return;
+            }
+            if(!reg.test(count)){
+                jQuery(this).css('border','1px solid #b94a48')
+                jQuery(this).parent().append("<p class='ts'>库存只能是正整数</p>");
+                jQuery(this).val("0");
+                return;
+            }else{
+                var num = parseInt(count);
+                if(num>9999){
+                    jQuery(this).css('border','1px solid #b94a48')
+                    jQuery(this).parent().append("<p class='ts'>规格库存最高为9999</p>");
+                    jQuery(this).val("0");
+                    return;
+                }
+            }
+
+            var Inventory=0;
+            jQuery(".spec_count").each(function(index,data){
+                if(jQuery(this).val()){
+                    Inventory=parseInt(jQuery(this).val())+parseInt(Inventory);
+                }
+            });
+            jQuery("#Inventory").val(Inventory);
+
+        });
+        //打开规格值的弹出框
+        //jQuery(".gsps").click(function(){
+        $(document).on("click", ".gsps", function () {
+            var gs_id = jQuery(this).attr("gs_id");
+            var this_gsp = jQuery(this);
+            var top = jQuery(this).offset().top;
+            var left = jQuery(this).offset().left;
+            var heigt = jQuery(this).outerHeight();
+            top = top + heigt+10;
+            //需要减去头部蓝色高度
+            top=top-80;
+            var width = jQuery('.ggz_tk_js').outerWidth();
+            left = left - width+180;
+            jQuery('.ggz_tk_js').css('top',''+top+'px').css('left',''+left+'px');
+            jQuery('.ggz_tk_js').show();
+            jQuery('#cover_black').show();
+            jQuery("input[name=add_spec]").val(gs_id);
+            jQuery.ajax({
+                type:'POST',
+                url:'/stores/GetSpecByAttrId',
+                dataType:"json",
+                data:{gs_id:gs_id},
+                success:function(data){
+                    jQuery(".ggz_tk_js").find("input").val('');
+                    jQuery('.ggz_tk_js').find('input').attr("style","");
+                    if(data.datas.length>0){
+                        jQuery(".spec_add").remove();
+                        jQuery('.ggz_tk_js').find('input').attr("style","border-bottom: none;");
+                        for (var i = 0; i < data.datas.length; i++) {
+                            jQuery('.ggz_tk_js').find('li').eq(0).append('<input class="bz click-turn spec_add" style="border-top: none;" type="text" onclick="gsp_add(this)" readonly="readonly" onmousemove="move_sepc(this)" onmouseout="out_spec(this)"  value="'+data.datas[i].SpecName+'" gsp_id="'+data.datas[i].Id+'">');
+                        }
+                    }
+                }
+            });
+        });
+        //删除规格
+        //jQuery(".fr").click(function(){
+        $(document).on("click", ".fr", function () {
+            var gs_id = jQuery(this).attr("gs_id");
+            //判断是否是第一规格
+            var image_checkbox = jQuery(this).closest("li").find(".hook-ggtp");
+            if(image_checkbox.length){
+                jQuery("input[name=spec_img_val0]").val('');
+                jQuery("input[name=spec_img_val1]").val('');
+                jQuery("input[name=spec_img_val2]").val('');
+                var checked = jQuery(".hook-ggtp").prop("checked");
+                if(checked){
+                    jQuery(".hook-ggtp").click();
+                }
+            }
+            remove_goods_gsp(gs_id,'');
+        });
+        //删除规格值
+        //jQuery(".guige-zhi-close").click(function(){
+        $(document).on("click", ".guige-zhi-close", function () {
+            //判断是否是第一规格
+            var image_checkbox = jQuery(this).closest("ul").find(".hook-ggtp");
+            /*var index = jQuery(this).attr("guige_index");
+             if(image_checkbox.length){
+                var spec_img_val0 = jQuery("input[name=spec_img_val0]").val();
+                var spec_img_val1 = jQuery("input[name=spec_img_val1]").val();
+                var spec_img_val2 = jQuery("input[name=spec_img_val2]").val();
+                if(parseInt(index)==1){
+                    jQuery("input[name=spec_img_val1]").val(spec_img_val2);
+                    jQuery("input[name=spec_img_val0]").val(spec_img_val1);
+                    jQuery("input[name=spec_img_val2]").val('');
+                }else if(parseInt(index)==2){
+                    jQuery("input[name=spec_img_val1]").val(spec_img_val2);
+                    jQuery("input[name=spec_img_val2]").val('');
+                }else{parseInt(index)==3}{
+                    jQuery("input[name=spec_img_val2]").val('');
+                }
+            } */
+            var spec_id = jQuery(this).attr("spec_id");
+            remove_goods_gsp('',spec_id);
+        });
+
+        //取消关闭规格值弹框
+        //jQuery('.cancel-bt').click(function(){
+        $(document).on("click", ".cancel-bt", function () {
+            jQuery(".spec_add").remove();
+            jQuery(this).closest('.tjgg-tk').hide();
+        });
+    });
+    //从数据库选择规格值
+    function gsp_add(data){
+        var name = jQuery(data).val();
+        var id = jQuery(data).attr("gsp_id");
+        var flag = true;
+        jQuery(".guige-zhi-close").each(function(index,data){
+            if(id==jQuery(this).attr("spec_id")){
+                layer.msg("规格值不能相同");
+                flag=false;
+            }
+        });
+        if(flag){
+
+            add_goods_gsp(id,'');
+        }
+    }
+
+    //添加规格值
+    function add_goods_gsp(id,obj){
+        jQuery(".spec_add").remove();
+        var name = jQuery(obj).closest(".clearfix").find("input").val();
+        var gs_id =  jQuery("input[name=add_spec]").val();
+        var flag=true;
+        if ((id == null || id == undefined || id == '')&&(name == null || name == undefined || name == '')) {
+            layer.msg("请输入规格值名名称");
+            flag=false;
+        }
+
+        if(!id && name){
+            jQuery.ajax({
+                type:'POST',
+                async:false,
+                url:'/stores/AddSpec',
+                data:{gs_id:gs_id,SpecName:name},
+                dataType:"json",
+                success:function(data){
+                    if(!data.isok){
+                        layer.msg(data.msg);
+                        flag=false;
+                    }
+                }
+            });
+        }
+        if(flag){
+            jQuery.ajax({
+                type:'POST',
+                async:false,
+                url:'/stores/AttrSpec_detail',
+                data:{spec_id:id,SpecName:name,gs_id:gs_id},
+                dataType:"text",
+                success:function(data){
+                    jQuery('.ggz_tk_js').hide();
+                    jQuery('#cover_black').hide();
+                    jQuery(".removespec").remove();
+                    jQuery(".spgl-spgg-table").remove();
+                    jQuery("#specs").append(data);
+                    jQuery("#Inventory").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').closest("li").find(".error-red-alert").remove();
+                    jQuery("#Price").attr("disabled","disabled").css("background-color","#e5e5e5").css('border','').parent().find(".error-red-alert").remove();
+                }
+            });
+        }
+    }
+    //删除规格值
+    function remove_goods_gsp(id,spec_id){
+        jQuery.ajax({
+            type:'POST',
+            url:'/stores/AttrSpec_detail',
+            data:{remove_gs_id:id,remove_spec_id:spec_id},
+            dataType:"text",
+            success:function(data){
+                jQuery(".spgl-spgg-table").remove();
+                jQuery(".removespec").remove();
+                jQuery("#specs").append(data);
+                if(jQuery(".spec_count").length==0){
+                    jQuery("#Inventory").attr("disabled",false).css("background-color","");
+                    jQuery("#Price").attr("disabled",false).css("background-color","");
+                }
+            }
+        });
+    }
+
+    // 删除图片
+    function removeAttachmentFunction(file) {
+        if(file.id!=undefined)
+        {
+            layer.open({
+                title: '删除图片',
+                content: "删除后无法恢复，确定删除图片？",
+                btn: ["确定", "取消"],
+                yes: function () {
+                    $.post('/stores/DeleteImg', { id: file.id }, function (result) {
+                        if (!result.Success) {
+                            layer.msg(result.Msg);
+                        }
+                        window.location.reload();
+                    });
+                },
+                no: function () { layer.closeAll(); },
+                cancel: function () {
+                    layer.closeAll();
+                    window.location.reload();
+                }
+            });
+        }
+            
+    }
+</script>

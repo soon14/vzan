@@ -1,0 +1,166 @@
+﻿@{
+    ViewBag.Title = "StoreEdit";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+@model PinStore
+@section styles{
+    <style>
+        .layui-form-switch { margin-top: 0px !important; width: 56px !important; line-height: 25px !important; height: 25px !important; }
+    </style>
+}
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3>商家管理</h3>
+        </div>
+        <div class="ibox-content xcx-list">
+            @if (Model != null)
+            {
+                <form method="post" class="form-horizontal layui-form" id="post_from">
+                    <input type="hidden" name="act" value="save" />
+                    <input type="hidden" name="aid" value="@aid" />
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">店铺状态：</label>
+                        <div class="col-sm-4">
+                            <input type="checkbox" name="openStore" lay-skin="switch" lay-text="开启|关闭" @(Model.state == 1 ? "checked" : "") lay-filter="openStore">
+                            <input type="hidden" id="state" name="state" value="@Model.state" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">店铺名称：</label>
+                        <div class="col-sm-4 layui-form">
+                            <input type="text" class="form-control" name="storeName" value="@Model.storeName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">店铺头像</label>
+                        <div class="col-sm-4">
+                            <div class="col-sm-10">
+                                <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="logo">
+                                    <input type="hidden" name="logo" id="cover_id_logo" value="@Model.logo">
+                                    <div class="upload-img-box">
+                                        <div class="upload-pre-item2">
+                                            @if (!string.IsNullOrEmpty(Model.logo))
+                                            {
+                                                <img src="@Model.logo" width="100" height="100">
+                                            }
+                                        </div>
+                                        <em class="edit_img_icon"> </em>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">管理账号：</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" name="loginName" value="@Model.loginName">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">登录密码：</label>
+                        <div class="col-sm-4">
+                            <input type="password" class="form-control" name="password" value="" placeholder="为空则不更新">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">使用期限：</label>
+                        <div class="col-sm-4">
+                            <div class="input-group">
+                                <input type="text" id="startDate" name="startDate" class="startDate form-control" placeholder="开始日期" value="@(Model.startDateStr)" data-date readonly />
+                                <span class="input-group-addon">~</span>
+                                <input type="text" id="endDate" name="endDate" class="endDate form-control" placeholder="结束日期" value="@(Model.endDateStr)" data-date readonly />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">商家认证：</label>
+                        <div class="col-sm-4">
+                            <input type="checkbox" name="openRz" lay-skin="switch" lay-text="开启|关闭" @(Model.rz == 1 ? "checked" : "") lay-filter="openRz">
+                            <input type="hidden" id="rz" name="rz" value="@Model.rz" />
+                            <span>认证后，店铺才能正常营业，否则商品无法购买。</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-4 col-sm-offset-2">
+                            <button class="btn btn-primary radius" type="submit" id="submit_button"> 保存</button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <p>数据不存在</p>
+            }
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <!--如果需要图片上传-->
+    <script src="~/Areas/DishAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+    <script src="~/Areas/DishAdmin/lib/dialog.js"></script>
+    <script src="~/Areas/DishAdmin/lib/admin_common.js"></script>
+
+    <script>
+        var UPLOAD_URL = "/tools/UpLoadImgFrm?appId=@aid&multi_selection=0&frontMethod=1&maxImgSize=1&objType=1";
+        $(function () {
+            //初始化上传图片插件
+            initUploadImg();
+
+            layui.use('form', function () {
+                var form = layui.form;
+                form.on('switch(openRz)', function (data) {
+                    if (data.elem.checked) {
+                        $("#rz").val(1);
+                    } else {
+                        $("#rz").val(0);
+                    }
+                });
+                form.on('switch(openStore)', function (data) {
+                    if (data.elem.checked) {
+                        $("#state").val(1);
+                    } else {
+                        $("#state").val(0);
+                    }
+                });
+            });
+
+            //表单验证
+            $("#post_from").validate({
+                rules: {
+                    loginName: {
+                        required: true,
+                    },
+                    storeName: {
+                        required: true,
+                    },
+                    logo: 'required',
+                },
+                messages: {
+                    logo:'请选择门店图片'
+                },
+                onkeyup: false,
+                success: "valid",
+                submitHandler: function (form) {   //表单提交句柄,为一回调函数，带一个参数：form
+                    var l_index = layer.msg('数据保存中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        type: 'post',
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            layer.msg(data.msg);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

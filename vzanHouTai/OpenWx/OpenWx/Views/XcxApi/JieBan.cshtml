@@ -1,0 +1,98 @@
+﻿@model OpenWx.Models.JieBangModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>小程序解绑</title>
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    <link href="/Content/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <script src="/Content/bootstrap/js/bootstrap.js"></script>
+</head>
+<body>
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        授权详情
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <span>您的小程序【@Model.xcxname】已授权给 @Model.name，是否解绑？</span>
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnCancel" onclick="returnBack()">返回后台</button>
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" onclick="Jiebang('@Model.username')">解绑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal bs-example-modal" id="showmsg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div style="text-align:center;">
+                        解绑成功，正在跳转授权中...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $(function () {
+        $("#addModal").modal("show");
+    })
+
+    function Jiebang(username) {
+        $.ajax({
+            type: "Post",
+            url: "/XcxApi/SaveJieBan?userId=" + username,
+            success: function (data) {
+                $('#addModal').modal('hide');
+                if (data.isok == 1) {
+                    $('#showmsg').modal('show');
+                    window.setTimeout(function () {
+                        var userId = '@Model.userId';
+                        var rid = '@Model.rid';
+                        var cityinfoid = '@Model.cityinfoid';
+                        var returnurl = '@Model.returnurl';
+                        var newtype = '@ViewBag.newtype';
+                        $.ajax({
+                            type: "Get",
+                            url: "/XcxApi/getOpenImg?userId=" + userId + "&rid=" + rid + "&cityinfoid=" + cityinfoid + "&returnurl=" + returnurl + "&newtype=" + newtype,
+                            success: function (res) {
+                                if (res.isok) {
+                                    location.href = res.src
+                                }
+                            },
+                            error: function (e) {
+                                console.log(e);
+                            }
+                        });
+                    }, 2000);
+                }
+                else {
+                    alert(data.msg);
+                }
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        });
+    }
+
+    function returnBack() {
+        var returnurl = decodeURIComponent('@Model.returnurl');
+        location.href = returnurl
+    }
+</script>
+</html>

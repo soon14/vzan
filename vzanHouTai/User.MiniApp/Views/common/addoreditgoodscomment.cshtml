@@ -1,0 +1,92 @@
+﻿@model Entity.MiniApp.Conf.GoodsComment
+@{
+    if (ViewBag.SouceFrom != "TemplateDecoration")
+    {
+        Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    }
+    ViewBag.Title = "编辑评论";
+}
+
+<style>
+    .width400{width:400px;}
+
+</style>
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layer/css/layui.css?v=1" />
+
+<div>
+    <table class="table">
+        <tr>
+            <td style="text-align: right;" width="100">用户评论 @ViewBag.appId</td>
+            <td>
+                <div>@Model.Comment</div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">商家回复</td>
+            <td>
+                <textarea class="form-control width400" style="height:100px;" id="Replay">@Model.Replay</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">是否隐藏</td>
+            <td>
+                <div>
+                    <input type="radio" name="invoice" value="1" @(Model.Hidden?"checked":"") />隐藏
+                    <input type="radio" name="invoice" value="0" @(Model.Hidden?"":"checked")/> 显示
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">评论图片</td>
+            <td>
+                @if (Model.CommentImgs != null && Model.CommentImgs.Count > 0)
+                {
+                    <div>
+                        @for(int i =0;i<Model.CommentImgs.Count;i++)
+                        {
+                            <img style="width:100px;height:100px;" src="@Model.CommentImgs[i].thumbnail"/>
+                        }
+                    </div>
+                }
+                
+            </td>
+        </tr>
+    </table>
+    <div style="text-align: center;width: 50%;">
+        <input type="button" class="btn btn-primary width100" id="btnSave" value="提交" />
+        <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+    </div>
+</div>
+
+<script>
+    var currentedit = 0;
+    $(function () {
+        // #region 保存
+        $('#btnSave').on('click', function () {
+            var Replay = $('#Replay').val();
+
+            var invoice = $("input[name='invoice']:checked").val();
+            currentedit = layer.load(1);
+            var hidden = invoice == 1;
+
+            $.post('/common/SaveGoodsComment',
+                {
+                    Replay: Replay,
+                    Hidden: hidden,
+                    Id: '@Model.Id',
+                    AId: '@Model.AId'
+                },
+                function (result) {
+                    if (result.isok) {
+                        layer.msg(result.Msg, { anim: 0, time: 1000 }, function () {
+                            window.location.href = "/common/goodscommentlist?appId=@ViewBag.appId&SouceFrom=@ViewBag.SouceFrom";
+                        });
+                    } else {
+                        layer.msg(result.Msg);
+                        layer.close(currentedit);
+                    }
+                });
+        });
+        // #endregion
+    })
+</script>

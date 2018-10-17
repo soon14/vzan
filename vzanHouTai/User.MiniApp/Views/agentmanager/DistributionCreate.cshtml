@@ -1,0 +1,354 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <meta charset="utf-8" />
+    <title>创建客户</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="" name="author" />
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+    @*<link href="@WebSiteConfig.SourceContent/content/??css/layer/layer.css" rel="stylesheet">*@
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    @*<script src="@(WebSiteConfig.cdnurl)content/layer/layer.js"></script>*@
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+    <script src="//j.vzan.cc/fcontent/plugin/vue.min.js"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/agent/css/zzsc.css" rel="stylesheet" />
+    <style>
+        .fs-title{
+            color:#888;
+        } 
+        .templatelist {
+            width: 100%;
+            float: left;
+        }
+
+            .templatelist li {
+                width: 30%;
+                float: left;
+                margin-right: 3%;
+                margin-bottom: 21px;
+            }
+
+        #msform input[type=checkbox] {
+            width: 20px;
+            margin: 0px 0px 0px -10px;
+        }
+
+        .areadiv .layui-form-select {
+            width: 33%;
+            float: left;
+        }
+
+        .layui-form-select dl {
+            margin-left: 10px;
+        }
+
+        .layui-anim-upbit {
+            text-align: left;
+        }
+
+        .tips {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .color_red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="addcustomer" style="width:100%; height:auto; " hidden>
+        <form id="msform">
+            <!-- progressbar -->
+            <ul id="progressbar">
+                <li class="active"><span class="buzhou">第一步</span></li>
+                <li><span class="buzhou">第二步</span></li>
+                <li><span class="buzhou">第三步</span></li>
+            </ul>
+            <!-- fieldsets -->
+            <fieldset>
+                <input type="hidden" id="sessid" value="@Session["DistributionQrcodekey"]" />
+                <img src="/QrCode/GetQrCode?code=@Session["DistributionQrcodekey"]" alt="" style="border: 8px solid #fff;" />
+                <p class="tips">请让<span style="color:red; font-weight:bold;font-size:18px;">您的分销商</span>用微信扫描二维码创建账号</p>
+                <p class="tips">小提示：可截图二维码后通过微信/QQ发给客户</p>
+                <input type="button" name="next" class="next action-button" value="下一步" v-on:click="checkuserInfo($event)" id="qrCodebtn" hidden />
+            </fieldset>
+            <fieldset>
+                <h2 class="fs-title">请输入分销商基础信息：</h2>
+                <table class="userInfo">
+                    <tr>
+                        <td width="90"><span>*</span>分销商名称：</td>
+                        <td>
+                            <input type="text" placeholder="请输入分销商名称,必填" v-model="username" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="90">备注：</td>
+                        <td>
+                            <input type="text" placeholder="内容不能超过100字" v-model="remark" />
+                        </td>
+                    </tr>
+                    @*<tr>
+                        <td><span>*</span>请设置密码：</td>
+                        <td>
+                            <input type="password" placeholder="请输入分销商登录密码,必填,至少6位数字或字母" v-model="pwd" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><span>*</span>确认密码：</td>
+                        <td>
+                            <input type="password" placeholder="请再次确认登录密码,必填" v-model="pwd_again" />
+                        </td>
+                    </tr>*@
+                </table>
+                <input type="button" name="next" class="next action-button" value="下一步" v-on:click="checksel($event)" />
+            </fieldset>
+
+            <fieldset>
+                <h2 class="fs-title">
+                    请配置分销商预存款和模板价格
+                </h2>
+                <table style="margin-left:71px;">
+                    <tr><td class="color_red" style="font-size:16px;text-align:right;">*预存款余额（元）：</td><td><input type="text" v-model="deposit" /></td></tr>
+                    <tr v-for="template in templateList"><td style="text-align:right;"><span class="color_red">*</span>{{template.TName}}：</td><td><input type="number" v-model="template.ShowPrice" placeholder="大于零，最多两位小数" /></td></tr>
+                </table>
+                <input type="button" name="previous" class="previous action-button" value="上一步" v-on:click="prevbtn($event)" />
+                <input type="button" class="action-button" value="确认无误,马上提交" style="width:130px;" v-on:click="addcustomer()" />
+            </fieldset>
+        </form>
+    </div>
+    <script src="@(WebSiteConfig.cdnurl)content/agent/js/jquery.easing.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/agent/js/zzsc.js"></script>
+    <script>
+        var current_fs, next_fs, previous_fs; //fieldsets
+        var left, opacity, scale, form, layer; //fieldset properties which we will animate
+        layui.use('layer', function () {
+            layer = layui.layer;
+        });
+        var vm = new Vue({
+            el: "#addcustomer",
+            data: {
+                username: '',
+                //pwd: '',
+                //pwd_again: '',
+                deposit: 0,
+                animating: false,
+                templateList: [],
+                remark: '',
+                accountid: '',
+                companyscaleid: 0,
+                industryid: 0,
+                isopen: true
+            },
+            methods: {
+                //第一步
+                checkuserInfo: function (e) {
+                    this.nextbtn(e);
+                },
+                //第二步
+                checksel: function (e) {
+                    if ($.trim(this.username) == '') {
+                        layer.msg("请填写分销商名称");
+                        return;
+                    }
+                    if (this.username.length > 28) {
+                        layer.msg("分销商名称过长，请勿超过28字");
+                        return;
+                    }
+                    if (!(/^[^\s]+$/).test($.trim(this.username))) {
+                        layer.msg("分销商名称不能含有空格");
+                        return;
+                    }
+                    if ($.trim(this.remark).length > 100) {
+                        layer.msg("备注内容不能超过100字");
+                        return;
+                    }
+                    //if (!(/^[a-zA-Z\d]+$/).test(this.pwd)) {
+                    //    layer.msg("只能用数字或者字母作为密码");
+                    //    return;
+                    //}
+                    //if (this.pwd.length < 6) {
+                    //    layer.msg("密码长度不够，请输入至少6位密码");
+                    //    return;
+                    //}
+                    //if (this.pwd != this.pwd_again) {
+                    //    layer.msg("两次密码不一致");
+                    //    return;
+                    //}
+                    this.nextbtn(e);
+                },
+                //切换下一步动作
+                nextbtn: function (e) {
+                    var _this = e.target;
+                    if (this.animating) return false;
+                    this.animating = true;
+                    current_fs = $(_this).parent();
+                    next_fs = $(_this).parent().next();
+
+                    //activate next step on progressbar using the index of next_fs
+                    $("#progressbar li").eq($("fieldset").index(next_fs)).addClass("active");
+
+                    //show the next fieldset
+                    next_fs.show();
+                    //hide the current fieldset with style
+                    current_fs.animate({ opacity: 0 }, {
+                        step: function (now, mx) {
+                            //as the opacity of current_fs reduces to 0 - stored in "now"
+                            //1. scale current_fs down to 80%
+                            scale = 1 - (1 - now) * 0.2;
+                            //2. bring next_fs from the right(50%)
+                            left = (now * 50) + "%";
+                            //3. increase opacity of next_fs to 1 as it moves in
+                            opacity = 1 - now;
+                            current_fs.css({ 'transform': 'scale(' + scale + ')' });
+                            next_fs.css({ 'left': left, 'opacity': opacity });
+                        },
+                        duration: 800,
+                        complete: function () {
+                            current_fs.hide();
+                            vm.animating = false;
+                        },
+                        //this comes from the custom easing plugin
+                        easing: 'easeInOutBack'
+                    });
+                },
+                //切换上一步动作
+                prevbtn: function (e) {
+                    var _this = e.target;
+                    if (this.animating) return false;
+                    this.animating = true;
+
+                    current_fs = $(_this).parent();
+                    previous_fs = $(_this).parent().prev();
+
+                    //de-activate current step on progressbar
+                    $("#progressbar li").eq($("fieldset").index(current_fs)).removeClass("active");
+
+                    //show the previous fieldset
+                    previous_fs.show();
+                    //hide the current fieldset with style
+                    current_fs.animate({ opacity: 0 }, {
+                        step: function (now, mx) {
+                            //as the opacity of current_fs reduces to 0 - stored in "now"
+                            //1. scale previous_fs from 80% to 100%
+                            scale = 0.8 + (1 - now) * 0.2;
+                            //2. take current_fs to the right(50%) - from 0%
+                            left = ((1 - now) * 50) + "%";
+                            //3. increase opacity of previous_fs to 1 as it moves in
+                            opacity = 1 - now;
+                            current_fs.css({ 'left': left });
+                            previous_fs.css({ 'transform': 'scale(' + scale + ')', 'opacity': opacity });
+                        },
+                        duration: 800,
+                        complete: function () {
+                            current_fs.hide();
+                            vm.animating = false;
+                        },
+                        //this comes from the custom easing plugin
+                        easing: 'easeInOutBack'
+                    });
+                },
+                //获取模板列表
+                gettemplate: function () {
+                    $.post("/agentmanager/GetXcxTemplate?actionType=-1", function (data) {
+                        vm.templateList = data.dataObj;
+                    });
+                },
+                //添加客户
+                addcustomer: function () {
+                    //if (this.deposit<1000) {
+                    //    layer.msg("预存款必须1000以上");
+                    //    return;
+                    //}
+                    //if (this.remark.length > 200) {
+                    //    layer.msg("内容超过200字");
+                    //    return;
+                    //}
+                    var isright = true;
+                    $.each(this.templateList, function (i, obj) {
+                        //this; //this指向当前元素
+                        //i; //i表示Array当前下标
+                        //value; //value表示Array当前元素
+                        console.log(this.ShowPrice);
+                        if (this.ShowPrice < 0 || !(/^[0-9]+([.]{1}[0-9]{1,2})?$/).test($.trim(this.ShowPrice)) || this.ShowPrice >9999999.99) {
+                            isright = false;
+                            return;
+                        }
+                        this.Price = this.ShowPrice * 100;
+                    });
+                    if (!isright) {
+                        layer.msg("模板价格填写范围：0~9999999.99，最多两位小数");
+                        return;
+                    }
+                    if (this.deposit < 0 || !(/^[0-9]+([.]{1}[0-9]{1,2})?$/).test($.trim(this.deposit)) || this.deposit>9999999.99) {
+                        layer.msg("预存款填写范围：0~9999999.99，最多两位小数");
+                        return;
+                    }
+                    var postdata = {
+                        useraccountid: this.accountid,
+                        username: $.trim(this.username),
+                        deposit: this.deposit * 100,
+                        //pwd: this.pwd,
+                        //pwd_again: this.pwd_again,
+                        templateList: JSON.stringify(this.templateList),
+                        remark: this.remark
+                    }
+                    console.log(postdata);
+                    $.post("/agentmanager/AddDistribution", postdata, function (data) {
+
+                        if (data.isok) {
+                            layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                layer.load(1);
+                                window.parent.location.reload();//do something
+                            });
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                }
+            },
+            created: function () {
+                $("#addcustomer").show();
+                this.gettemplate();
+            }
+        })
+
+        function wxLogin() {
+            if (!vm.isopen) return;
+            var key = $('#sessid').val();
+            $.ajax({
+                type: "POST",
+                url: "/agentmanager/wxlogin",
+                xhrFields: {
+                    withCredentials: true
+                },
+                data: { wxkey: key, type: 1 },
+                success: function (returnData) {
+
+                    if (returnData.isok) {
+                        //if (returnData.Msg == "olddistribution") {
+                        //    window.location.href = returnData.dataObj;
+                        //} else {
+                            vm.isopen = false;
+                            vm.accountid = returnData.Msg;
+                            $("#qrCodebtn").click();
+                       // }
+                    }
+                }
+            });
+        }
+        $(function () {
+            setInterval(wxLogin, 2000);
+        })
+
+    </script>
+</body>
+</html>

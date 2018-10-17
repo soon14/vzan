@@ -1,0 +1,437 @@
+﻿@model AgentWebSiteInfo
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "基础设置";
+    ViewBag.PageType = -1;
+}
+<style>
+    .form-control { width: 20%; display: inline-block; }
+
+    .i_Posters { height: 25%; margin-bottom: 2px; border-radius: 5px; }
+        .i_Posters > div { display: inline-block; vertical-align: middle; margin-right: 10px; box-shadow: 0 0 2px #ccc; }
+    .DelPoster { position: absolute; right: 5px; top: 5px; }
+        .DelPoster .glyphicon-remove { font-size: 14px; color: #ccc; padding: 5px; border: 1px solid #ccc; border-radius: 100%; }
+    .plus-button { box-shadow: none !important; border: 2px dashed #aaa; color: #888; cursor: pointer; text-align: center; height: 120px; transition: all .2s cubic-bezier(.7,0,.3,1); width: 120px; }
+        .plus-button .plus { font-size: 100px; line-height: 1; font-weight: 700; margin-top: -10px; }
+    .plus-label { font-size: 14px; position: relative; text-align: center; top: -2px; }
+</style>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<div id="app" v-cloak>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td style="text-align: right;">公司Logo：</td>
+            <td align="left">
+                <div class="pimg">
+                    <img style="height:150px;width:150px;" :src="agentWebSiteInfo.seoConfigModel.logo" v-if="agentWebSiteInfo.seoConfigModel.logo!=null&&agentWebSiteInfo.seoConfigModel.logo!=''" v-on:click="UploadImg(0)" />
+                    <div class="plus-button" v-on:click="UploadImg(0)" v-else>
+                        <div class="s-image-uploader-wrapper">
+                            <div>
+                                <div class="plus">+</div>
+                                <div class="plus-label">上传图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <label class="forinputmassage" style="color:#ccc;">建议尺寸：80x50px</label>
+            </td>
+
+        </tr>
+        @*<tr>
+            <td style="text-align: right;">页面icon图标：</td>
+            <td align="left">
+                <div class="pimg">
+                    <img style="height:150px;width:150px;" :src="agentWebSiteInfo.seoConfigModel.iconImg" v-if="agentWebSiteInfo.seoConfigModel.iconImg!=null&&agentWebSiteInfo.seoConfigModel.iconImg!=''" v-on:click="UploadImg(1)" />
+                    <div class="plus-button" v-on:click="UploadImg(1)" v-else>
+                        <div class="s-image-uploader-wrapper">
+                            <div>
+                                <div class="plus">+</div>
+                                <div class="plus-label">上传图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <label class="forinputmassage" style="color:#ccc;">建议尺寸：16x16或者32x32px</label>
+            </td>
+
+        </tr>*@
+        <tr>
+            <td style="text-align: right;">页面icon图标：</td>
+            <td align="left">
+                <div class="pimg">
+                    <img style="height:150px;width:150px;" :src="agentWebSiteInfo.seoConfigModel.iconImg" v-if="agentWebSiteInfo.seoConfigModel.iconImg!=null&&agentWebSiteInfo.seoConfigModel.iconImg!=''" v-on:click="UploadImg(1)" />
+                    <div class="plus-button" v-on:click="UploadImg(1)" v-else>
+                        <div class="s-image-uploader-wrapper">
+                            <div>
+                                <div class="plus">+</div>
+                                <div class="plus-label">上传图片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <label class="forinputmassage" style="color:#ccc;">建议尺寸：16x16或者32x32px</label>
+            </td>
+
+        </tr>
+
+        <tr>
+            <td style="text-align: right;" width="20%">公司名称：<label style="color: red">*</label></td>
+            <td>
+                <input name="companyName" maxlength="20" placeholder="1-20字符" class="form-control width300" v-model="agentWebSiteInfo.seoConfigModel.companyName" />
+
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">网站描述：</td>
+            <td>
+                <textarea class="form-control" maxlength="80" style="resize:none;margin: 0px; width: 390px; height: 230px;display:block;" v-model="agentWebSiteInfo.seoConfigModel.description">{{agentWebSiteInfo.seoConfigModel.description}}</textarea>
+                <label class="forinputmassage" style="color:#ccc;">显示于搜索引擎结果以及社交媒体分享内容中,限制80字符内</label>
+            </td>
+        </tr>
+
+
+        <tr>
+            <td style="text-align: right;">网站关键词优化：</td>
+            <td>
+                <input name="keyWords" maxlength="30" type="text" placeholder="关键词" class="form-control width300" style="display:block;" v-model="agentWebSiteInfo.seoConfigModel.keyWords">
+                <label class="forinputmassage" style="color:#ccc;">可优化搜索引擎结果，请用英文逗号","分隔限制30字符内</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">网站备案号：</td>
+            <td>
+                <input name="ICPNumber" maxlength="30" type="text" placeholder="网站备案号" class="form-control width300" style="display:block;" v-model="agentWebSiteInfo.seoConfigModel.ICPNumber">
+                <label class="forinputmassage" style="color:#ccc;">网站备案号,工信部可查询,例如:粤ICP备16043221号-2</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;" width="20%">域名设置：<label style="color: red">*</label></td>
+            <td>
+                <div>
+                    <div>
+                        <label><input type="radio" name="domainType" value="0" v-model="agentWebSiteInfo.domainType" v-on:click="clearDomain()" />自定义域名</label>
+                        <input name="domian" type="text" placeholder="自定义域名" class="form-control width300" v-if="agentWebSiteInfo.domainType==0" v-model="agentWebSiteInfo.domian" />
+                    </div>
+                    <label class="forinputmassage" style="color:#ccc;">请在此输入你已经拥有的自定义域名。停止使用自定义域名，请清除后保存。（只有自定义域名可参与百度推广等营销）</label>
+                </div>
+                <div>
+                    <div>
+                        <label><input type="radio" name="domainType" value="1" v-model="agentWebSiteInfo.domainType" v-on:click="clearDomain()" />小未程序二级域名</label>
+                        <div style="display:inline-block;" v-if="agentWebSiteInfo.domainType==1">
+                            <input name="domian" type="text" placeholder="自定义域名" class="form-control" v-model="agentWebSiteInfo.domian" style="width:50%" /> .xiaochengxu.com.cn
+                        </div>
+                    </div>
+                    <label class="forinputmassage" style="color:#ccc;">设置你的二级域名（可随时更改）</label>
+                </div>
+
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" value="保存" v-on:click="saveInfo()" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+
+
+        <div style="display: none;">
+            <button id="browse_file_img">上传图片</button>
+            <button id="start_upload_img" v-on:click="uploadFile('img')">开始上传</button>
+        </div>
+    </table>
+
+</div>
+
+<script>
+    var mask;
+    var MAX_IMG_SIZE = 1, MAX_AUDIO_SIZE = 10, MAX_VIDEO_SIZE = 20;
+    var uploader = {
+        img: {
+            filePath: ''
+        },
+        video: {
+            filePath: ''
+        },
+        audio: {
+            filePath: ''
+        }
+    };
+    var app = new Vue({
+        el: "#app",
+        data: {
+            agentWebSiteInfo:@Html.Raw(JsonConvert.SerializeObject(Model)),
+        },
+        mounted: function () {
+            var that = this;
+            that.initUploader('img');
+        },
+        methods: {
+            saveInfo:function(){
+                var that=this;
+                if(that.agentWebSiteInfo.seoConfigModel.companyName.length<=0||that.agentWebSiteInfo.seoConfigModel.companyName=='')
+                {
+                    layer.msg("请填写公司名称");
+                    return;
+                }
+
+                if(that.agentWebSiteInfo.domian==''||that.agentWebSiteInfo.domian.length<=0){
+                    layer.msg("请填写合法的域名");
+                    return ;
+                }
+
+                var fdStart = that.agentWebSiteInfo.domian.indexOf("xn--");
+                if(fdStart == 0){
+                    layer.msg("中文域名punycode编码后的,请联系客服");
+                    return ;
+                    
+                }
+
+                if(that.agentWebSiteInfo.domainType==0){
+                    var domainArry=that.agentWebSiteInfo.domian.split(';');
+                    var notUseDomainArry=["www.xiaochengxu.com.cn","www.xiaoweichengxu.cn","www.xiaoweichengxu.com.cn","www.xw666.net","www.xwcx6.com","www.d-zan.net","www.dzan6.cn","www.xiaowei666.net","www.xwcx666.com","www.xiaowei66.cn","xiaoweichengxu.cn","xiaoweichengxu.com.cn","xw666.net","xwcx6.com","d-zan.net","dzan6.cn","xiaowei666.net","xwcx666.com","xiaowei66.cn","xiaochengxu.com.cn"];
+                    for(var i=0;i<domainArry.length; i++){
+                        if (!/^([a-zA-Z0-9-\u4E00-\u9FA5]([a-zA-Z0-9\-\u4E00-\u9FA5]{0,61}[a-zA-Z0-9-\u4E00-\u9FA5])?\.)+[a-zA-Z]{2,6}$/.test(domainArry[i])) {
+                            layer.msg(domainArry[i]+"域名不合法");
+                            return ;
+                        }
+
+                        if( isInArray(notUseDomainArry,domainArry[i])){
+                            layer.msg(domainArry[i]+"域名被占用了");
+                            return ;
+                        }
+
+                    }
+
+                }
+
+                var saveMask = layer.load(0);
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/agentmanager/SetWebSiteIndex',
+                    data: {agentWebSiteInfo:that.agentWebSiteInfo },
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.close(saveMask);
+                        layer.msg(data.msg);
+                        if(data.isok){
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (rdata) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+            UploadImg: function (type) {
+                app.uploadImgType = type;
+                $('#browse_file_img').click();
+            },
+            clearDomain:function(){
+                var that = this;
+                that.agentWebSiteInfo.domian="";
+            },
+            initUploader: function (type) {
+                var that = this;
+                var options = {
+                    browse_button: 'browse_file_' + type,
+                    url: 'http://oss.aliyuncs.com',
+                    flash_swf_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.swf',
+                    silverlight_xap_url: '@(WebSiteConfig.cdnurl)content/aliosslib/lib/lib/plupload-2.1.2/js/Moxie.xap',
+                    filters: {
+
+                    },
+                    multi_selection: false
+
+                };
+                switch (type) {
+                    case 'img':
+
+                        options.filters = {
+
+                            mime_types: [
+                                {
+                                    title: "图片文件",
+                                    extensions: "jpg,jpeg,gif,png"
+                                },
+                            ],
+                            //max_file_size: '5mb'
+                        }
+                        break;
+                    case 'video':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "视频文件",
+                                    extensions: "mp4,m3u8",
+                                },
+                            ],
+                            //max_file_size: '20mb'
+                        }
+
+                        break;
+                    case 'audio':
+                        options.filters = {
+
+                            mime_types: [ //只允许上传图片和zip文件
+                                {
+                                    title: "音频文件",
+                                    extensions: "mp3",
+                                },
+                            ],
+                            //max_file_size: '10mb'
+                        }
+
+
+                        break;
+                }
+                //如果还有当前类型的上传组件实例的话则先把其销毁
+                if (uploader[type].instance) {
+                    console.log('destroy uploader :' + type);
+                    uploader[type].instance.destroy();
+                }
+                uploader[type].instance = new plupload.Uploader(options);
+
+                uploader[type].instance.init();
+
+                uploader[type].instance.bind('BeforeUpload', function (d, f) {
+
+
+                    //取到文件后缀名
+
+                    var fileName = f.name;
+                    var ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+
+                    //转成Mb
+                    var fileSize = f.size / 1024 / 1024;
+                    var flag = true;
+
+                    switch (type) {
+                        case 'img':
+                            if (!['jpg', 'png', 'gif', 'jpeg'].contains(ext)) {
+                                layer.msg('请上传正确的图片格式，后缀名可为：jpg,png,gif,jpeg');
+                                flag = false;
+                            }
+                            if (fileSize > MAX_IMG_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_IMG_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'audio':
+                            if (!['mp3'].contains(ext)) {
+                                layer.msg('请上传正确的音频格式文件，后缀名可为：mp3');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_AUDIO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_AUDIO_SIZE + 'Mb');
+                                flag = false;
+
+                            }
+                            break;
+                        case 'video':
+                            if (!['mp4', 'm3u8'].contains(ext)) {
+                                layer.msg('请上传正确的视频格式文件，后缀名可为：mp4,m3u8');
+                                flag = false;
+
+                            }
+                            if (fileSize > MAX_VIDEO_SIZE) {
+                                layer.msg('文件最大支持 ' + MAX_VIDEO_SIZE + 'Mb');
+                                flag = false;
+                            }
+                            break;
+                    }
+                    //如果在上传中遇到文件类型和文件大小不正确的错误时重新初始上传组件
+                    if (!flag) {
+                        that.initUploader(type);
+                    }
+
+                    uploader.token.key += '.' + ext;
+                    uploader[type].instance.setOption(uploader.token);
+
+                });
+
+                uploader[type].instance.bind('FilesAdded', function (uploader, files) {
+                    $('#start_upload_' + type).click();
+                });
+                uploader[type].instance.bind('UploadProgress', function (uploader, file) {
+
+                    mask = layer.load(0, {
+                        content: file.percent + "%", shade: [0.8, '#393D49'],
+
+                        success: function (layero) {
+                            layero.find('.layui-layer-content').css('color', 'white').css('font-size', '2rem').css('background', 'none');
+                        }
+                    });
+                });
+                uploader[type].instance.bind('UploadComplete', function (d, f, e) {
+
+
+                    layer.close(mask);
+                    var fileName = f[0].name;
+                    var fileExt = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length);
+                    var filePath = uploader[type].filePath + '.' + fileExt;
+                    if (that.uploadImgType == 0) {
+                        that.agentWebSiteInfo.seoConfigModel.logo = filePath;
+
+                    }else{
+                        that.agentWebSiteInfo.seoConfigModel.iconImg = filePath;
+                    }
+
+                    //上传完成后重新初始上传组件
+                    that.initUploader(type);
+
+                });
+
+            },
+            uploadFile: function (type) {
+                //   var that = this;
+                $.get('/upload/initupload', {
+                    type: type
+                }).then(function (data) {
+                    var filePath = data.dir + data.key;
+                    uploader[type].filePath = data.host + '/' + filePath;
+
+                    var multipartParams = {
+                        //因为不知道生成随机文件名的规则，所以，存储原始文件名
+                        'key': filePath,
+                        'policy': data.policy,
+                        'OSSAccessKeyId': data.accessid,
+                        'success_action_status': '200',
+                        'signature': data.signature
+                    };
+                    uploader.token = multipartParams;
+                    uploader[type].instance.setOption({
+                        'url': data.host,
+                        'multipart_params': multipartParams
+                    });
+                    uploader[type].instance.start();
+                })
+
+            }
+
+        }
+
+
+    });
+
+
+    function isInArray(arr,value){
+        for(var i = 0; i < arr.length; i++){
+            if(value === arr[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+</script>

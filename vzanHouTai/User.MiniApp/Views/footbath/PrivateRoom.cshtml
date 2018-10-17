@@ -1,0 +1,175 @@
+﻿
+@{
+    ViewBag.Title = "包间管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+<style>
+    .layui-table, #pages { width: 800px; }
+    .layui-table thead th, .layui-table td { text-align: center; }
+    .btn-primary, .btn-primary:active, .btn-primary:focus { background-color: #2196f3; border-color: #2196f3; }
+    .btn-primary:hover, .btn-primary:active:hover { background-color: #337ab7; border-color: #337ab7; }
+    .btnbox { text-align: center; margin-top: 16px; margin-bottom: 5px; }
+    /*#editModal { width: 350px }*/
+    .modal-body table { margin: 0 auto; }
+    .modal-body table tr { height: 50px; }
+    .modal-body input[type='text'] { width: 200px; }
+    .modal-content { width: 350px; }
+    button.close{position:inherit; width:auto;height:auto;}
+</style>
+<div id="app" v-cloak>
+    <button type="button" class="btn btn-primary" v-on:click="AddInfo()"><span class="glyphicon glyphicon-plus" aria-hidden="true" style="font-size:12px;"></span>新增包间</button>
+    <table class="layui-table">
+        <thead>
+            <tr>
+                <th>包间名称</th>
+                <th>容纳人数</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tr v-for="(room,index) in roomList">
+            <td>{{room.name}}</td>
+            <td>{{room.count}}</td>
+            <td>
+                <a href="javascript:;" class="editbtn" v-on:click="EditInfo(index)">编辑</a>
+                <a href="javascript:;" class="color-red">删除</a>
+            </td>
+        </tr>
+        <tr v-if="recordCount<=0"><td colspan="3">还没有包间</td></tr>
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+
+    <!--#region 新增编辑-->
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">包间管理</h4>
+                </div>
+                <div class="modal-body">
+                    <table>
+                        <tr>
+                            <td align="right">包间名称：</td>
+                            <td align="left"><input type="text" class="form-control" placeholder="不超过20字" v-model="roomInfo.name" /></td>
+                        </tr>
+                        <tr>
+                            <td align="right">容纳人数：</td>
+                            <td align="left">
+                                <input type="text" class="form-control" placeholder="1~999人/包间" v-model="roomInfo.count" />
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="btnbox">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" v-on:click="SaveInfo()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--#endregion-->
+
+
+</div>
+<script>
+    var form;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            roomList:[],
+            recordCount: 0,
+            postdata: {
+                appId:@ViewBag.appId,
+                pageIndex:1,
+                pageSize:8
+            },
+            roomInfo: {
+                appId:@ViewBag.appId,
+                id: 0,
+                name: '',
+                count: 1,
+            }
+        },
+        methods: {
+            GetList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetRoomList", this.postdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.roomList = data.roomList;
+                        app.recordCount = data.recordCount;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            app.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.GetList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //编辑
+            EditInfo: function (index) {
+                app.roomInfo.id = app.roomList[index].id;
+                app.roomInfo.name = app.roomList[index].name;
+                app.roomInfo.count = app.roomList[index].count;
+                $('#editModal').modal('show');
+            },
+            //新增
+            AddInfo: function () {
+                app.roomInfo.id = 0;
+                app.roomInfo.name = '';
+                app.roomInfo.count = 1;
+                $('#editModal').modal('show');
+            },
+            //保存
+            SaveInfo: function () {
+                if ($.trim(app.roomInfo.name).length > 20) {
+                    layer.msg("包间名称不能超过20字");
+                    return;
+                }
+                if ($.trim(app.roomInfo.name).length <= 0) {
+                    layer.msg("请输入包间名称");
+                    return;
+                }
+                app.roomInfo.count = parseInt(app.roomInfo.count);
+                if (app.roomInfo.count < 1 || app.roomInfo.count > 999) {
+                    layer.msg("容纳人数：请输入1~999之间的整数");
+                    return;
+                }
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveRoomInfo", app.roomInfo, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        $('#editModal').modal('hide');
+                        app.postdata.pageIndex = 1;
+                        app.GetList();
+                    }
+                })
+            }
+
+        },
+        created: function () {
+            this.GetList();
+        }
+    })
+</script>

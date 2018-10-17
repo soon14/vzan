@@ -1,0 +1,323 @@
+﻿@{
+    ViewBag.Title = "Setting";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    List<PinPicture> picList = (List<PinPicture>)ViewData["picList"];
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+@model PinPlatform
+@section styles{
+    <style>
+        .layui-table th, .layui-table td { text-align: center !important; }
+        .layui-form-switch { margin-top: 0px !important; width: 56px !important; line-height: 25px !important; height: 25px !important; }
+    </style>
+}
+<body class="gray-bg">
+    <!--#region 广告列表 开始-->
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3 style="float:left;">首页广告设置（仅限5张）</h3>
+            @if (picList == null || (picList != null && picList.Count < 5))
+            {
+                <a class="btn btn-primary radius" style="float:right;margin-right:20px;" href="/pin/config/AddPic?aid=@aid">新增广告</a>
+            }
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list">
+            <table class="layui-table" lay-skin="line">
+                <thead>
+                    <tr>
+                        <th>图片</th>
+                        <th>跳转功能</th>
+                        <th>跳转目标</th>
+                        <th>排序</th>
+                        <th>编辑时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (picList != null && picList.Count > 0)
+                    {
+                        foreach (var pic in picList)
+                        {
+                            <tr>
+                                <td><img src="@pic.img" width="100" /></td>
+                                <td>
+                                    @if (pic.funModel != null)
+                                    {
+                                        <p>@pic.funModel.name</p>
+                                    }
+                                </td>
+                                <td>@pic.target</td>
+                                <td>@pic.sort</td>
+                                <td>@pic.addTimeStr</td>
+                                <td><a class="btn btn-danger btn-sm" href="javascript:;" onclick="deletePic(@pic.Id)">删除</a></td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" style="text-align:center;">还没有设置广告</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!--#endregion 广告列表 结束-->
+    <!--#region 平台配置 开始-->
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3 style="float:left;">平台配置</h3>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list layui-form">
+           
+            <label>客服电话：</label>
+            <input type="checkbox" name="openKf" lay-skin="switch" lay-text="开启|关闭" @(Model.openKf == 1 ? "checked" : "") lay-filter="openKf">
+            <input type="hidden" id="openKf" value="@Model.openKf" />
+            <input type="text" class="form-control" style="width: 250px;display: inline;" id="phone" placeholder="请输入客服电话" value="@Model.kfPhone" />
+            <button class="btn btn-primary radius" type="submit" id="saveSetting" style="margin:0 40px;" onclick="saveSetting()"> 保存</button>
+            <a href="/common/wxconcat?appId=@(aid)&id=@(aid)&aid=@aid&type=22&mode=foodmutistore" class="btn btn-primary radius" type="button"> 接入微信网页客服</a>
+            <div style="margin-top:20px;" class="form-inline">
+                <label>客服微信：</label>
+                <input type="text" class="form-control" style="width:300px;" id="ServiceWeiXin" value="@(Model.ServiceWeiXin)" placeholder="请输入客服微信号" /><span style="color:#808080;padding-left:20px;">供用户复制，添加客服微信为好友</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>免费体验：</label>
+                <input type="text" class="form-control" style="width:70px;display: inline;" value="@Model.freeDays" id="freeDays" />天
+                <span style="color:#808080;margin-left:20px;">设置新用户入驻平台可免费体验天数，过期后，店铺自动关闭，商品不再展示</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>代理费用：</label>
+                <input type="number" class="form-control" style="width:70px;display: inline;" value="@Model.agentFeeStr" id="agentFee" />元
+                <label style="margin-left: 19px;">代理保护期：</label>
+                <input type="number" class="form-control" style="width:70px;display: inline;" value="@Model.agentProtectDays" id="agentProtectDays" />天
+            </div>
+            <div style="margin:20px 0">
+                <label>入驻提成：</label>
+                <input type="number" class="form-control" style="width:70px;display: inline;" value="@(Model.agentExtract*0.1)" id="agentExtract" />%
+                <span style="color:#808080;margin-left:20px;">邀请代理商，返佣代理费百分比（小数点保留一位）</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>订单提成：</label>
+                <input type="number" class="form-control" style="width:70px;display: inline;" value="@(Model.orderExtract*0.1)" id="orderExtract" />%
+                <span style="color:#808080;margin-left:20px;">发展商户分润交易总额百分比（小数点保留一位）</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>自动完成交易时间：</label>
+                <input type="text" class="form-control" style="width:80px;display: inline;" value="@Model.orderSuccessDays" id="orderSuccessDays" placeholder="默认7天" />天
+                <span style="color:#808080;margin-left:20px;">小于等于零则不会自动完成交易</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>分佣提成：</label>
+                <div style="display:inline-block;">
+                    <label>直接分佣比例:</label>
+                    <input type="number" class="form-control" style="width:100px;display: inline;" value="@(Model.FirstExtract*0.1)" id="firstExtract" /><span>%</span>
+                </div>
+                <div style="display:inline-block;margin-left:20px;">
+                    <label>间接分佣比例:</label>
+                    <input type="number" class="form-control" style="width:100px;display: inline;" value="@(Model.SecondExtract*0.1)" id="secondExtract" /><span>%</span>
+                </div>
+                <span style="color:#808080;margin-left:20px;">百分比（小数点保留一位）</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>代理商查询入口：</label>
+                <input type="checkbox" name="agentSearchPort" lay-skin="switch" lay-text="开启|关闭" @(Model.AgentSearchPort == 1 ? "checked" : "") lay-filter="agentSearchPort">
+                <input type="hidden" id="agentSearchPort" value="@Model.AgentSearchPort" />
+            </div>
+            <div style="margin:20px 0">
+                <label>入驻开关：</label>
+                <input type="checkbox" name="AddStorePort" lay-skin="switch" lay-text="开启|关闭" @(Model.AddStorePort == 1 ? "checked" : "") lay-filter="AddStorePort">
+                <input type="hidden" id="AddStorePort" value="@Model.AddStorePort" />
+            </div>
+        </div>
+    </div>
+    <!--#endregion 平台配置 结束-->
+    <!--#region 入驻宣传 开始-->
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3 style="float:left;">入驻宣传</h3>
+            <button class="btn btn-primary radius" type="submit" id="saveSetting" style="margin:0 40px;" onclick="savePoster()"> 保存</button>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list layui-form">
+            <textarea name="description" placeholder="入驻宣传..." style="width:700px; height:200px;" id="poster">@Model.poster</textarea>
+        </div>
+    </div>
+
+    <!--#endregion 入驻宣传 结束-->
+
+</body>
+@section scripts{
+    <script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+    <script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+
+    <script>
+        layui.use('form', function () {
+            var form = layui.form;
+            form.on('switch(openKf)', function (data) {
+                if (data.elem.checked) {
+                    $("#openKf").val(1);
+                } else {
+                    $("#openKf").val(0);
+                }
+                console.log($("#openKf").val());
+            });
+           
+            form.on('switch(agentSearchPort)', function (data) {
+                if (data.elem.checked) {
+                    $("#agentSearchPort").val(1);
+                } else {
+                    $("#agentSearchPort").val(0);
+                }
+                console.log($("#agentSearchPort").val());
+            });
+            form.on('switch(AddStorePort)', function (data) {
+                if (data.elem.checked) {
+                    $("#AddStorePort").val(1);
+                } else {
+                    $("#AddStorePort").val(0);
+                }
+                console.log($("#AddStorePort").val());
+            });
+
+        });
+        function deletePic(id) {
+            layer.confirm("是否确定删除此广告?", function () {
+                var layerIndex = layer.load(2);
+                $.post("/pin/config/delPic", { aid:@aid,id: id }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.code == 1) {
+                        window.location.reload();
+                    }
+                })
+            })
+        }
+        function saveSetting() {
+            var openKf = $("#openKf").val();
+            var OpenRuzhu = $("#OpenRuzhu").val();
+            var kfPhone = $.trim($("#phone").val());
+            var freeDays = $("#freeDays").val();
+            if (openKf == 1 && kfPhone.length <= 0) {
+                layer.msg("请输入客服号码");
+                return;
+            }
+            var agentFee = $("#agentFee").val();
+            var reg = /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
+            if (!reg.test(agentFee)) {
+                layer.msg("请输入正确的金额");
+                return;
+            }
+            agentFee = parseInt(agentFee * 100);
+            if (agentFee <= 0) {
+                layer.msg("请输入大于零的金额");
+                return;
+            }
+            var agentExtract = $("#agentExtract").val();
+            reg = /^\d*\.{0,1}\d{0,1}$/;
+            if (!reg.test(agentExtract) || agentExtract<0) {
+                layer.msg("入驻提成请输入大于零的数，小数保留一位");
+                return;
+            }
+            agentExtract = parseInt(agentExtract * 10);
+            var orderExtract = $("#orderExtract").val();
+            if (!reg.test(orderExtract) || orderExtract<0) {
+                layer.msg("订单提成请输入大于零的数，小数保留一位");
+                return;
+            }
+            orderExtract = parseInt(orderExtract * 10);
+            var agentProtectDays = $("#agentProtectDays").val();
+            if (agentProtectDays <= 0) {
+                layer.msg("代理保护期请输入大于零的天数");
+                return;
+            }
+            var orderSuccessDays = $("#orderSuccessDays").val();
+            var ServiceWeiXin = $("#ServiceWeiXin").val();
+            if ($.trim(ServiceWeiXin).length <= 0) {
+                layer.msg("请输入客服微信号")
+                return;
+            }
+
+            var firstExtract = $("#firstExtract").val();
+            reg = /^\d*\.{0,1}\d{0,1}$/;
+            if (!reg.test(firstExtract) || firstExtract<0) {
+                layer.msg("直接分佣比例请输入大于零的数，小数保留一位");
+                return;
+            }
+          
+            var secondExtract = $("#secondExtract").val();
+           
+            if (!reg.test(secondExtract) || secondExtract<0) {
+                layer.msg("间接分佣比例请输入大于零的数，小数保留一位");
+                return;
+            }
+
+            firstExtract=parseInt(firstExtract*10);
+            secondExtract=parseInt(secondExtract*10);
+            if ((firstExtract+secondExtract)>1000||(firstExtract+secondExtract)<0) {
+                layer.msg("直接跟间接分佣比例请输入大于零的数,并且两者之和比例不能大于100%，小数保留一位");
+                return;
+            }
+
+            var agentSearchPort = $("#agentSearchPort").val();
+            var addStorePort=$("#AddStorePort").val();
+
+            var layerIndex = layer.load(2);
+            $.post("/pin/config/saveSetting", { aid:@aid,OpenRuzhu, openKf, kfPhone, freeDays, agentFee, agentExtract, orderExtract, agentProtectDays, ServiceWeiXin, orderSuccessDays,firstExtract,secondExtract,agentSearchPort,addStorePort:addStorePort }, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.msg);
+            })
+        }
+        //保存宣传入驻
+        function savePoster() {
+            var poster = escape(comeditor.getContent());
+            if (poster.length <= 0) {
+                layer.msg("请填写宣传内容");
+                return;
+            }
+            var layerIndex = layer.load(2);
+            $.post("/pin/config/SavePoster", { aid:@aid,poster }, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.msg);
+            })
+        }
+        //富文本编辑器
+        var comeditor = null;
+        $(function () {
+            $('textarea[name="description"]').attr('id', 'editor_id_g_description');
+            if (comeditor != null) {
+                comeditor.reset();
+            }
+
+            var mytoolbars = [[
+                'source', 'removeformat', 'formatmatch', '|',
+                'fontsize', 'fullscreen', '|',
+                'bold', 'italic', 'underline', 'forecolor', 'backcolor', '|',
+                'indent', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|',
+                'rowspacingtop', 'rowspacingbottom', 'lineheight', '|',
+                'insertunorderedlist', 'insertorderedlist', '|',
+                'simpleupload', 'insertimage',
+            ]];
+            //编辑器
+            comeditor = UE.getEditor('editor_id_g_description', {
+                toolbars: [
+                    ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                    ['simpleupload', 'insertimage', 'insertvideo', 'paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain']
+                ],
+                imageUrl: "/Upload/Image?cityid=" + 1088,
+                autoHeight: true
+            });
+            comeditor.ready(function () {
+                
+               // comeditor.setContent(unece);
+            });
+            comeditor.addListener("contentChange", function () {
+                //if (comeditor != null) {
+                //    that.p.description = comeditor.getContent();
+                //}
+            });
+        })
+    </script>
+}

@@ -1,0 +1,195 @@
+﻿@model System.Data.DataTable
+@{
+    ViewBag.Title = "SalesRank";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+    int aId = ViewBag.aId;
+    int storeId = ViewBag.storeId;
+}
+
+@section styles{
+    <style type="text/css">
+        .four-grid { color: #ffffff; }
+        .four-agileits { background: #ff4a43; text-align: center; padding: 2em 0; }
+        .four-agileinfo { background: #22beef; padding: 2em 0; text-align: center; }
+        .four-w3ls { background: #a2d200; padding: 2em 0; text-align: center; }
+        .four-text h3 { font-size: 16px; }
+        .four-text h4 { font-size: 30px; }
+        .data-list { }
+        .data-list li { float: left; background: #f1f1f1; margin-right: 10px; padding: 10px 50px; }
+    </style>
+}
+
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 商品销售排行 <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="panel panel-default">
+        <div class="panel-header">销售排行</div>
+        <div class="panel-body">
+            <form method="post" class="search-form" action="/DishAdmin/Charts/SalesRank?aId=@aId&storeId=@storeId">
+                <div class="" style="text-align: right;">
+                    <input type="text" name="q_begin_time" id="q_begin_time" readonly placeholder="请选择开始日期" value="@ViewBag.q_begin_time" class="input-text" style="width: 150px;">
+                    &nbsp;<input type="text" name="q_end_time" id="q_end_time" readonly placeholder="请选择结束日期" value="@ViewBag.q_end_time" class="input-text" style="width: 150px;">
+                    <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+                </div>
+            </form>
+            <div id="data_goods" style="height: 600px;"></div>
+            <div style="clear: both;"></div>
+        </div>
+    </div>
+</div>
+
+
+
+@section scripts{
+    <script src="~/Areas/DishAdmin/lib/echarts.common.js"></script>
+    <script src="~/Areas/DishAdmin/lib/laydate/laydate.js"></script>
+    <script type="text/javascript">
+        $(function () {
+
+            laydate.render({
+                elem: '#q_begin_time',
+                format: 'yyyy-MM-dd',
+                //type:'datetime',
+                event: 'focus',
+                //theme: 'molv'
+            });
+            laydate.render({
+                elem: '#q_end_time',
+                format: 'yyyy-MM-dd',
+                //type: 'datetime',
+                event: 'focus',
+                //theme: 'molv'
+            });
+        });
+        var dataAxis = [@Html.Raw(ViewBag.goodMsgs)];
+        var data = [@Html.Raw(ViewBag.salesCounts)];
+        var chartHeight = dataAxis.length * 25 < 600 ? 600 : dataAxis.length * 25;
+        $("#data_goods").height(chartHeight);
+        var myChart = echarts.init(document.getElementById('data_goods'));
+
+        //var dataShadow = [];
+
+        //for (var i = 0; i < data.length; i++) {
+        //    dataShadow.push(yMax);
+        //}
+        var option = {
+            title: {
+                text: '商品销售排行统计',
+                subtext: '',
+                x: 'center'
+            },
+            toolbox: {
+                // y: 'bottom',
+                feature: {
+                    dataView: {},
+                    saveAsImage: {
+                        pixelRatio: 2
+                    }
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            //xAxis: {
+            //    type: 'category',
+            //    data: dataAxis,
+            //    axisTick: {
+            //        alignWithLabel: true,
+            //        interval :0,
+            //    },
+            //    axisLabel: {
+            //        inside: true,
+            //        textStyle: {
+            //            color:'#333',
+            //        },
+            //        interval: 0,
+            //        rotate: 9,
+            //    },
+            //    axisLine: {
+            //        show: false
+            //    },
+            //    z: 6
+            //},
+            xAxis: {
+                type: 'value',
+                boundaryGap: [0, 0.01]
+            },
+            //yAxis: {
+            //    type: 'value',
+            //    boundaryGap: [0, 0.01]
+            //},
+            yAxis: {
+                type: 'category',
+                data: dataAxis,
+                    axisTick: {
+                    alignWithLabel: true,
+                    interval :0,
+                },
+                axisLabel: {
+                    textStyle: {
+                        color:'#333',
+                    },
+                    interval: 0,
+                    formatter: '{value}'
+                },
+            },
+            series: [
+                //{ // For shadow
+                //    type: 'bar',
+                //    itemStyle: {
+                //        normal: { color: 'rgba(0,0,0,0.05)' }
+                //    },
+                //    barGap: '-100%',
+                //    barCategoryGap: '40%',
+                //    data: dataShadow,
+                //    animation: false
+                //},
+                {
+                    name: '总销量',
+                    type: 'bar',
+                    itemStyle: {
+                        normal: {
+                            color: new echarts.graphic.LinearGradient(
+                                0, 0, 0, 1,
+                                [
+                                    { offset: 0, color: '#5eb95e' },
+                                    { offset: 0.5, color: '#5eb95e' },
+                                    { offset: 1, color: '#5eb95e' }
+                                ]
+                            )
+                        },
+                        emphasis: {
+                            color: new echarts.graphic.LinearGradient(
+                                0, 0, 0, 1,
+                                [
+                                    { offset: 0, color: '#5eb95e' },
+                                    { offset: 0.7, color: '#5eb95e' },
+                                    { offset: 1, color: '#5eb95e' }
+                                ]
+                            )
+                        },
+                    },
+                    label: {
+                        normal: {
+                            show: true,
+                            position: 'inside',
+                            //textBorderWidth:0,
+                        },
+                    },
+                    data: data
+                }
+            ]
+        };
+        myChart.setOption(option);
+    </script>
+
+}

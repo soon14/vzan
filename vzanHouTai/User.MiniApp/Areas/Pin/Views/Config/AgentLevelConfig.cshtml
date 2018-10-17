@@ -1,0 +1,375 @@
+﻿@{
+    ViewBag.Title = "AgentLevelConfig";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+
+    int aid = ViewBag.aid;
+    List<PinAgentLevelConfig> listPinAgentLevelConfig = ViewBag.PinAgentLevelConfigList;
+}
+@model PinPlatform
+@section styles{
+    <style>
+        #item input{display:inline-block!important;margin-bottom:10px;margin-left:10px;}
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .layui-table th, .layui-table td { text-align: center !important; }
+        .layui-form-switch { margin-top: 0px !important; width: 56px !important; line-height: 25px !important; height: 25px !important; }
+    </style>
+}
+<body>
+    <div id="app_Conf" v-cloak>
+        <!--#region 代理等级 开始-->
+    <div>
+
+        <div class="ibox-content xcx-list">
+            <table class="layui-table" lay-skin="line">
+                <thead>
+                    <tr>
+                        <th>级别</th>
+                        <th>等级名称</th>
+                        <th>入驻费用(元)</th>
+                        <th>自推代理%</th>
+                        <th>自推商家%</th>
+                        <th>渠道推代理%</th>
+                        <th>渠道推商家%</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in agentLevelList">
+
+                        <td class="centertext">{{item.LevelId}}</td>
+                        <td class="centertext">{{item.LevelName}}</td>
+                        <td class="centertext">{{item.AgentFeeStr}}</td>
+                        <td class="centertext">{{item.AgentExtractStr}}</td>
+                        <td class="centertext">{{item.OrderExtractStr}}</td>
+                        <td class="centertext">{{item.SecondAgentExtractStr}}</td>
+                        <td class="centertext">{{item.SecondOrderExtractStr}}</td>
+                        <td class="centertext">
+                            <a href="javascript:;" style="color:#4a86e8;" v-on:click="addedit(index)">编辑</a>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            &times;
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            编辑
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+
+                            <div style="margin-top:10px;">
+                                <div style="margin-left:55px;">
+                                    <table id="item">
+                                        <tr>
+                                            <td>入驻费用:</td>
+                                            <td><input type="text" class="form-control" style="width:120px;display:inline-block;" v-model="agentLevelInfo.AgentFeeStr" />元</td>
+                                        </tr>
+                                        <tr>
+                                            <td>自推代理分佣比例:</td>
+                                            <td><input type="text" class="form-control" style="width:120px;" v-model="agentLevelInfo.AgentExtractStr" />%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>自推商家分佣比例:</td>
+                                            <td><input type="text" class="form-control" style="width:120px;" v-model="agentLevelInfo.OrderExtractStr" />%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>渠道推代理分佣比例:</td>
+                                            <td><input type="text" class="form-control" style="width:120px;" v-model="agentLevelInfo.SecondAgentExtractStr" />%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>渠道推商家分佣比例:</td>
+                                            <td><input type="text" class="form-control" style="width:120px;" v-model="agentLevelInfo.SecondOrderExtractStr" />%</td>
+                                        </tr>
+                                    </table>
+
+                                </div>
+                                </div>
+
+
+
+                            <div stle=" clear:both;"></div>
+                        </div>
+                    <div class="modal-footer" style="text-align:center;">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                关闭
+                            </button>
+                            <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                                保存
+                            </button>
+                        </div>
+                    </div>
+                    
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+    </div>
+    <!--#endregion 代理等级 结束-->
+
+        <!--#region 代理配置 开始-->
+        <div class="wrapper wrapper-content animated fadeInUp">
+            <div class="ibox-title">
+                <h3 style="float:left;">配置</h3>
+                <button class="btn btn-primary radius" type="submit" id="saveSetting" style="margin:0 40px;" onclick="saveSetting()"> 保存</button>
+                <div class="clearfix"></div>
+            </div>
+            <div class="ibox-content xcx-list layui-form">
+
+                <div style="margin:20px 0">
+                    <label style="margin-left: 19px;">代理保护期：</label>
+                    <input type="number" class="form-control" style="width:70px;display: inline;" value="@Model.agentProtectDays" id="agentProtectDays" />天
+                </div>
+                <div style="margin:20px 0">
+                    <label>越级分佣比：</label>
+                    <input type="number" class="form-control" style="width:70px;display: inline;" value="@(Model.JumpExtract*0.1)" id="jumpExtract" />%
+                    <span style="color:#808080;margin-left:20px;">当下级代理升级到超出自己代理等级时，该笔升级金额无法按等级分佣比例计算，而是按越级分佣比例计算（小数点保留一位）</span>
+                </div>
+
+                <div style="margin:20px 0">
+                    <label>代理商查询入口：</label>
+                    <input type="checkbox" name="agentSearchPort" lay-skin="switch" lay-text="开启|关闭" @(Model.AgentSearchPort == 1 ? "checked" : "") lay-filter="agentSearchPort">
+                    <input type="hidden" id="agentSearchPort" value="@Model.AgentSearchPort" />
+                </div>
+
+            </div>
+        </div>
+        <!--#endregion 平台配置 结束-->
+
+        <!--#region 代理政策 开始-->
+        <div class="wrapper wrapper-content animated fadeInUp">
+            <div class="ibox-title">
+                <h3 style="float:left;">代理政策</h3>
+                <button class="btn btn-primary radius" type="submit" id="saveSetting" style="margin:0 40px;" onclick="saveAgentPolicy()"> 保存</button>
+                <div class="clearfix"></div>
+            </div>
+            <div class="ibox-content xcx-list layui-form">
+                <textarea name="description" placeholder="代理政策..." style="width:700px; height:200px;" id="poster">@Model.AgentPolicy</textarea>
+            </div>
+        </div>
+
+        <!--#endregion 代理政策 结束-->
+
+    </div>
+   
+   
+
+</body>
+@section scripts{
+    <script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+    <script src="~/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+
+    <script>
+        layui.use('form', function () {
+            var form = layui.form;
+
+            form.on('switch(agentSearchPort)', function (data) {
+                if (data.elem.checked) {
+                    $("#agentSearchPort").val(1);
+                } else {
+                    $("#agentSearchPort").val(0);
+                }
+                console.log($("#agentSearchPort").val());
+            });
+       
+
+        });
+  
+        function saveSetting() {
+           
+           
+            var agentProtectDays = $("#agentProtectDays").val();
+            if (agentProtectDays <= 0) {
+                layer.msg("代理保护期请输入大于零的天数");
+                return;
+            }
+          
+
+            var jumpExtract = $("#jumpExtract").val();
+            reg = /^\d*\.{0,1}\d{0,1}$/;
+            if (!reg.test(jumpExtract) || jumpExtract<0) {
+                layer.msg("越级分佣比例请输入大于零的数，小数保留一位");
+                return;
+            }
+
+            jumpExtract=parseInt(jumpExtract*10);
+          
+            if (jumpExtract>1000) {
+                layer.msg("越级分佣比例不能大于100%，小数保留一位");
+                return;
+            }
+
+            var agentSearchPort = $("#agentSearchPort").val();
+          
+
+            var layerIndex = layer.load(2);
+            $.post("/pin/config/SaveAgentSetting", { aid:@aid, agentProtectDays:agentProtectDays,jumpExtract:jumpExtract, agentSearchPort:agentSearchPort }, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.msg);
+            })
+            }
+        //保存代理政策
+        function saveAgentPolicy() {
+            var agentPolicy = comeditor.getContent();
+            if (agentPolicy.length <= 0) {
+                layer.msg("请填写代理政策内容");
+                return;
+            }
+            var layerIndex = layer.load(2);
+            $.post("/pin/config/SaveAgentPolicy", { aid:@aid,agentPolicy:agentPolicy }, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.msg);
+            })
+        }
+        //富文本编辑器
+        var comeditor = null;
+        $(function () {
+            $('textarea[name="description"]').attr('id', 'editor_id_g_description');
+            if (comeditor != null) {
+                comeditor.reset();
+            }
+
+            var mytoolbars = [[
+                'source', 'removeformat', 'formatmatch', '|',
+                'fontsize', 'fullscreen', '|',
+                'bold', 'italic', 'underline', 'forecolor', 'backcolor', '|',
+                'indent', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|',
+                'rowspacingtop', 'rowspacingbottom', 'lineheight', '|',
+                'insertunorderedlist', 'insertorderedlist', '|',
+                'simpleupload', 'insertimage',
+            ]];
+            //编辑器
+            comeditor = UE.getEditor('editor_id_g_description', {
+                toolbars: [
+                    ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                    ['simpleupload', 'insertimage', 'insertvideo', 'paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain']
+                ],
+                imageUrl: "/Upload/Image?cityid=" + 1088,
+                autoHeight: true
+            });
+            comeditor.ready(function () {
+
+                // comeditor.setContent(unece);
+            });
+            comeditor.addListener("contentChange", function () {
+                //if (comeditor != null) {
+                //    that.p.description = comeditor.getContent();
+                //}
+            });
+        })
+    </script>
+
+
+<script>
+
+    var app = new Vue({
+        el: "#app_Conf",
+        data: {
+            agentLevelList: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PinAgentLevelConfigList)),
+            editIndex: 0,
+            isloading: false,
+            agentLevelInfo:""
+       
+        },
+        methods: {
+     
+            //添加编辑窗口
+            addedit: function (index) {
+                var that=this;
+                that.editIndex = index;
+                if (typeof (index) == "undefined"||index<0) {//编辑
+                    layer.msg("请先选择需要修改的等级");
+                    return ;
+                }
+                that.agentLevelInfo = JSON.parse(JSON.stringify(that.agentLevelList[index]));
+                $('#myModal').modal('show');
+            },
+           
+       
+            //保存规则
+            saveInfo: function () {
+                var that=this;
+                var reg = /(^[1-9]([0-9]+)?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)/;
+                if (!reg.test(Number(that.agentLevelInfo.AgentFeeStr))) {
+                    layer.msg("请输入正确的金额");
+                    return;
+                }
+                that.agentLevelInfo.AgentFee=parseInt(that.agentLevelInfo.AgentFeeStr*100);
+                if (that.agentLevelInfo.AgentFee <= 0) {
+                    layer.msg("请输入大于零的金额");
+                    return;
+                }
+
+               var regExtract = /^\d*\.{0,1}\d{0,1}$/;
+               if (!regExtract.test(Number(that.agentLevelInfo.AgentExtractStr)) || Number(that.agentLevelInfo.AgentExtractStr)<0) {
+                    layer.msg("自推代理费用分成比例请输入大于零的数，小数保留一位");
+                    return;
+                }
+               that.agentLevelInfo.AgentExtract = parseInt(that.agentLevelInfo.AgentExtractStr * 10);
+               if (that.agentLevelInfo.AgentExtract >1000) {
+                    layer.msg("自推代理费用分成比例最高不能超过100%");
+                    return;
+                }
+
+
+               if (!regExtract.test(Number(that.agentLevelInfo.OrderExtractStr)) || Number(that.agentLevelInfo.OrderExtractStr)<0) {
+                    layer.msg("自推商家订单分成比例请输入大于零的数，小数保留一位");
+                    return;
+                }
+               that.agentLevelInfo.OrderExtract = parseInt(that.agentLevelInfo.OrderExtractStr * 10);
+               if (that.agentLevelInfo.OrderExtract >1000) {
+                    layer.msg("自推商家订单分成比例最高不能超过100%");
+                    return;
+                }
+
+
+               if (!regExtract.test(Number(that.agentLevelInfo.SecondAgentExtractStr)) || Number(that.agentLevelInfo.SecondAgentExtractStr)<0) {
+                    layer.msg("渠道推代理费用分成比例请输入大于零的数，小数保留一位");
+                    return;
+                }
+               that.agentLevelInfo.SecondAgentExtract = parseInt(that.agentLevelInfo.SecondAgentExtractStr * 10);
+               if (that.agentLevelInfo.SecondAgentExtract >1000) {
+                    layer.msg("渠道推代理费用分成比例最高不能超过100%");
+                    return;
+                }
+
+
+
+               if (!regExtract.test(Number(that.agentLevelInfo.SecondOrderExtractStr)) || Number(that.agentLevelInfo.SecondOrderExtractStr)<0) {
+                    layer.msg("渠道推商家订单分成比例请输入大于零的数，小数保留一位");
+                    return;
+                }
+               that.agentLevelInfo.SecondOrderExtract = parseInt(that.agentLevelInfo.SecondOrderExtractStr * 10);
+               if (that.agentLevelInfo.SecondOrderExtract >1000) {
+                    layer.msg("渠道推商家订单分成比例最高不能超过100%");
+                    return;
+                }
+
+
+                var layerIndex = layer.load(2);
+                $.post("/pin/config/SaveAgentLevelConfig", {aid:@ViewBag.aid,agentLevelConfig:that.agentLevelInfo}, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.code==1) {
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+
+                })
+
+
+
+            }
+        }
+    });
+</script>
+
+
+}

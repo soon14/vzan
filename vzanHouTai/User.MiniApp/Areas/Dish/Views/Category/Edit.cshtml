@@ -1,0 +1,143 @@
+﻿@model EditModel<DishCategory>
+@{
+    ViewBag.Title = "edit";
+    Layout = "~/Areas/Dish/Views/Shared/_LayoutAdmin.cshtml"; 
+}
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+
+        <form method="post" class="form-horizontal" id="post_from">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="ibox-title">
+                        <h5>添加分类</h5>
+                    </div>
+                    <div class="ibox-content xcx-list">
+
+
+                        <input type="hidden" name="act" value="save" />
+                        <input type="hidden" name="id" value="@(Model.DataModel.id)" />
+                        <input type="hidden" name="aId" value="@(Model.DataModel.aId)" />
+                        <input type="hidden" name="storeId" value="@(Model.DataModel.storeId)" />
+                        <input type="hidden" name="type" value="1" />
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">分类名称</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="title" name="title" value="@Model.DataModel.title">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">缩略图(建议尺寸100px*100px)</label>
+                            <div class="col-sm-10">
+                                <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="img">
+                                    <input type="hidden" name="img" id="cover_id_img" value="@(Model.DataModel.img)">
+                                    <input type="file" id="upload_picture_img" />
+                                    <div class="upload-img-box">
+                                        @if (!string.IsNullOrEmpty(Model.DataModel.img))
+                                        {
+                                            <div class="upload-pre-item2">
+                                                <img src="@(Model.DataModel.img)" width="100" height="100">
+                                                <em class="edit_img_icon"> </em>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">是否显示</label>
+                            <div class="col-sm-10">
+                                <label class="radio-inline">
+                                    <input type="radio" name="is_show" value="1" @(Model.DataModel.is_show == 1 ? "checked" : "")>显示
+                                </label>
+                                <label class="radio-inline">
+                                    <input type="radio" name="is_show" value="0" @(Model.DataModel.is_show == 0 ? "checked" : "")>关闭
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">排序（数字越大越靠前）</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" name="is_order" value="@Model.DataModel.is_order">
+                            </div>
+                        </div>
+                        <div class="hr-line-dashed"></div>
+                        <div class="form-group">
+                            <div class="col-sm-4 col-sm-offset-2">
+                                <a class="btn submit-btn ajax-post btn-primary" id="submits" target-form="form-horizontal">确 定</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+
+@section scripts{
+    <!--如果需要图片上传-->
+<script src="~/Areas/DishAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+<script src="~/Areas/DishAdmin/lib/dialog.js"></script>
+<script>
+    var UPLOAD_DIALOG_URL = "/tools/UpLoadImgFrm?appId=@(Model.appId)&storeId=@(Model.storeId)&multi_selection=0&frontMethod=1&maxImgSize=1&objKey=img&objType=1&remainCount=1";
+        $(function () {
+            //初始化上传图片插件
+            initUploadImg();
+        });
+
+        //上传图片组件
+        function initUploadImg(opts) {
+            $(".upload-img-view").dragsort({
+                itemSelector: ".upload-pre-item22", dragSelector: ".upload-pre-item22", dragBetween: false, placeHolderTemplate: "<div class='upload-pre-item22'></div>", dragSelectorExclude: 'em', dragEnd: function () { $(".upload-pre-item22").attr('style', '') }
+            });
+            $uploadDom = $('.uploadrow2');
+            if (opts && opts.uploadDom) {
+                $uploadDom = opts.uploadDom;
+            }
+            $uploadDom.each(function (index, obj) {
+                $(obj).click(function () {
+                    uploadImgDialog(obj, opts);
+                });
+
+            });
+        }
+        function uploadImgDialog(obj, opts) {
+            var maxCount = parseInt($(obj).data('max'));
+            var field = $(obj).attr('rel');
+            uploadObj = obj;
+            $uploadHtml = '<div><div class="upload_dialog" style="height:520px;overflow-y:hidden;overflow-x:hidden;"><div><iframe id="goodsIframe" name="goodsIframe" style="height:520px;width:100%; border:none" border="0" src="' + UPLOAD_DIALOG_URL + '&max=' + maxCount + '&field=' + field + '"></iframe></div></div></div>';
+            $.Dialog.open("上传图片", { width: 800, height: 560 }, $uploadHtml);
+        }
+</script>
+
+<script type="text/javascript">
+    $(function () {
+        $("#submits").click(function () {
+            var title = $("#title").val();
+            if (title.length <= 0)
+            {
+                layer.msg("请输入标题");
+                return;
+            }
+
+            var layerIndex = layer.load(2);
+            $("#post_from").ajaxSubmit({
+                dataType: "json",
+                url: "/dish/category/Edit",
+                success: function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.code)
+                    {
+                        window.location.href = "/Dish/Category/index?aId=@Model.DataModel.aId";
+                    }
+                }
+            });
+        })
+    })
+</script>
+}

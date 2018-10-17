@@ -1,0 +1,223 @@
+﻿@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 49;
+    ViewBag.Title = "评论管理";
+}
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<link href="/Content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .nowrap { white-space: nowrap; }
+    .del { color: red; }
+    .msgDetail { max-height: 200px; max-width: 800px; overflow-y: auto; }
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content">
+
+    <div id="app" v-cloak>
+        <div class="search">
+            <div class="form-inline">
+                <div class="form-group" style="margin-left:0px;">
+                    <label for="plist-pname">评论关键词：</label>
+                    <input type="text" name="commentKey" class="form-control" id="commentKey" value="" />
+
+                </div>
+
+                <div style="display:inline-block;margin-left:10px;">
+                    <a href="#" class="btn btn-primary ml10" v-on:click="search()">查询</a>
+                    <a href="#" class="btn btn-default ml10" v-on:click="restSearch()">重置</a>
+                </div>
+
+            </div>
+        </div>
+
+        <table class="table table-bordered viplevel ml_19" style="margin-top:20px;">
+            <tr class="active">
+                <th class="centertext nowrap">编号</th>
+                <th class="centertext nowrap">评论详情</th>
+                <th class="centertext nowrap">发布人</th>
+                <th class="centertext nowrap">评论时间</th>
+                <th class="centertext nowrap">操作</th>
+            </tr>
+            <tr v-for="(item,index) in msgCommentList">
+                <td class="centertext nowrap">
+                    <label>
+                        <input type="checkbox" name="ck" v-on:click="ckSave(item.Id)" />{{item.Id}}
+                    </label>
+                </td>
+                <td class="centertext">
+                    <div class="msgDetail">
+                        {{item.CommentDetail}}
+                    </div>
+                </td>
+                <td class="centertext nowrap">
+                    {{item.NickName}}
+                </td>
+
+                <td class="centertext nowrap">
+                    {{item.AddTimeStr}}
+                </td>
+
+                <td class="centertext">
+                    <div><a href="javascript:void(0)" class="del" v-on:click="del(item.Id,0)">删除</a></div>
+                </td>
+            </tr>
+
+        </table>
+
+
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="msgCommentList.length>0"></div>
+
+        <div class="ml_19">
+            <a href="javascript:;" v-on:click="del(-1,-1)">批量删除</a>
+        </div>
+
+
+    </div>
+
+
+
+
+
+</div>
+
+
+<script>
+    var carousel;
+    var ids;
+    var chk_value =[];
+    var app = new Vue({
+        el: "#app",
+        data: {
+
+            isloading: false,
+            recordCount: 0,
+            msgCommentList: [],
+            postdata: {
+                Id:@ViewBag.Id,
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                keyMsg:""
+            }
+        },
+
+        methods: {
+            del:function(id){
+                //删除
+                var that=this;
+                var txt="确认进行删除操作？";
+
+                layer.open({
+                    content: txt
+                 ,btn: ['确认', '取消']
+                 ,yes: function(index, layero){
+
+                     if(id==-1){
+                         //表示批量删除
+                         if(chk_value.length<=0){
+                             layer.msg("请先选择需要删除的评论");
+                             return;
+                         }
+                     }else{
+                         chk_value.push(id);
+                     }
+
+                     ids= chk_value.join(",");
+
+                     $.ajax({
+                         type: 'POST',
+                         url: '/cityminiapp/DeleteMsgComment',
+                         data: {ids:ids,appId:@ViewBag.appId},
+                         dataType: 'json',
+                         success: function (data) {
+                             layer.msg(data.Msg);
+                             if (data.isok) {
+
+                                 window.setTimeout(function(){
+
+                                     window.location.reload();
+                                 },2000);
+                             }
+                         },
+                         error: function (data) {
+                             layer.msg('与服务器通讯错误');
+                         }
+                     });
+
+                 }
+                 ,btn2: function(index, layero){
+
+                     // layer.msg("点击取消");
+                 }
+
+                });
+
+
+
+
+
+
+
+            },
+            ckSave:function(id){
+                for(var i = 0; i < chk_value.length; i++){
+                    if(id === chk_value[i]){
+                        chk_value.splice(i,1);
+                        return ;
+                    }
+                }
+                return chk_value.push(id);
+            },
+            search:function(){
+                var that=this;
+                that.postdata.keyMsg=$("#commentKey").val();
+
+                that.GetMsgComment();
+            },
+            restSearch:function(){
+                window.location.reload();
+            },
+
+
+            //获取列表
+            GetMsgComment: function () {
+                var that=this;
+                var index = layer.load(1);
+                $.post("/cityminiapp/GetMsgComment", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.msgCommentList = data.dataObj.list;
+                    that.resetPage();
+                })
+
+            },
+            //分类列表分页
+            resetPage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.GetMsgComment();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            }
+        },created:function(){
+            var that=this;
+            that.GetMsgComment();
+        }
+    });
+</script>

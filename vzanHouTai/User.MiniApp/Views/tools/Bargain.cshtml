@@ -1,0 +1,214 @@
+﻿@using Entity.MiniApp.Tools
+@model  List<Bargain>
+@{
+    ViewBag.Title = "砍价";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int IsBargainOpen = ViewBag.IsBargainOpen;
+    string IsBargainOpenTxt = IsBargainOpen > 0 ? "关闭砍价" : "开启砍价";
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+</style>
+<div class="panel panel-default">
+    <div class="panel-body">
+        <a href="/tools/AddOrEditBargain?appId=@ViewBag.appId&PageType=@ViewBag.PageType" class="btn btn-success" id="btnBatch_Pass">
+            <span class="glyphicon glyphicon-ok"></span>
+            添加砍价
+        </a>
+        
+        <a href="#" class="btn btn-@(IsBargainOpen>0?"danger":"info")" id="IsOpen" data-state="@ViewBag.IsBargainOpen">
+            <span class="glyphicon glyphicon-@(IsBargainOpen>0?"remove-circle":"ok-circle")"></span>
+           @IsBargainOpenTxt
+        </a>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th>砍价名称</th>
+        <th>有效时间</th>
+        <th>砍价底价</th>
+        <th>原价</th>
+        <th>减价最大值</th>
+        <th>减价最小值</th>
+        <th>自己砍价间隔时间</th>
+        <th>发布时间</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @foreach (var item in Model)
+        {
+            <tr>
+               <td width="8%">@(item.BName)</td>
+                <td>@(item.StartDate.ToString("yyyy-MM-dd HH:mm")) 至 @(item.EndDate.ToString("yyyy-MM-dd HH:mm"))</td>
+                <td>@((float.Parse(item.FloorPrice.ToString()) / 100))</td>
+                <td>@((float.Parse(item.OriginalPrice.ToString()) / 100))</td>
+                <td>@((float.Parse(item.ReduceMax.ToString()) / 100))</td>
+                <td>@((float.Parse(item.ReduceMin.ToString()) / 100))</td>
+                <td>@(item.IntervalHour)小时</td>
+                <td>@(item.CreateDate)</td>
+                <td>
+                 @{
+                     if (item.State == -1)
+                     {
+                        <span class="label label-warning">已下架</span>
+
+                     }
+                    else if (DateTime.Now > item.EndDate || item.RemainNum == 0)
+                     {
+                        <span class="label label-danger">已失效</span>
+                       
+                     }
+                    else if (DateTime.Now < item.StartDate && item.RemainNum > 0)
+                     {
+                        <span class="label label-warning">未开始</span>
+
+                     }
+                     else
+                     {
+                        <span class="label label-success">进行中</span>
+
+                     }
+
+
+                    
+
+                }
+                </td>
+                <td>
+                    <a href="/tools/AddOrEditBargain?appId=@ViewBag.appId&PageType=@ViewBag.PageType&Id=@item.Id" class="btn btn-primary btn-xs">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        编辑
+                    </a>
+                    <a href="/tools/BargainUserList?appId=@ViewBag.appId&PageType=@ViewBag.PageType&bid=@item.Id" class="btn btn-primary btn-xs">
+                        <span class="glyphicon glyphicon-list"></span>
+                        参与记录
+                    </a>
+                   
+
+    @{
+        if (item.State == 0)
+        {
+            <a href="javascript:;" class="btn btn-danger btn-xs btnDel" data-id="@item.Id" data-state="@item.State">
+                <span class="glyphicon glyphicon-remove"></span>
+                下架
+            </a>
+        }
+        else
+        { <a href="javascript:;" class="btn btn-success btn-xs btnDel" data-id="@item.Id" data-state="@item.State">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        上架
+                    </a>
+        }
+    }
+
+</td>
+              
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+<!-- 信息删除确认 -->
+<div class="modal fade" id="delcfmModel">
+    <div class="modal-dialog">
+        <div class="modal-content message_align">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">提示信息</h4>
+            </div>
+            <div class="modal-body">
+                <p>您确认要上架该砍价商品?</p>
+            </div>
+            <div class="modal-footer">
+                <input type="hidden" id="curData" value="" />
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <a onclick="del()" class="btn btn-success" data-dismiss="modal">确定</a>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+<script>
+    $(function () {
+        var id;
+        var State;
+        $(".btnDel").click(function () {
+            $('#delcfmModel').modal();
+            id = $(this).data("id");
+            State=parseInt($(this).data("state"));
+            if(State==0){
+                $(".modal-body").find("p").html("您确认要下架该砍价商品?");
+            }
+            $("#curData").val(id);
+        });
+
+        //开启或者关闭砍价
+        $("#IsOpen").click(function(){
+            var IsOpen=parseInt($(this).data("state"));
+            $.ajax({
+                type: "POST",
+                url: "/tools/UpdateToolsConfigBargain",
+                data: {StoreId:@ViewBag.StoreId },
+                success: function (data) {
+                    if (data.code>0) {
+                        AppTools.Alert(data.msg);
+                        setTimeout(function(){
+                            window.location.href='/tools/Bargain?appId=@ViewBag.appId&PageType=@ViewBag.PageType';
+                        },1000);
+                    } else {
+                        AppTools.Alert(data.msg);
+                       
+                    }
+                },
+                error: function () {
+                    AppTools.Alert("通讯异常");
+                }
+            });
+            
+        });
+
+
+
+
+
+    });
+
+    function del() {
+        var id=$("#curData").val();
+        console.log(id);
+        if (parseInt(id) > 0) {
+
+            $.ajax({
+                type: "POST",
+                url: "/tools/DelBargain",
+                data: { Id: id, appId:@ViewBag.appId },
+                success: function (data) {
+                    if (data.code>0) {
+                        AppTools.Alert(data.msg);
+                        setTimeout(function(){
+                           window.location.href='/tools/Bargain?appId=@ViewBag.appId&PageType=@ViewBag.PageType';
+                        },1000);
+
+
+                    } else {
+                        AppTools.Alert(data.msg);
+                    }
+                },
+                error: function () {
+                    AppTools.Alert("通讯异常");
+                }
+            });
+        }
+    }
+</script>

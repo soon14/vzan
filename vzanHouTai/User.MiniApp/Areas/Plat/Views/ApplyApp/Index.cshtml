@@ -1,0 +1,324 @@
+﻿
+@using User.MiniApp.Areas.Plat.Models;
+@model ApplyAppView
+@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "独立小程序";
+}
+
+@section styles{
+    <style>
+        .centertext { vertical-align: inherit !important; text-align: center; }
+        .width200 {width: 200px !important;display: inline-block !important;}
+        .width100 {width: 100px !important;display: inline-block !important;}
+        .datetimebox {float: none !important;}
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+
+        <div id="app" v-cloak>
+            <div style="margin-left:17px;">
+                <div class="d-flex d-flex-center formsearch">
+                    <span>店铺名称：</span><input type="text" v-model="postdata.storename" class="input-sm layui-input width200" />
+                    <span>会员账号：</span><input type="text" v-model="postdata.loginid" class="input-sm layui-input width200" />
+                    <span>客户姓名：</span><input type="text" v-model="postdata.customername" class="input-sm layui-input width200" />
+                    <span>是否开通：</span>
+                    <select v-model="postdata.openstate" class="form-control width100">
+                        <option value="-1">全部</option>
+                        <option value="1">是</option>
+                        <option value="0">否</option>
+                    </select>
+                    <span>状态：</span>
+                    <select v-model="postdata.xcxappstate" class="form-control width100">
+                        <option value="-2">全部</option>
+                        <option value="0">正常</option>
+                        <option value="-1">停用</option>
+                    </select>
+                    <input type="text" v-model="postdata.daylength" class="input-sm layui-input width100" />天内到期
+
+                    <a href="#" v-on:click="ReSet()" class="btn btn-default ml10" style="float:right;">重置</a>&nbsp;
+                    <a href="#" v-on:click="Search()" class="btn btn-primary ml10" style="float:right;margin-right:20px;">搜索</a>&nbsp;
+                </div>
+                <div class="d-flex d-flex-center formsearch" style="margin-top:10px;text-align:right;">
+                    <span>可用预存款：@Model.DepositStr 元</span>
+                    @if (!Model.IsAgent)
+                    {
+                        <a href="#" v-on:click="chongzhi()" class="btn btn-primary ml10">充值</a>
+                    }
+                    @if (Model.ExitLog)
+                    {
+                        <a href="/Plat/ApplyApp/depositlog?aid=@ViewBag.appId" class="btn btn-primary ml10">预存款记录</a>
+                    }
+                </div>
+            </div>
+            <br />
+
+            <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+                <tr class="active">
+                    <th class="centertext">平台店铺名称</th>
+                    <th class="centertext">平台会员账号</th>
+                    <th class="centertext">客户姓名</th>
+                    <th class="centertext">申请时间</th>
+                    <th class="centertext">开通时间</th>
+                    <th class="centertext">到期时间</th>
+                    <th class="centertext">有效天数</th>
+                    <th class="centertext">状态</th>
+                    <th class="centertext">操作</th>
+                </tr>
+                <tr v-for="(item,index) in datalist">
+                    <td class="centertext">{{item.StoreName}}</td>
+                    <td class="centertext">{{item.LoginId}}</td>
+                    <td class="centertext">{{item.CustomerName}}</td>
+                    <td class="centertext">{{item.AddTimeStr}}</td>
+                    <td class="centertext">{{item.OpenTimeStr}}</td>
+                    <td class="centertext">{{item.OutTimeStr}}</td>
+                    <td class="centertext">{{item.ValDayLength}}</td>
+                    <td class="centertext">{{item.XcxAppStateStr}}</td>
+                    <td class="centertext">
+                        <a v-if="item.OpenState==0" href="javascript:;" v-on:click="openstore(index,'0')" class="btn btn-primary ml10">开通店铺小程序</a>
+                        <a v-if="item.OpenState==1" href="javascript:;" v-on:click="openstore(index,'1')" class="btn btn-primary ml10">模板续期</a>
+                        <a v-if="item.OpenState==1" href="javascript:;" v-on:click="savexcxstate(index)" class="btn ml10" v-bind:class="{'btn-default':(item.XcxAppState>=0),'btn-primary':(item.XcxAppState<0)}">{{item.XcxAppState>=0?"停用模板":"启用模板"}}</a><br />
+                    </td>
+                </tr>
+                <tr v-if="datalist==null || datalist.length==0">
+                    <td colspan="8" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+        </div>
+    </div>
+
+    <div id="editcode" hidden>
+        <div style='margin-top: 20px;margin-left: 20px;'>
+            <span style="float:left;">使用时长：</span>
+            <input type="number" value="1" id="tempuselength" class='form-control' style='display: inline-block;width: 100px;' />年
+            <div>过期时间：<span id="tempouttime"></span></div>
+            <div>费用：<span id="tempprice"></span>元</div>
+        </div>
+    </div>
+    <div id="chongzhi" hidden>
+        <div style='margin:20px;'>
+            <img style="width:200px;height:200px;" src="@(WebSiteConfig.cdnurl)content/newhome/image/newhome/dashu-006.png?@(WebSiteConfig.cdnVersion)"/>
+        </div>
+        <div>
+            <div style="text-align:center;">扫码加微信</div>
+            <div style="text-align:center;">联系人：大西瓜</div>
+            <div style="text-align:center;">电话：18680288930</div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                tempinfo:"",
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    customername: "",
+                    storename: "",
+                    loginid: "",
+                    openstate:-1,
+                    xcxappstate:-2,
+                    daylength:0,
+                },
+                isloading: false,
+                currenteditid:0,
+                playerindex:0,
+                type:0,
+                index:0,
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Plat/ApplyApp/GetDataList", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.data;
+                        app.tempinfo = data.dataObj.tempinfo
+                        app.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                Search:function()
+                {
+                    this.getdatalist();
+                },
+                ReSet:function(){
+                    app.postdata= {
+                        aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    customername: "",
+                    storename: "",
+                    loginid: "",
+                    openstate:-1,
+                    xcxappstate:-2,
+                    daylength:0,
+                        }
+                },
+                openstore:function(index,type)
+                {
+                    $("#tempprice").html((app.tempinfo.Price*0.01).toFixed(2));
+                    var nowtime = new Date();
+                    app.type = type;
+                    app.index = index;
+                    if(app.type ==1)
+                    {
+                        var temptime = new Date(app.datalist[app.index].OutTimeStr);
+                        if(temptime>nowtime)
+                        {
+                            nowtime = temptime;
+                        }
+                    }
+                    var outtime = (nowtime.getFullYear() + 1) + "-" + (nowtime.getMonth() + 1) + "-" + nowtime.getDate() + " " + nowtime.getHours() + ":" + nowtime.getMinutes();
+                    $("#tempouttime").html(outtime);
+                    app.playerindex=_layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: (app.type==1?"模板续期":"开通小程序"),
+                        shade: 0.3,
+                        area: ['350px', '230px'], //宽高
+                        content: $("#editcode").html().replace(/temp/g, ''),//this.adddiv(),
+                        btn: ["确定", "取消"],
+                        end: function () {
+                            isloading = 0;
+                        },
+                        yes: function () {
+                            if (app.currenteditid > 0) {
+                                return;
+                            }
+                            var uselength = window.parent.document.getElementById("uselength").value;
+                            if (uselength == undefined || uselength.length <= 0 || uselength<=0) {
+                                return _layer.msg("请输入使用时长");
+                            }
+
+                            _layer.confirm(app.type==1?"确定执行操作？":'确定开通模板？', {
+                                btn: ['确定', '取消'] //按钮
+                            }, function () {
+                                app.currenteditid = _layer.load(1);
+                                var id = app.datalist[app.index].Id;
+
+                                $.post("/Plat/ApplyApp/OpenStore", {aid:@ViewBag.appId,id:id,uselength:uselength,type:app.type}, function (data) {
+                                    if (data.isok) {
+                                        _layer.close(app.playerindex);
+                                        _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                            window.location.reload();
+                                        });
+                                    }
+                                    else {
+                                        _layer.msg(data.Msg);
+                                    }
+                                    _layer.close(app.currenteditid);
+                                    app.currenteditid = 0;
+                                })
+                            }, function () {
+                            });
+                        },
+                        success: function(layero, index){
+                            window.parent.document.getElementById("uselength").onchange = function(){
+                                var uselength = this.value;
+                                if(uselength<=0)
+                                {
+                                    this.value = 1;
+                                    return;
+                                }
+                                window.parent.document.getElementById("price").innerHTML = (uselength*app.tempinfo.Price*0.01).toFixed(2);
+                                var nowtime = new Date();
+                                if(app.type ==1)
+                                {
+                                    var temptime = new Date(app.datalist[app.index].OutTimeStr);
+                                    if(temptime>nowtime)
+                                    {
+                                        nowtime = temptime;
+                                    }
+                                }
+                                var outtime = (nowtime.getFullYear() + parseInt(uselength)) + "-" + (nowtime.getMonth() + 1) + "-" + nowtime.getDate() + " " + nowtime.getHours() + ":" + nowtime.getMinutes();
+                                //$("#tempouttime").html(outtime);
+                                window.parent.document.getElementById("outtime").innerHTML = outtime
+                            };
+                        }
+                    });
+                },
+                savexcxstate:function(index,state){
+                    var id = app.datalist[index].Id;
+                    var state = app.datalist[index].XcxAppState>=0?-1:1;
+                    var msg = state==-1?"确定停用模板？":"确定启用模板？";
+                    _layer.confirm(msg, {
+                                btn: ['确定', '取消'] //按钮
+                            }, function () {
+                                app.currenteditid = _layer.load(1);
+                                var id = app.datalist[index].Id;
+
+                                $.post("/Plat/ApplyApp/SaveXcxState", {aid:@ViewBag.appId,id:id,state:state}, function (data) {
+                                    if (data.isok) {
+                                        _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                            window.location.reload();
+                                        });
+                                    }
+                                    else {
+                                        _layer.msg(data.Msg);
+                                    }
+                                    _layer.close(app.currenteditid);
+                                    app.currenteditid = 0;
+                                })
+                            }, function () {
+                            });
+                },
+                chongzhi:function()
+                {
+                    _layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: "充值",
+                        shade: 0.3,
+                        area: ['250px', '350px'], //宽高
+                        content: $("#chongzhi").html()});
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+    </script>
+}

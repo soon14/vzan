@@ -1,0 +1,127 @@
+﻿@using Entity.MiniApp.Tools
+@using User.MiniApp.comment
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "提交返款";
+    ViewBag.PageType = -1;
+}
+
+<style>
+    .width400{width:400px;}
+</style>
+
+<div>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td style="text-align: right;" width="100">银行账号</td>
+            <td>
+                <input type="text" class="form-control width400" id="yinghang" onkeyup = "this.value=this.value.replace(/[^\d]/g,'');" maxlength="50"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">支付宝账号</td>
+            <td>
+                <input type="text" class="form-control width400" id="zhifubao" maxlength="50"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">发票类型</td>
+            <td>
+                <div>
+                    <input type="radio" name="invoice" value="0" checked />纸质发票
+                    <input type="radio" name="invoice" value="1" /> 电子发票
+                </div>
+                <div id="kuaidibox">
+                    快递单号：
+                    <input type="text" class="form-control width400" style="display:inline-block;" id="kuaididanhao" maxlength="50"/>
+                </div>
+                <div id="imgbox" hidden>
+                    @Html.FileUploadFor("CarouselList", maxFiles: 1, controllerWidth: 120, initImageList: new List<object>(), removeCallback: "removeFun", awm: 1)
+                    <label class="forinputmassage">点击灰色区域选择上传电子发票图片</label>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div style="text-align: center;width: 50%;">
+        <input type="button" class="btn btn-primary width100" id="btnSave" value="提交" />
+        <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+    </div>
+</div>
+
+<script>
+    var currentedit=0;
+    $(function () {
+        $("input[name='invoice']").on("click",function(){
+            var invoice = this.value;
+            if(invoice==0)
+            {
+                $("#imgbox").hide();
+                $("#kuaidibox").show();
+            }
+            else{
+                $("#kuaidibox").hide();
+                $("#imgbox").show();
+            }
+        })
+
+        // #region 保存
+        $('#btnSave').on('click', function () {
+            var yinghang = $('#yinghang').val();
+            if (yinghang.trim().length === 0)
+                return layer.msg("请填写银行账号");
+
+            var zhifubao = $('#zhifubao').val();
+            if (zhifubao.trim().length === 0)
+                return layer.msg("请填写支付宝账号");
+
+            var invoice = $("input[name='invoice']:checked").val();
+            var kuaididanhao = $('#kuaididanhao').val();
+            var imgurl = '';
+            if (invoice == 0)
+            {
+                if (kuaididanhao.trim().length === 0)
+                    return layer.msg("请填写快递单号");
+            }
+            else {
+                var carouselAlert = false;
+                if ($('.CarouselList .dz-image-preview').length > 0) {
+                    $('.CarouselList .dz-image-preview').each(function (i, n) {
+                        if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                            carouselAlert = true;
+                        }
+                    });
+                    $('#ImageCount').val($('.CarouselList .dz-image-preview').length);
+                }
+                if (carouselAlert) {
+                    return layer.msg('电子发票图片上传失败 ! ').html();
+                }
+
+                $('input[name="CarouselList"]').each(function (i, n) {
+                    imgurl = $(n).val();
+                });
+            }
+            currentedit = layer.load(1);
+            
+            $.post('/agentmanager/SaveAgentCaseBack',
+                {
+                    bankaccount: yinghang,
+                    alipayaccount: zhifubao,
+                    couriernumber: kuaididanhao,
+                    imgurl: imgurl,
+                    agentdistributionrid: @ViewBag.AgentDistributionRid,
+                    invoice: invoice,
+                },
+                function (result) {
+                    if (result.isok) {
+                        layer.msg(result.Msg, { anim: 0, time: 1000 }, function () {
+                            window.location.href = "/agentmanager/agentdistributionuser?agentqrcodeid=@ViewBag.AgentQrcodeId";
+                        });
+                    } else {
+                        layer.msg(result.Msg);
+                        layer.close(currentedit);
+                    }
+                });
+        });
+        // #endregion
+    })
+</script>

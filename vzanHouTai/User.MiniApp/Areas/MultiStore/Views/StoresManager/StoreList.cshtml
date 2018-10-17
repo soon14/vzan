@@ -1,0 +1,141 @@
+﻿
+@{
+    ViewBag.PageType = 26;
+    ViewBag.Title = "多门店管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+<style>
+    .Tip { margin-top: 1rem; font-weight: bold; }
+</style>
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<div id="app" v-cloak>
+    <div>
+        <div style="margin-left:17px;">
+            <div  style="margin-top:20px;">
+                <div>
+                    <div class="Tip"><span>商户号:</span>@ViewBag.Mch_id</div>
+                    <div class="Tip"><span>门店后台登录地址:</span><a href="http://www.xiaochengxu.com.cn/MultiStore/userlogin/login">http://www.xiaochengxu.com.cn/MultiStore/userlogin/login</a> </div>
+                </div>
+
+            </div>
+        </div>
+        <br />
+        <br />
+
+
+        <table class="table table-bordered viplevel ml_19">
+            <tr class="active">
+                <th class="centertext">门店名称</th>
+                <th class="centertext">门店地址</th>
+                <th class="centertext">门店管理员账号</th>
+                <th class="centertext">联系电话</th>
+                <th class="centertext">创建时间</th>
+                <th class="centertext">过期时间</th>
+                <th class="centertext">状态</th>
+                <th class="centertext">操作</th>
+            </tr>
+    
+            <tr v-for="(item,index) in StoreList">
+                <td class="centertext">{{item.StoreName}}</td>
+                <td class="centertext">{{item.Address}}</td>
+                <td class="centertext">{{item.ShopManagerName}}</td>
+                <td class="centertext">{{item.TelePhone}}</td>
+                <td class="centertext">{{item.CreateDateStr}}</td>
+                <td class="centertext">{{item.OverTimeStr}}</td>
+                <td class="centertext">
+                    <span class="label label-danger" v-if="item.State==0">{{item.StateStr}}</span>
+                    <span class="label label-success" v-else>{{item.StateStr}}</span>
+                </td>
+                <td class="centertext">
+                    <div class="doItem" >
+                        <a :href="'/MultiStore/StoresManager/Index?appId=@ViewBag.appId&&storeId='+item.Id" class="btn btn-primary btn-xs">
+                            <span class="glyphicon glyphicon-edit"></span>
+                            编辑
+                        </a>
+
+                        <span class="label label-info">
+                            <a :href="'/MultiStore/GoodsManager/subgoodlist?appId=@ViewBag.appId&manageType=fromAdmin&storeId='+item.Id">商品管理</a>
+                        </span>
+                        <a :href="'/MultiStore/StoresManager/TakeoutSetting?appId=@ViewBag.appId&storeId='+item.Id" class="btn btn-primary btn-xs">
+                            <span class="glyphicon glyphicon-plane"></span>
+                            配送设置
+                        </a>
+                        @*<a href="javascript:;" class="btn btn-danger btn-xs btnDel" data-id="498">
+                            <span class="glyphicon glyphicon-remove-sign"></span>
+                            删除
+                        </a>*@
+                       
+                    </div>
+                </td>
+            </tr>
+            <tr v-if="StoreList==null || StoreList.length==0">
+                <td colspan="10">暂无数据</td>
+            </tr>
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="RecordCount>0"></div>
+
+    </div>
+</div>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            StoreList:[],
+            RecordCount: 0,
+            postdata:{
+                appId:@ViewBag.appId,
+                HomeId:@ViewBag.HomeId,
+                pageIndex: 1,
+                pageSize: 10
+            }
+        },
+        methods: {
+            getList:function(){
+                if (this.isloading) {
+                    layer.msg("努力加载ing...")
+                    return;
+                }
+                this.isloading = true;
+                var index = layer.load(1);
+                $.post("/MultiStore/StoresManager/GetStoreList", this.postdata, function (data) {
+                    layer.close(index);
+                    app.isloading = false;
+                    if (data.isok) {
+                        app.RecordCount = data.model.RecordCount;
+                        app.StoreList = data.model.StoreList;
+                        app.resetPage();
+                    }
+                })
+            },
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.RecordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            console.log(obj.limit); //得到每页显示的条数
+                            app.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+
+        }, created: function () {
+            this.getList();
+        }
+
+    });
+</script>

@@ -1,0 +1,287 @@
+﻿@using Entity.MiniApp.Home;
+@model QuestionViewModel
+@using Entity.MiniApp;
+@{
+
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 引入Bootstrap -->
+    <link href="@(WebSiteConfig.cdnurl)content/dlptcss/css/bootstrap.css" rel="stylesheet">
+    <!--<link rel="stylesheet" type="text/css" href="css/reset.css"/>-->
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/dlptcss/css/common.css" />
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/dlptcss/css/question.css" />
+    <link href="@WebSiteConfig.SourceContent/content/??css/layer/layer.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+    <title>小程序问答</title>
+    <style>
+        .options a {
+            color: #000;
+        }
+
+            .options a:focus {
+                text-decoration: none;
+            }
+
+        .options :hover {
+            background: #ddd;
+            color: #808080;
+        }
+
+        .options_in:hover {
+            background: #1AAD19;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="head">
+        <div class="container">
+            <nav id="laya_nav" class="navbar navbar-inverse layabox_nav">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#laya_nav_collapse" aria-expanded="true">
+                            <span class="sr-only"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand navbar-logo" href="">
+                            <p>点赞科技</p>
+                            <p>DZAN</p>
+                        </a>
+                    </div>
+                    <div id="laya_nav_collapse" class="navbar-collapse collapse in" aria-expanded="true">
+                        <ul class="nav navbar-nav">
+                            <li><a href="/dlpt/agency">代理加盟</a></li>
+                            <li><a href="/dlpt/shop">小程序商店</a></li>
+                            <li class="dro active">
+                                <a href="/dlpt/abou_xiao">关于小程序</a>
+                                <ul class="drop">
+                                    <span class="sharp_top"></span>
+                                    <a href="/dlpt/abou_xiao"><li class="tab">小程序排行榜</li></a>
+                                    <a href="/dlpt/abou_xiao"><li class="tab">新闻资讯</li></a>
+                                    <a href="/dlpt/abou_xiao"><li class="tab">深度观点</li></a>
+                                    <a href="/dlpt/abou_xiao"><li class="tab">行业报告</li></a>
+                                    <a href="/dlpt/Question" target="_blank"><li class="tab">小程序百科</li></a>
+                                </ul>
+                            </li>
+                            <li><a href="/dlpt/about_US">关于我们</a></li>
+                            <li><a href="https://www.vzan.com" target="_blank">微赞官网</a></li>
+                            <li>
+                                <a href="/CustomerHome/login" target="_blank"><button class="btn_in">小程序后台</button></a>
+                                <a href="/home/login" target="_blank"><button class="btn hover">代理商后台</button></a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <div class="web" id="boxs" hidden>
+        <div class="contain_left">
+            <div class="logo">
+                <div>
+                    <img src="@(WebSiteConfig.cdnurl)content/dlptcss/images/logo.png" />
+                </div>
+                <p></p>
+            </div>
+            <div class="options @(ViewBag.childnode==0?"options_in":"")">
+                <a href="javascript:;"><p>全部</p></a>
+            </div>
+            @if (Model != null && Model.menuList != null && Model.menuList.Count > 0)
+            {
+                foreach (var menu in Model.menuList)
+                {
+                    <div class="options @(ViewBag.childnode==menu.Id?"options_in":"")">
+                        <a href="javascript:;" id="@menu.Id"><p>@menu.name</p></a>
+                    </div>
+                }
+            }
+         
+        </div>
+        <div class="contain_right">
+            <div class="contain">
+                <div class="seek white">
+                    <input type="image" id="btn" src="@(WebSiteConfig.cdnurl)content/dlptcss/images/seek.png"  v-on:click="search()"/>
+                    <input type="text" id="seek" placeholder="搜索" v-model="title"  @@keyup.enter="search()"/>
+                    <div class="clear"></div>
+                </div>
+                @if (Model != null && Model.commonList != null && Model.commonList.Count > 0)
+                {
+                    <div class="faq white">
+                        <p>常见问题</p>
+                        <div id="faq">
+                            @foreach (var news in Model.commonList)
+                            {
+                                <a href="/dlpt/QuestionContent?id=@news.Id"><span>@(news.title.Length > 7 ? news.title + "..." : news.title)</span></a>
+                            }
+                        </div>
+                    </div>
+                }
+                <div class="questions white">
+
+                    <div class="question" v-if="list!=null&&list.length>0" v-for="item in list">
+                        <div>
+                            <b class="question_title"><a v-bind:href="'/dlpt/QuestionContent?id='+item.id">{{item.title}}</a></b>
+                        </div>
+                        <div class="tagbox" v-if="item.taglist!=null && item.taglist.length>0">
+                            <span v-for="tag in item.taglist">{{tag}}</span>
+                        </div>
+                        <p>{{item.Description}}</p>
+                    </div>
+
+                    <div class="question" v-if="list==null||list.length<=0">
+                        <p>{{msg}}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="popularize">
+                @if (Model != null && Model.advList != null && Model.advList.Count > 0)
+                {
+                    
+                    <div class="popularize_code white">
+                        @foreach (var adv in Model.advList)
+                        {
+                            <img src="@adv.ImgLink" />
+                        }
+                        
+                    </div>
+                }
+                @if (Model != null && Model.hotList != null && Model.hotList.Count > 0)
+                {
+                    <div class="hot white">
+                        <span>热门问题</span>
+                        @foreach (var news in Model.hotList)
+                        {
+                            <a href="/dlpt/QuestionContent?id=@news.Id"><p>@news.title</p></a>
+                        }
+                    </div>
+                }
+            </div>
+            <div id="fixed_bottom">
+                <p>
+                    招商热线：18680288930
+                    <span class="code">
+                        <img src="@(WebSiteConfig.cdnurl)content/dlptcss/images/code.png" />
+                        <small>扫码加微信</small>
+                    </span>
+                </p>
+
+                <div id="close_fixed" v-on:click="close()">
+                    <img src="@(WebSiteConfig.cdnurl)content/dlptcss/images/close.png" />
+                </div>
+            </div>
+        </div>
+
+        <div class="clear"></div>
+    </div>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    @*<script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>*@
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="@(WebSiteConfig.cdnurl)content/dlptcss/js/jquery.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/dlptcss/js/bootstrap.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/layer/layer.js"></script>
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+    <script src="@WebSiteConfig.SourceContent/fcontent/plugin/vue.min.js"></script>
+    <script>
+        //var close = document.getElementById("close_fixed");
+        //var fixe = document.getElementById("fixed_bottom");
+        //close.onclick = function(){
+        //    fixe.style.display = "none"
+        //}
+
+        var vm = new Vue({
+            el: "#boxs",
+            data: {
+                title: '@ViewBag.title',
+                childnode: '@ViewBag.childnode',
+                pageIndex: 1,
+                pagesize: 10,
+                isover: false,
+                isloading: false,
+                list: [],
+                msg:"暂无数据"
+            },
+            methods: {
+                getlist: function () {
+                    if (this.isover) return;
+                    if (this.isloading) return;
+                    this.isloading = true;
+                    $.post("/dlpt/getQuestionList", { pageindex: this.pageIndex, pagesize: this.pagesize, childnode: this.childnode,title:this.title }, function (data) {
+                        vm.isloading = false;
+                        if (data.isok) {
+                            if (data.dataObj != null && data.dataObj.length > 0) {
+                                vm.list = vm.list.concat(data.dataObj);
+                                vm.pageIndex++;
+                            } else {
+                                vm.isover = true;
+                                if (vm.title.length > 0) {
+                                    vm.msg = "没有查到与‘" + vm.title + "’相关的内容";
+                                } else {
+                                    vm.msg = "暂无数据";
+                                }
+                            }
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+
+                },
+                search:function() {
+                    //console.log("dd");
+                    this.isover = false;
+                    this.pageIndex = 1;
+                    this.list = [];
+                    this.getlist();
+                    //$.post("/foods/updateTheShopOrderState", { appId:2,state:2,orderid:1}, function (data) {
+                    //    layer.msg(data.msg);
+                    //});
+                },
+                close: function () {
+                    $("#fixed_bottom").hide();
+                }
+            },
+            created: function () {
+                $("#boxs").show();
+                this.getlist();
+            }
+        })
+        $(".options").click(function () {
+            $(".options").removeClass("options_in");
+            $(this).addClass("options_in");
+            vm.childnode = $(this).find("a").attr("id");
+            vm.isover = false;
+            vm.list = [];
+            vm.pageIndex = 1;
+            vm.title = '';
+            vm.getlist();
+            // console.log($(this).find("a").attr("id"));
+        })
+        $(".nav li").eq(2).mousemove(function(){
+            $(".dro a").eq(0).css("border-width","0")
+            $(".drop").eq(0).css("display","block")
+        });
+        $(".nav li").eq(2).mouseout(function(){
+            $(".drop").eq(0).css("display","none")
+        });
+        $(window).scroll(function () {
+            var scrollTop = $(this).scrollTop();
+            var scrollHeight = $(document).height();
+            var windowHeight = $(this).height();
+            //			滑到底部加载更多问题
+            if (scrollTop + windowHeight == scrollHeight) {
+                if (!vm.isover) {
+                    vm.getlist();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

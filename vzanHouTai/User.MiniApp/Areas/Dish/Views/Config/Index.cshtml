@@ -1,0 +1,194 @@
+﻿@model ViewModel<DishStore>
+@{
+    ViewBag.Title = "门店管理";
+    Layout = "~/Areas/Dish/Views/Shared/_LayoutAdmin.cshtml";
+    XcxAppAccountRelation xcx = (XcxAppAccountRelation)Request.RequestContext.RouteData.Values["xcx"];
+    if (xcx.SCount <= 0)
+    {
+        xcx.SCount = 1;
+    }
+    string host = Request.Url.Host;
+}
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3>门店管理</h3>
+        </div>
+        <div class="ibox-content xcx-list">
+            <div class="alert alert-warning">
+                门店独立后台地址：http://@(host)/DishAdmin/main/login <br />
+                @if (xcx.SCount > 1)
+                {
+                    @("您可以添加" + xcx.SCount + "个门店，将某个门店设为主店后，小程序自动开启单店模式，用户打开小程序将自动进入主店")
+                }
+            </div>
+
+            <div class="row m-b-sm m-t-sm">
+                @if (Model.DataList.Count < xcx.SCount)
+                {
+                    <div class="col-md-9">
+                        <a href="/Dish/Config/Edit?aid=@(Model.aId)" class="btn btn-w-m btn-primary">
+                            <i class="fa fa-plus"></i> 添加新门店
+                        </a>
+                    </div>
+                }
+
+
+                @*<div class="col-md-3 text-right">
+                        <div>
+                            <form method="get" action="/Dish/Config/Index">
+                                <input type="hidden" name="aId" value="@(Model.aId)" />
+                                <table border="0" cellpadding="0" cellspacing="0" align="right">
+                                    <tr>
+                                        <td><input type="text" name="kw" value="@(Utility.IO.Context.GetRequest("kw",""))" class="search-input form-control" placeholder="请输入门店名称"></td>
+                                        <td><span class="input-group-btn"><button type="submit" class="btn btn-primary"><i class="fa fa-search"></i>搜索</button></span></td>
+                                    </tr>
+                                </table>
+                            </form>
+                        </div>
+                    </div>*@
+            </div>
+            <table class="table table-hover table-condensed">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>门店名称</th>
+                        <th>门店电话</th>
+                        <th>LOGO</th>
+                        @*<th>类别</th>*@
+                        <th>操作</th>
+                </thead>
+                @if (Model.DataList != null && Model.DataList.Count > 0)
+                {
+                    <tbody>
+                        @foreach (var item in Model.DataList)
+                        {
+                            <tr v-for="(item,index) in stores">
+                                <td>@(item.id)</td>
+                                <td>@(item.dish_name)</td>
+                                <td>@(item.dish_con_mobile)</td>
+                                <td><img src="@(item.dish_logo)" width="50px"></td>
+                                @*<td>@(item.cat_name)</td>*@
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="/Dish/Config/Edit?aid=@(Model.aId)&id=@(item.id)" class="btn btn-outline btn-default"><i class="fa fa-edit"></i> 编辑</a>
+                                        <a class="btn btn-outline btn-default entermanage" data-id="@(item.id)" data-aid="@(Model.aId)"><i class="fa fa-key"></i> 进入管理</a>
+                                        @*<a href="http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Config/set_kefu/id/74848.html" class="btn btn-outline btn-default"><i class="fa fa-cog"></i> 设置客服</a>*@
+
+                                        @if (xcx.SCount > 1)
+                                        {
+                                            <a class="btn btn-outline btn-default confirm del" data-id="@(item.id)">
+                                                <i class="fa fa-trash"></i> 删除
+                                            </a>
+                                            <a class='btn btn-outline btn-default @(item.ismain==1?"active":"") setmain' data-id="@(item.id)" data-value="@(item.ismain)">
+                                                <i class="fa fa-home"></i> @(item.ismain == 1 ? "取消主店" : "设为主店")
+                                            </a>
+                                        }
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+            <nav aria-label="Page navigation" class="text-center">
+                <ul class="pagination pagination-lg">
+                    <li>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+</body>
+
+@section scripts{
+
+    <script>
+        var manageWin = null;
+        $(function () {
+            $(".del").on("click", function (e) {
+                var id = $(this).data("id");
+                if (confirm('确定要删除该门店吗?')) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/Dish/Config/Index",
+                        data: { act: 'del', id: id, aid : @Model.aId },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 1000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+
+                }
+            })
+            $(".setmain").on("click", function (e) {
+                var id = $(this).data("id");
+                var value = $(this).data("value");
+                if (value == 0) {
+                    if (confirm('设为主店后，小程序将自动切换至单门店模式。')) {
+
+                        postMethod();
+                    }
+
+                }
+                else {
+                    postMethod();
+                }
+                function postMethod() {
+                    $.ajax({
+                        type: "POST",
+                        url: "/Dish/Config/Index",
+                        data: { act: 'changemode', id: id, aid: @Model.aId, ismain: value },
+                        dataType: "json",
+                        success: function (data) {
+                            if (data.code == 1) {
+                                layer.msg(data.msg, { time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            } else {
+                                layer.msg(data.msg, { time: 1000 });
+                            }
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            layer.alert('系统错误，请重试', { icon: 5 });
+                        }
+                    });
+                }
+            });
+            $(".entermanage").on("click", function () {
+                var id = $(this).data("id");
+                var aid = $(this).data("aid");
+                $.post("/Dish/Config/EnterStoreManage", { aid: aid, id: id }).then(function (result) {
+                    if (result.code == 1) {
+                        var host = window.location.host;
+                        var domain = "";
+                        if (host.indexOf('vzan.com') != -1) {
+                            domain = ".vzan.com";
+                        }
+                        else if (host.indexOf('xiaochengxu.com') != -1) {
+                            domain = ".xiaochengxu.com.cn";
+                        }
+                        $.cookie('dzDishAdmin', result.msg, { expires: 7, path: '/', domain: domain});
+
+                        setTimeout(function () {
+                            window.parent.location.href = "/DishAdmin/main/index?aId=" + aid + "&storeId="+id;
+                        }, 10);
+                    }
+                });
+
+            });
+        });
+    </script>
+}

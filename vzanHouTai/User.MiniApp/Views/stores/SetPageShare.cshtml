@@ -1,0 +1,279 @@
+﻿@using Entity.MiniApp.User
+@using Entity.MiniApp.Conf
+@model PageShare
+@{
+    //行业版同城配置
+    ViewBag.Title = "分享转发";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" />
+
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/jquery.dad.css" rel="stylesheet" />
+<style>
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .flex { -webkit-box-flex: 1; -webkit-flex: 1; -ms-flex: 1; flex: 1; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+
+    .headTxt { color: red }
+    .form-control { display: inline-block; }
+    .rightPreviewImg { width: 100%; }
+    .leftMsg { margin: auto; }
+    .logo { height: 10%; }
+    .headTitle { height: 30%; }
+    .AdImg { height: 25%; }
+    .tipTxt { height: 10%; }
+    .qrCode { height: 25%; }
+    .prvDiv div { margin-bottom: 20px; }
+    .i_Posters { display: inline-block; }
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div class="d-flex d-flex-center">
+    @{
+        if (ViewBag.shouquan == 0)
+        {
+            <tr>
+                <td style="text-align: right;" width="20%"> </td>
+                <td>
+                    <div>
+                        <a style="font-size: 18px;text-decoration:underline; " target="_blank" href="/stores/XcxManageIndex?appId=@ViewBag.appId">您暂未对小程序授权 , 请到 [ 小程序模板 ] ]进行授权</a>
+                    </div>
+                </td>
+            </tr>
+        }
+        else
+        {
+            <div class="leftMsg" style="width:70%;">
+                <table class="table table-condensed table-hover cancel-table-td-border ">
+                    <tr>
+                        <td style="text-align: right;" width="20%"> </td>
+                        <td>
+                            <div class="headTxt">
+                                开启分享按钮后,用户可以在指定页面上点击一键分享按钮生成带小程序的二维码
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right;" width="20%">分享按钮:</td>
+                        <td>
+                            <input class="IsOpen" name="IsOpen" type="radio" value="1" @(Model.IsOpen > 0 ? "checked" : string.Empty)> 开启
+                            <input class="IsOpen" name="IsOpen" type="radio" value="0" @(Model.IsOpen == 0 ? "checked" : string.Empty)> 关闭
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right;" width="20%">分享引导语:</td>
+                        <td><input type="text" class="form-control width400" id="ShareTitle" value="@Model.ShareTitle" /><label style="color: red">*建议20个字以内</label></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right;" width="20%">店铺名称:</td>
+                        <td><input type="text" class="form-control width400" id="Title" value="@Model.Title" /><label style="color: red">*建议10个字以内</label></td>
+                    </tr>
+
+                    <tr>
+                        <td style="text-align: right;" width="20%">摘要:</td>
+                        <td><input type="text" class="form-control width400" value="@Model.Remark" id="Remark" /><label style="color: red">*建议20个字以内</label></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right;" width="20%">店铺Logo:</td>
+                        <td>
+                            <div class="i_Posters">
+                                <div style="position:relative;display:inline-block;" data-img="@Model.Logo" style="width:130px;height:130px;">
+                                    <img src="@(string.IsNullOrEmpty(Model.Logo)?"@(WebSiteConfig.cdnurl)content/Miniapp/imgs/imageUpload.png":Model.Logo)" class="defaultUploadAttr LogoImgItem" title="点击上传" style="display:block;max-width:130px;max-height:130px" />
+                                    <span title="点击删除" class="DelPoster" style="position: absolute;right:0px;top: 0px;display:@(string.IsNullOrEmpty(Model.Logo)?"none":"block")"><i style="font-size: x-large;cursor: pointer;" class="Hui-iconfont"></i></span>
+                                </div>
+                            </div>
+                            <label style="color: red">*建议上传130*130px 一张小于1M格式jpg或者png</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right;" width="20%">广告图:</td>
+                        <td>
+                            <div class="i_Posters">
+
+                                <div style="position:relative;display:inline-block;" data-img="@Model.ADImg" style="width:480px;height:270px;">
+                                    <img src="@(string.IsNullOrEmpty(Model.ADImg)?"@(WebSiteConfig.cdnurl)content/Miniapp/imgs/imageUpload.png":Model.ADImg)" class="defaultUploadAttr AdImgItem" title="点击上传" style="display:block;max-width:480px;max-height:270px" />
+                                    <span title="点击删除" class="DelPoster" style="position: absolute;right:0px;top: 0px;display:@(string.IsNullOrEmpty(Model.ADImg)?"none":"block")"><i style="font-size: x-large;cursor: pointer;" class="Hui-iconfont"></i></span>
+
+                                </div>
+                            </div>
+                            <label style="color: red">*建议上传480*270px 一张小于1M格式jpg或者png</label>
+                        </td>
+                    </tr>
+                </table>
+                <div class="col-md-offset-2">
+                    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+                    <input type="button" class="btn width100" id="PreviewBtn" value="预览" />
+                    <input type="button" class="btn width100" id="GetQrcodeBtn" value="获取小程序码" />
+                    <label style="color:#808080">默认已经加载二维码,如果预览二维码未显示,点击重新获取</label>
+                </div>
+
+            </div>
+        }
+    }
+
+
+   
+
+</div>
+
+
+
+
+<!-- loading -->
+<div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">  
+            <div class="modal-body">
+                请稍候,正在处理你的请求.....
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<input id="ImgUrlAttr" type="file" name="ImgUrlAttr" onchange="UploadImgAttr()" style="height: 0px; width: 0px;opacity:0;" />
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+@*<script src="@(WebSiteConfig.cdnurl)content/Home/js/jquery.min.js"></script>*@
+<script src="@(WebSiteConfig.cdnurl)content/Miniapp/js/jquery.dad.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/Miniapp/js/ajaxfileupload.js"></script>
+<script src="//j.vzan.cc/zhibo/livecontent/plugin/html2canvas.min.js"></script>
+@section script{
+
+    <script>
+        var qrCode='@Model.QrCodeImg';
+        var thisUploadImg;//全局变量 保存属性当前点击的的上传图片
+        $(function () {
+
+            $("#GetQrcodeBtn").click(function(){
+                $('#loading').modal('show');
+                $.ajax({
+                    type: 'POST',
+                    url: '/stores/GetQrcode',
+                    data: {appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#loading').modal('hide');
+                        if (data.isok) {
+                            qrCode=data.obj;
+                            AppTools.Alert(data.msg);
+                        }
+                        else {
+                            AppTools.Alert(data.msg);
+                        }
+
+                    },
+                    error: function (rdata) {
+                        AppTools.Alert("参数错误");
+                    }
+                });
+            });
+
+            $("#saveBtn").click(function(){
+
+                var IsOpen= $("input[name='IsOpen']:checked").val();
+
+                var ShareTitle = $("#ShareTitle").val();
+                var Title = $("#Title").val();
+                var Remark = $("#Remark").val();
+                var Logo = $(".LogoImgItem").parent().data("img");
+                var ADImg = $(".AdImgItem").parent().data("img");
+
+
+
+
+                $('#loading').modal('show');
+                $.ajax({
+                    type: 'POST',
+                    url: '/stores/SetPageShare',
+                    data: {Id:@Model.Id,relationId:@ViewBag.appId,ShareTitle:ShareTitle,Title:Title,Logo:Logo,Remark:Remark,ADImg:ADImg,IsOpen:IsOpen,QrCodeImg:qrCode },
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#loading').modal('hide');
+                        if (data.isok) {
+                            AppTools.Alert(data.msg);
+                        }
+                        else {
+                            AppTools.Alert(data.msg);
+                        }
+
+                    },
+                    error: function (rdata) {
+                        AppTools.Alert("参数错误");
+                    }
+                });
+
+            });
+
+
+
+
+            $(document).on("click", ".defaultUploadAttr", function () {
+                thisUploadImg = $(this);
+                $("#ImgUrlAttr").val("");
+               $("#ImgUrlAttr").click();
+            }).on("click", ".DelPoster", function () {
+
+                $(this).prev().attr("src", "@(WebSiteConfig.cdnurl)content/Miniapp/imgs/imageUpload.png");
+                $(this).css("display", "none");
+                $(this).parent().data("img",'');
+
+            }).on("click", "#PreviewBtn", function () {
+                var ShareTitle = $("#ShareTitle").val();
+                var Title = $("#Title").val();
+                var Remark = $("#Remark").val();
+                var Logo = $(".LogoImgItem").parent().data("img");
+                var ADImg = $(".AdImgItem").parent().data("img");
+               
+                window.open("/stores/PreviewShare?ShareTitle="+ShareTitle+"&Title="+Title+"&Remark="+Remark+"&Logo="+Logo+"&ADImg="+ADImg+"&QrCodeImg="+qrCode+"");
+            });
+
+
+        });
+
+        //上传图片
+        function UploadImgAttr() {
+            $('#loading').modal('show');
+            $.ajaxFileUpload({
+                type: 'POST',
+                url: '/Upload/UploadImg',
+                secureuri: false,
+                fileElementId: 'ImgUrlAttr',
+                dataType: 'json',
+                success: function (data) {
+                    $('#loading').modal('hide');
+                    if (data.Success) {
+
+                        thisUploadImg.attr("src", data.Path);
+                        $(thisUploadImg).parent().data("img",data.Path);
+                        thisUploadImg.next().css("display", "block");
+                        AppTools.Alert(data.Msg);
+                    }
+                    else {
+                        AppTools.Alert(data.Msg);
+                    }
+                },
+                error: function (rdata) {
+                    AppTools.Alert("参数错误");
+                }
+            });
+        }
+
+    </script>
+}

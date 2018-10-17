@@ -1,0 +1,270 @@
+﻿
+@model EntShare
+@{
+    //行业版同城配置
+    ViewBag.Title = "分享转发";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/Miniapp/css/iconfont.css" rel="stylesheet" type="text/css">
+<style>
+    .twxq-new-kuang { border: 1px solid #ccc; padding: 10px; margin-right: 10px; background: #fff; }
+
+    .twxq-edit-zhanshi { border: 2px dashed #fc7d7d; padding: 10px; min-height: 108px; position: relative; }
+
+    .spgl-bianji-bt { position: absolute; bottom: 0; right: 0; display: inline-block; background-color: rgba(0,0,0,0.3); color: #fff; padding: 0 5px; margin-left: 1px; font-size: 12px; }
+
+    .bz { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+    .spxqq-f p:first-child { font-size: 17px; }
+
+    .spxqq-f { text-align: center; margin-top: 17px; line-height: 25px; }
+    .cur { background-color: rgba(91, 148, 253, 1); color: white; }
+    .styleDiv { width: 10%; border: 1px solid rgba(91, 148, 253, 1); text-align: center; border-radius: 4px; line-height: 30px; margin-left: 10px; cursor: pointer; }
+    .layui-form-switch{width:55px !important;}
+    img{width:100%;vertical-align:middle;}
+</style>
+<div style="display:flex;">
+    <table class="table table-condensed table-hover cancel-table-td-border " style="width:55%;">
+        <tr>
+            <td style="text-align: right;" width="20%">开关:</td>
+            <td>
+                <form class="layui-form" action="">
+                    <div class="layui-form-item" style="margin-top:-10px;">
+                        <div class="layui-input-block" style="margin-left:0px;">
+                            <input id="IsOpen" type="checkbox" @(Model.IsOpen > 0 ? "checked=\"checked\"" : string.Empty) name="open" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+                        </div>
+                    </div>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">分享图样式：</td>
+            <td>
+                <div style="display:flex;">
+                    <div class="styleDiv cur">样式1</div><div class="styleDiv">样式2</div><div class="styleDiv">样式3</div>
+                    <div class="styleDiv">样式4</div><div class="styleDiv">样式5</div><div class="styleDiv">样式6</div><div class="styleDiv">样式7</div>
+                </div>
+
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">店铺名称：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.StoreName, new { @class = "form-control width300", palcehlder = "1-10字", maxlength = "10", style = "width:300px;" })
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">店铺Logo：<label style="color: red">*</label></td>
+            <td class="LogoList">
+                @Html.FileUploadFor("LogoList", maxFiles: 1, controllerWidth: 113, initImageList: (List<object>)ViewBag.LogoList, removeCallback: "removeFun", awm: 1)
+                <label class="forinputmassage">点击灰色区域选择上传图片,建议上传130*130px，大小不超过1M，格式为jpg或png的图片</label>
+            </td>
+
+        </tr>
+
+        <tr>
+            <td style="text-align: right;" width="30%">广告语：</td>
+            <td>
+                @Html.TextBoxFor(m => m.ADTitle, new { @class = "form-control width300", palcehlder = "1-20字", maxlength = "20", style = "width:300px;" })
+                <label class="forinputmassage">不填写时小程序转发卡片默认显示小程序名称</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">广告图：</td>
+            <td class="ADImgList">
+                @Html.FileUploadFor("ADImgList", maxFilesize: 20, maxFiles: 1, controllerWidth: 113, initImageList: (List<object>)ViewBag.ADImgList, removeCallback: "removeFun", awm: 1)
+                <label class="forinputmassage">点击灰色区域选择上传图片, 不上传广告图时小程序转发卡片默认截取转发时的小程序页面</label>
+            </td>
+
+        </tr>
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" id="btnSave" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+                <input type="button" class="btn width100" id="GetQrcodeBtn" value="获取小程序码" />
+                <label class="forinputmassage">默认已经加载二维码,如果预览二维码未显示,点击重新获取</label>
+            </td>
+        </tr>
+    </table>
+    <div style="display: inline-block;width:45%">
+        <div style="display:inline-block;width: 45%;position: relative;">
+            <img src="@(WebSiteConfig.cdnurl)content/enterprise/img/share/bg5.png">
+            <div style="display:inline-block;width: 60%;position: absolute;top: 13%;left: 19%;">
+                <img id="curStyle" src="@(WebSiteConfig.cdnurl)content/enterprise/img/share/0.png">
+            </div>
+        </div>
+
+        <div style="display:inline-block;width: 45%;">
+            <img src="@(WebSiteConfig.cdnurl)content/enterprise/img/share/bg4.png">
+        </div>
+    </div>
+</div>
+<!-- loading -->
+<div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-body" id="modelMsg">
+                请稍候,正在处理你的请求.....
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var State=$('#IsOpen').attr('checked')?1:0;
+
+    layui.use(['form'], function(){
+        var form = layui.form
+        ,layer = layui.layer;
+
+        //监听指定开关
+        form.on('switch(switchTest)', function(data){
+            State=(this.checked?1:0);
+        });
+    });
+
+
+    $(function () {
+
+        var saveStyle=@Model.StyleType;
+        $('.styleDiv').eq(saveStyle).addClass('cur').siblings().removeClass('cur');
+        $("#curStyle").attr("src","@(WebSiteConfig.cdnurl)content/enterprise/img/share/" + saveStyle + ".png");
+        // #region 保存
+        $('#btnSave').on('click', function () {
+
+            var carouselAlert = false;
+            if ($('.LogoList .dz-image-preview').length > 0) {
+                $('.LogoList .dz-image-preview').each(function(i,n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        carouselAlert = true;
+                    }
+                });
+
+                $('#ImageCount').val($('.CarouselList .dz-image-preview').length);
+            }
+            if (carouselAlert) {
+                return AppTools.Alert('店铺Logo上传失败 ! ').html();
+            }
+            if ($('.LogoList .dz-image-preview').length ===0) {
+                return AppTools.Alert('请上传店铺Logo ! ');
+            }
+
+
+            //logo
+            var LogoList = '';
+            $('input[name="LogoList"]').each(function (i, n) {
+                LogoList += '|' + $(n).val();
+            });
+
+
+            var ADImgList = '';
+            $('input[name="ADImgList"]').each(function (i, n) {
+                ADImgList += '|' + $(n).val();
+            });
+
+
+            var StoreName = $('#StoreName').val();
+            if (StoreName.length == 0) return AppTools.Alert("请填写店铺名称");
+            if (StoreName.length > 10) {
+                return AppTools.Alert("店铺名称最多10个字！");
+            }
+
+
+            var ADTitle = $('#ADTitle').val();
+
+            if (ADTitle.length > 20) {
+                return AppTools.Alert("广告语最多20个字！");
+            }
+
+
+            $('#loading').modal('show');
+            var StyleType=$('.styleDiv').index($(".cur"));
+            $.post('/stores/ShareSetting',
+                {
+                    appId:@ViewBag.appId,
+                    Id:@Model.Id,
+                    aid:@ViewBag.aid,
+                    StoreName: StoreName,
+                    ADTitle:ADTitle,
+                    StyleType:StyleType,
+                    LogoList:LogoList,
+                    ADImgList:ADImgList,
+                    IsOpen:State,
+                    ShareType:1
+                },
+                function (result) {
+                    if (result.isok > 0) {
+
+                        $("#modelMsg").html("操作成功!2秒后自动跳转...");
+
+                        window.setTimeout(function(){
+                            $('#loading').modal('hide');
+                            window.location.href = '/stores/ShareSet?appId=@ViewBag.appId';
+                        },2000);
+                    } else {
+                        $('#loading').modal('hide');
+                        AppTools.Alert(result.msg);
+                    }
+                });
+        });
+
+
+
+        $('.styleDiv').on('click', function () {
+            $(this).addClass('cur').siblings().removeClass('cur');
+            var index = $('.styleDiv').index($(this));
+            var imgPath = "@(WebSiteConfig.cdnurl)content/enterprise/img/share/" + index + ".png";
+            $("#curStyle").attr("src",imgPath);
+
+        })
+        // #endregion
+
+        
+        $("#GetQrcodeBtn").click(function(){
+            $('#loading').modal('show');
+            $.ajax({
+                type: 'POST',
+                url: '/stores/GetQrcode',
+                data: {appId:@ViewBag.appId,ShareType:@Model.ShareType},
+                dataType: 'json',
+                success: function (data) {
+                    $('#loading').modal('hide');
+                    if (data.isok) {
+                       
+                        AppTools.Alert(data.msg);
+                    }
+                    else {
+                        AppTools.Alert(data.msg);
+                    }
+
+                },
+                error: function (rdata) {
+                    AppTools.Alert("参数错误");
+                }
+            });
+        });
+
+
+
+
+    });
+
+    // #region 删除图片
+    function removeFun(file) {
+        if (file) {
+            $.post('/tools/DeleteImg', { id: file.id }, function (result) {
+                if (!result.Success) {
+                    AppTools.Alert(result.Msg);
+                }
+            });
+        }
+    }
+    // #endregion
+
+
+</script>
+

@@ -1,0 +1,1927 @@
+﻿@using User.MiniApp.Comment;
+@using Entity.MiniApp.Conf;
+@using Entity.MiniApp.Tools;
+@model List<VipLevel>
+@{
+    ViewBag.PageType = 22;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "订单管理";
+    int orderState = Utility.IO.Context.GetRequestInt("orderState", -999);
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+
+<div id="app" v-cloak class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+    <ul class="layui-tab-title">
+        <li class="tab_element" v-on:click="Tab(1)" lay-id="tab_element_1">普通订单</li>
+        <li class="tab_element" v-on:click="Tab(2)" lay-id="tab_element_2">砍价订单</li>
+        <li class="tab_element" v-on:click="Tab(3)" lay-id="tab_element_3">拼团订单</li>
+        @*<li class="tab_element" v-on:click="Tab(4)" lay-id="tab_element_4">预约订单</li>*@
+        @*<li class="tab_element" v-on:click="Tab(5)" lay-id="tab_element_5">外卖订单</li>*@
+    </ul>
+
+    <!--列表-->
+    <div class="layui-tab-content">
+        <!--普通订单-->
+        <div class="layui-tab-item" v-bind:class="{'layui-show': !tab || tab === 1}">
+            <div>
+                <div style="margin-left:17px;">
+                    <div class="d-flex" style="margin-top:20px;">
+                        <div class="leftDiv d-flex d-flex-center">
+                            <div class="d-flex d-flex-center"><span class="Tip">订单号:</span><input type="text" v-model="postOrderdata.orderNum" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">提货码/消费码:</span><input type="text" v-model="postOrderdata.tablesNo" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">商品:</span><input type="text" v-model="postOrderdata.goodsName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">收货人/顾客:</span><input type="text" v-model="postOrderdata.accName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">收货/顾客电话:</span><input type="text" v-model="postOrderdata.accPhone" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">二维码名称:</span><input type="text" v-model="postOrderdata.qrCodeName" class="input-sm form-control" /></div>
+                            &nbsp;&nbsp;&nbsp;
+                            <div class="d-flex d-flex-center">
+                                <span class="Tip">配送方式:</span>
+                                <select v-model="postOrderdata.GetWay" class="form-control">
+                                    <option value="-1" selected>全部</option>
+                                    @*@foreach (miniAppOrderGetWay g in Enum.GetValues(typeof(miniAppOrderGetWay)))
+                                        {
+                                            <option value="@((int)g)">@(g.ToString())</option>
+                                        }*@
+                                    @foreach (miniAppOrderGetWay GetWay in Enum.GetValues(typeof(miniAppOrderGetWay)))
+                                    {
+                                        if (GetWay.ToString() == "达达配送" || GetWay.ToString() == "蜂鸟配送" || GetWay.ToString() == "快跑者配送" || GetWay.ToString() == "UU配送")
+                                        {
+                                            continue;
+                                        }
+                                    <option value="@((int)GetWay)">@(GetWay.ToString())</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px;">
+                        <table>
+                            <tr>
+                                <td>
+                                    <div style="float:left;">
+                                        &nbsp;订单状态:
+                                    </div>
+                                </td>
+                                <td style="width:800px;">
+                                    <div class="typeItem" style="float:left;width:900px;">
+                                        <input v-bind:class="['col-sm-2 btn btn-default btnState',{active:item.state==postOrderdata.orderState}]" type="button" v-on:click="selectState(item.state,1)" v-bind:value="item.vaue" v-for="(item,index) in orderStates">
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="formsearch" style="margin-top:20px;">
+                        <div class="d-flex d-flex-center">
+                            <div class="d-flex d-flex-center flex">
+                                <div class="d-flex d-flex-center" style="margin-right:30px;">
+                                    <span style="width:80px">下单时间:</span>
+                                    <input type="text" class="input-sm form-control time" id="orderTime" style="width:250px;" readonly />
+                                </div>
+                                <div class="btnSearch">
+                                    <a href="#" v-on:click="Search(1)" class="btn btn-primary ml10">搜索</a>&nbsp;
+                                    <a href="#" v-on:click="exPort(1)" class="btn btn-info ml10">导出(按查询)</a>&nbsp;
+                                    <a href="#" v-on:click="ExportAll(1)" class="btn btn-info ml10">导出全部</a>&nbsp;
+                                    <a style="cursor:pointer" v-show="!isMultiple" v-on:click="isMultiple = true" class="btn btn-info ml10">批量打印</a>&nbsp;
+                                    <a style="cursor:pointer" v-show="isMultiple" v-on:click="printSelectOrder(@((int)PrintContentType.打印专业版订单))" class="btn btn-info ml10">确认打印</a>&nbsp;
+                                    @*@Html.Partial("~/Views/common/_partialFindWxOrderMsg.cshtml")*@
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <table class="table table-bordered viplevel ml_19">
+                    <tr class="active">
+                        <th class="centertext" v-show="isMultiple">
+                            <div class="layui-form" style="min-width:80px">
+                                <input type="checkbox" class="layui-input" title="全选" lay-skin="primary" data-printType="@((int)PrintContentType.打印专业版订单)" lay-filter="orderSelAll">
+                            </div>
+                        </th>
+                        <th class="centertext" style="min-width:160px;">订单号</th>
+                        <th class="centertext" style="min-width:60px;">提货码/消费码</th>
+                        <th class="centertext">商品</th>
+                        <th class="centertext">订单金额(元)</th>
+                        <th class="centertext">实收金额(元)</th>
+                        <th class="centertext">支付方式</th>
+                        <th class="centertext" style="width:10%;">提/送货地址</th>
+                        <th class="centertext">配送方式</th>
+                        <th class="centertext">提/收货人</th>
+                        <th class="centertext">提/收货人电话</th>
+                        <th class="centertext" style="width:10%;">订单备注</th>
+                        <th class="centertext">下单时间</th>
+                        @*<th class="centertext">团号</th>*@
+                        <th class="centertext">二维码名称</th>
+                        <th class="centertext">订单状态</th>
+                        <th class="centertext">操作</th>
+                    </tr>
+                    <tr v-for="(item,index) in OrderList">
+                        <td class="contentext" v-show="isMultiple">
+                            <div class="layui-form" style="min-width:80px">
+                                <input type="checkbox" class="layui-input" title="打印" lay-skin="primary" v-bind:value="item.Id" v-model="selOrder" lay-filter="orderSel">
+                            </div>
+                        </td>
+                        <td class="centertext"><a v-on:click="printOrder(item.Id,@((int)PrintContentType.打印专业版订单),1)">{{item.OrderNum}}</a></td>
+
+                        @*<td class="centertext"><a v-on:click="GetEntOrderDetail(item.Id,item.OrderNum,item.FreightPriceStr)">{{item.OrderNum}}</a></td>*@
+                        <td class="centertext">{{item.TablesNo}}</td>
+                        <td class="centertext"><a v-on:click="printOrder(item.Id,@((int)PrintContentType.打印专业版订单),1)">{{item.QtyCount}}</a></td>
+                        @*<td class="centertext"><a v-on:click="GetEntOrderDetail(item.Id,item.OrderNum,item.FreightPriceStr)">{{item.QtyCount}}</a></td>*@
+                        <td class="centertext">{{item.GoodsMoney}}</td>
+                        <td class="centertext">{{item.BuyPriceStr}}</td>
+                        <td class="centertext">{{item.BuyModeStr}}</td>
+                        <td class="centertext">{{item.Address}}</td>
+                        <td class="centertext">{{item.GetWayStr}}</td>
+                        <td class="centertext">{{item.AccepterName}}</td>
+                        <td class="centertext">{{item.AccepterTelePhone}}</td>
+                        <td class="centertext">{{item.Message}}</td>
+                        <td class="centertext">{{item.CreateDateStr}}</td>
+                        <td class="centertext">{{item.StoreCodeName}}</td>
+                        @*<td class="centertext">{{item.GroupId}}</td>*@
+                        <td class="centertext">
+                            <div v-if="item.GetWay==@((int)miniAppOrderGetWay.达达配送)">
+                                <span>{{item.DadaOrderStateStr}}</span>
+                            </div>
+                            <div v-else>
+                                {{item.StateStr}}<br />
+                                <p v-if="item.State=== @((int)MiniAppEntOrderState.退款中)||item.State=== @((int)MiniAppEntOrderState.退款失败)||item.State=== @((int)MiniAppEntOrderState.退款成功)||item.State=== @((int)MiniAppEntOrderState.退货退款成功)">退款：{{item.refundFeeStr}}</p>
+                            </div>
+                        </td>
+                        <td class="centertext" v-if="item.OrderType == @((int)EntOrderType.拼团订单) && item.GroupState == @((int)GroupState.开团成功)">
+                            <span v-if="item.State==@((int)MiniAppEntOrderState.已取消)">已取消付款</span>
+                            <span v-else>请等待拼团成功</span>
+                        </td>
+                        <td class="centertext" v-else-if="item.OrderType == @((int)EntOrderType.拼团订单) && item.GroupState == @((int)GroupState.已过期)">
+                            <span>无操作</span>
+                        </td>
+                        <!--达达物流-->
+                        <td class="centertext" v-else-if="item.GetWay==@((int)miniAppOrderGetWay.达达配送)">
+                            <div v-if="item.State == @((int)MiniAppEntOrderState.待发货) || item.State == @((int)MiniAppEntOrderState.待收货) ">
+                                <a v-on:click="CancelOrder(item.dadaorderid,item.State,item.sourceid)" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                            </div>
+                        </td>
+                        <td class="centertext" v-else>
+
+                            <div v-if="item.State ===@((int)MiniAppEntOrderState.已取消)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-10,index,0,item.GetWay)" style="margin-top:5px;">
+                                    删除订单
+                                </a>
+                            </div>
+                            <div v-if="item.State === @((int)MiniAppEntOrderState.待付款)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.已取消),index,0,item.GetWay)" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                                <br />
+                                <a v-on:click="OpenModifyOrderForm(index)" style="margin-top:5px;">
+                                    修改订单资料
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === @((int)MiniAppEntOrderState.待发货)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.退款中),index,0,item.GetWay)" v-if="item.BuyMode != @((int)miniAppBuyMode.货到付款)" style="margin-top:5px;cursor:pointer">
+                                    退款
+                                </a>
+                                <a v-on:click="updateDelivery(item.Id,item.State,@((int)MiniAppEntOrderState.待收货))"
+                                   v-show="!(item.OrderType == @((int)EntOrderType.拼团订单) && item.GroupState==@((int)GroupState.开团成功))"
+                                   style="margin-top:5px;">
+                                    确认发货
+                                </a>
+                                <br />
+                                <a v-on:click="OpenModifyOrderForm(index)" style="margin-top:5px;">
+                                    修改订单资料
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === @((int)MiniAppEntOrderState.待收货) && item.BuyMode != @((int)miniAppBuyMode.货到付款)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.退款中),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    退款
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === @((int)MiniAppEntOrderState.待自取)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.退款中),index,0,item.GetWay)"
+                                   v-if="item.BuyMode != @((int)miniAppBuyMode.货到付款)" style="margin-top:5px;cursor:pointer">
+                                    退款
+                                </a>
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.交易成功),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer" v-if="item.GetWay!=6">
+                                    {{item.BuyMode == @((int)miniAppBuyMode.货到付款) ? '确认收货收款' : '确认收货'}}
+                                </a>
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.交易成功),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer" v-else>
+                                    {{item.BuyMode == @((int)miniAppBuyMode.货到付款) ? '确认消费收款' : '确认消费'}}
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === @((int)MiniAppEntOrderState.退款失败)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-3,index,0,item.GetWay)" href="#" style="margin-top:5px;">
+                                    重新退款
+                                </a>
+                                <br />
+                                <a v-on:click="OpenOutOrderFailRemarkForm(item.Id)" href="#" style="margin-top:5px;cursor:pointer">
+                                    查看退款失败原因
+                                </a>
+                            </div>
+
+                            <div v-if="item.State === @((int)MiniAppEntOrderState.退货审核中)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.待退货),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    同意退货申请
+                                </a>
+                                <br />
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.拒绝退货),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    拒绝退货申请
+                                </a>
+                            </div>
+                            <div v-if="item.State === @((int)MiniAppEntOrderState.退货中)">
+                                <a v-on:click="updateDelivery(item.Id,item.State,@((int)MiniAppEntOrderState.换货中),@((int)DeliveryOrderType.专业版订单用户退货))" style="margin-top:5px;cursor:pointer">
+                                    确认发送换货
+                                </a><br />
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.退货退款成功),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    确认收到退货并退款
+                                </a><br /><br />
+                            </div>
+                            <div v-if="item.State === @((int)MiniAppEntOrderState.退货审核中) ||
+                                       item.State === @((int)MiniAppEntOrderState.待退货) ||
+                                       item.State === @((int)MiniAppEntOrderState.退货中) ||
+                                       item.State === @((int)MiniAppEntOrderState.换货中) ||
+                                       item.State === @((int)MiniAppEntOrderState.拒绝退货) ||
+                                       item.State === @((int)MiniAppEntOrderState.退货退款成功) ||
+                                       item.State === @((int)MiniAppEntOrderState.退换货成功) ||
+                                       item.State === @((int)MiniAppEntOrderState.拒绝退货)">
+                                <a v-on:click="CheckReturnOrder(item.Id)" style="margin-top:5px;cursor:pointer">
+                                    查看退货请求详情
+                                </a>
+                            </div>
+                            <div v-if="item.State === @((int)MiniAppEntOrderState.退货中) ||
+                                       item.State === @((int)MiniAppEntOrderState.换货中) ||
+                                       item.State === @((int)MiniAppEntOrderState.退换货成功) ||
+                                       item.State === @((int)MiniAppEntOrderState.退货退款成功)">
+                                <a v-on:click="CheckDelivery(item.Id,@((int)DeliveryOrderType.专业版订单用户退货))" style="margin-top:5px;cursor:pointer">
+                                    查看退货物流
+                                </a>
+                                <br />
+                                <a v-if="item.State === @((int)MiniAppEntOrderState.换货中) ||
+                                         item.State === @((int)MiniAppEntOrderState.退换货成功)"
+                                   v-on:click="CheckDelivery(item.Id,@((int)DeliveryOrderType.专业版订单商家换货))" style="margin-top:5px;cursor:pointer">
+                                    查看换货物流
+                                </a>
+                            </div>
+                            <div v-if="item.State >= @((int)MiniAppEntOrderState.待收货) && item.State!= @((int)MiniAppEntOrderState.申请取消订单)&& item.GetWay > 0&&item.GetWay!=6">
+                                <a v-on:click="CheckDelivery(item.Id,@((int)DeliveryOrderType.专业版订单商家发货))" style="margin-top:5px;cursor:pointer">
+                                    查看物流信息
+                                </a>
+                            </div>
+                            <div>
+                                <a v-on:click="printOrder(item.Id,@((int)PrintContentType.打印专业版订单))" style="margin-top:5px;cursor:pointer">打印订单</a>
+                            </div>
+
+                            <div v-if="item.State == @((int)MiniAppEntOrderState.申请取消订单)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.退款中),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    退款
+                                </a>
+                                <br />
+                                <a v-if="item.GetWay==@((int)miniAppOrderGetWay.到店自取) " v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.交易成功),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    {{item.BuyMode == @((int)miniAppBuyMode.货到付款) ? '确认收货收款' : '确认收货'}}
+                                </a>
+                                <a v-else-if="item.GetWay==@((int)miniAppOrderGetWay.到店消费)" v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.交易成功),index,0,item.GetWay)" style="margin-top:5px;cursor:pointer">
+                                    {{item.BuyMode == @((int)miniAppBuyMode.货到付款) ? '确认消费收款' : '确认消费'}}
+                                </a>
+                                <a v-else-if="item.GetWay!=@((int)miniAppOrderGetWay.到店消费) && item.GetWay!=@((int)miniAppOrderGetWay.到店自取)" v-on:click="OpenConfForm(item.Id,item.State,@((int)MiniAppEntOrderState.待收货),index,0,item.GetWay)" style="margin-top:5px;">
+                                    确认发货
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="OrderList==null || OrderList.length==0">
+                        <td colspan="15">暂无数据</td>
+                    </tr>
+                </table>
+                <div id="pagesOrder" style="text-align: center;margin-top: 0.5rem;" v-show="orderRecordCount>0"></div>
+            </div>
+        </div>
+        <!--砍价订单-->
+        <div class="layui-tab-item" v-bind:class="{'layui-show': tab === 2}">
+            <div>
+                <div style="margin-left:17px;">
+                    <div class="d-flex" style="margin-top:20px;">
+                        <div class="leftDiv d-flex d-flex-center">
+                            <div class="d-flex d-flex-center"><span class="Tip">订单号:</span><input type="text" v-model="postBargaindata.orderId" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">砍价商品名称:</span><input type="text" v-model="postBargaindata.bName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">微信昵称:</span><input type="text" v-model="postBargaindata.shopName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">收货人/自提人/消费者:</span><input type="text" v-model="postBargaindata.addressUserName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">联系电话:</span><input type="text" v-model="postBargaindata.addressTelNumber" class="input-sm form-control" /></div>
+                        </div>
+
+                        <div class="d-flex d-flex-center">
+                            <span class="Tip">会员级别:</span>
+                            <select v-model="postBargaindata.levelid" class="form-control">
+                                <option value="0" selected>全部</option>
+                                @foreach (var x in Model)
+                                {
+                                    <option value="@x.Id">@x.name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px;">
+                        <table>
+                            <tr>
+                                <td>
+                                    <div style="float:left;">
+                                        &nbsp;订单状态:
+                                    </div>
+                                </td>
+                                <td style="width:800px;">
+                                    <div class="typeItem" style="float:left;width:800px;">
+                                        <input v-bind:class="['col-sm-2 btn btn-default btnState',{active:item.state==postBargaindata.orderState}]" type="button" v-on:click="selectState(item.state,3)" v-bind:value="item.vaue" v-for="(item,index) in orderBargainStates">
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="formsearch" style="margin-top:20px;">
+                        <div class="d-flex d-flex-center">
+                            <div class="d-flex d-flex-center flex">
+                                <div class="d-flex d-flex-center" style="margin-right:30px;">
+                                    <span style="width:80px">下单时间:</span>
+                                    <input type="text" class="input-sm form-control time" id="barginTime" style="width:250px;" readonly />
+                                </div>
+                                <div class="btnSearch">
+                                    <a href="#" v-on:click="Search(0)" class="btn btn-primary ml10">搜索</a>&nbsp;
+                                    <a href="#" v-on:click="exPort(0)" class="btn btn-info ml10">导出(按查询)</a>&nbsp;
+                                    <a href="#" v-on:click="ExportAll(0)" class="btn btn-info ml10">导出全部</a>&nbsp;
+                                    <a style="cursor:pointer" v-show="!isMultiple" v-on:click="isMultiple = true" class="btn btn-info ml10">批量打印</a>&nbsp;
+                                    <a style="cursor:pointer" v-show="isMultiple" v-on:click="printSelectOrder(@((int)PrintContentType.打印专业版砍价订单))" class="btn btn-info ml10">确认打印</a>&nbsp;
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <br />
+
+                <table class="table table-bordered viplevel ml_19">
+                    <tr class="active">
+                        <th class="centertext" v-show="isMultiple">
+                            <div class="layui-form" style="min-width:80px">
+                                <input type="checkbox" class="layui-input" title="全选" data-printType="@((int)PrintContentType.打印专业版砍价订单)" lay-skin="primary" lay-filter="orderSelAll">
+                            </div>
+                        </th>
+                        <th class="centertext" style="width:200px;">订单号</th>
+                        <th class="centertext">砍价商品名称</th>
+                        <th class="centertext">会员</th>
+                        <th class="centertext">会员级别</th>
+                        <th class="centertext">实收金额(元)</th>
+                        <th class="centertext">支付方式</th>
+                        <th class="centertext" style="width:10%;">留言备注</th>
+                        <th class="centertext">配送方式</th>
+                        <th class="centertext" style="width:10%;">收货地址/门店地址</th>
+                        <th class="centertext">快递名称</th>
+                        <th class="centertext">快递单号</th>
+                        <th class="centertext">收货人/自取人/消费者</th>
+                        <th class="centertext">联系电话</th>
+                        <th class="centertext">下单时间</th>
+                        <th class="centertext">支付时间</th>
+                        <th class="centertext">创建时间</th>
+                        <th class="centertext">订单状态</th>
+                        <th class="centertext">操作</th>
+                    </tr>
+                    <tr v-for="(item,index) in bargainUserList">
+                        <td class="contentext" v-show="isMultiple">
+                            <div class="layui-form" style="min-width:80px">
+                                <input type="checkbox" class="layui-input" title="打印" lay-skin="primary" v-bind:value="item.Id" v-model="selOrder" lay-filter="orderSel">
+                            </div>
+                        </td>
+                        <td class="centertext">{{item.OrderId}}</td>
+                        <td class="centertext">{{item.BName}}</td>
+                        <td class="centertext">{{item.ShopName}}</td>
+                        <td class="centertext">{{item.VipLeve}}</td>
+                        <td class="centertext">{{item.PayAmount}}</td>
+                        <td class="centertext">{{item.PayTypeStr}}</td>
+                        <td class="centertext">{{item.Remark}}</td>
+                        <td class="centertext" v-if="item.GetWay==1">到店自取</td>
+                        <td class="centertext" v-if="item.GetWay==2">到店消费</td>
+                        <td class="centertext" v-if="item.GetWay==0">快递配送</td>
+                        <td class="centertext">{{item.AddressDetail}}</td>
+                        <td class="centertext">{{item.SendGoodsName}}</td>
+                        <td class="centertext">{{item.WayBillNo}}</td>
+                        <td class="centertext">{{item.AddressUserName}}</td>
+                        <td class="centertext">{{item.TelNumber}}</td>
+                        <td class="centertext">{{item.CreateOrderTimeStr}}</td>
+                        <td class="centertext">{{item.BuyTimeStr}}</td>
+                        <td class="centertext">{{item.CreateDateStr}}</td>
+                        <td  class="centertext">
+                            <div>
+                                {{item.StateStr}}<br />
+                                <p v-if="item.State=== 2||item.State=== 3||item.State=== 4">退款：{{item.refundFeeStr}}</p>
+                            </div>
+                        </td>
+
+                        <td class="centertext">
+                            <div class="doItem" v-show="item.State == 1||item.State == 7||item.State == 6">
+                                <span class="label label-info" v-on:click="OpenKjTipsModal(index)" style="cursor:pointer;">退款</span>
+                            </div>
+                            <div class="doItem" v-show="item.State == 7||item.State == 6">
+                                <span class="label label-info">
+
+                                    <a v-if="item.State == 7&&item.GetWay==0" v-on:click="updateDelivery(item.Id,item.State,6,@((int)DeliveryOrderType.专业版砍价发货))">发货</a>
+                                    <a v-else-if="item.State == 6&&item.GetWay==0" v-on:click="CheckDelivery(item.Id,@((int)DeliveryOrderType.专业版砍价发货))" style="margin-top:5px;cursor:pointer">
+                                        查看物流信息
+                                    </a>
+                                    <a v-else-if="(item.State == 7||item.State == 6)&&item.GetWay==1" v-on:click="OpenBargainUserConfForm(item.Id,1)">确认自取</a>
+                                    <a v-else-if="(item.State == 7||item.State == 6)&&item.GetWay==2" v-on:click="OpenBargainUserConfForm(item.Id,2)">确认消费</a>
+                                </span>
+                            </div>
+                            <div class="doItem" v-show="item.State == 7&&item.GetWay==0">
+                                <span class="label label-info">
+                                    <a v-on:click="OpenModifyBargainForm(index)" style="margin-top:5px;">
+                                        修改订单资料
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="doItem">
+                                <a v-bind:href="'/tools/BargainRecordList?appId=@ViewBag.appId&PageType=22&buid='+item.Id" class="btn btn-primary btn-xs">
+                                    <span class="glyphicon glyphicon-list"></span>
+                                    帮砍记录
+                                </a>
+                            </div>
+                            <div class="doItem">
+                                <a class="btn btn-primary btn-xs" @@click="printOrder(item.Id,@((int)PrintContentType.打印专业版砍价订单))">
+                                    <span class="glyphicon glyphicon-print"></span>
+                                    打印订单
+                                </a>
+                            </div>
+
+                        </td>
+                    </tr>
+                    <tr v-if="bargainUserList==null || bargainUserList.length==0">
+                        <td colspan="17">暂无数据</td>
+                    </tr>
+                </table>
+                <div id="pagesBargain" style="text-align: center;margin-top: 0.5rem;" v-show="bargainRecordCount>0"></div>
+            </div>
+        </div>
+        <!--拼团订单-->
+        <div class="layui-tab-item" v-bind:class="{'layui-show': tab === 3}">
+            <div>
+                <div style="margin-left:17px;">
+                    <div class="d-flex" style="margin-top:20px;">
+                        <div class="leftDiv d-flex d-flex-center">
+                            <div class="d-flex d-flex-center"><span class="Tip">订单号:</span><input type="text" v-model="postGroupOrderdata.orderNum" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">提货码:</span><input type="text" v-model="postGroupOrderdata.tablesNo" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">商品:</span><input type="text" v-model="postGroupOrderdata.goodsName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">收货人:</span><input type="text" v-model="postGroupOrderdata.accName" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">收货电话:</span><input type="text" v-model="postGroupOrderdata.accPhone" class="input-sm form-control" /></div>
+                            <div class="d-flex d-flex-center"><span class="Tip">二维码名称:</span><input type="text" v-model="postGroupOrderdata.qrCodeName" class="input-sm form-control" /></div>
+                            &nbsp;&nbsp;&nbsp;
+                            <div class="d-flex d-flex-center">
+                                <span class="Tip">配送方式:</span>
+                                <select v-model="postGroupOrderdata.GetWay" class="form-control">
+                                    <option value="-1" selected>全部</option>
+                                    @foreach (miniAppOrderGetWay g in Enum.GetValues(typeof(miniAppOrderGetWay)))
+                                    {
+                                        if (g.ToString() == "达达配送" || g.ToString() == "蜂鸟配送" || g.ToString() == "快跑者配送" || g.ToString() == "UU配送")
+                                        {
+                                            continue;
+                                        }
+                                        <option value="@((int)g)">@(g.ToString())</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px;">
+                        <table>
+                            <tr>
+                                <td>
+                                    <div style="float:left;">
+                                        &nbsp;订单状态:
+                                    </div>
+                                </td>
+                                <td style="width:800px;">
+                                    <div class="typeItem" style="float:left;width:800px;">
+                                        <input v-bind:class="['col-sm-2 btn btn-default btnState',{active:item.state==postGroupOrderdata.orderState}]" type="button" v-on:click="selectState(item.state,2)" v-bind:value="item.vaue" v-for="(item,index) in orderGroupStates">
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="formsearch" style="margin-top:20px;">
+                        <div class="d-flex d-flex-center">
+                            <div class="d-flex d-flex-center flex">
+                                <div class="d-flex d-flex-center" style="margin-right:30px;">
+                                    <span style="width:80px">下单时间:</span>
+                                    <input type="text" class="input-sm form-control time" id="groupTime" style="width:250px;" readonly />
+                                </div>
+                                <div class="btnSearch">
+                                    <a href="#" v-on:click="Search(2)" class="btn btn-primary ml10">搜索</a>&nbsp;
+                                    <a href="#" v-on:click="exPort(2)" class="btn btn-info ml10">导出(按查询)</a>&nbsp;
+                                    <a href="#" v-on:click="ExportAll(2)" class="btn btn-info ml10">导出全部</a>&nbsp;
+                                    <a style="cursor:pointer" v-show="!isMultiple" v-on:click="isMultiple = true" class="btn btn-info ml10">批量打印</a>&nbsp;
+                                    <a style="cursor:pointer" v-show="isMultiple" v-on:click="printSelectOrder(@((int)PrintContentType.打印专业版订单))" class="btn btn-info ml10">确认打印</a>&nbsp;
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <br />
+
+                <table class="table table-bordered viplevel ml_19">
+                    <tr class="active">
+                        <th class="centertext" v-show="isMultiple">
+                            <div class="layui-form" style="min-width:80px">
+                                <input type="checkbox" class="layui-input" title="全选" data-printType="@((int)PrintContentType.打印专业版订单)" lay-skin="primary" lay-filter="orderSelAll">
+                            </div>
+                        </th>
+                        <th class="centertext" style="min-width:160px;">订单号</th>
+                        <th class="centertext" style="min-width:60px;">提货码</th>
+                        <th class="centertext">商品</th>
+                        <th class="centertext">订单金额(元)</th>
+                        <th class="centertext">实收金额(元)</th>
+                        <th class="centertext">支付方式</th>
+                        <th class="centertext" style="width:10%;">提/送货地址</th>
+                        <th class="centertext">配送方式</th>
+                        <th class="centertext">提/收货人</th>
+                        <th class="centertext">提/收货人电话</th>
+                        <th class="centertext" style="width:10%;">订单备注</th>
+                        <th class="centertext">下单时间</th>
+                        <th class="centertext">团号</th>
+                        <th class="centertext">二维码名称</th>
+                        <th class="centertext">订单状态</th>
+                        <th class="centertext">操作</th>
+                    </tr>
+                    <tr v-for="(item,index) in groupOrderList">
+                        <td class="contentext" v-show="isMultiple">
+                            <div class="layui-form" style="min-width:80px">
+                                <input type="checkbox" class="layui-input" title="打印" lay-skin="primary" v-bind:value="item.Id" v-model="selOrder" lay-filter="orderSel">
+                            </div>
+                        </td>
+                        <td class="centertext"><a v-on:click="printOrder(item.Id,@((int)PrintContentType.打印专业版订单),1)">{{item.OrderNum}}</a></td>
+
+                        @*<td class="centertext"><a v-on:click="GetEntOrderDetail(item.Id,item.OrderNum,item.FreightPriceStr)">{{item.OrderNum}}</a></td>*@
+                        <td class="centertext">{{item.TablesNo}}</td>
+                        <td class="centertext"><a v-on:click="printOrder(item.Id,@((int)PrintContentType.打印专业版订单),1)">{{item.QtyCount}}</a></td>
+                        @*<td class="centertext"><a v-on:click="GetEntOrderDetail(item.Id,item.OrderNum,item.FreightPriceStr)">{{item.QtyCount}}</a></td>*@
+                        <td class="centertext">{{item.GoodsMoney}}</td>
+                        <td class="centertext">{{item.BuyPriceStr}}</td>
+                        <td class="centertext">{{item.BuyModeStr}}</td>
+                        <td class="centertext"><span v-show="item.GetWay==1">{{item.FreightTemplateName}}</span><br v-show="item.GetWay==1" />{{item.Address}}</td>
+                        <td class="centertext">{{item.GetWayStr}}</td>
+                        <td class="centertext">{{item.AccepterName}}</td>
+                        <td class="centertext">{{item.AccepterTelePhone}}</td>
+                        <td class="centertext">{{item.Message}}</td>
+                        <td class="centertext">{{item.CreateDateStr}}</td>
+                        <td class="centertext">{{item.GroupId}}</td>
+                        <td class="centertext">{{item.StoreCodeName}}</td>
+                        <td class="centertext">
+                            <div v-if="item.OrderType==3 && item.GroupState==@((int)GroupState.开团成功)">
+                                <span>拼团中</span>
+                            </div>
+                            <div v-else-if="item.OrderType==3 && item.GroupState==@((int)GroupState.已过期)">
+                                <span v-if="item.State==@((int)MiniAppEntOrderState.退款失败)">退款失败</span>
+                                <span v-else-if="item.State==@((int)MiniAppEntOrderState.退款中)">退款中</span>
+                                <span v-else-if="item.State==@((int)MiniAppEntOrderState.退款成功)">退款成功</span>
+                                <span v-else>未成团</span>
+                            </div>
+                            <div v-else>
+                                {{item.StateStr}}
+                            </div>
+                        </td>
+                        <td class="centertext" v-if="item.OrderType==3 && item.GroupState == @((int)GroupState.开团成功)">
+                            <span v-if="item.State==@((int)MiniAppEntOrderState.已取消)">已取消付款</span>
+                            <span v-else>请等待拼团成功</span>
+                        </td>
+                        <td class="centertext" v-else-if="item.OrderType==3 && item.GroupState == @((int)GroupState.已过期)">
+                            <div v-if="item.State==@((int)MiniAppEntOrderState.退款失败)">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-3,index,3,item.GetWay)" href="#" style="margin-top:5px;">
+                                    重新退款
+                                </a>
+                                <br />
+                                <a v-on:click="OpenOutOrderFailRemarkForm(item.Id)" href="#" style="margin-top:5px;cursor:pointer">
+                                    查看退款失败原因
+                                </a>
+                            </div>
+                            <span v-else>无操作</span>
+                        </td>
+                        <td class="centertext" v-else>
+                            <div v-if="item.State === 0">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-1,index,3,item.GetWay)" style="margin-top:5px;">
+                                    取消订单
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === 1">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-2,index,3,item.GetWay)" href="#" style="margin-top:5px;">
+                                    退款
+                                </a>
+                                <a v-on:click="updateDelivery(item.Id,@((int)MiniAppEntOrderState.待发货),@((int)MiniAppEntOrderState.待收货))"
+                                   v-show="!(item.OrderType==3 && item.GroupState==@((int)GroupState.开团成功))" style="margin-top:5px;">
+                                    确认发货
+                                </a>
+                                @*<a v-on:click="OpenConfForm(item.Id,item.State,2,index,3,item.GetWay)" v-show="!(item.OrderType==3 && item.GroupState==@((int)GroupState.开团成功))" style="margin-top:5px;">
+                                        确认发货
+                                    </a>*@
+                                <br />
+                                <a v-on:click="OpenModifyOrderForm(index)" style="margin-top:5px;">
+                                    修改订单资料
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === 2">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-2,index,3,item.GetWay)" href="#" style="margin-top:5px;">
+                                    退款
+                                </a>
+                            </div>
+                            <div v-else-if="item.State === 8">
+                                <a v-on:click="OpenConfForm(item.Id,item.State,-2,index,3,item.GetWay)" href="#" style="margin-top:5px;">
+                                    退款
+                                </a>
+                                <a v-on:click="OpenConfForm(item.Id,item.State,3,index,3,item.GetWay)" style="margin-top:5px;" v-if="item.GetWay!=6">
+                                    确认收货
+                                </a>
+                                <a v-on:click="OpenConfForm(item.Id,item.State,3,index,3,item.GetWay)" style="margin-top:5px;" v-else>
+                                    确认消费
+                                </a>
+
+                            </div>
+                            <div v-else-if="item.State === -3">
+                                <a v-on:click="OpenOutOrderFailRemarkForm(item.Id)" href="#" style="margin-top:5px;">
+                                    查看退款失败原因
+                                </a>
+                            </div>
+                            <div>
+                                <a v-on:click="printOrder(item.Id,@((int)PrintContentType.打印专业版订单))" style="margin-top:5px;cursor:pointer">打印订单</a>
+                            </div>
+                            <div v-if="item.State >= @((int)MiniAppEntOrderState.待收货) && item.GetWay > 0">
+                                <a v-on:click="CheckDelivery(item.Id,@((int)DeliveryOrderType.专业版订单商家发货))" style="margin-top:5px;cursor:pointer">
+                                    查看物流信息
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="groupOrderList==null || groupOrderList.length==0">
+                        <td colspan="15">暂无数据</td>
+                    </tr>
+                </table>
+                <div id="pagesGroupOrder" style="text-align: center;margin-top: 0.5rem;" v-show="groupOrderRecordCount>0"></div>
+            </div>
+        </div>
+        <!--预约订单-->
+        @*<div class="layui-tab-item">
+                <com-reservation v-if="tab === 4"></com-reservation>
+            </div>*@
+    </div>
+
+    <!--编辑-->
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        订单号:<span id="CurOrderNo">{{CurOrderNo}}</span>
+                    </h4>
+                    <label style="float:right; margin-right:20px;">运费：<label id="friPrice">{{friPrice}}</label> 元</label>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" id="btnAdd" v-on:click="hideaddModal()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal bs-example-modal" id="tsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        <span id="tsTitle">
+                            {{tsTitle}}
+                        </span>
+                    </h4>
+                </div>
+                <div id="tsText" class="modal-body" style="text-align:center;">
+                    {{tsText}}
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button id="tsConfBtn" type="button" class="btn btn-primary" v-on:click="updateState()">确定</button>
+                    <button id="tsCanncelBtn" type="button" class="btn" v-on:click="hideTsModel()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--退款提示弹出开始-->
+    <div class="modal bs-example-modal" id="tkTipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        <span id="tsTitle">
+                            {{tsTitle}}
+                        </span>
+                    </h4>
+                </div>
+                <div id="tsText" class="modal-body" style="text-align:center;">
+                    {{tsText}}
+                    <div>
+                        <label>退款金额</label><input type="text" v-model="buyPrice" />
+                    </div>
+                    <div>
+                        <label>退款原因</label><input type="text" v-model="remark" />
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button id="tsConfBtn" type="button" class="btn btn-primary" v-on:click="updateState()">确定</button>
+                    <button id="tsCanncelBtn" type="button" class="btn" v-on:click="hideTsModel()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--退款提示弹出结束-->
+    <!--砍价订单退款提示弹出开始-->
+    <div class="modal bs-example-modal" id="kjtkTipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        <span id="tsTitle">
+                            {{tsTitle}}
+                        </span>
+                    </h4>
+                </div>
+                <div id="tsText" class="modal-body" style="text-align:center;">
+                    {{tsText}}
+                    <div>
+                        <label>退款金额</label><input type="text" v-model="buyPrice" />
+                    </div>
+                    <div>
+                        <label>退款原因</label><input type="text" v-model="remark" />
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button id="tsConfBtn" type="button" class="btn btn-primary" v-on:click="outBargainOrder()">确定</button>
+                    <button id="tsCanncelBtn" type="button" class="btn" v-on:click="hideTsModel()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--砍价订单退款提示弹出结束-->
+    <!--取消订单-->
+    <div class="modal bs-example-modal" id="dadatsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        <span id="dadatsTitle">
+                            {{tsTitle}}
+                        </span>
+                    </h4>
+                </div>
+                <div id="dadatsText" class="modal-body" style="text-align:center;">
+                    <span>取消订单原因:</span>
+                    <select class="form-control width400" style="display:inline-block;" v-model="canceldadaorderpostdata.cancel_reason_id">
+                        <option v-for="(item,index) in cancellist" v-bind:value="item.id">{{item.reason}}</option>
+                    </select>
+                    <div v-if="canceldadaorderpostdata.cancel_reason_id==10000" style="clear:both;height: 80px;position: relative;margin: 0 auto;width: 490px;margin-top:10px;">
+                        <div style="height:100%; float:left;line-height:80px;display:inline-block;">
+                            <span>填写其他原因:</span>
+                        </div>
+                        <div style="height:100%; float:left;display:inline-block;">
+                            <textarea class="form-control width400" v-model="canceldadaorderpostdata.cancel_reason" style="display:inline-block;height:100%;" maxlength="200"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div id="dadatsText" class="modal-body" style="text-align:center;">
+                    {{tsText}}
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button id="dadatsConfBtn" type="button" class="btn btn-primary" v-on:click="updatedadaOrderState()">确定</button>
+                    <button id="dadatsCanncelBtn" type="button" class="btn" v-on:click="hidedadaTsModel()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--修改订单资料-->
+    <div class="modal bs-example-modal" id="modifyOrderForm" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        <span id="dadatsTitle">
+                            修改订单资料
+                        </span>
+                    </h4>
+                </div>
+                <div v-if="curEditOrder!=null" class="modal-body" style="text-align:center;">
+                    <table class="layui-table" lay-skin="nob" style="margin:0px;">
+                        <tr>
+                            <td class="right"><span>订单编号:</span></td>
+                            <td class="left">{{curEditOrder.OrderNum}}</td>
+                        </tr>
+                        <tr v-if="curEditOrder.State==0">
+                            <td class="right"><span>订单金额:</span></td>
+                            <td class="left"><input type="text" v-model="curEditOrder.BuyPriceStr" class="input-sm form-control w100" v-on:input="changePrice" style="display:inline-block;" /></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><span>提/收货人:</span></td>
+                            <td class="left"><input type="text" v-model="curEditOrder.AccepterName" class="input-sm form-control w200" style="display:inline-block;" /></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><span>提/收货人电话:</span></td>
+                            <td class="left"><input type="text" v-model="curEditOrder.AccepterTelePhone" class="input-sm form-control w200" style="display:inline-block;" /></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><span>提/收货地址:</span></td>
+                            <td class="left"><textarea class="form-control width400 w200" v-model="curEditOrder.Address" style="display:inline-block;" maxlength="80"></textarea></td>
+                        </tr>
+                    </table>
+                </div>
+                <div v-else class="modal-body" style="text-align:center;">订单资料有误</div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" v-on:click="ModifyOrderData()">确定</button>
+                    <button type="button" class="btn" v-on:click="HideModifyOrderForm()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--修改砍价订单资料-->
+    <div class="modal bs-example-modal" id="modifyBargainForm" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        <span id="dadatsTitle">
+                            修改砍价订单资料
+                        </span>
+                    </h4>
+                </div>
+                <div v-if="curEditOrder!=null" class="modal-body" style="text-align:center;">
+                    <table class="layui-table" lay-skin="nob" style="margin:0px;">
+                        <tr>
+                            <td class="right"><span>订单编号:</span></td>
+                            <td class="left">{{curEditBargain.OrderId}}</td>
+                        </tr>
+                        <tr>
+                            <td class="right"><span>提/收货人:</span></td>
+                            <td class="left"><input type="text" v-model="curEditBargain_Address.userName" class="input-sm form-control w200" style="display:inline-block;" /></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><span>提/收货人电话:</span></td>
+                            <td class="left"><input type="text" v-model="curEditBargain_Address.telNumber" class="input-sm form-control w200" style="display:inline-block;" /></td>
+                        </tr>
+                        <tr>
+                            <td class="right"><span>提/收货地址:</span></td>
+                            <td class="left">
+                                省:<input type="text" class="form-control w100" v-model="curEditBargain_Address.provinceName" style="display:inline-block;" maxlength="10" />
+                                市:<input type="text" class="form-control w100" v-model="curEditBargain_Address.cityName" style="display:inline-block;" maxlength="10" />
+                                区:<input type="text" class="form-control w100" v-model="curEditBargain_Address.countyName" style="display:inline-block;" maxlength="10" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="right">详细位置:</td>
+                            <td class="left"><input type="text" class="form-control w400" v-model="curEditBargain_Address.detailInfo" style="display:inline-block;" maxlength="50"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div v-else class="modal-body" style="text-align:center;">订单资料有误</div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" v-on:click="ModifyBargainData()">确定</button>
+                    <button type="button" class="btn" v-on:click="HideModifyBargainForm()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function(){
+
+        appId = Number('@ViewBag.appId');
+        levelJsonData = JSON.parse('@Html.Raw(JsonConvert.SerializeObject(Model))');
+        currTab = Number('@ViewBag.tab');
+        returnAddress = '@ViewBag.returnAddress';
+        flashDealID = Number('@ViewBag.flashDealId');
+
+        var app = new Vue({
+            el: "#app",
+            data: {
+                remark:'商家操作退款',
+                buyPrice:0,
+                appId:appId,
+                orderNum:'',
+                orderMsgs:[],
+                selOrder:[],
+                isMultiple:false,
+                //砍价订单
+                orderBargainStates:[{state:-2,vaue:"全部"},{state:7,vaue:"待发货"},{state:-1,vaue:"已经关闭"},{state:5,vaue:"待付款"},{state:8,vaue:"交易成功"},{state:6,vaue:"待收货"},{state:2,vaue:"退款"},{state:-1000,vaue:"待评价"}],
+                bargainRecordCount: 0,
+                bargainUserList: [],
+                curEditBargain:{},
+                curEditBargain_Address:{},
+                levelList:levelJsonData,
+                postBargaindata: {
+                    appId:appId,
+                    orderState :-2,
+                    pageIndex: 1,
+                    pageSize: 10,
+                    orderId: "",
+                    levelid: 0,
+                    bName:"",
+                    shopName:"",
+                    addressUserName:"",
+                    addressTelNumber:"",
+                    startDate:"",
+                    endDate:""
+                },
+                //拼团订单
+                orderGroupStates:[{state:-999,vaue:"全部"},{state:1,vaue:"待发货"},{state:2,vaue:"待收货"},{state:3,vaue:"交易成功"},{state:8,vaue:"待自取/消费"},{state:30,vaue:"拼团中"},{state:31,vaue:"拼团成功"},{state:32,vaue:"拼团失败"},{state:-1000,vaue:"待评价"}],
+                groupOrderRecordCount: 0,
+                groupOrderList:[],
+                postGroupOrderdata: {
+                    appId:appId,
+                    orderState :-999,
+                    GetWay :-1,
+                    tablesNo:'',
+                    pageIndex: 1,
+                    pageSize: 10,
+                    orderNum: "",
+                    goodsName:"",
+                    accName:"",
+                    accPhone:"",
+                    startdate:"",
+                    enddate:"",
+                    ordertype:3,
+                    qrCodeName:''
+                },
+                returnAddress:returnAddress,
+                //普通订单
+                orderStates:[
+                    {state:-999,vaue:"全部"},{state: -5, vaue: '拒绝退货'}, {state:-4,vaue:"退款成功"},{state:-3,vaue:"退款失败"},{state:-2,vaue:"退款中"},{state:-1,vaue:"已取消"},{state:0,vaue:"待付款"},{state:1,vaue:"待发货"},
+                    {state:2,vaue:"待收货"},{state:3,vaue:"交易成功"},{state:8,vaue:"待自取/消费"},{state:13,vaue:"退货待审核"},{state:14,vaue:"待退货"},{state:15,vaue:"退货中"},{state:16,vaue:"换货中"},
+                    {state:17,vaue:"退换货成功"},{state:18,vaue:"退货退款成功"},{state:19,vaue:"申请取消订单"},{state:-1000,vaue:"待评价"},{state:-2000,vaue:"分销商品订单"}
+                ],
+                orderRecordCount: 0,
+                OrderList: [],
+                curEditOrder:{},
+                postOrderdata: {
+                    appId: appId,
+                    orderState :@orderState,
+                    GetWay :-1,
+                    tablesNo:'',
+                    pageIndex: 1,
+                    pageSize: 10,
+                    orderNum: "",
+                    goodsName:"",
+                    accName:"",
+                    accPhone:"",
+                    startdate:"",
+                    enddate:"",
+                    ordertype:0,
+                    flashDealID: flashDealID,
+                    qrCodeName:""
+                },
+                isloading: false,
+                tsTitle:"",
+                tsText:"",
+                orderid:0,
+                oldstate:-999,
+                newstate:-999,
+                CurOrderNo:'',
+                friPrice:0,
+                tab:currTab,
+                canceldadaorderpostdata:{
+                    order_id:0,
+                    merchantid:"73753",
+                    state:0,
+                    cancel_reason_id:0,
+                    cancel_reason:"",
+                },
+                cancellist: [],
+                layForm:{},
+                //外卖订单
+                takeoutOrderList:[],
+                takeoutOrderStates: [
+                    { state: -999, vaue: "全部" }, { state: -4, vaue: "退款成功" }, { state: -3, vaue: "退款失败" }, { state: -2, vaue: "退款中" }, { state: -1, vaue: "已取消" },
+                    { state: 0, vaue: "待付款" }, { state: 9, vaue: "待接单" }, { state: 1, vaue: "待送餐" }, { state: 2, vaue: "待确认送达" }, { state: 6, vaue: "已完成" }
+                ],
+                takeoutRecordCount:0,
+                takeoutOrderdata: {
+                    appId:appId,
+                    orderState :-999,
+                    GetWay :-1,
+                    tablesNo:'',
+                    pageIndex: 1,
+                    pageSize: 10,
+                    orderNum: "",
+                    goodsName:"",
+                    accName:"",
+                    accPhone:"",
+                    startdate:"",
+                    enddate:"",
+                    ordertype:4,
+                },
+            },
+            computed:{
+                allOrderId:function(){
+                    thisVue = this;
+                    orderMap = {
+                        1:'OrderList',
+                        2:'bargainUserList',
+                        3:'groupOrderList'
+                    };
+                    return thisVue[orderMap[thisVue.tab]].map(order => order.Id);
+                }
+            },
+            methods: {
+                findWxOrderNo: function(){
+                    app.orderMsgs = utils.getWxOrderMsgs(app.appId, app.orderNum);
+                },
+                InitLayer: function(){
+                    thisApp = this;
+                    //绑定lay
+                    layui.use(['element','laydate','form'], function(){
+                        var $ = layui.jquery
+                        ,element = layui.element
+                        ,form = layui.form;
+                        //Tab的切换功能，切换事件监听等，需要依赖element模块
+                        element.tabChange('docDemoTabBrief', 'tab_element_'+thisApp.tab);
+                        //时间选择器
+                        thisApp.layForm = form;
+                        laydate = layui.laydate;
+                        laydate.render({
+                            elem: '#orderTime', //指定元素
+                            theme: 'grid',
+                            range: '~',
+                            value: '',
+                            done: function (value, date, endDate) {
+                                $("#orderTime").val(value);
+                                if(value != '' && value != 'undefined')
+                                {
+                                    app.postOrderdata.startdate = date.year + "-" + date.month + "-" + date.date;
+                                    app.postOrderdata.enddate = endDate.year + "-" + endDate.month + "-" + endDate.date;
+                                }
+                                else
+                                {
+                                    app.postOrderdata.startdate = "";
+                                    app.postOrderdata.enddate = "";
+                                }
+                            }
+                        });
+                        laydate.render({
+                            elem: '#barginTime', //指定元素
+                            theme: 'grid',
+                            range: '~',
+                            value: '',
+                            done: function (value, date, endDate) {
+                                $("#barginTime").val(value);
+                                if(value != '' && value != 'undefined' )
+                                {
+                                    app.postBargaindata.startdate = date.year + "-" + date.month + "-" + date.date;
+                                    app.postBargaindata.enddate = endDate.year + "-" + endDate.month + "-" + endDate.date;
+                                }
+                                else
+                                {
+                                    app.postBargaindata.startdate = "";
+                                    app.postBargaindata.enddate = "";
+                                }
+                            }
+                        });
+                        laydate.render({
+                            elem: '#groupTime', //指定元素
+                            theme: 'grid',
+                            range: '~',
+                            value: '',
+                            done: function (value, date, endDate) {
+                                $("#groupTime").val(value);
+                                if(value != '' && value != 'undefined' )
+                                {
+                                    app.postGroupOrderdata.startdate = date.year + "-" + date.month + "-" + date.date;
+                                    app.postGroupOrderdata.enddate = endDate.year + "-" + endDate.month + "-" + endDate.date;
+                                }
+                                else
+                                {
+                                    app.postGroupOrderdata.startdate = "";
+                                    app.postGroupOrderdata.enddate = "";
+                                }
+                            }
+                        });
+                        //多选框
+                        form.on('checkbox(orderSel)', function(data){
+                            //单选订单
+                            if(data.elem.checked){
+                                thisApp.selOrder.push(data.value);
+                            }else{
+                                thisApp.selOrder.splice(thisApp.selOrder.indexOf(data.value),1);
+                            }
+                        })
+                        form.on('checkbox(orderSelAll)', function(data){
+                            //多选订单
+                            if(data.elem.checked){
+                                thisApp.selOrder = thisApp.allOrderId;
+                            }else{
+                                thisApp.selOrder = [];
+                            }
+                        })
+                    });
+                },
+                //订单分页
+                resetOrderPage: function () {
+
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+
+                        laypage.render({
+                            elem: 'pagesOrder'
+                            , count: app.orderRecordCount //数据总数，从服务端得到
+                            , curr: app.postOrderdata.pageIndex //当前页
+                            , limit: app.postOrderdata.pageSize
+                            , jump: function (obj, first) {
+                                //console.log(obj.limit); //得到每页显示的条数
+                                app.postOrderdata.pageIndex = obj.curr;
+                                //首次执行
+                                if (!first) {
+                                    app.GetNormalOrderList();
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                resetBargainPage: function () {
+
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+
+                        laypage.render({
+                            elem: 'pagesBargain'
+                            , count: app.bargainRecordCount //数据总数，从服务端得到
+                            , curr: app.postBargaindata.pageIndex //当前页
+                            , limit: app.postBargaindata.pageSize
+                            , jump: function (obj, first) {
+                                //obj包含了当前分页的所有参数，比如：
+                                //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postBargaindata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getBargainUserList();
+
+                                }
+                            }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                resetGroupOrderPage: function () {
+
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+
+                        laypage.render({
+                            elem: 'pagesGroupOrder'
+                            , count: app.groupOrderRecordCount //数据总数，从服务端得到
+                            , curr: app.postGroupOrderdata.pageIndex //当前页
+                            , limit: app.postGroupOrderdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postGroupOrderdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getGroupOrderList();
+
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                resetTakeoutOrderPage: function () {
+                    layui.use('laypage', function () {
+                        var that = this;
+                        var laypage = layui.laypage;
+
+                        laypage.render({
+                            elem: 'pagesTakeoutOrder'
+                            , count: that.takeoutRecordCount //数据总数，从服务端得到
+                            , curr: that.takeoutOrderdata.pageIndex //当前页
+                            , limit: that.takeoutOrderdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                that.takeoutOrderdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    that.GetTakeoutOrderList();
+
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                //获取普通订单
+                GetNormalOrderList: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/enterprisepro/GetNormalOrderList", this.postOrderdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (data.isok) {
+                            app.orderRecordCount = data.model.orderRecordCount;
+                            app.OrderList = data.model.listEntGoodsOrder;
+                            app.resetOrderPage();
+                        }
+                    })
+                },
+                //获取砍价订单
+                getBargainUserList: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/enterprisepro/GetBargainUserList", this.postBargaindata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (data.isok) {
+                            app.bargainRecordCount = data.model.bargainRecordCount;
+                            app.bargainUserList = data.model.bargainUserList;
+                            app.resetBargainPage();
+                        }
+                    })
+                },
+                //获取拼团订单
+                getGroupOrderList: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/enterprisepro/GetNormalOrderList", this.postGroupOrderdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        if (data.isok) {
+                            app.groupOrderRecordCount = data.model.orderRecordCount;
+                            app.groupOrderList = data.model.listEntGoodsOrder;
+                            app.resetGroupOrderPage();
+                        }
+                    })
+                },
+                ////获取外卖订单
+                //GetTakeoutOrderList: function () {
+                //    var index = layer.load(1);
+                //    $.post("/enterprisepro/GetNormalOrderList", this.takeoutOrderdata, function (data) {
+                //        layer.close(index);
+                //        if (data.isok) {
+                //            app.takeoutRecordCount = data.model.orderRecordCount;
+                //            app.takeoutOrderList = data.model.listEntGoodsOrder;
+                //            app.resetOrderPage();
+                //        }
+                //    })
+                //},
+                selectState: function (state, type) {
+                    var that = this;
+                    if (type == 1) {
+                        that.postOrderdata.orderState = state;
+                    }
+                    else if (type == 2) {
+                        that.postGroupOrderdata.orderState = state;
+                    }
+                    else if (type == 3) {
+                        that.postBargaindata.orderState = state;
+                    } else {
+                        that.takeoutOrderdata.orderState = state;
+                    }
+                },
+                Search: function (type) {
+                    var that = this;
+                    if (type == 1) {
+                        that.GetNormalOrderList();
+                    }
+                    else if (type == 2) {
+                        that.getGroupOrderList();
+                    }
+                    else {
+                        that.getBargainUserList();
+                    }
+
+                },
+                exPort: function (type) {
+                    var confForm = layer.open({
+                        title: '导出流水报表',
+                        btn: ["确定", "取消"],
+                        content: "确定按查询条件导出订单吗？<br /><单据数量越多响应时间越长>",
+                        yes: function () {
+                            var params;
+                            if (type == 1) {
+                                //表示普通商品订单导出
+
+                                params = serialize(app.postOrderdata);
+                                window.location.href = '/enterprisepro/ExportNormalOrder?export=1&' + params;
+                            }
+                            else if (type == 2) {
+                                //表示拼团商品订单导出
+                                params = serialize(app.postGroupOrderdata);
+                                window.location.href = '/enterprisepro/ExportNormalOrder?export=1&' + params;
+                            }
+                            else {
+                                //表示砍价订单导出
+                                params = serialize(app.postBargaindata);
+                                window.location.href = '/enterprisepro/ExportBargainOrderExcel?export=1&' + params;
+                            }
+                            layer.close(confForm);
+                        },
+                    });
+                },
+                ExportAll: function (type){
+                    var confForm = layer.open({
+                        title: '导出流水报表',
+                        btn: ["确定", "取消"],
+                        content: "确定导出所有订单吗？<br /><单据数量越多响应时间越长>",
+                        yes: function () {
+                            var params;
+                            if(type==1){
+                                //表示普通商品订单导出
+                                params=serialize(app.postOrderdata);
+                                window.location.href='/enterprisepro/ExportNormalOrder?export=1&appId='+app.appId+'&ordertype=0';
+                            }
+                            else if(type==2){
+                                //表示拼团商品订单导出
+                                params=serialize(app.postGroupOrderdata);
+                                window.location.href='/enterprisepro/ExportNormalOrder?export=1&appId='+app.appId+'&ordertype=3';
+                            }
+                            else{
+                                //表示砍价订单导出
+                                params=serialize(app.postBargaindata);
+                                window.location.href='/enterprisepro/ExportBargainOrderExcel?export=1&appId='+app.appId;
+                            }
+                            layer.close(confForm);
+                        },
+                    });
+                },
+                OpenKjTipsModal: function (index) {
+                    var that = this;
+                    that.buyPrice = that.bargainUserList[index].PayAmount;
+                    that.orderid = that.bargainUserList[index].Id
+                    that.tsTitle = "砍价订单退款";
+                    that.tsText = "确定后将发起退款，确定对此订单进行退款吗?";
+                    $("#kjtkTipsModal").modal("show");
+                },
+                outBargainOrder: function () { //砍价订单退款
+                    var that = this;
+                    var layerIndex = layer.load(2);
+                    $.ajax({
+                        type: "POST",
+                        url: "/tools/outOrder",
+                        data: { buid: that.orderid, AppId: that.appId, buyPrice: parseInt(that.buyPrice * 100), remark: app.remark },
+                        success: function (data) {
+                            layer.close(layerIndex);
+                            if (data && data.isok) {
+                                layer.msg(data.msg);
+                                window.setTimeout(function () {
+                                    window.location.reload();
+                                }, 2000);
+
+                            } else {
+                                layer.msg(data.msg);
+                            }
+                        },
+                        error: function () {
+                            layer.msg("通讯异常");
+                        }
+                    });
+                },
+                Tab:function(type){
+                    this.tab = type;//切换标签页更改tab属性
+                    window.history.pushState(null,null,'OrderTotalList?appId='+ this.appId +'&tab='+this.tab);//浏览器不跳转追加tab属性
+                    switch(this.tab){
+                        case 1:
+                            this.GetNormalOrderList();
+                            break;
+                        case 2:
+                            this.getBargainUserList();
+                            break;
+                        case 3:
+                            this.getGroupOrderList();
+                            break;
+                            //case 4:
+                            //    this.GetTakeoutOrderList();
+                            //    break;
+                    }
+                },
+                OpenBargainUserConfForm:function(orderid,GetWay){
+
+                    var tsTitle= Number(GetWay)!=2?"确认收货":"确认消费";
+
+                    layer.confirm(Number(GetWay)!=2?"确定此订单买家已到店铺取货了吗?":"确定此订单买家已到店铺消费了吗?", {
+                        btn: ['确认', '取消'] //按钮
+                    }, function () {
+                       
+                        //将砍价订单改为交易成功
+
+                        if (app.isloading) {
+                            layer.msg("执行操作中")
+                            return;
+                        }
+
+                        app.isloading = true;
+                        $.ajax({
+                            type: "POST",
+                            url: "/tools/ConfirmBargainOrder",
+                            data: { buid:orderid,appId:appId },
+                            success: function (data) {
+                                app.isloading = false;
+                                layer.msg(data.msg);
+                                window.setTimeout(function () {
+                                    window.location.reload();
+                                }, 2000);
+                            },
+                            error: function () {
+                                layer.msg("通讯异常");
+                                app.isloading = false;
+                            }
+                        });
+
+
+                    });
+
+
+                  
+                },
+                OpenConfForm: function (orderid, oldstate, newstate, index, orderType,GetWay) {
+                    //0:普通订单  3：拼团订单
+                    if (orderType == 0) {
+                        app.buyPrice = app.OrderList[index].BuyPriceStr;
+                    }
+                    else if (orderType == 3) {
+                        app.buyPrice = app.groupOrderList[index].BuyPriceStr;
+                    }
+
+                    app.orderid=orderid;
+                    app.oldstate=oldstate;
+                    app.newstate=newstate;
+
+                    if(oldstate == Number('@((int)MiniAppEntOrderState.待付款)') && newstate == Number('@((int)MiniAppEntOrderState.已取消)')){
+                        app.tsTitle="取消订单";
+                        app.tsText="您确定要取消本订单吗？取消后用户将无法付款";
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.已取消)') && newstate == Number('@((int)MiniAppEntOrderState.已删除)')){
+                        app.tsTitle="删除订单";
+                        app.tsText="您确定要删除本订单吗？删除后查询不到订单";
+                    }
+                    else if((oldstate == Number('@((int)MiniAppEntOrderState.待发货)') || oldstate == Number('@((int)MiniAppEntOrderState.待自取)')) && newstate == Number('@((int)MiniAppEntOrderState.退款中)')){
+                        app.tsTitle="取消订单";
+                        app.tsText = "您确定要拒绝本订单吗？拒绝后系统将自动发起退款，金额将原路退回";
+
+                        if (orderType == 0) {
+                            $("#tkTipsModal").modal("show");
+                            return;
+                        }
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.待收货)') && newstate == Number('@((int)MiniAppEntOrderState.退款中)')){
+                        app.tsTitle="取消订单";
+                        app.tsText = "您确定要取消本订单吗？取消后系统将自动发起退款，金额将原路退回";
+                        if (orderType == 0) {
+                            $("#tkTipsModal").modal("show");
+                            return;
+                        }
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.待发货)') && newstate == Number('@((int)MiniAppEntOrderState.待收货)')){
+                        app.tsTitle="确认发货";
+                        app.tsText="确定此订单已经发货了吗?";
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.待自取)') && newstate == Number('@((int)MiniAppEntOrderState.交易成功)')){
+                        app.tsTitle= Number(GetWay)!=6?"确认收货":"确认消费";
+                        app.tsText=Number(GetWay)!=6?"确定此订单买家已到店铺取货了吗?":"确定此订单买家已到店铺消费了吗?";
+                    }
+                    else if(newstate == Number('@((int)MiniAppEntOrderState.拒绝退货)')){
+                        app.tsTitle= "拒绝退货";
+                        app.tsText= "确定拒绝此订单买家退货吗?";
+                    }
+                    else if(newstate == Number('@((int)MiniAppEntOrderState.退货退款成功)')){
+                        app.tsTitle="同意退款";
+                        app.tsText="确定收到此订单买家的退货，并退款吗?";
+                        $("#tkTipsModal").modal("show");
+                        return;
+                    }
+                    else if(newstate == Number('@((int)MiniAppEntOrderState.待退货)')){
+                        app.tsTitle="同意退款";
+                        app.tsText= app.returnAddress ? "确定同意此订单买家退货吗?" : "您还没有设置退货地址，确定同意此订单买家退货吗?（店铺配置=>退货地址）";
+                        $("#tkTipsModal").modal("show");
+                        return;
+                    }
+                    else if(newstate == Number('@((int)MiniAppEntOrderState.退款失败)')){
+                        app.tsTitle="重新退款";
+                        app.tsText= "确定重新发起退款，金额将原路退回?";
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.申请取消订单)') && newstate == Number('@((int)MiniAppEntOrderState.退款中)')){
+                        app.tsTitle="同意退款";
+                        app.tsText= "确定后将发起退款，确定同意此订单买家取消订单吗?";
+                        $("#tkTipsModal").modal("show");
+                        return;
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.申请取消订单)') && newstate == Number('@((int)MiniAppEntOrderState.待收货)')){
+                        layer.confirm("该用户已申请取消订单退款，请先与客户沟通确认再发货", {
+                            btn: ['强行发货', '取消'] //按钮
+                        }, function () {
+                            layer.closeAll();
+                            app.updateDelivery(app.OrderList[index].Id,app.OrderList[index].State,@((int)MiniAppEntOrderState.待收货))
+                        });
+                        return;
+                    }
+                    else if(oldstate == Number('@((int)MiniAppEntOrderState.申请取消订单)') && newstate == Number('@((int)MiniAppEntOrderState.交易成功)')){
+                        layer.confirm("该用户已申请取消订单退款，请先与客户沟通确认", {
+                            btn: ['强行交易成功', '取消'] //按钮
+                        }, function () {
+                            layer.closeAll();
+                            app.updateState();
+                        });
+                        return;
+                    }
+                    else{
+                        layer.msg("数据错误!请刷新页面重试");
+                        return;
+                    }
+
+                    $("#tsModal").modal("show");
+                },
+                CheckReturnOrder:function(orderId){
+                    var openUrl = '/tools/ViewReturnOrderInfo?appid='+app.appId+'&orderId='+orderId;
+                    layer.open({type:2,content:openUrl, area :['720px','500px'],title:'查看退货详情'});
+                },
+                CheckDelivery:function(orderId,orderType){
+                    var openUrl = '/tools/ViewDeliveryFeed?appid='+app.appId+'&orderId='+orderId + '&orderType=' + orderType;
+                    layer.open({type:2,content:openUrl, area :['430px','630px'],title:'查看物流信息'});
+                },
+                updateDelivery:function(orderid,oldstate,newstate,deliveryOrderType){
+                    var openUrl = '/tools/DeliveryInfo?orderType=22&appid='+app.appId+'&orderId='+orderid + '&newState=' + newstate + '&oldState=' + oldstate+"&deliveryOrderType="+(deliveryOrderType||0);
+                    layer.open({type:2,content:openUrl, area :['1000px','630px'],title:'填写物流信息'});
+                },
+                //更新普通订单状态
+                updateState:function(){
+                    if (app.isloading) {
+                        layer.msg("执行操作中")
+                        return;
+                    }
+
+                    app.isloading = true;
+                    $.ajax({
+                        type: "POST",
+                        url: "/enterprisepro/updteOrderState",
+                        data: { orderid: app.orderid, state:app.newstate ,oldState:app.oldstate, buyPrice: app.buyPrice,remark:app.remark },
+                        success: function (data) {
+                            app.isloading = false;
+                            $("#tsModal").modal('hide');
+                            $("#tkTipsModal").modal('hide');
+                            $("#tsModalCancel").modal('hide');
+                            layer.msg(data.msg);
+                            window.setTimeout(function () {
+                                if(app.tab==3)
+                                {
+                                    app.getGroupOrderList();
+                                }
+                                else{
+                                    app.GetNormalOrderList();
+                                }
+
+                            }, 2000);
+                        },
+                        error: function () {
+                            layer.msg("通讯异常");
+                            app.isloading = false;
+                        }
+                    });
+                },
+                //取消达达订单
+                CancelOrder:function(orderid,oldstate,merchantid){
+                    app.orderid=orderid;
+                    if(oldstate == Number('@((int)DadaOrderEnum.待接单)')){
+                        app.tsTitle="取消订单";
+                        app.tsText="您确定要取消本订单吗？";
+                    }
+                    else if((oldstate == Number('@((int)DadaOrderEnum.待取货)'))){
+                        app.tsTitle="取消订单";
+                        app.tsText="接单后1－15分钟内取消订单，运费退回。同时扣除2元作为给配送员的违约金，您确定要取消?";
+                    }
+                    //else
+                    //{
+                    //    layer.msg("数据错误!请刷新页面重试");
+                    //    return;
+                    //}
+                    app.canceldadaorderpostdata.order_id = orderid;
+                    app.canceldadaorderpostdata.merchantid = merchantid;
+                    $.ajax({
+                        type: "POST",
+                        url: "/dadamanage/GetCancelOrderReasons",
+                        data: app.canceldadaorderpostdata,
+                        success: function (result) {
+                            app.cancellist = result.dada;
+                            $("#dadatsModal").modal("show");
+                        },
+                        error: function () {
+                            layer.msg("通讯异常");
+                        }
+                    });
+                },
+                //更新普通订单状态
+                updatedadaOrderState:function(){
+                    $.ajax({
+                        type: "POST",
+                        url: "/dadamanage/UpdateDadaOrderState",
+                        data: app.canceldadaorderpostdata,
+                        success: function (data) {
+                            $("#dadatsModal").modal('hide');
+                            layer.msg(data.msg);
+                            window.setTimeout(function () {
+                                app.GetNormalOrderList();
+                            }, 2000);
+                        },
+                        error: function () {
+                            layer.msg("通讯异常");
+                        }
+                    });
+                },
+                OpenOutOrderFailRemarkForm:function(orderId){
+                    app.tsTitle="查看退款失败原因";
+                    OpenOutOrderFailRemarkFormTxt(orderId);
+                },
+                hidedadaTsModel:function(){
+                    $("#dadatsModal").modal("hide");
+                },
+                hideTsModel: function () {
+                    $("#kjtkTipsModal").modal("hide");
+                    $("#tkTipsModal").modal("hide");
+                    $("#tsModal").modal("hide");
+                },
+                hideaddModal:function(){
+                    $("#addModal").modal("hide");
+                },
+                //获取普通商品订单详情
+                GetEntOrderDetail:function(id,ordernum,friPrice){
+                    app.CurOrderNo=ordernum;
+                    app.friPrice=friPrice;
+                    $.post('/enterprisepro/getOrderDtlItem', { orderid: id }, function(result) {
+                        $('#btnAdd').attr("data-itemid",id);
+                        $('#addModal .modal-body').html(result);
+                        $('#addModal').modal('show');
+
+                    });
+                },
+                //验证金额
+                changePrice:function(e){
+                    var obj=$(e.target);
+                    if(!/^[0-9]{1,10}(\.\d{0,2})?$/.test(obj.val())){
+                        layer.msg("请输入正确的金额",{time:1000});
+                        obj.val("");
+                        return;
+                    }
+                },
+                //修改普通,拼团订单资料
+                ModifyOrderData:function(){
+                    if(app.curEditOrder.BuyPriceStr == ''){
+                        layer.msg("请输入正确的金额");
+                        return;
+                    }
+
+                    app.curEditOrder.BuyPrice = app.curEditOrder.BuyPriceStr * 10000 / 100;
+                    $.ajax({
+                        type: "POST",
+                        url: "/enterprisepro/UpdateOrderMaterial",
+                        data: {appId:app.appId, orderJson:JSON.stringify(app.curEditOrder),updateOrderCol:"BuyPrice,Address,AccepterName,AccepterTelePhone"},
+                        success: function (data) {
+                            $("#modifyOrderForm").modal('hide');
+                            layer.msg(data.Msg);
+                            if(data.isok)
+                            {
+                                window.setTimeout(function () {
+                                    switch(app.tab)
+                                    {
+                                        case 1:
+                                            app.GetNormalOrderList();
+                                            break;
+                                        case 3:
+                                            app.getGroupOrderList();
+                                            break;
+                                    }
+                                }, 2000);
+                            }
+                        },
+                        error: function () {
+                            layer.msg("通讯异常");
+                        }
+                    });
+                },
+                //隐藏普通订单,拼团修改订单资料弹框
+                HideModifyOrderForm:function(){
+                    $("#modifyOrderForm").modal('hide');
+                },
+                //弹出普通订单,拼团修改订单资料弹框
+                OpenModifyOrderForm:function(index){
+                    switch(this.tab){
+                        case 1:
+                            app.curEditOrder = JSON.parse(JSON.stringify(app.OrderList[index]));
+                            break;
+                        case 3:
+                            app.curEditOrder = JSON.parse(JSON.stringify(app.groupOrderList[index]));
+                            break;
+                    }
+                    $("#modifyOrderForm").modal('show');
+                },
+                //修改砍价订单资料
+                ModifyBargainData:function(){
+                    app.curEditBargain.Address = JSON.stringify(app.curEditBargain_Address);
+                    $.ajax({
+                        type: "POST",
+                        url: "/enterprisepro/UpdateBargainMaterial",
+                        data: {appId:app.appId, bargainUserJson:JSON.stringify(app.curEditBargain),updateCol:"Address"},
+                        success: function (data) {
+                            $("#modifyBargainForm").modal('hide');
+                            layer.msg(data.Msg);
+                            if(data.isok)
+                            {
+                                window.setTimeout(function () {
+                                    app.getBargainUserList();
+                                }, 2000);
+                            }
+                        },
+                        error: function () {
+                            layer.msg("通讯异常");
+                        }
+                    });
+                },
+                //隐藏砍价修改订单资料弹框
+                HideModifyBargainForm:function(){
+                    $("#modifyBargainForm").modal('hide');
+                },
+                //弹出砍价修改订单资料弹框
+                OpenModifyBargainForm:function(index){
+
+                    app.curEditBargain = app.bargainUserList[index];
+                    app.curEditBargain_Address = JSON.parse(app.curEditBargain.Address.replace('\n',''));
+
+                    $("#modifyBargainForm").modal('show');
+                },
+                //打印订单
+                printOrder:function(orderIds,printType,isPrint){
+                    var txt='打印预览（仅支持A4纸）';
+                    if(isPrint==1){
+                        txt='订单详情';
+                    }
+                    layer.open({
+                        type:2,
+                        title:txt,
+                        area:['794px','600px'],
+                        content:String.raw`/Tools/Printer?appId=${this.appId}&printType=${printType}&pageTitle=打印预览&content=${orderIds}&isPrint=${isPrint}`,
+                        btn:['关闭']
+                    });
+                },
+                //批量打印订单
+                printSelectOrder:function(printType){
+                    orderIds = this.selOrder.join(',');
+                    if(!orderIds.trim()){
+                        layer.msg('请勾选想打印的订单');
+                        return;
+                    }
+                    this.printOrder(orderIds,printType);
+                },
+            },
+            created:function(){
+                this.Tab(this.tab);
+                this.InitLayer();
+            },
+            updated:function(){
+                thisApp = this;
+                if(!thisApp.layForm.render){
+                    return;
+                }
+                thisApp.$nextTick(function(){
+                    thisApp.layForm.render('checkbox');
+                })
+            },
+            watch:{
+                tab:function(){
+                    this.selOrder = [];
+                    this.isMultiple = false;
+                }
+            }
+        });
+    })
+
+
+
+    //查看退款失败原因
+    function OpenOutOrderFailRemarkFormTxt(orderId){
+        $.ajax({
+            type: "POST",
+            url: "/enterprisepro/getOutOrderFailRemark",
+            data: { orderId: orderId},
+            success: function (data) {
+
+                layer.msg(data);
+            },
+            error: function () {
+                layer.msg("通讯异常");
+            }
+        });
+    }
+
+    ///更新普通订单状态
+    function updateOrderState(orderid,state,oldState){
+        $.ajax({
+            type: "POST",
+            url: "/enterprisepro/updteOrderState",
+            data: { orderid: orderid, state:state ,oldState:oldState},
+            success: function (data) {
+                $("#tsModal").modal('hide');
+                layer.msg(data.msg);
+                window.setTimeout(function () {
+                    window.location.reload();
+                }, 2000);
+            },
+            error: function () {
+                layer.msg("通讯异常");
+            }
+        });
+    }
+
+    serialize = function(obj, prefix) {
+        var str = [], p;
+        for(p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
+                str.push((v !== null && typeof v === "object") ?
+                  serialize(v, k) :
+                  encodeURIComponent(k) + "=" + encodeURIComponent(v));
+            }
+        }
+        return str.join("&");
+    }
+</script>
+
+<style>
+    .centertext { vertical-align: middle !important; text-align: center; }
+
+    span.layui-laypage-curr, span.layui-laypage-skip { float: none; padding-top: 0; }
+
+    #logModal .modal-dialog { width: 952px; }
+
+    .searchul { width: 100%; margin: 20px 0px 14px 0px; }
+
+        .searchul li { /*width:25%;*/ float: left; margin-right: 25px; }
+
+            .searchul li span { float: left; padding-top: 5px; padding-right: 8px; }
+
+            .searchul li input, .searchul li select { width: 140px; }
+
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #0094ff !important; }
+
+        .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #0094ff !important; }
+
+    .btnState { margin: 3px; width: 100px; background-color: white; border-color: #5e97fa; margin-bottom: 8px; background-color: White; color: #108EE9; }
+
+    .typeItem .active { background-color: #108EE9 !important; color: white !important; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+
+    .Tip { width: 70%; display: inline-block; text-align: center; }
+
+    .doItem { margin-top: 10px; }
+
+    #modifyOrderForm .left { text-align: left; height: 30px; }
+
+    #modifyOrderForm .right { text-align: right; height: 30px; }
+
+    #modifyBargainForm .left { text-align: left; height: 30px; }
+
+    #modifyBargainForm .right { text-align: right; height: 30px; }
+</style>

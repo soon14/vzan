@@ -1,0 +1,114 @@
+﻿@using User.MiniApp.Areas.DishAdmin.Models;
+@model ViewModel<PayRecordModel>
+@{
+    ViewBag.Title = "买单记录";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+    int aId = Utility.IO.Context.GetRequestInt("aId", 0);
+    int storeId = Utility.IO.Context.GetRequestInt("storeId", 0);
+    int payType = Utility.IO.Context.GetRequestInt("payType",0);
+    DateTime? q_begin_time = ViewBag.q_begin_time;
+    DateTime? q_end_time = ViewBag.q_end_time;
+}
+<link href="~/Areas/DishAdmin/lib/My97DatePicker/4.8/skin/WdatePicker.css" rel="stylesheet" />
+<script src="~/Areas/DishAdmin/lib/My97DatePicker/4.8/WdatePicker.js"></script>
+<nav class="breadcrumb"><i class="Hui-iconfont">&#xe67f;</i> 首页 <span class="c-gray en">&gt;</span> 订单管理 <span class="c-gray en">&gt;</span> 买单记录<a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a></nav>
+<div class="page-container">
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l">提示：未授权用户没有头像和昵称</span>
+        <span class="r">共有数据：<strong>@(Model.TotalCount)</strong> 条</span>
+    </div>
+    <div class="text-c" style="margin-top:10px;">
+        <form method="get" class="search-form">
+            <input type="hidden" name="aId" value="@aId" />
+            <input type="hidden" name="storeId" value="@storeId" />
+            <span class="select-box inline">
+                <select name="payType" id="s_pt_status" class="select">
+                    <option value="0" @(payType == 0 ? "selected" : "")>支付方式</option>
+                    <option value="1" @(payType == 1 ? "selected" : "")>@(DishEnums.PayMode.微信支付)</option>
+                    <option value="2" @(payType == 2 ? "selected" : "")>@(DishEnums.PayMode.余额支付)</option>
+                </select>
+            </span>
+            <span> 开始日期：</span><input type="text" readonly name="q_begin_time" id="q_begin_time" placeholder="请选择开始日期" value="@(q_begin_time != null ?string.Format("{0:yyyy-MM-dd}",q_begin_time ): "")" class="input-text" style="width: 150px;" onClick="WdatePicker()">
+            <span>&nbsp; 结束日期：</span><input type="text" readonly name="q_end_time" id="q_end_time" placeholder="请输入结束日期" value="@(q_end_time != null ? string.Format("{0:yyyy-MM-dd}", q_end_time) : "")" class="input-text" style="width: 150px;" onClick="WdatePicker()">
+
+            <button name="" id="search" class="btn btn-success" type="submit"><i class="Hui-iconfont">&#xe665;</i> 搜索</button>
+            <button name="" onclick="import_data()" class="btn btn-success" type="button"><i class="Hui-iconfont">&#xe640;</i> 导出</button>
+        </form>
+    </div>
+    <div class="mt-20">
+        <table class="table table-border table-bordered table-bg table-hover table-sort">
+            <thead>
+                <tr class="text-c">
+                    <th width="80">用户</th>
+                    <th width="60">头像</th>
+                    <th width="60">支付金额</th>
+                    <th width="60">支付方式</th>
+                    <th>备注</th>
+                    <th width="120">付款时间</th>
+                </tr>
+            </thead>
+            @if (Model.DataList != null && Model.DataList.Count > 0)
+            {
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr class="text-c">
+                            <td>@(item.NickName)</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.NickName))
+                                {
+                                    <img src="@(item.HeadImgUrl)" width="50" height="50" />
+                                }
+                            </td>
+                            <td>
+                                @(item.Money)
+                            </td>
+                            <td>
+                                @if (item.PayType == "微信支付")
+                                {
+                                    <span class="label label-success radius">@(item.PayType)</span>
+                                }
+                                else
+                                {
+                                    <span class="label label-warning radius">@(item.PayType)</span>
+                                }
+                            </td>
+                            <td style="text-align: left;">
+                                @(item.Info)
+                            </td>
+
+                            <td>@(item.AddTime)</td>
+                        </tr>
+                    }
+                </tbody>
+            }
+        </table>
+        @if (Model.TotalCount > Model.PageSize)
+        {
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        }
+    </div>
+</div>
+
+@section scripts{
+    <script>
+        function import_data() {
+            var l_layer = layer.msg('导出中，请稍候', {
+                icon: 16,
+                shade: 0.5
+            });
+            var btnSearch = $("#search"), form = btnSearch.closest('form');
+
+            var url = "/DishAdmin/Order/PayRecord";
+            var param = form.serialize();
+            url = url.indexOf("?") != -1 ? url + "&" + param : url + "?" + param + "&act=export";
+            window.location.href = url;
+            layer.close(l_layer);
+        }
+        $(function () {
+
+        });
+    </script>
+}

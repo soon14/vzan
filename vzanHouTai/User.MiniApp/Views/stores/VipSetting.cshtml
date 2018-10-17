@@ -1,0 +1,631 @@
+﻿@using Entity.MiniApp.ViewModel
+@model VipViewModel
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    /* ViewBag.PageType = 6;*///1是行业版同城，用于母版页的左侧菜单区分
+    ViewBag.Title = "会员卡";
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/colorpicker/spectrum.css" rel="stylesheet" />
+<style>
+    .ml_19 { margin-left: 19px; }
+
+    .viplevel { width: 60%; min-width: 800px; margin-top: 20px; }
+
+    .viplevel th, .viplevel td { text-align: center; }
+
+    .modal-body ul li { padding: 6px; }
+
+    .modal-body label { margin-left: 10px; }
+
+    .modal-body span { float: left; padding-top: 6px; }
+
+    .actionbtn { margin-top: 10px; float: left; margin-left: 10px; }
+
+    .rel { position: relative; }
+
+    .set_good_selimgs { width: 82%; margin: 0 auto; }
+
+    .set_good_selimgs_item { margin-top: 10px; margin-right: 15px; width: 50px; height: 50px; display: inline-block; }
+
+    .set_good_selimgs_item img { /*width: 70px;
+            height: 70px;*/ border: 1px solid #ddd; background-color: #fff; }
+
+    .close-modal.small { top: -8px; right: -8px; width: 18px; height: 18px; font-size: 14px; line-height: 16px; border-radius: 9px; }
+
+    .close-modal { position: absolute; z-index: 2; top: -9px; right: -9px; width: 20px; height: 20px; font-size: 16px; line-height: 18px; color: #fff; text-align: center; cursor: pointer; background: rgba(153,153,153,0.6); border-radius: 10px; }
+
+    .ruleinput { width: 75px; float: left; }
+
+    select.ruleinput { width: 110px; }
+
+    .rulespan { float: left; padding: 10px 6px 0 6px; }
+
+    .ruleul { margin-left: 31px; margin-bottom: 12px; }
+
+    .ruleul li { height: 40px; }
+
+    .ruleul li a { float: left; margin: 9px; color: #ff6a00; }
+
+    .btn-Info { background: #5e97fa; color: #fff; }
+
+    .btn-Info:hover { color: #fff; background: #3272e2; }
+</style>
+
+<div id="app" hidden>
+    <p style="font-size:16px; font-weight:bold; color:#5691fc">|会员级别及权益</p>
+    <table class="table table-bordered viplevel ml_19">
+        <tr class="active">
+            <th>级别名称</th>
+            <th>卡片封面</th>
+            <th>商品折扣</th>
+            <th>修改时间</th>
+            <th>操作</th>
+        </tr>
+        <tr v-for="(level,index) in levellist">
+            <td>{{level.name}}</td>
+            <td><div v-bind:style="{background:level.bgcolor,width:'40px',height:'25px',margin:'0 auto'}"></div></td>
+            <td v-if="level.type==0">无折扣</td>
+            <td v-else-if="level.type==1">全场{{level.discount /10}}折</td>
+            <td v-else-if="level.type==2">指定商品{{level.discount /10}}折</td>
+            <td v-else>未知数据</td>
+            <td>{{level.showtime}}</td>
+            <td>
+                <a href="javascript:;" style="color:red" v-if="level.level!=0" v-on:click="dellevel(index)">删除</a>
+                <a href="javascript:;" style="color:#4a86e8;" v-on:click="addedit(index)">编辑</a>
+            </td>
+        </tr>
+    </table>
+    <div class="ml_19">
+        <a href="javascript:;" v-if="levellist.length<10" v-on:click="addedit()">+新增会员级别</a>
+    </div>
+    <p style="color:#ff6a00; padding:20px 0 0 20px;">
+        温馨提示:<br />若会员级别下已有会员，则该会员级别不能删除，您可到会员列表手动更改会员级别后再尝试删除会员级别。
+    </p>
+    <!--添加会员级别-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        编辑会员级别
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <ul>
+                            <li><span>级别名称:&nbsp;&nbsp;</span><input type="text" v-model="levelInfo.name" class="form-control" style="width:120px;" placeholder="字数不超过5个字" /></li>
+                            <li>卡片封面:&nbsp;&nbsp;<input id="full" /><input type="hidden" id="colordiv" v-model="levelInfo.bgcolor" /></li>
+                            <li>
+                                折扣类型:
+                                <label><input type="radio" value="0" v-model="levelInfo.type" name="discounttype" />无折扣</label>
+                                <label><input type="radio" value="1" v-model="levelInfo.type" name="discounttype" />全场折扣</label>
+                                <label><input type="radio" value="2" v-model="levelInfo.type" name="discounttype" />部分商品折扣</label>
+                            </li>
+                            <li v-if="levelInfo.type!=0">
+                                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;折扣:&nbsp;&nbsp;</span>
+                                <input type="text" v-model="levelInfo.discount" class="form-control" style="width:60px; float:left" />
+                                <span style="color:#676464;margin-left:8px;">请填写0~10之间的数字，最多保留一位小数</span>
+                                <div style="clear:both;"></div>
+                            </li>
+                            <li v-if="levelInfo.type==2">
+                                <div class="set_good_selimgs">
+                                    <div class="set_good_selimgs_item rel" v-for="(selgood_item,selgood_index) in levelInfo.goodslist">
+                                        <img v-bind:src="utils.resizeimg(selgood_item.ImgUrl,100,100)" width="70" height="70" />
+                                        <a class="close-modal js-delete-goods small" data-id="" title="删除" v-on:click="levelInfo.goodslist.splice(selgood_index,1)">×</a>
+                                    </div>
+                                </div>
+                                <div class="mt10">
+                                    <a href="javascript:;" class="actionbtn " v-on:click="getgoodslist()">＋添加产品</a>
+                                    <div style="clear:both;"></div>
+                                </div>
+                            </li>
+                        </ul>
+                        <div stle=" clear:both;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                        保存
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+    <!--添加打折商品-->
+    <div class="modal fade" id="AddGoodModal" tabindex="-1" role="dialog" aria-labelledby="AddGoodModal_label" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择产品</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <thead>
+                            <tr>
+                                <th width="40">ID</th>
+                                <th width="70">产品图片</th>
+                                <th>产品名称</th>
+                                <th width="100">创建时间</th>
+                                <th width="100">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(good_item,good_index) in goodslistdata.list">
+                                <td align="center">{{good_item.Id}}</td>
+                                <td align="center"><img v-bind:src="utils.resizeimg(good_item.ImgUrl,100,100)" width="50" /></td>
+                                <td>
+                                    <div style="word-break:break-all;">
+                                        {{good_item.GoodsName}}
+                                    </div>
+                                </td>
+                                <td>{{good_item.showtime}}</td>
+                                <td align="center" valign="middle">
+                                    <input type="button" class="btn btn-default" v-bind:class="{'btn-primary':good_item.sel}"
+                                           v-bind:value="good_item.sel?'取消':'选取'"
+                                           v-on:click="good_item.sel=!good_item.sel" />
+
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="goodslistdata.recordCount>0"></div>
+                    <br />
+                    <div class="nodata" v-if="goodslistdata.recordCount<=0">
+                        暂无数据，请先添加 <a href="/stores/GoodsAddOrEdit?appId=@(ViewBag.appId)">点击添加产品</a>
+                    </div>
+                    @*<vue-pager ref="goodpager" name="goods"></vue-pager>*@
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="PickGoodOK()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!---------同步发布至微信卡包------------------------------------->
+    <span style="display:none;">@ViewBag.token</span>
+    <span style="display:none;" id="ak">@ViewBag.ak</span>
+    <p style="font-size:16px; font-weight:bold; color:#5691fc; margin-top:20px;">|会员卡同步设置</p>
+    <div>
+        <label style="margin-top: 20px; margin-left: 20px;">
+            @{
+                if (ViewBag.IsAuth == 0 || ViewBag.IsAuthCard == 0)
+                {
+                    <p style="margin-left: 20px;">未绑定微信服务号，去 <a href="@ViewBag.AuthUrl">绑定</a> @*或 <a href="/common/InsteadCardAuth?appid=@ViewBag.appId&PageType=ViewBag.PageType">申请代制卡券</a>*@ </p>
+                }
+                else
+                {
+
+
+
+                    <span>授权服务号:@ViewBag.SerName</span><br />
+                    if (ViewBag.HaveCard == 1)
+                    {
+                        <span>@ViewBag.CardStaus|</span><a href="javascript:void(0);" v-on:click="UpdateWxCard()">更新会员卡</a>
+
+                    }
+                    else
+                    {
+                        <input type="checkbox" @(ViewBag.HaveCard == 1 ? "checked=\"checked\"" : string.Empty) v-model="config.autosynccardswitch" @(ViewBag.IsAuth == 0 || ViewBag.IsAuthCard == 0 || ViewBag.HaveCard == 1 ? "disabled" : "") v-on:change="saveSyncCard()" /><span>同步发布至微信卡包</span>
+
+                    }
+
+                    <a href="@ViewBag.AuthUrl">|重新授权</a>
+                }
+                @*<a href="/common/InsteadCardAuth?appid=@ViewBag.appId&PageType=@ViewBag.PageType">申请代制卡券</a>*@
+            }
+
+        </label>
+
+
+
+    </div>
+
+    <!-- loading -->
+    <div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body" id="modelMsg">
+                    请稍候,正在处理你的请求.....
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!---------自动升级规则------------------------------------->
+    <p style="font-size:16px; font-weight:bold; color:#5691fc; margin-top:20px;">|会员升级规则</p>
+    <div>
+        <label style="margin-top:20px; margin-left:20px;"><input type="checkbox" v-model="config.autoswitch" v-on:change="saveconfig()" />自动升级</label>
+        <ul class="ruleul">
+            <li v-for="(item,index) in rulelist" v-if="rulelist.length<=1">累计消费金额在  0  元以上时，会员级别为{{levellist[0].name}}</li>
+            <li v-else-if="index == (levellist.length-1)">
+                <span class="rulespan">
+                    累计消费金额在  {{item.showminMoney}}  元以上时，会员级别为
+                </span>
+                <select class="form-control ruleinput" v-model="item.levelid">
+                    <option v-for="level in levellist" v-bind:value="level.Id">{{level.name}}</option>
+                </select>
+                <a href="javascript:;" v-if="index==rulelist.length-1" v-on:click="delrule(index)">删除</a>
+            </li>
+            <li v-else-if="index==0">
+                <span class="rulespan">累计消费金额在{{item.showminMoney}}元到</span>
+                <input type="text" class="form-control ruleinput" v-model="item.showmaxMoney" v-on:keyup="moneychange(index)" />
+                <span class="rulespan">之间时，会员级别为{{levellist[0].name}}</span>
+                <a href="javascript:;" v-if="index==rulelist.length-1" v-on:click="delrule(index)">删除</a>
+            </li>
+            <li v-else>
+                <span class="rulespan">累计消费金额在{{item.showminMoney}}元到</span>
+                <input type="text" class="form-control ruleinput" v-model="item.showmaxMoney" v-on:keyup="moneychange(index)" />
+                <span class="rulespan">之间时，会员级别为</span>
+                <select class="form-control ruleinput" v-model="item.levelid">
+                    <option v-for="level in levellist" v-bind:value="level.Id">{{level.name}}</option>
+                </select>
+                <a href="javascript:;" v-if="index==rulelist.length-1" v-on:click="delrule(index)">删除</a>
+            </li>
+        </ul>
+        <div class="ml_19">
+            <a href="javascript:;" v-if="levellist.length>rulelist.length" v-on:click="createRule()">+新建规则</a>
+            <button type="button" class="btn btn-Info" v-on:click="saveRule()">保存</button>
+        </div>
+
+    </div>
+    <div style="color:#FF6600">
+        <br /><br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;温馨提示：<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1. 您可在会员列表手动更改会员级别；<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2. 开启自动升级后，会员级别只升不降，<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;举个例子，小王会员级别为V1，老板手动把他等级改为V2了，<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;开启自动升级后，系统不会自动把小王等级降为V1，只会在小王累计消费金额达到V3时把小王的级别提升到V3。<br />
+    </div>
+
+</div>
+
+<script>
+    var leveldata = {
+        Id: 0,
+        name: '',
+        bgcolor: '#666',
+        type: 0,
+        goodslist: [],
+        gids: "",
+        discount: 9.9
+    };
+    var ruledata = {
+        appId:@Html.Raw(ViewBag.appId),
+        id: 0,
+        showminMoney: 0,
+        showmaxMoney:0,
+        minMoney: this.showminMoney*100,
+        maxMoney: this.showmaxMoney*100,
+        levelid: 0
+    };
+    var goodidArry = [];
+    var app = new Vue({
+        el: "#app",
+        data: {
+            config:@Html.Raw(JsonConvert.SerializeObject(Model.config)),
+            levellist:@Html.Raw(JsonConvert.SerializeObject(Model.levelList)),
+            rulelist:@Html.Raw(JsonConvert.SerializeObject(Model.ruleList)),
+            editIndex: 0,
+            levelInfo: JSON.parse(JSON.stringify(leveldata)),
+            goodslistdata: {
+                recordCount: 0,
+                list: [],
+                postdata: {
+                    appId:@Html.Raw(ViewBag.appId),
+                    versionType:@Html.Raw(ViewBag.versionType),
+                    pageIndex: 1,
+                    pageSize: 8,
+                    ispost:"post"
+
+                }
+            },
+            rulemoney:[0],
+            isloading: false
+        },
+        methods: {
+            //添加编辑窗口
+            addedit: function (index) {
+                //console.log(index)
+                this.editIndex = index;
+                if (typeof (index) != "undefined") {//编辑
+
+                    this.levelInfo = JSON.parse(JSON.stringify(this.levellist[index]));
+                    this.levelInfo.discount = this.levelInfo.discount/10;
+                } else {
+                    this.levelInfo = JSON.parse(JSON.stringify(leveldata));
+                }
+                initcolorpicker()
+                $('#myModal').modal('show')
+            },
+            //保存会员等级
+            saveInfo: function () {
+                if ($.trim(this.levelInfo.name) == '') {
+                    layer.msg("请填写级别名称");
+                    return;
+                }
+                if ($.trim(this.levelInfo.name).length > 5) {
+                    layer.msg("级别名称长度不能超过5个字");
+                    return;
+                }
+                goodidArry = [];
+
+                if (this.levelInfo.goodslist == null) {
+                    this.levelInfo.goodslist = [];
+                }
+                this.levelInfo.goodslist.forEach(function (o, i) {
+                    //console.log(o.Id);
+                    goodidArry.push(o.Id);
+                });
+                if (this.levelInfo.type == 2 && goodidArry.length <= 0) {
+                    layer.msg("请选择打折商品");
+                    return;
+                }
+                this.levelInfo.gids = goodidArry.join(",");
+
+                if (this.levelInfo.type != 0 && !/^[1-9](\.[0-9]{1})?$|0\.[1-9]{1}$/.test(this.levelInfo.discount)) {
+                    layer.msg("请填写0~10之间的数字，最多保留一位小数");
+                    return;
+                }
+                if (this.levelInfo.bgcolor.length <= 0) {
+                    layer.msg("请选择会员卡封面");
+                    return;
+                }
+                var index = layer.load(1);
+
+                $.post("/stores/SavelevelInfo", { id: this.levelInfo.Id, name: this.levelInfo.name, bgcolor: this.levelInfo.bgcolor, gids: this.levelInfo.gids, type: this.levelInfo.type, discount: this.levelInfo.discount * 10, appId:@Html.Raw(ViewBag.appId) }, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        //app.levelInfo.id = data.model.Id;
+                        //app.levelInfo.showtime = data.model.showtime;
+                        var info = data.model;
+                        if (typeof (app.editIndex) != "undefined") {
+                            app.levellist[app.editIndex] = info;
+                        } else {
+                            app.levellist.push(info);
+                        }
+                        app.levelInfo = JSON.parse(JSON.stringify(leveldata));
+                        $('#myModal').modal('hide');
+                    }
+                })
+            },
+            //获取商品列表
+            getgoodslist: function () {
+                if (this.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1)
+                $.post("/stores/GoodsList", this.goodslistdata.postdata, function (data) {
+                    layer.close(index);
+                    app.goodslistdata.recordCount = data.recordCount;
+                    app.goodslistdata.list = data.list;
+                    app.resetgoodsPage();
+                })
+                $('#AddGoodModal').modal('show');
+            },
+            //商品列表分页跳转
+            resetgoodsPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.goodslistdata.recordCount //数据总数，从服务端得到
+                        , curr: app.goodslistdata.postdata.pageIndex //当前页
+                        , limit: app.goodslistdata.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            //console.log(app.recordCount);
+                            app.goodslistdata.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getgoodslist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //选取折扣商品完成
+            PickGoodOK: function () {
+                var sellist = this.goodslistdata.list.filter(function (_item) {
+                    return _item.sel;
+                });
+                if (sellist.length <= 0) {
+                    layer.msg("请选择打折的商品");
+                    return;
+                }
+                if (this.levelInfo.goodslist == null) {
+                    this.levelInfo.goodslist = [];
+                }
+                this.levelInfo.goodslist = this.levelInfo.goodslist.concat(sellist);
+                $('#AddGoodModal').modal('hide');
+            },
+            //删除会员等级
+            dellevel: function (index) {
+                this.isloading = true;
+                $.post("/stores/validviplist", { id: this.levellist[index].Id }, function (data) {
+                    app.isloading = false;
+                    if (data.isok) {
+                        layer.confirm('您确定要删除该会员级别吗？', {
+                            btn: ['确定', '取消'] //按钮
+                        }, function () {
+                            $.post("/stores/delLevel", { id: app.levellist[index].Id, appId:@Html.Raw(ViewBag.appId) }, function (data) {
+
+                                if (data.isok) {
+                                    app.levellist.splice(index, 1);
+                                }
+                                layer.msg(data.msg);
+                            });
+                        });
+
+                    } else {
+                        app.isloading = true;
+                        layer.msg(data.msg);
+                        return;
+                    }
+                })
+            },
+            //自动升级开关
+            saveconfig: function () {
+                //console.log(this.config.autoswitch);
+                var autostate = this.config.autoswitch ? 1 : 0;
+                $.post("/stores/saveConfig", { appId:@Html.Raw(ViewBag.appId),switch: autostate }, function (data) {
+                    layer.msg(data.msg);
+                })
+            },
+            //新建规则
+            createRule: function () {
+                var rule = JSON.parse(JSON.stringify(this.rulelist[this.rulelist.length - 1]));
+                rule.showminMoney = rule.showmaxMoney;
+                rule.showmaxMoney = parseFloat(rule.showmaxMoney) + 1000;
+                rule.id = 0;
+                this.rulelist.push(rule)
+            },
+            moneychange: function (index) {
+                //if (index == (this.rulelist.length - 1)) return;
+                if (index <= (this.rulelist.length - 1))
+                    this.rulelist[index + 1].showminMoney = this.rulelist[index].showmaxMoney;
+                if (index == (this.rulelist.length - 2)) {
+                    this.rulelist[index + 1].showmaxMoney = this.rulelist[index + 1].showminMoney;
+                    //return;
+                }
+            },
+            //删除规则
+            delrule: function (index) {
+                layer.confirm('您确定要删除此规则吗？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    if (app.rulelist[index].id == 0) {
+                        app.rulelist.splice(index, 1);
+                        layer.msg("操作成功");
+                        return;
+                    } else {
+                        $.post("/stores/delRule", { id: app.rulelist[index].id, appId:@Html.Raw(ViewBag.appId) }, function (data) {
+                            if (data.isok) {
+                                app.rulelist.splice(index, 1);
+                            }
+                            layer.msg(data.msg);
+                            return;
+                        });
+                    }
+                });
+            },
+            //保存规则
+            saveRule: function () {
+                if (this.rulelist.length == 1) {
+                    layer.msg("保存成功");
+                    return;
+                }
+                var isfail = false;
+                var idArry = [];
+                $.each(this.rulelist, function (i, v) {
+                    v.maxMoney = v.showmaxMoney * 100;
+                    v.minMoney = v.showminMoney * 100;
+                    if (v.minMoney > v.maxMoney) {
+                        layer.msg("第" + (i + 1) + "条规则消费金额范围不合理");
+                        isfail = true;
+                        return false
+                    }
+                    if ($.inArray(v.levelid, idArry) > 0) {
+                        layer.msg("有多条规则包含同一会员级别，请修改");
+                        isfail = true;
+                        return false;
+                    } else {
+                        idArry.push(v.levelid);
+                    }
+                    //v.maxMoney = v.showmaxMoney * 100;
+                    //v.minMoney = v.showminMoney * 100;
+                })
+                if (isfail) return;
+                var layerIndex = layer.load(1);
+                $.post("/stores/saveRuleList", { rulelist: JSON.stringify(this.rulelist), appId:@Html.Raw(ViewBag.appId)}, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        app.rulelist = data.ruleList;
+                    }
+                })
+            },
+            saveSyncCard:function() {
+                var autostate = this.config.autosynccardswitch ? 1 : 0;
+                $('#loading').modal('show');
+                $.ajax({
+                    type: "POST",
+                    url: "/stores/SaveSyncCard",
+                    data: { appId:@Html.Raw(ViewBag.appId),switch: autostate },
+                    success: function (data) {
+
+                        if (data && data.isok) {
+                            $("#modelMsg").html("操作成功2秒后自动刷新页面!");
+                        } else {
+                            $("#modelMsg").html(data.msg);
+                        }
+
+                        window.setTimeout(function(){
+                            $('#loading').modal('hide');
+                            window.location.reload();
+                        },2000);
+                    },
+                    error: function () {
+                        layer.msg("通讯异常");
+
+                    }
+                });
+
+
+
+            },
+            UpdateWxCard:function() {
+                $('#loading').modal('show');
+                $.ajax({
+                    type: "POST",
+                    url: "/stores/UpdateWxCard",
+                    data: { appId:@Html.Raw(ViewBag.appId)},
+                    success: function (data) {
+
+                        if (data && data.isok) {
+                            $("#modelMsg").html("操作成功2秒后自动刷新页面!");
+                        } else {
+                            $("#modelMsg").html(data.msg);
+
+                        }
+
+                        window.setTimeout(function(){
+                            $('#loading').modal('hide');
+                            window.location.reload();
+                        },2000);
+                    },
+                    error: function () {
+                        layer.msg("通讯异常");
+
+                    }
+                });
+            }
+        },
+        created: function () {
+            $("#app").show();
+            this.utils = utils;
+        }
+    })
+</script>
+<!--颜色选择器-->
+<script src="@(WebSiteConfig.cdnurl)content/colorpicker/spectrum.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/colorpicker/docs/docs.js"></script>

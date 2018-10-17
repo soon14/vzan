@@ -1,0 +1,133 @@
+﻿@model ViewModel<DishCategory>
+@{
+    ViewBag.Title = "分类管理";
+    Layout = "~/Areas/Dish/Views/Shared/_LayoutAdmin.cshtml";
+}
+<style>
+    #categorys tr th { text-align: center; }
+    #categorys tr td { text-align: center; }
+</style>
+<body class="gray-bg">
+
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox-title">
+                    <h5>分类管理</h5>
+                </div>
+                <div class="ibox-content xcx-list">
+                    <div class="xcx-list">
+                        <div class="row m-b-sm m-t-sm">
+                            <div class="col-md-1 text-right" style="width: auto;">
+                                <a href="/Dish/Category/Edit?aId=@Model.DataModel.aId" class="btn btn-primary">
+                                    <i class="fa fa-plus"></i> 新增
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="categorys" class="table table-hover table-condensed">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>标题名称</th>
+                                <th>图片</th>
+                                <th>是否显示</th>
+                                <th>排序</th>
+                                <th>操作</th>
+                        </thead>
+                        <tbody>
+                            @foreach (DishCategory item in Model.DataList)
+                            {
+                                <tr>
+                                    <td>@item.id</td>
+                                    <td>@item.title</td>
+                                    <td><img src="@item.img" width="50px"></td>
+                                    <td>
+                                        <input type="checkbox" @(item.is_show == 1 ? "checked" : "") onclick="ModifyCategoryShow(@item.id,this)" />
+                                    </td>
+                                    <td>@item.is_order</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="/Dish/Category/Edit?id=@item.id&aId=@item.aId" class="btn btn-outline btn-default">
+                                                <i class="fa fa-edit"></i> 编辑
+                                            </a>
+                                            <a href="#" class="btn btn-outline btn-default confirm" onclick="DeleteCategory(@item.id)">
+                                                <i class="fa fa-trash"></i> 删除
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <nav aria-label="Page navigation" class="text-center">
+                        <ul class="pagination pagination-lg">
+                            <li>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+@section scripts{
+    <script>
+        //删除分类
+        function DeleteCategory(id){
+            layer.confirm('确定删除该分类吗？', {
+                btn: ['确定','取消'] //按钮
+            }, function(){
+                var layindex = layer.load(2);
+
+                $.post("/Dish/Category/Edit",
+                {
+                    id: id,
+                    aid:@Model.DataModel.aId,
+                    act: "del"
+                }, function (data) {
+                    layer.close(layindex);
+                    layer.msg(data.Msg);
+                    if(data.code = 1)
+                    {
+                        window.location.reload();
+                    }
+                });
+            }, function(){
+
+            });
+        }
+
+        //切换分类是否显示
+        function ModifyCategoryShow(id,that){
+            var is_show;
+            if($(that).is(':checked'))
+            {
+                is_show = 1;
+            }
+            else
+            {
+                is_show = 0;
+            }
+            var layindex = layer.load(2);
+            $.ajax({
+                type: 'POST',
+                dataType: "json",
+                url: "/Dish/Category/Edit",
+                data: {aid:@Model.DataModel.aId, id: id, is_show: is_show, act:"save", updateCols: "is_show" },
+                success: function(data)
+                {
+                    layer.close(layindex);
+                    layer.msg(data.msg);
+                },
+                error: function()
+                {
+                    layer.msg("网络异常");
+                }
+            });
+        }
+
+    </script>
+}

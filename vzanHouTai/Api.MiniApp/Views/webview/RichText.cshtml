@@ -1,0 +1,190 @@
+﻿@using Senparc.Weixin.MP.Containers;
+@using System.Configuration;
+@{
+    /**/
+    string webview_appid = ConfigurationManager.AppSettings["webview_appid"];
+    string webview_appsecret = ConfigurationManager.AppSettings["webview_appsecret"];
+    Layout = null;
+    int id = Utility.IO.Context.GetRequestInt("id", 0);
+    string type = Utility.IO.Context.GetRequest("type", "");
+    string accesstoken = AccessTokenContainer.TryGetAccessToken(webview_appid, webview_appsecret);
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link href="//j.vzan.cc/dz/content/newhome/css/dzbase.css?2018-05-15 13:43" rel="stylesheet" />
+    <script type="text/javascript" src="//res.wx.qq.com/open/js/jweixin-1.3.2.js"></script>
+    <script src="//j.vzan.cc/miniapp/js/jquery.min.js"></script>
+    <script src="~/dist/Eleditor-1.8.3/Eleditor.js"></script>
+    @*<script src="~/dist/Eleditor-1.8.3/webuploader.min.js"></script>*@
+
+    <!--@Html.Raw(ViewBag.pageUrl)-->
+    <!--@(ViewBag.ticket)-->
+    <title>编辑详情</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; padding: 10px; line-height: 1.5; -webkit-overflow-scrolling: touch; }
+        img { width: 100%; }
+        .main { /*position: absolute; left: 10px; right: 10px;top: 10px; bottom: 10px;*/ }
+        .btn-save { display: inline-block; padding: 10px 20px; border-radius: 5px; text-align: center; font-size: 14px; color: #fff; background-color: #FE536F; }
+        .btn-cancel { display: inline-block; padding: 10px 20px; border-radius: 5px; text-align: center; font-size: 14px; color: #fff; background-color: #ccc; }
+        .main-content { /*position:absolute;top:0;bottom:0;width:100%;  overflow-y: scroll;*/ }
+        .ml20 { margin-left: 20px; }
+        .rel { position: relative; }
+    </style>
+    <script>
+        wx.config({
+            debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+                        appId: '@(webview_appid)', // 必填，公众号的唯一标识
+                        timestamp: @(ViewBag.timestamp), // 必填，生成签名的时间戳
+                        nonceStr: '@(ViewBag.nonceStr)', // 必填，生成签名的随机串
+                        signature: '@(ViewBag.signature)',// 必填，签名
+                        jsApiList: ['chooseImage', 'previewImage','uploadImage'] // 必填，需要使用的JS接口列表
+        });
+        var id =@(id);
+    </script>
+</head>
+<body>
+    <div class="main">
+        <div id="contentEditor" class="main-content">
+            @if (id > 0)
+            {
+                @Html.Raw(ViewBag.description)
+            }
+        </div>
+        <div class="f fc fc-h" style="margin-top:20px;">
+            <a href="javascript:;" class="btn-cancel">取消</a>  <a href="javascript:;" class="btn-save ml20">保存</a>
+        </div>
+    </div>
+    <script>
+        var type = '@(type)';
+        $(function () {
+            var ismini = false;
+            wx.miniProgram.getEnv(function (res) {
+                ismini = res.miniprogram;
+                if (true) {
+
+                    wx.ready(function () {
+
+                        var Edr = new Eleditor({
+                            el: '#contentEditor',
+                            uploader: function () {
+                                return new Promise(function (resolve, reject) {
+                                    wx.chooseImage({
+                                        //count: count, //默认只能传一张
+                                        success: function (res) {
+                                            console.log(res);
+                                            var localIds = res.localIds;
+                                            var uploadCount = 0;
+                                            var uploadImgs = [];
+                                            //var tempFilePaths = res.tempFilePaths;
+
+                                            function uploadOne() {
+
+                                                wx.uploadImage({
+                                                    localId: localIds[uploadCount],
+                                                    name: "file",
+                                                    success: function (res) {
+                                                        console.log(res);
+                                                        if (res && res.errMsg && res.errMsg == "uploadImage:ok") {
+
+
+                                                            $("#mediaid").val(res.serverId);
+                                                            $.when($.post("/webview/SaveImgByServerId", { media_id: res.serverId })).then(function (_resu) {
+                                                                if (_resu.isok) {
+                                                                    /*执行resolve并传递url*/
+                                                                    uploadImgs.push(_resu.msg);
+                                                                }
+                                                                else {
+                                                                    alert(_resu.msg);
+                                                                }
+                                                                uploadCount += 1;
+
+                                                                if (uploadCount < localIds.length) {
+                                                                    uploadOne();
+                                                                } else {
+                                                                    console.log("上传完毕", uploadImgs);
+                                                                    resolve(uploadImgs);
+                                                                }
+
+                                                            });
+                                                            /*取得图片serverId后传给后端保存处理并返回url*/
+
+
+
+                                                        }
+
+
+                                                    },
+                                                    complete: function () {
+
+                                                    }
+                                                });
+                                            }
+                                            uploadOne();
+                                        }
+                                    });
+                                });
+                            }
+                        });
+
+                        $(document)
+                            .on("click", ".btn-save", function () {
+                                if (!ismini) {
+                                    alert("请在小程序中操作");
+                                }
+                                else {
+                                    var content = Edr.getContent();
+                                    if (content == "") {
+                                        alert("产品详情不能为空");
+                                        return;
+                                    }
+                                    if (type == 'pin') {
+                                        $.post("/webview/SavePinRichText", { id: id, content: content }).then(function (data) {
+                                            if (data && data.isok) {
+                                                wx.miniProgram.postMessage({ data: { txt: content } })
+                                                setTimeout(function () {
+                                                    wx.miniProgram.navigateBack(1);
+                                                }, 300);
+                                            }
+                                            else {
+                                                alert(data.msg);
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        wx.miniProgram.postMessage({ data: { txt: content } })
+                                        setTimeout(function () {
+                                            wx.miniProgram.navigateBack(1);
+                                        }, 300);
+                                    }
+
+                                    
+
+                                }
+                            })
+                            .on("click", ".btn-cancel", function () {
+                                setTimeout(function () {
+                                    wx.miniProgram.navigateBack(1);
+                                }, 300);
+                            });
+                    });
+
+                }
+            });
+
+
+
+
+
+
+
+
+        });
+    </script>
+
+</body>
+</html>

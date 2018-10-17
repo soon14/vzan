@@ -1,0 +1,419 @@
+﻿@using Entity.MiniApp.Conf
+@model  DistributionModel
+@{
+    Layout = null;
+    ViewBag.PageType = -1;
+    int tempplatetype = (int)TmpType.小程序多门店模板;
+    int zhtempplatetype = (int)TmpType.智慧餐厅;
+}
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+<!--<![endif]-->
+<head>
+    <meta charset="utf-8" />
+    <title>资料编辑</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta content="" name="author" />
+    <link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+    @*
+        <link href="@WebSiteConfig.SourceContent/content/??css/layer/layer.css" rel="stylesheet">*@
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    @*
+    <script src="@(WebSiteConfig.cdnurl)content/layer/layer.js"></script>*@
+    <script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+    <script src="@(WebSiteConfig.SourceContent)/fcontent/plugin/vue.min.js"></script>
+    <link href="@(WebSiteConfig.cdnurl)content/agent/css/zzsc.css" rel="stylesheet" />
+    <style>
+        .userInfo, .templateDetail {
+            width: auto;
+            margin-left: 20%;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+            .userInfo span {
+                color: red;
+            }
+
+            .userInfo td {
+                padding: 8px 5px;
+                text-align: left;
+            }
+
+        .textname {
+            text-align: right !important;
+            width: 100px !important;
+        }
+
+        /*.userInfo input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            margin-left: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: montserrat;
+            color: #2C3E50;
+            font-size: 13px;
+        }*/
+
+        .placebox {
+            width: 30% !important;
+            float: left;
+        }
+
+        table.layui-form td {
+            padding: 7px 0px;
+        }
+
+        .selbox {
+            width: 85%;
+        }
+
+        .layui-form-select {
+            width: 90%;
+        }
+
+        textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            font-family: montserrat;
+            color: #2C3E50;
+            font-size: 13px;
+        }
+
+        .textRight {
+            text-align: right !important;
+        }
+
+        .templateDetail td {
+            border: solid 1px #808080;
+        }
+    </style>
+</head>
+<body>
+    @if (Model != null)
+    {
+        <div id="editdiv" hidden>
+            <div class="layui-tab layui-tab-card" style="width: 90%; margin: 40px auto;">
+                <ul class="layui-tab-title">
+                    <li class="@(ViewBag.type== 0?"layui-this":"")">基础信息</li>
+                    <li class="@(ViewBag.type== 1?"layui-this":"")">账户信息</li>
+                    <li class="@(ViewBag.type== 2?"layui-this":"")">已购买模板</li>
+                    <li class="@(ViewBag.type== 3?"layui-this":"")">已创建客户</li>
+                </ul>
+                <div class="layui-tab-content">
+
+                    <div class="layui-tab-item @(ViewBag.type== 0? "layui-show" : "" )">
+                        <table class="userInfo">
+                            <tr>
+                                <td class="textRight">分销商账号：</td>
+                                <td>{{loginId}}</td>
+                            </tr>
+                            <tr>
+                                <td class="textRight">分销商名称：</td>
+                                <td><input type="text" v-model="username" class="layui-input" /></td>
+                            </tr>
+                            <tr>
+                                <td class="textRight">密码：</td>
+                                <td>********************** <a href="javascript:" onclick="changePwd()" style="margin-left: 15px; color: #33a7fe;">修改密码</a></td>
+                            </tr>
+                            <tr>
+                                <td class="textRight">备注：</td>
+                                <td><input type="text" v-model="remark" class="layui-input" /></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="layui-tab-item @(ViewBag.type== 1?"layui-show" : "")">
+                        <table class="userInfo">
+                            <tr>
+                                <td class="textRight">预存款余额（元）：</td>
+                                <td><input class="layui-input" v-model="deposit" placeholder="0~9999999.99，最多两位小数" /></td>
+                            </tr>
+                            <tr v-for="template in templateList">
+                                <td class="textRight"><span class="color_red">*</span>{{template.TName}}：</td>
+                                <td>
+                                    <div v-if="template.Type==@tempplatetype || template.Type==@((int)TmpType.小程序餐饮多门店模板)">
+                                        开通<input class="layui-input" v-model="template.storecount" onkeyup = "this.value=this.value.replace(/[^\d]/g,'');"  maxlength="4" style="display:inline-block;width:60px;"/>家门店之内（包括总店）收取<input class="layui-input" v-model="template.ShowPrice" placeholder="0~9999999.99，最多两位小数" style="display:inline-block;width:60px;"/>元，每开通一家门店就收取<input class="layui-input" v-model="template.statename" placeholder="0~9999999.99，最多两位小数" style="display:inline-block;width:60px;"/>元
+                                    </div>
+                                    <div v-else-if="template.Type==@zhtempplatetype">
+                                        开通费用<input class="layui-input" v-model="template.ShowPrice" placeholder="0~9999999.99，最多两位小数" style="display:inline-block;width:60px;" />元，每开通一家门店就收取<input class="layui-input" v-model="template.statename" placeholder="0~9999999.99，最多两位小数" style="display:inline-block;width:60px;" />元
+                                    </div>
+                                    <div v-else>
+                                        <input class="layui-input" v-model="template.ShowPrice" placeholder="0~9999999.99，最多两位小数" />
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+                    <div class="layui-tab-item @(ViewBag.type== 2?"layui-show" : "")">
+                        <table class="layui-table">
+                            <tr>
+                                <th>模板名称</th>
+                                <th>已购买模板数量</th>
+                                <th>模板总费用（元）</th>
+                            </tr>
+                            @if (Model.detailList != null && Model.detailList.Count > 0)
+                            {
+                                foreach (var detail in Model.detailList)
+                                {
+                                    <tr>
+                                        <td>@detail.name</td>
+                                        <td>@detail.Count</td>
+                                        <td>@detail.showsum</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="3">还没有购买模板~</td>
+                                </tr>
+                            }
+                        </table>
+
+                    </div>
+                    <div class="layui-tab-item @(ViewBag.type== 3?"layui-show" : "")">
+                        <table class="layui-table">
+                            <tr>
+                                <th>客户账号</th>
+                                <th>客户名称</th>
+                                <th>已开通模板</th>
+                                <th>模板费用（元）</th>
+                            </tr>
+                            <tr v-if="customerList!=null&&customerList.length>0" v-for="customer in customerList">
+                                <td>{{customer.LoginId}}</td>
+                                <td>{{customer.username}}</td>
+                                <td>{{customer.templates}}</td>
+                                <td>{{customer.showPrice}}</td>
+                            </tr>
+                            <tr v-else>
+                                <td colspan="4">还没有客户~</td>
+                            </tr>
+                        </table>
+                        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="width:100%;text-align:center; margin-bottom:50px;">
+                <a href="javascript:;" class="layui-btn layui-btn-primary" onclick="closewin()">关闭</a>
+                <a href="javascript:;" class="layui-btn layui-btn-normal" v-on:click="saveInfo()">保存</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>数据不存在</p>
+    }
+    <script>
+        var layer;
+        var isright = true;
+        layui.use(['element','layer'], function () {
+            element = layui.element;
+            form = layui.form;
+            layer = layui.layer;
+        });
+        function closewin() {
+            parent.layer.closeAll();
+        }
+        function changePwd() {
+            parent.layer.open({
+                type: 2,
+                title: "修改密码",
+                shade: 0,
+                // shade: [0.8, '#000'],
+                // skin: 'layui-layer-rim', //加上边框
+                area: ['650px', '350px'], //宽高
+                content: '/agentmanager/updateDistributionPwd?id=@Model.AgentId'
+            });
+
+        }
+        var vm = new Vue({
+            el: "#editdiv",
+            data: {
+                loginId: '@Model.LoginId',
+                username: '@Model.name',
+                remark: '@Model.remark',
+                deposit: '@Model.showDeposit',
+                templateList: [],
+                customerList: [],
+                pageIndex: 1,
+                pageSize: 5,
+                id:@Model.AgentId,
+                recordCount: 0,
+                isloading: false
+            },
+            methods: {
+                getTemplateList: function () {
+                    $.post("/agentmanager/GetDistributionTemplate", { id: this.id }, function (data) {
+                        if (data.isok) {
+                            vm.templateList = data.dataObj;
+                        }
+                    })
+                },
+                getCustomerList: function () {
+                    if (this.isloading) {
+                        layer.msg("正在加载");
+                        return;
+                    }
+                    this.isloading = true;
+                    $.post("/agentmanager/GetCreatedCustomer", { id: this.id, pageIndex: this.pageIndex, pageSize: this.pageSize }, function (data) {
+                        vm.isloading = false;
+                        if (data.isok) {
+                            vm.customerList = data.dataObj.list;
+                            vm.recordCount = data.dataObj.Count;
+                            vm.resetPage();
+                        }
+                    })
+                },
+                resetPage: function () {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: vm.recordCount //数据总数，从服务端得到
+                            , curr: vm.pageIndex //当前页
+                            , limit: vm.pageSize
+                            , jump: function (obj, first) {
+                                //obj包含了当前分页的所有参数，比如：
+                                //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                               // console.log(obj.limit); //得到每页显示的条数
+                                vm.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    vm.getCustomerList();
+                                    //console.log("first");//do something
+
+                                }
+                            }
+                            , theme: '#1E9FFF'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                            , groups:4
+                        });
+                    })
+                },
+                saveInfo: function () {
+                    if ($.trim(this.username) == '') {
+                        layer.msg("请填写分销商名称");
+                        return;
+                    }
+                    if (this.username.length > 28) {
+                        layer.msg("分销商名称过长，请勿超过28字");
+                        return;
+                    }
+                    if (!(/^[^\s]+$/).test($.trim(this.username))) {
+                        layer.msg("分销商名称不能含有空格");
+                        return;
+                    }
+                    if ($.trim(this.remark).length > 100) {
+                        layer.msg("备注内容不能超过100字");
+                        return;
+                    }
+
+                    isright=true;
+                    var erromsg = "";
+                    //模板类型
+                    var templatetype = @tempplatetype
+                    $.each(this.templateList, function (i, obj) {
+                        //this; //this指向当前元素
+                        //i; //i表示Array当前下标
+                        //value; //value表示Array当前元素
+                        console.log(this.ShowPrice);
+                        
+                        if(!vm.checknum(this.ShowPrice))
+                        {
+                            isright=false;
+                            erromsg="模板价格填写范围：0~9999999.99，最多两位小数";
+                            return;
+                        }
+
+                        //判断是否是多店铺
+                        if(this.Type==templatetype)
+                        {
+                            //增加一家店铺单价
+                            if(!vm.checknum(this.statename))
+                            {
+                                isright=false;
+                                erromsg="模板价格填写范围：0~9999999.99，最多两位小数";
+                                return;
+                            }
+
+                            if (this.storecount > 9999 || this.storecount< this.SCount) {
+                                erromsg="开通分店数量范围："+this.SCount+"~9999";
+                                isright=false;
+                                return;
+                            }
+                        }
+                        else if((this.Type==@zhtempplatetype))
+                        {
+                            //增加一家店铺单价
+                            if(!vm.checknum(this.statename))
+                            {
+                                isright=false;
+                                erromsg="模板价格填写范围：0~9999999.99，最多两位小数";
+                                return;
+                            }
+                        }
+                    });
+                    if (!isright) {
+                        layer.msg(erromsg);
+                        return;
+                    }
+                    if (this.deposit < 0 || !(/^[0-9]+([.]{1}[0-9]{1,2})?$/).test($.trim(this.deposit)) || this.deposit > 9999999.99) {
+                        layer.msg("预存款填写范围：0~9999999.99，最多两位小数");
+                        return;
+                    }
+                    var postdata = {
+                        id: this.id,
+                        username: $.trim(this.username),
+                        deposit: this.deposit,
+                        templateList: JSON.stringify(this.templateList),
+                        remark: this.remark
+                    }
+                    var ind = layer.load(1);
+
+                    $.post("/agentmanager/DistributionSaveEdit", postdata, function (data) {
+                        layer.close(ind);
+
+                        if (data.isok) {
+                            layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                layer.load(1);
+                                window.parent.location.reload();//do something
+                            });
+                        } else {
+                            layer.msg(data.Msg);
+                        }
+                    })
+                },
+                checknum:function(num)
+                {
+                    if (num < 0 || !(/^[0-9]+([.]{1}[0-9]{1,2})?$/).test($.trim(num))) {
+                        return false;
+                    }
+                    if (num > 9999999.99) {
+                        return false;
+                    }
+
+                    return true;
+                }
+            },
+            created: function(){
+                $("#editdiv").show();
+                this.getTemplateList();
+                this.getCustomerList();
+            }
+        })
+
+    </script>
+</body>
+</html>

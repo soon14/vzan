@@ -1,0 +1,452 @@
+﻿
+@{
+    ViewBag.Title = "项目列表";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+@model List<EntGoodType>
+<style>
+    .layui-btn-primary:hover { border-color: #2196f3; color: #2196f3; }
+    .btn-reset:hover { border-color: #2196f3; color: #2196f3; }
+    .selected { border-color: #2196f3; color: #fff; background: #2196f3; }
+    .selected:hover { color: #fff; }
+    .searchbox td { width: 100px; }
+    .layui-table { min-width: 1070px; max-width: 1200px; }
+    .layui-table td, .layui-table th{text-align:center; }
+    /*编辑添加页面样式*/
+    .detail-box { width: 800px; }
+    .detail-box table { margin-top: 20px; }
+    .detail-box table td { padding: 5px 0px; }
+    .tr { width: 85px; }
+    .servicetype { height: 30px; padding: 0 10px; line-height: 30px; font-size: 13px; margin: 5px 5px 5px 10px; }
+    .detail-box .form-control { width: 350px; }
+    .detail-box table label, .tr span { color: #ff6a00; font-weight: normal; }
+    .del-btn { position: absolute; top: -9px; right: -8px; color: #fff; background: rgba(0, 0, 0, 0.56); width: 18px; border-radius: 13px; text-align: center; line-height: 18px; }
+    .del-btn:hover, .del-btn:focus { color: #fff; text-decoration: none; }
+    /*添加分类弹框样式*/
+    .modal-content { width: 350px; }
+    .btnbox { text-align: center; }
+    .modal-body table { margin: 0 auto; }
+    .modal-body table td { padding-bottom: 15px; }
+    .modal-body .form-control { width: 179px; }
+    .bdddb{margin-top:20px;}
+</style>
+<div id="app" v-cloak>
+    <div v-show="!isDetail">
+        <table class="searchbox">
+            <tr>
+                <td class="tr">项目名称：</td>
+                <td><input type="text" class="form-control" placeholder="" v-model="postdata.name" v-on:keyup.enter="searchList()" /></td>
+                <td class="tr">项目分类：</td>
+                <td>
+                    <select class="form-control" v-model="postdata.ptypes">
+                        <option value="0">全部</option>
+                        <option v-for="(serviceType,index) in serviceTypeList" :value="serviceType.id">{{serviceType.name}}</option>
+                    </select>
+                </td>
+                <td class="tr">状态：</td>
+                <td>
+                    <select class="form-control" v-model="postdata.tag">
+                        <option value="-1">全部</option>
+                        <option value="1">已上架</option>
+                        <option value="0">已下架</option>
+                    </select>
+                </td>
+                <td style="width:220px; text-align:center;">
+                    <button type="button" class="layui-btn layui-btn-primary selected" v-on:click="searchList()">搜索</button>
+                    <button type="button" class="layui-btn layui-btn-primary btn-reset" v-on:click="Reset()">重置</button>
+                </td>
+            </tr>
+        </table>
+        <button type="button" class="layui-btn layui-btn-primary selected" v-on:click="AddService()" style="margin-top:20px;">添加服务项目</button>
+        <table class="layui-table" lay-skin="line">
+            <thead>
+                <tr>
+                    <th>项目名称</th>
+                    <th>项目主图</th>
+                    <th>项目分类</th>
+                    <th>价格（元）</th>
+                    <th>服务时长（分钟）</th>
+                    <th>已订数量</th>
+                    <th>状态</th>
+                    <th>最后更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tr v-for="(service,index) in serviceList">
+                <td>{{service.name}}</td>
+                <td><img :src="service.img" width="120" height="60" /></td>
+                <td>{{service.ptypestr}}</td>
+                <td>{{service.price}}</td>
+                <td>{{service.ServiceTime}}</td>
+                <td>{{service.salesCount}}</td>
+                <td :class="[service.tag==1?'color-green':'color-red']">{{service.tag==1?"已上架":"已下架"}}</td>
+                <td>{{service.showUpdateTime}}</td>
+                <td>
+                    <a href="javascript:;" class="editbtn" v-on:click="EditServiceInfo(index)">编辑</a>
+                    <a href="javascript:;" :class="[service.tag==1?'color-red':'color-green','editbtn']" v-on:click="UpdateOrDelete(index,'updateTag')">{{service.tag==1?"下架":"上架"}}</a>
+                    <a href="javascript:;" class="color-red" v-on:click="UpdateOrDelete(index,'delete')">删除</a>
+
+                </td>
+            </tr>
+            <tr v-if="recordCount<=0">
+                <td colspan="9">
+                    还没有服务项目
+                </td>
+            </tr>
+        </table>
+        <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>postdata.pageSize"></div>
+    </div>
+    <div class="detail-box" v-show="isDetail">
+        <!--#region 添加编辑-->
+        @Html.Partial("/views/footbath/_ServiceInfoPartial.cshtml")
+        <!--#endregion-->
+    </div>
+</div>
+<script src="/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/plugin/uploadImg.js"></script>
+<script type="text/javascript">
+    var element, form, laydate;
+    var comeditor = null;
+    //搜索条件初始值
+    var default_Search = {
+        appId:@ViewBag.appId,
+        pageIndex: 1,
+        pageSize: 10,
+        ptypes: '0',
+        name: '',
+        tag: -1,
+    }
+    //添加服务项目初始值
+    var defServiceInfo = {
+        aid:@ViewBag.appId,
+        id:0,
+        name: '',
+        ptypes: '',
+        price:'0',
+        ServiceTime: 0,
+        stock: 0,
+        specificationkeys: '',
+        description: '',
+        img:'',
+        salesCount:0,
+    }
+    //添加分类弹框初始值
+    var defaultType = {
+        appId:@ViewBag.appId,
+        id: 0,
+        name: '',
+        sort: 1,
+    }
+    var app = new Vue({
+        el: "#app",
+        data: {
+            componentData: {//传入组件数据
+                uploadData: {
+                    img1: {//传入图片对象
+                        imgList: [],//图片路径
+                        progress: 'demo',//进度条过滤器
+                        maxfile:1,
+                    }
+                }
+            },
+            isDetail: false,//是否详情页
+            recordCount:0,//服务项目列表总数
+            serviceList: [],//服务项目列表
+            serviceTypeList:@Html.Raw(JsonConvert.SerializeObject(Model)),//项目分类列表
+            selTypeList: @Html.Raw(JsonConvert.SerializeObject(Model)),//项目分类备份列表，用于添加新的分类后重新设置用户已选项
+            postdata: {//搜索数据
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                ptypes: '0',
+                name: '',
+                tag:-1,
+            },
+            serviceInfo: {//添加编辑服务项目信息
+                aid:@ViewBag.appId,
+                id:0,
+                name: '',
+                ptypes: '',
+                price: '0',
+                ServiceTime:0,
+                stock:0,//已订人数
+                specificationkeys: '',//服务流程
+                description: '',
+                img:'',
+                salesCount:0,
+            },
+            typedata: {//添加分类信息
+                appId:@ViewBag.appId,
+                id: 0,
+                name: '',
+                sort: 1,
+            },
+        },
+        components: {
+            // <upload-component> 将只在父组件模板中可用
+            'upload-component': uploadChild//上传组件
+        },
+        methods: {
+            //切换工作状态
+            GetState: function (val) {
+                app.postdata.state = val;
+            },
+            //重置搜索条件
+            Reset: function () {
+                $.extend(true, app.postdata, default_Search);
+            },
+            //获取列表信息
+            GetList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetServiceList", this.postdata, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.serviceList = data.serviceList;
+                        app.recordCount = data.recordCount;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.postdata.pageIndex //当前页
+                        , limit: app.postdata.pageSize
+                        , jump: function (obj, first) {
+                            app.postdata.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.postdata.pageIndex = obj.curr;
+                                app.GetList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //搜索
+            searchList: function () {
+                app.postdata.pageIndex = 1;
+                app.GetList();
+            },
+            //添加服务
+            AddService: function () {
+                $.each(app.serviceTypeList, function (i, v) {
+                    v.sel = false;
+                })
+                $.extend(true, app.serviceInfo, defServiceInfo);
+                comeditor.setContent(app.serviceInfo.description);
+                app.componentData.uploadData.img1.imgList = [];
+                app.isDetail = true;
+                
+            },
+            //取消服务项目添加编辑
+            Cancel: function () {
+                
+                app.isDetail = false;
+            },
+            //选择分类
+            ChooseType: function (index) {
+                app.serviceTypeList[index].sel = !app.serviceTypeList[index].sel;
+                app.selTypeList[index].sel = !app.selTypeList[index].sel;
+            },
+            //添加分类
+            AddServiceType: function () {
+                $.extend(true, app.typedata, defaultType);
+                $('#editModal').modal('show');
+            },
+            //保存项目分类
+            SaveType: function () {
+                if ($.trim(app.typedata.name).length == 0) {
+                    layer.msg("请填写分类名称");
+                    return;
+                }
+                if ($.trim(app.typedata.name).length > 8) {
+                    layer.msg("分类名称不能超过8字");
+                    return;
+                }
+                if (app.typedata.sort < 1 || app.typedata.sort > 99) {
+                    layer.msg("排序请填写1~99之间的整数");
+                    return;
+                }
+                app.typedata.name = $.trim(app.typedata.name);
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveType", app.typedata, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        $('#editModal').modal('hide');
+                        app.serviceTypeList = data.list;
+                        $.extend(true, app.serviceTypeList, app.selTypeList);
+                    }
+                })
+            },
+            //初始化进度条
+            initLayer: function () {
+                layui.use('element', function () {
+                    element = layui.element;
+                });
+            },
+            //绑定富文本编辑器
+            BuildEditor: function () {
+                console.log("BuildEditor");
+                var that = this;
+                if (comeditor != null) {
+                    comeditor.reset();
+                }
+                //编辑器
+                comeditor = UE.getEditor('editor', {
+                    toolbars: [
+                        ['source', '|', 'undo', 'redo', '|', 'bold', ' italic', ' underline', 'strikethrough', '|', 'forecolor', 'backcolor', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify'],
+                        ['simpleupload', 'insertimage', 'insertvideo', 'paragraph', 'fontsize', ' |', 'insertorderedlist', 'insertunorderedlist', 'horizontal', 'autotypeset', 'pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image?cityid=" + that.serviceInfo.aid,
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.serviceInfo.description);
+                });
+                comeditor.addListener("contentChange", function () {
+                    console.log("change");
+                    if (comeditor != null) {
+                        that.serviceInfo.description = comeditor.getContent();
+                    }
+                });
+            },
+            //保存服务项目
+            SaveServiceInfo: function () {
+                var that = this;
+                that.serviceInfo.name = $.trim(that.serviceInfo.name);
+                var nameLength = that.serviceInfo.name.length;
+                if (nameLength > 30) {
+                    layer.msg("项目名称超过30字");
+                    return;
+                }
+                if (nameLength == 0) {
+                    layer.msg("请输入项目名称");
+                    return;
+                }
+                var selArr = new Array();
+                $.each(that.serviceTypeList, function (i, v) {
+                    if (v.sel) {
+                        selArr.push(v.id);
+                    }
+                })
+                if (selArr.length <= 0) {
+                    layer.msg("请选择项目分类");
+                    return;
+                }
+                that.serviceInfo.ptypes = selArr.join();
+                if (that.serviceInfo.price < 0 || !(/^[0-9]+([.]{1}[0-9]{1,2})?$/).test($.trim(that.serviceInfo.price)) || that.serviceInfo.price > 999999999) {
+                    layer.msg("价格范围：0~999999999，最多两位小数");
+                    return;
+                }
+                if (that.serviceInfo.ServiceTime < 0 || that.serviceInfo.ServiceTime > 999) {
+                    layer.msg("服务时长：0~999分钟之间");
+                    return;
+                }
+                if (that.componentData.uploadData.img1.imgList.length==0) {
+                    layer.msg("请上传项目主图");
+                    return;
+                }
+                that.serviceInfo.img = that.componentData.uploadData.img1.imgList[0].filepath;
+                if (that.serviceInfo.stock < 0 || that.serviceInfo.stock > 999) {
+                    layer.msg("已订人数范围：0~999");
+                    return;
+                }
+                var sLength = that.serviceInfo.specificationkeys.length;
+                if (sLength > 100) {
+                    layer.msg("服务流程字数不能超过100字");
+                    return;
+                }
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveServiceInfo", that.serviceInfo, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        that.isDetail = false;
+                        that.postdata.pageIndex = 1;
+                        that.GetList();
+                    }
+                })
+            },
+            //编辑服务项目
+            EditServiceInfo: function (index) {
+                $.each(app.serviceTypeList, function (i, v) {
+                    v.sel = false;
+                })
+                $.extend(true, app.serviceInfo, app.serviceList[index]);
+                comeditor.setContent(app.serviceInfo.description);
+                app.componentData.uploadData.img1.imgList = [];
+                var imgarry = app.serviceInfo.img.split(',');
+                $.each(imgarry, function (i, v) {
+                    var obj = {
+                        id:0,
+                        filepath: v
+                    }
+                    app.componentData.uploadData.img1.imgList.push(obj);
+                })
+                
+                var selArr = app.serviceInfo.ptypes.split(',');
+                $.each(app.serviceTypeList, function (i, v) {
+                    var result = $.inArray(v.id.toString() , selArr);
+                    if (result>-1) {
+                        v.sel = true;
+                    }
+                });
+                $.extend(true, app.selTypeList, app.serviceTypeList);
+                app.isDetail = true;
+            },
+            UpdateOrDelete: function (index,action) {
+                var layerIndex = layer.load(2);
+
+                $.post("/footbath/UpdateTagOrDelete?action=" + action, app.serviceList[index], function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        if (action == 'delete') {
+                            app.serviceList.splice(index, 1);
+                        } else {
+                            if (app.serviceList[index].tag == 1) {
+                                app.serviceList[index].tag = 0;
+                            } else {
+                                app.serviceList[index].tag = 1;
+                            }
+                        }
+
+                    }
+                })
+            }
+        },
+        created: function () {
+            var that = this;
+            if ($(".edui-container").length == 0) {
+                //that.comeditor.destroy();
+                that.BuildEditor();
+            }
+            var imgarry = that.serviceInfo.img.split(',');
+            $.each(imgarry, function (i, v) {
+                var obj = {
+                    id: 0,
+                    url: v
+                }
+                that.componentData.uploadData.img1.imgList.push(obj);
+            })
+            //that.componentData.uploadData.img1.imgurl = that.serviceInfo.img.split(',');
+            that.initLayer();
+            that.GetList();
+        }
+    })
+</script>
+

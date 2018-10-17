@@ -1,0 +1,269 @@
+﻿
+@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; color: rgb(26, 173, 25) !important; padding: 10px; margin: 10px 0; }
+    .item{margin-top:20px;width:50%;}
+    .form-control { width: 35%; display: inline-block; }
+
+</style>
+<div style="height:100%;" class="form-horizontal set-form-content backgroundcolorfff">
+    <div id="app_Conf" v-cloak>
+        <div>
+            <div class="form-title">
+                店铺入驻设置
+            </div>
+            <div class="item">
+                <label>入驻模式：</label>
+                <label><input type="radio" name="RemarkOpenFrm" value="0" v-model="AddWay" v-on:click="ChangeAddWay(0)"/>免费入驻</label>
+                <label><input type="radio" name="RemarkOpenFrm" value="1" v-model="AddWay" v-on:click="ChangeAddWay(1)"/>付费入驻</label>
+            </div>                                                                         
+            <div class="item">
+                <label>收费规则：</label><label class="forinputmassage" style="color:#ccc;">注意：选择付费入驻模式后,用户开通店铺需要按月支付平台使用费,到期后可续费使用,之前免费入驻店铺从开通日起算默认一年的免费使用期限.(收费套餐最多可设置4个)</label>
+                <table class="table table-bordered viplevel ml_19">
+                    <tr class="active">
+                        <th class="centertext">使用时间</th>
+                        <th class="centertext">购买金额</th>
+                        <th class="centertext">新增时间</th>
+                        <th class="centertext">更新时间</th>
+                        <th class="centertext">操作</th>
+                    </tr>
+                    <tr v-for="(rule,index) in rulelist">
+
+                        <td class="centertext">{{rule.YearCount}}月</td>
+                        <td class="centertext">{{rule.CostPriceStr}}元</td>
+                        <td class="centertext">{{rule.AddTimeStr}}</td>
+                        <td class="centertext">{{rule.UpdateTimeStr}}</td>
+                        <td class="centertext">
+                            <a href="javascript:;" style="color:red" v-on:click="delRule(rule.Aid,rule.Id)">删除</a>
+                            <a href="javascript:;" style="color:#4a86e8;" v-on:click="addedit(index)">编辑</a>
+                        </td>
+                    </tr>
+                </table>
+                <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>0"></div>
+
+                <div class="ml_19">
+                    <a href="javascript:;" v-on:click="addedit()" v-if="recordCount<4">+新增入驻规则</a>
+                </div>
+
+
+
+                <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                    &times;
+                                </button>
+                                <h4 class="modal-title" id="myModalLabel">
+                                    编辑入驻规则
+                                </h4>
+                            </div>
+                            <div class="modal-body">
+                                <div>
+
+                                    <div style="margin-top:10px;">
+                                        <div style="margin-left:55px;">
+                                            <div>
+                                                <span>使用时间:</span><input type="text" class="form-control" style="width:120px;" v-model="ruleInfo.YearCount" />月&nbsp;&nbsp;
+                                                <span>购买金额:</span><input type="text" class="form-control" style="width:120px;" v-model="ruleInfo.CostPriceStr" />元
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div stle=" clear:both;"></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="text-align:center;">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">
+                                    关闭
+                                </button>
+                                <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                                    保存
+                                </button>
+                            </div>
+                        </div><!-- /.modal-content -->
+                    </div><!-- /.modal-dialog -->
+                </div><!--/.modal-->
+
+            </div>
+        </div>
+
+    </div>
+</div>
+<script>
+
+    var app = new Vue({
+        el: "#app_Conf",
+        data: {
+            ruleInfo: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.AddRule)),
+            editIndex: 0,
+            isloading: false,
+            recordCount: 0,
+            rulelist: [],
+            postdata: {
+                appId:@Html.Raw(ViewBag.appId),
+                pageIndex: 1,
+                pageSize: 10
+
+            },
+            AddWay:@ViewBag.AddWay,
+        },
+        methods: {
+            ChangeAddWay:function(AddWay){
+                var that=this;
+                if(AddWay==1&&(that.rulelist==null||that.rulelist.length<=0)){
+                    layer.msg("请先添加入驻规则");
+                    return;
+                }
+
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Store/SaveAddSetting", {appId:@ViewBag.appId,addWay:AddWay}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.Msg);
+                    if (data.isok) {
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                   
+                })
+            },
+            //添加编辑窗口
+            addedit: function (index) {
+                var that=this;
+                that.editIndex = index;
+                if (typeof (index) != "undefined") {//编辑
+
+                    that.ruleInfo = JSON.parse(JSON.stringify(that.rulelist[index]));
+
+                } else {
+                    that.ruleInfo = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.AddRule));
+                }
+                $('#myModal').modal('show')
+            },
+            //获取规则列表
+            getRuleList: function () {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Store/GetRules", that.postdata, function (data) {
+                    layer.close(index);
+                    that.recordCount = data.dataObj.totalCount;
+                    that.rulelist = data.dataObj.list;
+                    that.resetRulePage();
+                })
+
+            },
+            //列表分页跳转
+            resetRulePage: function () {
+                var that=this;
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: that.recordCount //数据总数，从服务端得到
+                        , curr: that.postdata.pageIndex //当前页
+                        , limit:that.postdata.pageSize
+                        , jump: function (obj, first) {
+                            that.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                that.getRuleList();
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+
+            delRule:function(appId,ruleId){
+
+                //删除
+                var index = layer.load(1);
+
+                $.post("/Plat/Store/DelRule", {appId:appId,ruleId:ruleId}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.Msg);
+                    if (data.isok) {
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                })
+            },
+            //保存规则
+            saveInfo: function () {
+                var that=this;
+                if (!/^\+?[1-9][0-9]*$/.test(that.ruleInfo.YearCount)) {
+                    layer.msg("月数必须为大于零的整数");
+                    return ;
+                }
+
+                var price=that.ruleInfo.CostPriceStr;
+
+
+                if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(price)) {
+                    layer.msg("金额为大于0小于1000000且小数不超过2位的正数！");
+                    return;
+                } else {
+                    var price_save = price * 1000000 / 10000;
+                    if (0 == price_save || parseInt(price_save) < 1) {
+                        layer.msg("金额不能低于1分钱！");
+                        return;
+                    }
+
+                    that.ruleInfo.CostPrice=price_save;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Store/SaveRule',
+                    data: {rule:that.ruleInfo,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+
+
+            }
+        },created:function(){
+            var that=this;
+           that.getRuleList();
+        }
+    });
+</script>

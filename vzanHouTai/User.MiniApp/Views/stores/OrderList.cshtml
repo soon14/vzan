@@ -1,0 +1,826 @@
+﻿@using Entity.MiniApp.Conf;
+@using Entity.MiniApp.Stores
+@using Entity.MiniApp
+@model List<StoreAdminGoodsOrder>
+@{
+    ViewBag.Title = "订单管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+}
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/shopping-mall-backstage.css">
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/shopping-mall-shangpinguanli.css">
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/shopping-mall-jiaoyiguanli.css">
+<link rel="stylesheet" type="text/css" href="http://i.pengxun.cn/content/shop/20170427/resources/center/css/backstage-dialog.css">
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery-validation/js/jquery.validate.min.js"></script>
+
+<style>
+    table th {
+        text-align: center;
+    }
+
+    td {
+        word-break: break-all;
+        word-wrap: break-word;
+    }
+
+    table tr td, th {
+        vertical-align: middle;
+    }
+
+    img {
+        max-width: 100%;
+    }
+
+    ul, li {
+        list-style: none;
+    }
+
+    .fl {
+        float: left;
+    }
+    .name 
+    {
+        padding-left:35px;
+    }
+</style>
+<div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="form-inline form-group">
+                &nbsp;订单号:
+                <input id="orderNum" type="text" class="form-control" value="@ViewBag.orderNum" />
+                &nbsp;时间段 <input type="text" id="startdate" class="form-control" onfocus="this.blur()"> 至 <input type="text" id="enddate" class="form-control" onfocus="this.blur()">
+                &nbsp;会员微信昵称:
+                <input id="userName" type="text" class="form-control" value="@ViewBag.userName" />
+                <br/><br />
+                &nbsp;会员等级:
+                <select id="vipLevelId" class="form-control width150">
+                    <option value="0" @(ViewBag.curLevel == 0 ? "selected" : "")>全部</option>
+                    @foreach (var item in ViewBag.levelList)
+                    {
+                        <option value="@(item.Id)" @(ViewBag.curLevel == item.Id ? "selected" : "")>@item.name</option>
+                    }
+                </select>
+                &nbsp;订单状态:
+                <select id="curState" class="form-control width150">
+                    <option value="-999" @(ViewBag.curState == -999 ? "selected" : "")>全部</option>
+                    @foreach (var item in Enum.GetValues(typeof(OrderState)))
+                    {
+                        <option value="@((int)item)" @(ViewBag.curState == (int)item ? "selected" : "")>@item.ToString()</option>
+                    }
+                </select>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <input id="search" type="button" class="btn btn-primary" value="搜索" />
+                <input id="clrea" type="button" class="btn btn-default" value="清除" />
+                <input type="button" class="btn btn-primary" onclick="confirmExportdata()" value="导出订单(按查询)" />
+                <input type="button" class="btn btn-primary" onclick="ConfirmExportAllData()" value="导出全部订单" />
+
+            </div>
+        </div>
+    </div>
+    <table class="jygl-all-table" style="margin-top: 15px;">
+        <thead>
+            <tr>
+                <th style="width: 40%;">商品</th>
+                <th>单价/数量</th>
+                <th>买家</th>
+                <th>下单时间</th>
+                <th>会员</th>
+                <th>会员级别</th>
+                <th>订单状态</th>
+                <th>支付方式</th>
+                <th>实付金额</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        @foreach (var item in Model)
+        {
+            if (item == null)
+            {
+                continue;
+            }
+            <tbody>
+                <tr class="separation-row">
+                    <td colspan="10"></td>
+                </tr>
+                <tr class="header-row">
+                    <td colspan="8">
+                        <p>
+                            订单号: @item.OrderNum
+                        </p>
+                    </td>
+                    <td colspan="2" style="text-align: right;">
+                        <a style="color: blue;" href="/stores/OrderDetail?appId=@ViewBag.appId&oid=@item.Id">查看详情</a>
+                        -
+                        <a class="beizhu-f" onclick="remark('@(item.Id)', '@(item.Remark)')">备注 </a>
+                    </td>
+                </tr>
+                @foreach (var cart in item.GoodsList)
+                {
+                    <tr>
+                        <td class="sp-pic">
+                            <ul class="d-flex">
+                                <li class="fl pic"><a href="#this"><img src="@(cart.ImgUrl)" width="60" height="60"></a></li>
+                                <li class="flex">
+                                    <a class="name">@cart.GoodsName</a>
+                                    <p style="text-align: left;margin: 5px 0 0 10px;">@cart.SpecInfo</p>
+                                </li>
+                            </ul>
+                        </td>
+                        <td>@((cart.Price * 0.01).ToString("0.00"))<br />@(cart.Count)件</td>
+                        @if (cart == item.GoodsList[0])
+                        {
+                            <td rowspan="@(item.GoodsList.Count)">@item.NickName<br />@item.TelePhone</td>
+                            <td rowspan="@(item.GoodsList.Count)">@(item.CreateDate.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                            <td rowspan="@(item.GoodsList.Count)">@(item.userName)</td>
+                            <td rowspan="@(item.GoodsList.Count)">@(item.levelname)</td>
+                            <td rowspan="@(item.GoodsList.Count)">@(Enum.GetName(typeof(OrderState), item.State))</td>
+                            <td rowspan="@(item.GoodsList.Count)">@(Enum.GetName(typeof(miniAppBuyMode), item.buyMode))</td>
+                            <td rowspan="@(item.GoodsList.Count)">
+                                <p class="price">@((item.BuyPrice * 0.01).ToString("0.00"))</p>
+                                <p>(含运费<span class="price" style="color: #555;">@((item.FreightPrice * 0.01).ToString("0.00"))</span>)</p>
+                                @if (item.State == (int)OrderState.未付款)
+                                {
+                                    <div style="margin-top: 5px;"><input type="button" class="shaixuan-blue-bt tz" value="调整费用" onclick="adjust_fee('@(item.Id)','@item.OrderNum','@item.TelePhone','@((item.BuyPrice * 0.01).ToString("0.00"))','@((item.FreightPrice * 0.01).ToString("0.00"))')"></div>
+                                }
+                            </td>
+                            <td rowspan="@(item.GoodsList.Count)" class="bt qxyy_bt_js">
+                                @if (item.State == (int)OrderState.待发货)
+                                {
+                                    <div class="edit">
+                                        <div class="clearfix">
+                                            <input type="button" class="shaixuan-blue-bt btn-bianji" data-state="3" data-id="@item.Id" value="立即发货">
+                                        </div>
+                                    </div>
+                                }
+                                else if (item.State == (int)OrderState.正在配送)
+                                {
+                                    <div class="edit">
+                                        <div class="clearfix">
+                                            <input type="button" class="shaixuan-blue-bt btn-distribute" data-state="4" data-id="@item.Id" value="配送完成">
+                                        </div>
+                                    </div>
+                                }
+                                else if (item.State == (int)OrderState.待收货)
+                                {
+                                    <i style="color:blue;">等待用户确认</i><br>
+                                }
+                                else if (item.State == (int)OrderState.已收货)
+                                {
+                                    <i style="color:blue;">已完成</i><br>
+                                }
+                                else if (item.State == (int)OrderState.未付款)
+                                {
+                                    <i style="color:blue;">待付款</i><br>
+                                    <a style="color: red;" onclick="cancle_order('@(item.Id)','@item.OrderNum')">取消订单</a>
+                                }
+                                else if (item.State == (int)OrderState.取消订单)
+                                {
+                                    <i style="color:red;">已取消</i>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+                <tr class="remark-row">
+                    <td colspan="10">@if (!string.IsNullOrEmpty(item.Remark))
+                    { <span>卖家备注：@item.Remark</span> }</td>
+                </tr>
+            </tbody>
+        }
+    </table>
+    <ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+        共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+    </ul>
+</div>
+
+<script type="text/html" id="id_cashoffice">
+    开始时间：
+    <input type="text" id="cashstarttime">
+    <br />
+    结束时间：
+    <input type="text" id="cashendtime">
+</script>
+<!--配送状态弹框-->
+<div class="admin-shop-fix-tk boo-wlzt-tk" style="top: 100%;" hidden>
+    <div class="basewrap wlzt-tk">
+        <!--配送信息-->
+        <div style="padding-bottom: 1.5rem;">
+            @*<p class="boo-wlxx-f"><i>配送信息</i></p>*@
+            <ul class="d-flex boo-wuliu-infor">
+                <li class="name">收货人: </li>
+                <li class="flex distribute-nickname"></li>
+            </ul>
+            <ul class="d-flex boo-wuliu-infor">
+                <li class="name">手机号码：</li>
+                <li class="flex distribute-telephone"></li>
+            </ul>
+            <ul class="d-flex boo-wuliu-infor">
+                <li class="name">收货地址：</li>
+                <li class="flex distribute-address"></li>
+            </ul>
+            <ul class="d-flex boo-wuliu-infor">
+                <li class="name">配送方式：</li>
+                <li class="flex distribute-name"></li>
+            </ul>
+            <ul class="d-flex boo-wuliu-infor">
+                @*<li class="name">物流编号：</li>*@
+                <li class="name">订单编号：</li>
+                <li class="flex distribute-orderno"></li>
+            </ul>
+            <ul class="d-flex boo-wuliu-infor">
+                <li class="name">下单时间：</li>
+                <li class="flex distribute-time"></li>
+            </ul>
+        </div>
+    </div>
+    <!--返回按钮-->
+    @*<div class="fix-bottom-left" style="position: absolute;display: flex;">
+            <a id="wkzt_confirm" class="basewrap jrdp-bt" style="width: 50%;min-width: 100px;display: inline-block;">确认发货</a>
+            <a id="wkzt_close" class="basewrap jrdp-bt" style="width: 50%;min-width: 100px;display: inline-block;background-color: #f7f7f7;color: black;">取消</a>
+        </div>*@
+</div>
+<!-- 确认发货 -->
+<div id="shipping_confirm"> </div>
+<!-- 取消订单 -->
+<div id="cancle_order" style="display:none;">
+    <form method="post" id="theForm">
+        <div id="qxdd_tk" class="save-tk">
+            <div class="bz save-dialog">
+                <p class="title">取消订单<a class="save-close" onclick="close_order_cancle()"></a></p>
+                <div style="padding: 25px 50px 25px 15px;">
+                    <p style="margin-bottom: 20px;">你确定要取消下面的订单吗？</p>
+                    <!--订单号-->
+                    <ul class="d-flex d-flex-center sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;line-height: normal;">订单号：</li>
+                        <li class="flex" style="text-align: left;" id="onum"></li>
+                        <input name="oidcancel" type="hidden" id="oidcancel" value="">
+                    </ul>
+                    <!--商品总价-->
+                    <ul class="d-flex sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;line-height: normal;">取消原因：</li>
+                        <li class="flex">
+                            <div class="clearfix">
+                                <div class="fl">
+                                    <input name="state_info" id="radio1" class="qxyy-radio" type="radio" checked="checked" onclick="switch_reason();" value="买家要求取消">买家要求取消
+                                </div>
+                            </div>
+                            <div class="clearfix" style="padding-top: 10px;">
+                                <div class="fl">
+                                    <input name="state_info" id="radio2" class="qxyy-radio" type="radio" onclick="switch_reason();" value="商品缺货">商品缺货
+                                </div>
+                            </div>
+                            <div class="clearfix" style="padding-top: 10px;">
+                                <div class="fl">
+                                    <input name="state_info" id="radio3" class="qxyy-radio" type="radio" onclick="switch_reason();" value="other">其他原因
+                                </div>
+                            </div>
+                            <textarea name="other_state_info" id="other_state_info" class="bz click-turn-textarea2" style="width: 220px;height: 80px;margin-top: 10px;display:none" maxlength="100"></textarea>
+                        </li>
+                    </ul>
+                    <div class="clearfix" style="margin-top: 20px;">
+                        <a class="save-tijiao-bt" style="margin-left: 161px;" onclick="canclesave_form()">确定</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- 调整费用 -->
+<div id="adjust_fee" style="display:none;">
+    <form action="" method="post" id="adjustForm" novalidate="novalidate">
+        <div id="swwlxxtk" class="save-tk">
+            <div class="bz save-dialog">
+                <p class="title">调整费用 <a class="save-close" onclick="close_adjust_dialog()"></a></p>
+                <div style="padding: 25px 50px 25px 15px;">
+                    <!--买家用户-->
+                    <ul class="d-flex d-flex-center sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;line-height: normal;">买家用户：</li>
+                        <li class="flex" style="text-align: left;" id="adjustName"></li>
+                    </ul>
+                    <!--订单号-->
+                    <ul class="d-flex d-flex-center sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;line-height: normal;">订单号：</li>
+                        <li class="flex" style="text-align: left;" id="adjustONum"></li>
+                        <input name="adjustoid" type="hidden" id="adjustoid" value="">
+                    </ul>
+                    <!--商品总价-->
+                    <ul class="d-flex d-flex-center sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;">商品总价：</li>
+                        <li>
+                            <div class="clearfix">
+                                <div class="fl yuan-danwei">
+                                    <input name="goods_amount" id="goods_amount" class="fl bz click-turn" style="width: 140px;padding-left: 35px;" value="" maxlength="8">
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <!--运费-->
+                    <ul class="d-flex d-flex-center sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;">运费：</li>
+                        <li>
+                            <div class="clearfix">
+                                <div class="fl yuan-danwei">
+                                    <input name="ship_price" id="ship_price" class="fl bz click-turn" style="width: 140px;padding-left: 35px;" value="" maxlength="8">
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <!--订单总计-->
+                    <ul class="d-flex d-flex-center sc-dpsj-infor" style="margin-bottom: 10px;">
+                        <li class="width" style="width: 128px;line-height: normal;">订单总计：</li>
+                        <li class="dfk-price" style="text-align: left;" id="totalPrice_text">34.00</li>
+                        <input name="totalPrice" type="hidden" id="totalPrice" value="34.00">
+                    </ul>
+
+                    <div class="clearfix" style="margin-top: 10px;">
+                        <a class="save-tijiao-bt" style="margin-left: 128px;" onclick="save_form()">提交</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- 买家退货申请 -->
+<div id="apply"> </div>
+<!--备注弹框-->
+<div class="beizhu-tk none">
+    <div class="bz beizhu-dialog">
+        <p class="title">卖家备注<a class="beizhu-close" onclick="close_remark()"></a></p>
+        <div class="content">
+            <textarea id="remark_text" name="remark" class="bz" placeholder="最多可输入100个字符" maxlength="100"></textarea>
+        </div>
+        <div class="clearfix">
+            <a class="fr tijiao-bt" onclick="remark_save()">提交</a>
+        </div>
+    </div>
+</div>
+
+
+<!--提示框-->
+<div class="modal bs-example-modal-sm" id="hintDiv" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div id="hintText" class="modal-body text-center  ">
+                确认退货成功
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+<!--保存成功-->
+<div class="modal bs-example-modal-sm" id="saveSuccess" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                <i id="successMsg">确认退货成功</i>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+<!--保存失败-->
+<div class="modal bs-example-modal-sm" id="saveFalse" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                <i id="falseMsg">确认退货失败</i>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="closeFalse()">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 等待加载遮掩层 -->
+<div id="showLoading" class="download-zhezhao" style="display:none">
+    <div class="download-ing">
+        <div class="zhuan bz"></div>
+        <i></i>
+    </div>
+</div>
+
+<script>
+    //初始化时间
+    function inidate() {
+        //开始时间
+        $('#startdate').datetimepicker({
+            language: "zh-CN",
+            autoclose: true,//选中之后自动隐藏日期选择框
+            clearBtn: true,//清除按钮
+            startView: 2,
+            format: 'yyyy-mm-dd',
+            minView: 2
+            //todayBtn: true,//今日按钮
+        }).on('changeDate', function (ev) {
+        });
+        //结束时间
+        $('#enddate').datetimepicker({
+            language: "zh-CN",
+            autoclose: true,//选中之后自动隐藏日期选择框
+            clearBtn: true,//清除按钮
+            startView: 2,
+            format: 'yyyy-mm-dd',
+            minView: 2
+            //todayBtn: true,//今日按钮
+        }).on('changeDate', function (ev) {
+        });
+
+        //设置默认值
+        var datemo = new Date('@ViewBag.startdate');
+        var datemo2 = new Date('@ViewBag.enddate');
+
+        $("#startdate").val('@ViewBag.startdate');
+        $("#enddate").val('@ViewBag.enddate');
+
+    }
+
+    $(function () {
+        //初始化时间
+        inidate();
+
+        // #region 搜索
+        $('#search').click(function () {
+            var orderNum = $('#orderNum').val();
+            var startdate = $('#startdate').val();
+            var enddate = $('#enddate').val();
+
+            location.href = "/stores/OrderList?appId=@ViewBag.appId&orderNum=" + orderNum
+                + "&startdate=" + startdate
+                + "&enddate=" + enddate
+                + "&userName=" + $("#userName").val()
+                + "&vipLevelId=" + $("#vipLevelId").val()
+                + "&state=" + $("#curState").val();
+        });
+        // #endregion
+    });
+    $("#clrea").click(function () {
+        $('#orderNum').val("");
+        $('#startdate').val("");
+        $('#enddate').val("");
+        $("#userName").val("");
+        $("#vipLevelId").val("0");
+        $("#curState").val("-999");
+
+    });
+    function DateDiff(sDate1, sDate2) {  //sDate1和sDate2是yyyy-MM-dd格式
+
+        var aDate;
+
+        aDate = sDate1.split("-");
+
+        var oDate1 = new Date(aDate[1] + '-' + aDate[2] + '-' + aDate[0]);  //转换为yyyy-MM-dd格式
+
+        aDate = sDate2.split("-");
+
+        var oDate2 = new Date(aDate[1] + '-' + aDate[2] + '-' + aDate[0]);
+
+        var iDays = parseInt(Math.abs(oDate1 - oDate2) / 1000 / 60 / 60 / 24); //把相差的毫秒数转换为天数
+
+        return iDays;  //返回相差天数
+    }
+    //判断日期间隔是否大于一个月
+    function MonthDiff(sDate2_End,sDate_Start) {  //sDate1和sDate2是yyyy-MM-dd格式
+        var aDate = sDate_Start.split("-");
+        var aDate2 = sDate2_End.split("-");
+
+        if (aDate2[2] - aDate[2] > 0)
+        {
+            if (aDate2[1] - aDate[1] != 0 || aDate2[0] - aDate[0] != 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    function confirmExportdata()
+    {
+        var orderNum = $('#orderNum').val();
+        var startdate = $('#startdate').val();
+        var enddate = $('#enddate').val();
+        layer.open({
+            title: '导出流水报表',
+            btn: ["确定", "取消"],
+            content: "确定按填写的搜索条件导出订单吗？",
+            yes: function () {
+                window.location.href = "/stores/OrderList?appId=@ViewBag.appId&orderNum=" + orderNum
+                + "&startdate=" + startdate
+                + "&enddate=" + enddate
+                + "&userName=" + $("#userName").val()
+                + "&vipLevelId=" + $("#vipLevelId").val()
+                + "&state=" + $("#curState").val()
+                + "&export=true";
+                layer.closeAll();
+            },
+        })
+    }
+    function ConfirmExportAllData() {
+        layer.open({
+            title: '导出流水报表',
+            btn: ["确定", "取消"],
+            content: "确定导出所有订单吗？<br/><单据数量越多响应时间越长>",
+            yes: function () {
+                window.location.href = "/stores/OrderList?appId=@ViewBag.appId&export=true";
+                layer.closeAll();
+            },
+        })
+    }
+
+
+</script>
+<script type="text/javascript">
+
+    //立即发货弹框
+    $(document).on('click', '.btn-bianji', function () {
+        var id = $(this).data("id");
+        $.post('/stores/getdistributioninfo', { id: id }, function (result) {
+            if (result.Success) {
+                $('#wkzt_confirm').data('id', id);
+                $('li.distribute-nickname').html(result.Data.DistributionInfo.NickName);
+                $('li.distribute-telephone').html(result.Data.DistributionInfo.TelePhone);
+                $('li.distribute-address').html(result.Data.DistributionInfo.Address);
+                $('li.distribute-name').html(result.Data.DistributionInfo.DistributeName);
+                $('li.distribute-orderno').html(result.Data.DistributionInfo.DistributeOrderNo);
+                $('li.distribute-time').html(result.Data.DistributionInfo.DistributeTime);
+                var startConf = false;
+                layer.open({
+                    title: "配送信息",
+                    content: $(".boo-wlzt-tk").html(),
+                    btn: ["确认发货", "取消"],
+                    yes: function () {
+                        layer.open({
+                            content: '确认立即发货吗 ?',
+                            btn: ['确认', '取消'],
+                            yes: function () {
+
+                                if (startConf) {
+                                    return;
+                                }
+                                startConf = true;
+                                $.post('/stores/confirmdistribute', { id: id, state: 3 }, function (result) {
+                                    layer.closeAll();
+                                    $("#hintText").html(result.Message);
+                                    $("#hintDiv").show();
+                                    if (result.Success) {
+                                        setTimeout(function () { location.reload(); }, 1000);
+                                    }
+                                    startConf = false;
+                                });
+                            }
+                        });
+                    },
+                    no: function () { layer.closeAll(); },
+                    cancel: function () {
+                        layer.closeAll();
+                    }
+                });
+
+            } else {
+                layer.alert("获取配送信息失败 , 请重试 !");
+            }
+        });
+    });
+    // 配送完成
+    $(document).on("click", ".btn-distribute", function () {
+        var id = $(this).data("id");
+        var state = $(this).data("state");
+        layer.open({
+            content: '请向配送人员确认是否配送完成<br/>未配送完成请勿点击确认 , 否则会降低商家信誉度',
+            btn: ['确认', '取消'],
+            yes: function () {
+                $.post('/stores/confirmdistribute', { id: id, state: state }, function (result) {
+                    layer.closeAll();
+                    layer.open({ content: result.Message, skin: 'open', time: 2 });
+                    $("#hintText").html(result.Message);
+                    $("#hintDiv").show();
+                    if (result.Success) {
+                        setTimeout(function () { location.reload(); }, 1000);
+                    }
+                });
+            }
+        });
+    });
+
+
+    //费用调整显示
+    function adjust_fee(id, num, tel, bprice, fprice) {
+        $("#adjustName").html(tel);
+        $("#adjustONum").html(num);
+        $("#adjustoid").val(id);
+        $("#goods_amount").val(parseFloat(bprice - fprice).toFixed(2));
+        $("#ship_price").val(fprice);
+        $("#totalPrice_text").html(bprice);
+        $("#totalPrice").val(bprice);
+        jQuery("#swwlxxtk").show();
+        $("#adjust_fee").show();
+    }
+
+
+    jQuery(document).ready(function () {
+        jQuery.validator.addMethod("decimals", function (value, element, d) {
+            var a = value.indexOf(".") + 1;
+            if (a == 0) {
+                a = value.length;
+            }
+            var b = value.length;
+            var c = b - a;
+            return this.optional(element) || c <= d;
+        });
+        jQuery("#theForm").validate({
+            rules: {
+                goods_amount: { required: true, number: true, decimals: 2, range: [0.01, 1000000], },
+                ship_price: { required: true, number: true, decimals: 2, range: [0, 1000000] }
+            },
+            messages: {
+                goods_amount: { required: "商品总价不能为空", number: "商品总价只能为数字", decimals: "只能输入小数后2位", range: "商品总价只能在0.01-1000000之间" },
+                ship_price: { required: "配送金额不能为空", number: "配送金额只能为数字", decimals: "只能输入小数后2位", range: "配送金额只能在0-1000000之间" }
+            }
+        });
+
+        jQuery("#goods_amount").on("blur", function () {
+            var goods_amount = jQuery("#goods_amount").val();
+            var ship_price = jQuery("#ship_price").val();
+            if (ship_price == "") {
+                ship_price = 0;
+            }
+            if (goods_amount == "") {
+                goods_amount = 0;
+            }
+            totalPrice = 0;
+            var totalPrice = (parseFloat(goods_amount) + parseFloat(ship_price)).toFixed(2);
+            jQuery("#totalPrice_text").html(totalPrice);
+            jQuery("#totalPrice").val(totalPrice);
+        });
+        jQuery("#ship_price").on("blur", function () {
+            var goods_amount = jQuery("#goods_amount").val();
+            var ship_price = jQuery("#ship_price").val();
+            if (ship_price == "") {
+                ship_price = 0;
+            }
+            if (goods_amount == "") {
+                goods_amount = 0;
+            }
+            totalPrice = 0;
+            var totalPrice = (parseFloat(goods_amount) + parseFloat(ship_price)).toFixed(2);
+            jQuery("#totalPrice_text").html(totalPrice);
+            jQuery("#totalPrice").val(totalPrice);
+        });
+
+    });
+
+    function save_form() {
+        if (!$("#adjustForm").valid()) {
+            return;
+        }
+        var adjustoid = $("#adjustoid").val();
+        var reg = new RegExp("^[0-9]+(.[0-9]{1,2})?$");
+        var goods_amount = $("#goods_amount").val();
+        if (!reg.test(goods_amount)) {
+            alert("商品价格请输入数字,且最多小数位为2位");
+            return;
+        }
+        if (goods_amount * 1000000 / 10000 < 1)
+        {
+            alert("商品价格最小值为0.01元");
+            return;
+        }
+        if (goods_amount * 1000000 / 10000 > 10000000) {
+            alert("商品价格最大值为10万");
+            return;
+        }
+        var ship_price = $("#ship_price").val();
+        if (!reg.test(ship_price)) {
+            alert("运费请输入数字,且最多小数位为2位");
+            return;
+        }
+        if (ship_price * 1000000 / 10000 > 10000000) {
+            alert("运费金额最大值为10万");
+            return;
+        }
+        var totalPrice = $("#totalPrice").val();
+        var datas = jQuery("#adjustForm").serializeArray();
+        jQuery.ajax({
+            url: "/stores/order_adjust_fee_save",
+            data: { adjustoid: adjustoid, goods_amount: goods_amount * 1000000 / 10000, ship_price: ship_price * 1000000 / 10000, totalPrice: totalPrice * 1000000 / 10000 },
+            success: function (data) {
+                if (data.isok == true) {
+                    jQuery("#successMsg").text(data.msg);
+                    jQuery("#saveSuccess").show();
+                    setTimeout(function () { location.reload(true); }, 1500)
+                } else {
+                    jQuery("#saveFalse").show();
+                    jQuery("#falseMsg").text(data.msg);
+                }
+            }
+        });
+
+    }
+
+    function close_adjust_dialog() {
+        $("input[id^=adjustFee_]").attr("disabled", false);
+        jQuery("#swwlxxtk").hide();
+        $("#adjust_fee").hide();
+    }
+
+
+    //取消订单显示
+    function cancle_order(id, onum) {
+        jQuery("#oidcancel").val(id);
+        jQuery("#onum").html(onum);
+        jQuery("#cancle_order").show();
+    }
+
+    //切换取消原因
+    function switch_reason() {
+        var ck = jQuery("#radio3").prop("checked");
+        if (ck) {
+            jQuery("#other_state_info").show();
+        } else {
+            jQuery("#other_state_info").hide();
+        }
+    }
+    //确认取消
+    function canclesave_form() {
+        var datas = jQuery("#theForm").serializeArray();
+        jQuery.post({
+            url: "/stores/ordercancel",
+            data: datas,
+            success: function (data) {
+                if (data.isok == true) {
+                    jQuery("#successMsg").text(data.msg);
+                    jQuery("#saveSuccess").show();
+                    setTimeout(function () {
+                        location.reload(true);
+                    }, 1500);
+                } else {
+                    jQuery("#falseMsg").text(data.msg);
+                    jQuery("#saveFalse").show();
+                }
+            }
+        });
+    }
+
+
+    //备注弹框
+    var oid = "";
+    function remark(id, e) {
+        jQuery("#remark_text").text(e);
+        jQuery(".beizhu-tk").show();
+        oid = id;
+    }
+    //备注保存
+    function remark_save() {
+        var remark = jQuery("#remark_text").val();
+        jQuery.ajax({
+            url: "/stores/OrderRemark",
+            type: "post",
+            data: { "id": oid, "remark": remark },
+            success: function (data) {
+                if (data.isok == true) {
+                    jQuery("#saveSuccess").show();
+                    jQuery("#successMsg").text(data.msg);
+                    setTimeout(function () {
+                        location.reload(true);
+                    }, 1500)
+                } else {
+                    jQuery("#saveFalse").show();
+                    jQuery("#falseMsg").text(data.msg);
+                }
+            }
+        });
+    }
+
+
+    //关闭备注弹框
+    function close_remark() {
+        jQuery(".beizhu-tk").hide();
+    }
+    //关闭取消订单
+    function close_order_cancle() {
+        jQuery("#qxdd_tk").hide();
+    }
+
+    //关闭弹框
+    function close_dialog() {
+        jQuery("#swwlxxtk").hide();
+    }
+
+    //关闭窗口
+    function closeFalse() {
+        jQuery("#saveFalse").hide();
+    }
+
+</script>

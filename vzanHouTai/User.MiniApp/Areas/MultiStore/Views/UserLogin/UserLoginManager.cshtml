@@ -1,0 +1,342 @@
+﻿@{
+    ViewBag.PageType = 26;//多门店
+    ViewBag.Title = "分店用户管理";
+    int aid = ViewBag.appId;
+}
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+    table { margin: 20px 0px 0px 20px; color: #616060; }
+
+    table tr { height: 35px; }
+
+    table th { text-align: center; }
+
+    .ml10 { margin-left: 20px; }
+
+    .modal-title { font-size: 16px; font-weight: bold; }
+
+    .modal-body ul li { width: 50%; height: 28px; float: left; }
+
+    .detail_title { color: #4a86e8; font-size: 16px; margin-bottom: 10px; }
+    .searchul { width: 100%; margin: 20px 0px 14px 0px; }
+    .searchul li { /*width:25%;*/ float: left; margin-right: 25px; }
+    .searchul li span { float: left; padding-top: 5px; padding-right: 8px; }
+    .searchul li input, .searchul li select { width: 140px; }
+    [v-cloak] { display: none; }
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form { width: 665px; margin-top: 30px; }
+    .layui-form tr { height: 50px; }
+    .layui-form .title { text-align: right; }
+</style>
+<link href="@(WebSiteConfig.cdnurl)content/enterprise/css/main.css" rel="stylesheet" />
+<script src="//j.vzan.cc/scripts/common/verify_input.js"></script>
+<script src="@WebSiteConfig.SourceContent/scripts/min/juicer-min.js"></script>
+
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div id="app" class="container-fluid" v-cloak>
+    <div>
+        
+        <div>
+            <p style="font-size: 16px; font-weight:bold; color:#5691fc">&nbsp;|  分店管理员账号</p>
+        </div>
+        <br/>
+        <div>
+            <p style="font-weight:bold;" >&nbsp;商户号：@ViewBag.MerNo</p>
+            <p style="color:red;">&nbsp;注：每个微信号仅能绑定一个分店管理账户</p>
+        </div>
+         
+        <div class="mt10">
+            <table class="layui-table" lay-even lay-skin="nob">
+                <thead>
+                    <tr class="text-center">
+                        <th>登录账号</th>
+                        <th>备注</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="bcontent">
+                    <tr v-for="(item,index) in list">
+                        <td width="12%">{{item.LoginName}}</td>
+                        <td width="50%">{{item.Remark}}</td>
+                        <td width="15%" v-if="item.State==1">已激活</td>
+                        <td width="15%" v-else-if="item.State==0">未激活</td>
+                        <td width="15%" v-else></td>
+                        <td width="20%">
+                            <a class="editiInfo" v-on:click="updateSetState(index,-1)">删除</a>
+                            <a class="editiInfo" v-on:click="showEditForm(index)">编辑</a>
+                            <a class="editiInfo" v-if="item.State == 0" v-on:click="updateSetState(index,1)">激活账号</a>
+                            @*<a class="editiInfo" v-if="item.State == 1" v-on:click="updateSetState(index,0)">取消激活</a>*@
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" v-if="recordCount<=0">暂无数据</td>
+                    </tr>
+
+            </table>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <a href="javascript:;" class="btn btn-success temp-btn-setting" data-itemid="0" data-name="" id="btnBatch_Pass" v-on:click="showAddForm()" style="background-color: rgba(50,150,250,1);border-color: rgba(50,150,250,1);">
+                <span class="glyphicon glyphicon-plus"></span>
+                添加登录账号
+            </a>
+        </div>
+    </div>
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        登录账号
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td width="120px">登录名 : </td>
+                            <td>
+                                <input maxlength="20" style="width:320px" placeholder="20个字符以内"  type="text" class="form-control" v-model="LoginName" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="120px"><span>登录密码：</span></td>
+                            <td>
+                                <input minlength="6" style="width:320px" placeholder="6个以上数字和英文" type="password" class="form-control" v-model="LoginPassword" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="120px"><span>备注：</span></td>
+                            <td>
+                                <input maxlength="100" style="width:320px" placeholder="100个字以内" type="text" class="form-control" v-model="Remark" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" v-on:click="saveInfo()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal bs-example-modal" id="bindWxModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+
+    </div>
+</div>
+
+<br />
+
+
+<script>
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            list: [],
+            index: 0,
+            detailindex: 0,
+            recordCount :0,
+            postdata: {
+                appId: '@aid',
+            },
+            detail: [],
+            formpostdata: {
+                Id:0,
+                AppId: '@aid',
+                LoginName: "",
+                Password: "",
+                Remark:"",
+                State:0
+            },
+            EditId:0,
+            LoginName:"",
+            LoginPassword:"",
+            Remark:"",
+            customer: null,
+            isloading: false,
+            wxLoginInterval : null
+        },
+        methods: {
+            getlist: function () {
+                if (this.isloading) {
+                    layer.msg("正在加载");
+                    return;
+                }
+                this.isloading = true;
+                var loadindex = layer.load(1);
+                $.get("/MultiStore/UserLogin/GetUserAccountList", this.postdata, function (data) {
+                    layer.close(loadindex);
+                    app.isloading = false;
+                    if (!data.success) {
+                        console.log(data.msg);
+                        layer.msg(data.msg);
+                        return;
+                    } else {
+                        app.recordCount = data.postData.recordCount;
+                        app.list = data.postData.multiStoreAccounts;
+                    }
+                })
+            },
+            showAddForm: function () {
+                app.EditId = 0;
+                app.LoginName = "";
+                app.LoginPassword = "";
+                app.Remark = "";
+                //页面层
+                $('#addModal').modal('show')
+            },
+            showEditForm: function (index) {
+                app.EditId = app.list[index].Id;
+                app.LoginName = app.list[index].LoginName;
+                app.LoginPassword = app.list[index].Password;
+                app.Remark = app.list[index].Remark;
+                //页面层
+                $('#addModal').modal('show')
+            },
+            updateSetState: function (index,state) {
+                this.formpostdata.Id = this.list[index].Id;
+                this.formpostdata.State = state;
+                var layindex = layer.load(1);
+                //删除
+                if (state == -1)
+                {
+                    if (confirm("你确定要删除么?"))
+                    {
+                        $.post("/MultiStore/UserLogin/DeleteUserAccount", this.formpostdata, function (data) {
+                            layer.close(layindex);
+                            layer.msg(data.msg, {
+                                time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                            });
+                            if (data.success) {
+
+                                app.getlist();
+                                $('#addModal').modal('hide');
+                                //$('#myModal').modal('hide')
+                            }
+                        });
+                    }
+                }
+                else if(state == 1) //激活
+                {
+                    $.get("/MultiStore/UserLogin/_BindUserAccountBox", this.formpostdata, function (data) {
+                        layer.close(layindex);
+                        app.isloading = false;
+                        if (data == null || data == "") {
+                            layer.msg("请求进入绑定页面失败!");
+                            return;
+                        } else {
+                            $('#bindWxModal').html(data);
+                            $('#bindWxModal').modal('show');
+
+                            if (app.wxLoginInterval != null)
+                            {
+                                clearInterval(app.wxLoginInterval);
+                            }
+                            app.wxLoginInterval = setInterval(wxLogin, 3000);
+                            //扫描登录
+                            function wxLogin() {
+                                var key = $('#sessid').val();
+                                $.ajax({
+                                    type: "POST",
+                                    url: "/MultiStore/UserLogin/checkBindUserAccount",
+                                    xhrFields: {
+                                        withCredentials: true
+                                    },
+                                    data: { wxkey: key },
+                                    success: function (returnData) {
+                                        if (returnData.success) {
+                                            layer.msg(returnData.msg, {
+                                                time: 2000 //2秒关闭（如果不配置，默认是3秒）
+                                            });
+                                            clearInterval(app.wxLoginInterval);
+                                            app.getlist();
+                                            $('#bindWxModal').modal('hide');
+                                        }
+                                        else {
+                                            return;
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    })
+                    layer.close(layindex);
+                }
+                else if (state == 0) //取消激活  --不可用,会影响逻辑
+                {
+                    //if (confirm("你确定要取消激活么?")) {
+                    //    $.post("/MultiStore/UserLogin/RemoveUserAccount", this.formpostdata, function (data) {
+                    //        layer.close(layindex);
+                    //        layer.msg(data.msg, {
+                    //            time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                    //        });
+                    //        if (data.success) {
+
+                    //            app.getlist();
+                    //            $('#addModal').modal('hide');
+                    //            //$('#myModal').modal('hide')
+                    //        }
+                    //    });
+                    //}
+                }
+            },
+            saveInfo: function () {
+                var layindex = layer.load(1);
+
+                app.formpostdata.Id = app.EditId;
+                app.formpostdata.LoginName = app.LoginName;
+                app.formpostdata.Password = app.LoginPassword;
+                app.formpostdata.Remark = app.Remark;
+
+                //编辑
+                if (app.formpostdata.Id > 0)
+                {
+                    $.post("/MultiStore/UserLogin/EditUserAccount", this.formpostdata, function (data) {
+                        layer.close(layindex);
+                        layer.msg(data.msg, {
+                            time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                        });
+                        if (data.success) {
+
+                            app.getlist();
+                            $('#addModal').modal('hide')
+                        }
+                    });
+                }
+                else //保存
+                {
+                    $.post("/MultiStore/UserLogin/AddUserAccount", this.formpostdata, function (data) {
+                        layer.close(layindex);
+                        layer.msg(data.msg, {
+                            time: 1500 //2秒关闭（如果不配置，默认是3秒）
+                        });
+                        if (data.success) {
+
+                            app.getlist();
+                            $('#addModal').modal('hide')
+                        }
+                    });
+                }
+            },
+            //hideBindWxModal: function () {
+            //    $('#bindWxModal').modal('hide');
+            //    clearInterval(app.wxLoginInterval);
+            //}
+        },
+        created: function (index) {
+            this.getlist();
+        }
+
+    });
+</script>

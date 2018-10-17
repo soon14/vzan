@@ -1,0 +1,310 @@
+﻿
+@model ViewModel<EntIndutypes>
+
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "产品参数";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int parasSwtich = ViewBag.parasSwtich;
+}
+
+<style>
+    .treegridtable { width: 100%; border-collapse: collapse; color: #777; font-weight: 300; }
+    .treegridtable td { text-align: left; padding: 5px 10px; border-bottom: 1px solid #e5e5e5; }
+    .treegridtable .spanexpend { background-image: url(/js/treegrid/img/expand.png); width: 16px; height: 16px; display: inline-block; position: relative; cursor: pointer; }
+</style>
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、参数名称不能超过20个字，且不能重复</p>
+            <p>2、产品参数若已关联了至少一个产品，则该参数不可删除</p>
+        </div>
+        <div>
+            @{
+                if (Model.PageType == 22 && parasSwtich == 1)
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" title="请升级到更高版本" disabled="disabled">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增参数
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" v-on:click="addNew(-1)">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增参数
+                    </button>
+                }
+            }
+          
+        </div>
+        <div class="mt10">
+            <table class="tree treegridtable">
+                <thead>
+                    <tr>
+                        <th width="100">ID</th>
+                        <th>参数名称</th>
+                        <th>显示方式</th>
+                        <th width="10%">层级</th>
+                        <th width="10%">排序</th>
+                        <th width="200">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list" v-bind:class="['treegrid-'+(item.TypeId),item.ParentId>0?'treegrid-parent-'+item.ParentId:'','treegrid-collapsed']" v-bind:key="item.Id">
+                        <td v-on:click="gettypelist(index)">
+                            @*<span class="treegrid-expander treegrid-expander-expanded"></span>*@
+                            <span class="spanexpend" v-if="item.childcount>0 && item.isopen==0"></span>
+                            {{item.Id}}
+                        </td>
+                        <td>{{item.TypeName}}</td>
+
+                        <td>{{item.ShowType==0?"文字":item.ShowType==1?"图片":item.ShowType==2?"文字加图片":"未知类型"}}</td>
+                        <td>{{item.Level}}</td>
+                        <td>{{item.Sort}}</td>
+                        <td>
+                            <a v-on:click="del(index)" class="btn-xs btn-danger"> 删除 </a>
+                            <a v-on:click="edit(index)" class="btn-xs btn-primary ml10"> 编辑 </a>
+                            <a v-on:click="addNew(index)" v-if="item.Level<2" class="btn-xs btn-info ml10"> 添加子参数 </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+    </div>
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        产品参数
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr style="display:block;">
+                            <td><span>参数类型：</span></td>
+                            <td>
+                                <select class="form-control" v-on:change="changeshowtype()" id="showtype">
+                                    <option value="0" checked="edititem.ShowType==0">文字</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr v-bind:style="edititem.ShowType!=1?'display:block;':'display:none;'" >
+                            <td><span>参数名称：</span></td>
+                            <td><input maxlength="20" placeholder="参数名称" id="nameVal" v-model="edititem.TypeName" type="text" class="form-control"></td>
+                        </tr>
+                        <tr style="display:block;">
+                            <td><span>参数排序：</span></td>
+                            <td><input maxlength="2" placeholder="参数排序" onkeyup = "this.value=this.value.replace(/[^1-9-]+/,'');" id="sortVal" v-model="edititem.Sort" type="text" class="form-control"></td>
+                        </tr>
+                        
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<link href="@(WebSiteConfig.cdnurl)js/treegrid/css/jquery.treegrid.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/treegrid/js/jquery.treegrid.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.tree').treegrid();
+    });
+
+</script>
+<script>
+    var item = {
+        Id:0,
+        ParentId:0,
+        ShowType:0,
+        Industr:"",
+        TypeName: "",
+        AId:@Utility.IO.Context.GetRequestInt("appId",0),
+        State:1,
+        Sort:1,
+        Imgurl:"",
+        Level:1,
+    };
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            edititem:JSON.parse(JSON.stringify(item)),
+            editid:0,
+            list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+        },
+        coumputed:{
+            totalcount:function(){
+                return this.list.length;
+            }
+        },
+        mounted: function () {
+            console.log("mounted");
+        },
+        methods: {
+            addNew: function (index) {
+                $('#addModal').modal('show');
+                if(index>=0)
+                {
+
+                    item.ParentId = this.list[index].TypeId;
+                    item.Level = this.list[index].Level+1;
+
+                    $("#showtype").val(this.edititem.ShowType);
+
+                    this.edititem = JSON.parse(JSON.stringify(item));
+                }
+                this.edititem.Id=0
+                this.showimgload(true);
+                this.editid = 0;
+            },
+            save: function () {
+                var that=this;
+                var _typename=$.trim(that.edititem.TypeName);
+                if(parseInt(that.edititem.ShowType)!=1)
+                {
+                    if(_typename.length==0||_typename.length>20){
+                        layer.msg("参数名称不能为空，且不能超过20个字",{time:1000});
+                        return;
+                    }
+                }
+
+                if(that.edititem.ShowType>0)
+                {
+                    var _img=$("input:hidden[name='Imgurl']").val()||"";
+                    //图片
+                    if((this.edititem.Imgurl==null || this.edititem.Imgurl=="")&&_img==""){
+                        layer.msg("请上传产品图片！",{time:1000});
+                        return;
+                    }
+                    else if(_img!=""){
+                        this.edititem.Imgurl=_img;
+                    }
+                }
+
+                $.post("/@(dirName)/savecartype", $.extend(that.edititem,{appId:item.AId}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            $('#addModal').modal('hide');
+                            layer.msg("保存成功",{time:1000});
+
+                            window.location.reload();
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            edit:function(index){
+                $('#addModal').modal('show');
+
+                this.edititem=JSON.parse(JSON.stringify(this.list[index]));
+                $("#showtype").val(this.edititem.ShowType);
+
+                this.showimgload(true);
+            },
+            del:function(index){
+                var that=this;
+                layer.open({
+                    title: "删除确认",
+                    content: "确定要删除该参数么？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        $.post("/@(dirName)/savecartype",{act:"del",id:that.list[index].Id,appId:item.AId})
+                        .then(function(data){
+                            console.log(data);
+                            if(typeof data=="object"){
+                                if(data.isok){
+                                    layer.msg("删除成功",{time:1000});
+                                    //that.list.splice(index,1);
+                                    window.location.reload();
+                                }
+                                else{
+                                    layer.alert(data.msg);
+                                }
+                            }
+                            else{
+                                layer.alert(data);
+                            }
+                        });
+
+                    }
+                })
+            },
+            changeshowtype:function(){
+                var showtype  = $("#showtype").val();
+                this.edititem.ShowType = showtype;
+
+                this.showimgload(false);
+            },
+            gettypelist:function(index){
+                var typeid = this.list[index].TypeId
+                var aid =  this.list[index].AId
+                var industr =  this.list[index].Industr
+                var level =  this.list[index].Level+1;
+                var that=this;
+                if(app.list[index].isopen==1)
+                {
+                    return;
+                }
+                $.post("/@(dirName)/getcartypelist", {typeid:typeid,aid:aid,industr:industr,level:level,appId:aid},function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            if(data.data.length>0)
+                            {
+                                app.list[index].isopen =1;
+                                for (var i = 0; i < data.data.length; i++) {
+                                    app.list.splice(index + (i + 1), 0, data.data[i]);
+                                }
+
+
+                                that.$nextTick(function () {
+                                    // DOM 现在更新了
+                                    // `this` 绑定到当前实例
+                                    $('.tree').treegrid();
+                                })
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            showimgload:function(refresh){
+
+            },
+        },
+        created: function (index) {
+            //$(".tree").show();
+            //$('.tree').treegrid();
+        },
+    });
+</script>

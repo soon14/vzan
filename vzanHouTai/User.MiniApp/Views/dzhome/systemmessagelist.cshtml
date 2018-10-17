@@ -1,0 +1,99 @@
+﻿@model ViewModel<SystemUpdateMessage>
+@{
+    ViewBag.PageType = -2;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "消息中心";
+}
+@*<link href="@(WebSiteConfig.cdnurl)content/newhome/css/sysmsg.css" rel="stylesheet" />*@
+<style>
+    html { background-color:#fff;}
+    .sysmsg-title { overflow: hidden; height: 80px; line-height: 80px; color: #9A9A9A; font-size: 16px; }
+    .sysmsg-title-t { overflow: hidden; height: 40px; line-height: 40px; font-size: 14px; }
+    .sysmsglistbox { border: 1px solid #F7F7F7; border-radius: 5px; -webkit-border-radius: 5px;box-shadow:0 0 30px 6px #f2f2f2; -webkit-box-shadow: 0 0 30px 6px #f2f2f2; }
+    .sysmsgcontentbox { padding:30px; box-shadow:0 0 5px 3px #f2f2f2 inset; -webkit-box-shadow: 0 0 5px 3px #f2f2f2 inset;background-color:#F9F7F7;}
+    .sysmsg-border-b { border-bottom:1px solid #f2f2f2;}
+    .sysmsgitem-margin { margin: 0px 30px; }
+    .sysmsgitem-padding { padding: 20px 30px; }
+</style>
+<div>
+    <section class="myTpl f fv fc">
+        <div class="templateContent">
+            <div class="tpl-title fp-font-blue f fc"><p style="font-size: 1.8rem;">消息中心</p></div>
+
+            <div class="myTpl-list-box f fv fc sysmsglistbox">
+                @if (Model != null && Model.DataList!=null && Model.DataList.Count > 0)
+            {
+                    <ul style="width:100%;cursor:pointer;">
+                        @for(int i= 0;i< Model.DataList.Count;i++)
+                        {
+
+                            <li class="sysmsg-li" data-index="@i" data-id="@Model.DataList[i].Id" data-isread="@Model.DataList[i].IsRead">
+                                <div class="sysmsg-li-div ">
+                                    @* @(ViewBag.sysid==Model.DataList[i].Id?"sysmsgitem-padding":"sysmsgitem-margin") *@
+                                    <div class="sysmsg-title sysmsg-border-b sysmsg-li-title sysmsgitem-margin" style="@(Model.DataList[i].IsRead==0 && ViewBag.sysid!=Model.DataList[i].Id?"color:black;":"") ">
+                                        <div style="display: inline-block;float: left;font-size:18px;">@Model.DataList[i].Title</div>
+                                        <div style="display: inline-block;float: right;margin-right: 50px;">
+                                            @Model.DataList[i].UpdateTime.ToString("yyyy-MM-dd")
+                                        </div>
+                                    </div>
+                                    <div class="sysmsg-li-content sysmsgcontentbox" style="@(ViewBag.sysid==Model.DataList[i].Id?"":"display:none;")">
+                                        @*<div class="sysmsg-title-t">
+                                            <div style="display: inline-block;float: left;">@Model.DataList[i].Title</div>
+                                            <div style="display: inline-block;float: right;margin-right: 50px;">@Model.DataList[i].UpdateTime.ToString("yyyy-MM-dd")</div>
+                                        </div>*@
+                                        <div style="text-align: left;color:#666">
+                                            @Html.Raw(Model.DataList[i].Content)
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul> }
+            else
+            {
+                    <div style="height: 80px;line-height: 80px;">暂无最新消息</div>
+                }
+            </div>
+            <div class="page" style="margin-top:60px;">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    var selectindex = @ViewBag.sysindex;
+    $(".sysmsg-li").on("mouseenter", function () {
+        var index = $(this).attr("data-index");
+        var isread = $(this).attr("data-isread");
+        var sysid = $(this).attr("data-id");
+
+        var sysmsg_li_title = $(".sysmsg-li-title");
+        var sysmsg_li_content = $(".sysmsg-li-content");
+
+        if (selectindex != -1) {
+
+            $(sysmsg_li_content[selectindex]).hide();
+        }
+
+        $(sysmsg_li_content[index]).show();
+
+        selectindex = index;
+
+        //判断是否已读
+        if(isread==0)
+        {
+            read(sysid, sysmsg_li_title[index],this);
+        }
+    })
+
+    function read(sysid,obj,e)
+    {
+        var postdata={
+            sysid:sysid,
+        };
+        $.get('/dzhome/Read', postdata, function (result) {
+            obj.style.color = "#9A9A9A"
+            $(e).attr("data-isread",1);
+        })
+    }
+</script>

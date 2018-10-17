@@ -1,0 +1,528 @@
+﻿@using User.MiniApp.comment
+@using Entity.MiniApp.Fds;
+@model Food
+@{
+    //小程序餐饮餐馆配置
+    ViewBag.Title = "扫码点餐";
+    ViewBag.PageType = 8;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    //Layout = null;
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-daterangepicker/daterangepicker.min.css" rel="stylesheet" type="text/css" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-colorpicker/bootstrap-clockpicker.min.css" rel="stylesheet" />
+
+<style>
+    .edui-modal { margin-top: 150px; }
+
+    .twxq-new-kuang { border: 1px solid #ccc; padding: 10px; margin-right: 10px; background: #fff; }
+
+    .twxq-edit-zhanshi { border: 2px dashed #fc7d7d; padding: 10px; min-height: 108px; position: relative; }
+
+    .spgl-bianji-bt { position: absolute; bottom: 0; right: 0; display: inline-block; background-color: rgba(0,0,0,0.3); color: #fff; padding: 0 5px; margin-left: 1px; font-size: 12px; }
+
+    .bz { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
+
+    .spxqq-f p:first-child { font-size: 17px; }
+
+    .spxqq-f { text-align: center; margin-top: 17px; line-height: 25px; }
+
+    #label_1 { color: white; display: none; }
+
+    .checkKey { background-color: coral; color: white !important; border-color: transparent; }
+
+    .noCheckKey { background-color: white; border-color: black; color: black; }
+    .centertext { vertical-align: middle !important; text-align: center; }
+    .width200 { width: 200px !important }
+
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<input type="hidden" id="listenMap" value="" onchange="getMap();" />
+@Html.HiddenFor(m => m.Id)
+@Html.HiddenFor(m => m.appId)
+
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            <tr>
+                <td style="text-align: right;" width="20%">扫码点餐<label style="color: red">*</label></td>
+                <td>
+                    <input class="TheShopRadio" name="TheShopRadio" type="radio" value="1" @(Model.TheShop == 1 ? "checked" : "") /> 开启
+                    <input class="TheShopRadio" name="TheShopRadio" type="radio" value="0" @(Model.TheShop == 0 ? "checked" : "") /> 关闭
+                    &nbsp;&nbsp;&nbsp;
+                    <label class="forinputmassage" for="DeliveryRange" style="color: red">* 关闭后,点餐小程序上将显示店铺休息中,顾客将无法下单</label>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">线下支付<label style="color: red">*</label></td>
+                <td>
+                    <input class="TheShopRadio" name="UnderlinePay" type="radio" value="1" @(Model.underlinePay == 1 ? "checked" : "") /> 开启
+                    <input class="TheShopRadio" name="UnderlinePay" type="radio" value="0" @(Model.underlinePay == 0 ? "checked" : "") /> 关闭
+                    &nbsp;&nbsp;&nbsp;
+                    @*<label class="forinputmassage" for="DeliveryRange" style="color: red">* 关闭后,点餐小程序上将显示店铺休息中,顾客将无法下单</label>*@
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;" width="20%">扫码点餐使用流程</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <div style="width:100%;margin-left:220px;">
+                        <img src="@(WebSiteConfig.cdnurl)content/MiappFood/QQ截图20171107173501.png" />
+                    </div>
+
+                </td>
+            </tr>
+
+            <tr>
+                <td style="text-align: right;" width="20%">店铺营业时间</td>
+                <td>
+                    @{ var weekOpenStrList = new List<string>() { "周一", "周二", "周三", "周四", "周五", "周六", "周日" }; }
+                    <label class="forinputmassage">@string.Join("、", weekOpenStrList.Where(x => Model.OpenDateStr.Contains(x)))</label>(与店铺的营业日期保持一致)
+                    @*<a href="/foods/Index?Id=@ViewBag.appid&appId=@ViewBag.appid">修改店铺营业时间</a>*@
+                    @if (Model.getOpenTimeList.Count > 2)
+                    {
+                        <div class="OpenTimeDiv" style="margin-bottom:5px">
+                            <input type="text" readonly="readonly" class="form-control width200 StartShopTime" id="StartShopTime" value="@Model.getOpenTimeList[2].StartTime" style="display:inline-block;" /><span>-</span>
+                            <input readonly="readonly" style="display:inline-block; " type="text" id="EndShopTime" class="form-control width200 EndShopTime" value="@Model.getOpenTimeList[2].EndTime" />
+                        </div>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align:right;">
+                    桌台二维码：
+                </td>
+                <td>
+                    <a href="#" onclick="addTablesNo()">+新增桌台号</a>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <table id="tableNo" border="0" cellspacing="0" cellpadding="0">
+                        <tr style="background-color:#D3D3D3;">
+                            <th width="80px">
+                                桌台号
+                            </th>
+                            <th width="280px">
+                                桌台二维码
+                            </th>
+                            <th>
+                                操作
+                            </th>
+                        </tr>
+                        @foreach (Entity.MiniApp.Fds.FoodTable x in ViewBag.TablesNoList)
+                        {
+                            <tr>
+                                <td width="80px">
+                                    @x.Scene
+                                </td>
+                                <td width="180px">
+                                    <img src="@x.ImgUrl" style="width:50px;height:50px;" />
+                                    <a href="#" style="" data-url="@x.ImgUrl" class="clicklockbigimg">查看大图</a>
+                                    <a href="@x.ImgUrl" target="_blank" download="filename.jpg">下载图片</a>
+                                </td>
+                                <td width="50px">
+                                    <a href="#" data-id="@x.Id" style="color:red;" class="delQrcode">删除</a>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div class="col-md-offset-2">
+    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+    <input type="button" class="btn btn-default width100" onclick="self.location=document.referrer;" value="返回" />
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">
+                    添加桌台号
+                </h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-add">
+                    <tr>
+                        <td><span>桌台号：</span></td>
+                        <td><input placeholder="桌台号 1-99999" id="nameVal" type="text" class="form-control" value=""></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal bs-example-modal-sm" id="testqrcodModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>图片</h4>
+            </div>
+            <div class="modal-body text-center">
+                <img id="testqrcodeimg" style="" src="" />
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closetestqrcode">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+@section script{
+    <script>
+
+
+
+    //查看大图
+    $('.clicklockbigimg').on('click', function () {
+        $("#testqrcodeimg").attr("src", $(this).data("url"));
+        $("#testqrcodModal").show();
+    });
+
+    $(".delQrcode").on('click', function () {
+        if(confirm("你确定要删除这张桌台吗?"))
+        {
+            $.ajax({
+                type: "Post",
+                url: "/foods/delAppQrcordNo",
+                data:
+                    {
+                        tablenoid : $(this).data("id")
+                        //LogImg: imgUrl,
+                    },
+                success: function (data) {
+                    if (data.isok) {
+                        layer.alert(data.msg, {closeBtn: 0 ,yes:function(){
+                            window.location.reload();
+                        }
+                        });
+                    }
+                }
+            });
+        }
+    });
+    $('#closetestqrcode').on('click', function () {
+        $("#testqrcodModal").hide();
+    });
+    function addTablesNo()
+    {
+        $("#nameVal").val("");
+        $('#addModal').modal('show');
+    }
+    $('#btnAdd').on('click', function() {
+        //一修改名称
+        var itemid = $("#nameVal").val();
+        if (itemid == "") {
+            alert("请输入桌台号");
+            return;
+        }
+        var reg = /^[0-9]+$/ ;
+        //if(!reg.test(itemid))
+        //{
+        //    alert("请输入1~99999的整数");
+        //    return;
+        //}
+        //if(itemid < 1 || itemid > 99999)
+        //{
+        //    alert("请输入1~99999的整数");
+        //    return;
+        //}
+
+        $(this).attr('disabled', 'disabled');
+
+        $.ajax({
+            type: "Post",
+            url: "/foods/addTables",
+            data:
+                {
+                    appId:@(ViewBag.appId),
+                    tablesNo:itemid,
+                    //LogImg: imgUrl,
+                },
+            success: function (data) {
+                if (data.isok) {
+                    layer.alert(data.msg, {closeBtn: 0 ,yes:function(){
+                        window.location.reload();
+                    }
+                    });
+
+
+                }
+                else {
+                    $("#btnAdd").removeAttr("disabled");
+                    layer.alert(data.msg);
+                }
+            }
+        });
+    });
+
+    //查看大图
+    $('.clicklockbigimg').on('click', function () {
+        $("#testqrcodeimg").attr("src", $(this).data("url"));
+        $("#testqrcodModal").show();
+    });
+
+        var currDateTimeIndex = 0;
+        var newIndex = @(Model.getOpenTimeList.Count + 1);
+
+        var ChooseLocationOK = function () {
+            var _location = mapframe.window.document.getElementById("poi_cur").value;
+            var _addr_cur = mapframe.window.document.getElementById("addr_cur").value;
+            var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+            if (_location == "") {
+                layer.msg("您还未选择地理位置！");
+                return;
+            }
+            _location = _location.split(",");
+            $("#mapLng").val(parseFloat(_location[1]));
+            $("#mapLat").val(parseFloat(_location[0]));
+            $("#Address").text(_addr_cur);
+            console.log(_location);
+            console.log(_addr_cur);
+            $("#ChooseLocationModal").modal("hide");
+        }
+
+        function keyPress(ob) {
+            if (!ob.value.match(/^\d+\.?\d?\d?$/)) {
+                if (ob.t_value == undefined || ob.t_value.length == 1) {
+                    ob.value = "";
+                }
+                else {
+                    ob.value = ob.t_value;
+                }
+            }
+            else
+                ob.t_value = ob.value;
+        }
+        $('#btnMap').on('click', function () {
+            $("#ChooseLocationModal").modal("show");
+        });
+        $(document).ready(function()
+        {
+        });
+
+        $(function () {
+            //getMap();
+
+
+        $("#openTimeTd .StartShopTime").on("click",function()
+        {
+            currDateTimeIndex = $(this).data("index");
+        });
+        $("#openTimeTd .EndShopTime").on("click",function()
+        {
+            currDateTimeIndex = $(this).data("index");
+        });
+        //营业时间
+        //openTimeTd
+        $("#openTimeTd .StartShopTime").clockpicker({
+            placement: 'bottom',
+            align: 'left',
+            autoclose: true,
+            afterDone: function() {
+                var StartTimeHours = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var EndTimeHours = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var StartTimeMinu = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                var EndTimeMinu = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                if(EndTimeHours<StartTimeHours){
+                    AppTools.Alert("开始时间不能大于结束时间");
+                    $("#EndShopTime_"+currDateTimeIndex).val("@Model.EndShopTime");
+                }
+            }
+        });
+        $("#openTimeTd .EndShopTime").clockpicker({
+            placement: 'bottom',
+            align: 'left',
+            autoclose: true,
+            afterDone: function() {
+                var StartTimeHours = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var EndTimeHours = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var StartTimeMinu = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                var EndTimeMinu = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                if(EndTimeHours<StartTimeHours){
+                    AppTools.Alert("结束时间不能小于开始时间");
+                    $("#EndShopTime_"+currDateTimeIndex).val("@Model.EndShopTime");
+                }
+            }
+        });
+        // #region 保存
+        $('#saveBtn').click(function () {
+
+            $('#saveBtn').attr('disabled', "true");
+            $('#loadModal').modal('show');
+
+            saveStore();
+        });
+        function saveStore() {
+            var appId = $('#appId').val();
+            var Id = $('#Id').val();
+            var TheShopRadio = $('input[name="TheShopRadio"]:checked').val();
+            var UnderlinePay = $('input[name="UnderlinePay"]:checked').val();
+            var StartShopTime = $("#StartShopTime").val();
+            var EndShopTime = $("#EndShopTime").val();
+            $.post('/foods/SaveScanCodeInfo',
+                {
+                    Id: Id,
+                    appId: appId,
+                    TheShop: TheShopRadio,
+                    FoodsName: '@Model.FoodsName',
+                    UnderlinePay: UnderlinePay,
+                    colName: "TheShop,underlinePay",
+                    StartShopTime: StartShopTime,
+                    EndShopTime: EndShopTime,
+                },
+                function (data) {
+                    $('#saveBtn').removeAttr('disabled');
+                    $('#loadModal').modal('hide');
+                    AppTools.Alert(data.Msg);
+                });
+        }
+        // #endregion
+    });
+
+    // #region 省市级联
+    $('#ddProvince').change(function () {
+        var areaCode = $(this).val();
+        if(areaCode == "选择行省" || areaCode == "")
+        {
+            $('#ddArea option').remove();
+            $('#ddArea').append('<option>选择城市</option>');
+            $('#ddRegion option').remove();
+            $('#ddRegion').append('<option>选择区域</option>');
+            $('#ddArea').change();
+            $('#ddRegion').change();
+            return;
+        }
+        $.get('/stores/GetRegionJsonList?parentCode=' + areaCode,
+            function (data) {
+                //if (data.length > 0) {
+                    $('#ddArea option').remove();
+                    $('#ddArea').append('<option>选择城市</option>');
+                    $('#ddRegion option').remove();
+                    $('#ddRegion').append('<option>选择区域</option>');
+                    for (var i = 0; i < data.length; i++) {
+                        var isSelected = "";
+                        if (data[i].Selected) {
+                            isSelected = "selected='selected'";
+                        }
+                        var option = "<option value='" + data[i].Value + "' " + isSelected + ">" + data[i].Text + "</option>";
+                        $("#ddArea").append(option);
+                    }
+                    $('#ddArea').change();
+                //}
+            });
+    });
+    $('#ddArea').change(function () {
+        var areaCode = $(this).val();
+        if(areaCode == "选择城市")
+        {
+            $('#ddRegion option').remove();
+            $('#ddRegion').append('<option>选择区域</option>');
+            $('#ddRegion').change();
+            return;
+        }
+        $.get('/stores/GetRegionJsonList?parentCode=' + areaCode,
+            function (data) {
+                //if (data.length > 0) {
+                    $('#ddRegion option').remove();
+                    $('#ddRegion').append('<option>选择区域</option>');
+                    for (var i = 0; i < data.length; i++) {
+                        var isSelected = "";
+                        if (data[i].Selected) {
+                            isSelected = "selected='selected'";
+                        }
+                        var option = "<option value='" + data[i].Value + "' " + isSelected + ">" + data[i].Text + "</option>";
+                        $("#ddRegion").append(option);
+                    }
+                    $('#ddRegion').change();
+                //}
+            });
+    });
+    // #endregion
+
+    // #region 删除图片
+    function removeAttachmentFunction(file) {
+        if (file && file.id) {
+                // 删除Logo
+                $.get('/foods/DeleteImg?id=' + file.id,
+                    function (data) {
+                        if (!data.Success) {
+                            AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                            return e.ee;
+                        }
+                    });
+        }
+    }
+                                        // #endregion
+
+
+
+        $(function () {
+            //营业时间
+            //openTimeTd
+            $("#StartShopTime").clockpicker({
+                placement: 'bottom',
+                align: 'left',
+                autoclose: true,
+            });
+            $("#EndShopTime").clockpicker({
+                placement: 'bottom',
+                align: 'left',
+                autoclose: true,
+            })
+        })
+    </script>
+}

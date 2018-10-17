@@ -1,0 +1,370 @@
+﻿@model ExchangeActivity
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "积分活动";
+    int activityimgCount = 0;
+    if (ViewBag.activityimg != null)
+    {
+        activityimgCount = ((List<object>)ViewBag.activityimg).Count;
+    }
+   
+}
+<style>
+    .form-control { width: 30%; display: inline-block; }
+</style>
+<div id="app" v-cloak>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td style="text-align: right;">活动主图：<label style="color: red">*</label></td>
+            <td class="activityimg">
+                @Html.FileUploadFor("activityimg", maxFiles: 1, controllerWidth: 113, initImageList: (List<object>)ViewBag.activityimg, removeCallback: "removeFun", awm: 1)
+                <label class="forinputmassage" style="color:#ccc;">点击灰色区域选择上传图片建议尺寸750*750</label>
+            </td>
+
+        </tr>
+        <tr>
+            <td style="text-align: right;">轮播图：<label style="color: red">*</label></td>
+            <td class="imgs">
+                @Html.FileUploadFor("imgs", maxFiles: 5, controllerWidth: 400, initImageList: (List<object>)ViewBag.imgs, removeCallback: "removeFun", awm: 1)
+                <label class="forinputmassage" style="color:#ccc;">点击灰色区域选择上传图片建议尺寸750*750</label>
+            </td>
+
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="20%">活动名称：<label style="color: red">*</label></td>
+            <td>
+                <input name="activityname" maxlength="100" class="form-control width300" v-model="exChangeModel.activityname" />
+                <label class="forinputmassage" style="color:#ccc;">活动名称不超过100字符</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">原价：</td>
+            <td>
+                <input name="price" placeholder="原价" class="form-control width300" v-model="exChangeModel.originalPriceStr" />
+                <label class="forinputmassage" style="color:#ccc;">商品原价</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;" width="20%">兑换方式：<label style="color: red">*</label></td>
+            <td>
+                <label><input type="radio" name="exchangeway" value="0" v-model="exChangeModel.exchangeway" />积分兑换</label>
+                <label><input type="radio" name="exchangeway" value="1" v-model="exChangeModel.exchangeway" />积分+金额</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">所需积分：<label style="color: red">*</label></td>
+            <td>
+                <input name="integral" type="text" placeholder="所需积分" class="form-control width300" v-model="exChangeModel.integral">
+                <label class="forinputmassage" style="color:#ccc;">兑换礼品所需要的积分</label>
+            </td>
+        </tr>
+
+        <tr v-if="exChangeModel.exchangeway==1">
+            <td style="text-align: right;">所需金额：</td>
+            <td>
+                <input name="price" placeholder="所需金额" class="form-control width300" v-model="exChangeModel.priceStr" />
+                <label class="forinputmassage" style="color:#ccc;">兑换礼品所需要的金额</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">库存：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" placeholder="库存" name="stock" class="form-control width300" v-model="exChangeModel.stock">
+                <label class="forinputmassage" style="color:#ccc;">提供多少礼品供兑换</label>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">每人可兑换数量：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" placeholder="库存" name="perexgcount" class="form-control width300" v-model="exChangeModel.perexgcount">
+                <label class="forinputmassage" style="color:#ccc;">限制每人可兑换数量</label>
+            </td>
+        </tr>
+
+
+        <tr v-if="exChangeModel.exchangeway==1">
+            <td style="text-align: right;">运费：</td>
+            <td>
+                <input name="freight" placeholder="运费" class="form-control width300" v-model="exChangeModel.freightStr" />
+            </td>
+        </tr>
+
+
+        <tr>
+            <td style="text-align: right;">活动描述：</td>
+            <td>
+                <div id="editor" style="height:460px;width:90%">
+
+                </div>
+            </td>
+
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">开始时间：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" class="form-control " id="datetimepicker1" readOnly="readOnly"  v-model="exChangeModel.startdateStr" onfocus="this.blur()" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">结束时间：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" class="form-control " id="datetimepicker2" readOnly="readOnly"  v-model="exChangeModel.enddateStr" onfocus="this.blur()" />
+
+            </td>
+        </tr>
+        @{
+            if (Model.id == 0)
+            {
+            <tr>
+
+                <td style="text-align: right;"></td>
+                <td>
+                    <label for="nowStart">立即开始: <input type="checkbox" name="nowStart" id="nowStart" /> </label>
+                </td>
+            </tr>
+                }
+            }
+
+        <tr>
+            <td style="text-align: right;"></td>
+            <td>
+                <input type="button" class="btn btn-primary width100" v-on:click="SaveInfo()" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+
+      
+
+    </table>
+</div>
+<script src="/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<script>
+    var comeditor=null;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            exChangeModel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            activityimgCount:@activityimgCount,
+            activityimg:"",
+            imgs:[]
+            },
+        methods: {
+            SaveInfo:function(){
+                if(!this.ValidData())return;
+                app.exChangeModel.price=app.exChangeModel.priceStr * 1000000 / 10000;
+                app.exChangeModel.freight=app.exChangeModel.freightStr * 1000000 / 10000;
+                app.exChangeModel.originalPrice=app.exChangeModel.originalPriceStr * 1000000 / 10000;
+                var index = layer.load(1);
+                app.exChangeModel.description=comeditor.getContent();
+                $.post("/common/ExchangeActivitySaveSet", { exChangeModel: app.exChangeModel,activityimg:app.activityimg,imgs:app.imgs.join('|'),appId:@ViewBag.appId }, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                    window.setTimeout(function () {
+                        window.location.href='/common/ExchangeActivityList?appId=@ViewBag.appId&PageType=22';
+                    }, 2000);
+
+                },"json")
+            },
+            ValidData: function () {
+                var result = false;
+                $('input[name="activityimg"]').each(function (i, n) {
+                    app.activityimg=$(n).val();
+                });
+                app.imgs=[];
+                $('input[name="imgs"]').each(function (i, n) {
+                    app.imgs.push($(n).val());
+                });
+               
+                if (app.activityimg.length <= 0 && app.activityimgCount <= 0) {
+                    layer.msg("请上传活动图片");
+                    return result;
+                }
+
+                if ($.trim(app.exChangeModel.activityname).length <= 0||$.trim(app.exChangeModel.activityname).length>100) {
+                    layer.msg("请输入不超过100字符的活动名称");
+                    return result;
+                }
+
+                if (!/^\+?[0-9][0-9]*$/.test(app.exChangeModel.integral)) {
+                    layer.msg("积分必须为整数");
+                    return result;
+                }
+
+                if(parseInt(app.exChangeModel.exchangeway)==1){
+                    var price=app.exChangeModel.priceStr;
+                    //表示选择的是金额+积分兑换
+
+                    if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(price)) {
+                        layer.msg("金额必须为数字，且最多为2位小数,最大为6位整数！");
+                        return result;
+                    } else {
+                        var price_save = price * 1000000 / 10000;
+                        if (0 == price_save || parseInt(price_save) < 1) {
+                            layer.msg("金额不能低于1分钱！");
+                            return result;
+                        } 
+
+                    }
+
+
+                }
+
+
+
+
+                var originalPrice=app.exChangeModel.originalPriceStr;
+                //表示选择的是金额+积分兑换
+
+                if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(originalPrice)) {
+                    layer.msg("金额必须为数字，且最多为2位小数,最大为6位整数！");
+                    return result;
+                } else {
+                    var price_save = originalPrice * 1000000 / 10000;
+                    if (0 == price_save || parseInt(price_save) < 1) {
+                        layer.msg("金额不能低于1分钱！");
+                        return result;
+                    } 
+
+                }
+
+
+
+                if (!/^\+?[0-9][0-9]*$/.test(app.exChangeModel.stock)) {
+                    layer.msg("库存必须为整数");
+                    return result;
+                } 
+
+                if (!/^\+?[0-9][0-9]*$/.test(app.exChangeModel.perexgcount)) {
+                    layer.msg("每个人可兑换数量必须为整数");
+                    return result;
+                } 
+
+                if (!/^[0-9]{1,3}(\.\d{0,2})?$/.test(app.exChangeModel.freightStr)) {
+                    layer.msg("运费必须为数字，且最多为2位小数,最大为3位整数！");
+                    return result;
+                }
+
+                
+
+
+                var startdate = $('#datetimepicker1').val();
+                var enddate = $('#datetimepicker2').val();
+               
+                if(@(Model.id) == 0){
+                    var nowStart=$("#nowStart").get(0).checked;
+                    console.log(nowStart);
+                    if(nowStart){
+                        startdate=getNowFormatDate();
+                    }
+                    //    if (new Date(startdate) < new Date()) {
+                    //        layer.msg("开始时间要大于当前时间");
+                    //        return result;
+                        
+                    //}
+                    
+                }
+                if (new Date(enddate) < new Date(startdate)) {
+                    layer.msg('结束时间要大于开始时间！');
+                    return result;
+                }
+
+                app.exChangeModel.startdate=startdate;
+                app.exChangeModel.enddate=enddate;
+                app.exChangeModel.startdateStr=startdate;
+                app.exChangeModel.enddateStr=enddate;
+
+                result = true;
+                return result;
+            },
+            BuildEditor: function () {
+                console.log("BuildEditor");
+                var that = this;
+                if (comeditor != null) {
+                    comeditor.reset();
+                }
+                //编辑器
+                comeditor = UE.getEditor('editor',{
+                    toolbars: [
+                        ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                        ['simpleupload','insertimage','insertvideo','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset','pasteplain']
+                    ],
+                    imageUrl: "/Upload/Image",
+                    autoHeight: true
+                });
+                comeditor.ready(function () {
+                    comeditor.setContent(that.exChangeModel.description);
+                });
+                comeditor.addListener("contentChange", function () {
+                    console.log("change");
+                    if (comeditor != null) {
+                        that.exChangeModel.description=comeditor.getContent();
+                    }
+                });
+            },
+
+        },mounted:function(){
+            var that=this;
+            if ($(".edui-container").length == 0) {
+                that.BuildEditor();
+            }
+        }
+
+    });
+
+    function removeFun(file) {
+        if (file) {
+            $.post('/tools/DeleteImg', { id: file.id }, function (result) {
+                if (!result.Success) {
+                    AppTools.Alert(result.Msg);
+                }
+            });
+        }
+    }
+
+    $('#datetimepicker1').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy-mm-dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        startDate: new Date(),//开始日期时间，在此之前的都不可选，同理也有endDate
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    })
+    $('#datetimepicker2').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy-mm-dd hh:ii:ss',//选择完日期后，input框里的时间值的格式
+        startDate: new Date(),//开始日期时间，在此之前的都不可选，同理也有endDate
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        forceParse: true,
+        showMeridian: 1,
+        minuteStep:1
+    });
+
+    function getNowFormatDate() {
+        var date = new Date();
+        var seperator1 = "-";
+        var seperator2 = ":";
+        var month = date.getMonth() + 1;
+        var strDate = date.getDate();
+        if (month >= 1 && month <= 9) {
+            month = "0" + month;
+        }
+        if (strDate >= 0 && strDate <= 9) {
+            strDate = "0" + strDate;
+        }
+        var currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate
+                + " " + date.getHours() + seperator2 + date.getMinutes()
+                + seperator2 + date.getSeconds();
+        return currentdate;
+    }
+
+</script>

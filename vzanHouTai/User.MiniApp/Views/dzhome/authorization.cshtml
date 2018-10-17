@@ -1,0 +1,182 @@
+﻿@{
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+    ViewBag.Title = "代理商授权查询";
+
+}
+@section cssSection{
+    @*<link href="/Content/newhome/css/authorization.css" rel="stylesheet" />*@
+}
+
+
+<!--内容-->
+<div class="authorization" id="appAuthor" v-cloak>
+    <div class="header-bg rel">
+        <img src="@(WebSiteConfig.cdnurl)content/newhome/image/authorization-banner.png" />
+        <div class="header-text">
+            <h1 class="fz-50 tc mgb40">代理商授权证书查询</h1>
+            <div class="search-box f">
+                <input id="contenInput" v-model="authorCode" type="text" placeholder="请输入要查询的授权编号" />
+                <span class="search-btn" v-on:click="findAuthorImg()">搜索</span>
+            </div>
+        </div>
+    </div>
+    <div class="results-box">
+        <h2 class="fz-30 tc c-333" v-show="isResult">查询结果</h2>
+        <div class="credential f fv fc">
+            <p>{{dataMsg}}</p>
+            <img v-show="isResult&&dataMsg==''" src="@(WebSiteConfig.cdnurl)content/newhome/image/authorization-nullresults.png" />
+            <div class="tc mgb50" v-for="(item, index) in formData" >
+                <canvas v-bind:id="'credential_'+index" width="1180" height="834" style="border:1px solid #d3d3d3;margin-bottom:18px;">
+                    您的浏览器不支持 HTML5 canvas 标签。
+                </canvas>
+                <div class="download-btn" v-on:click="downloadCredential(index)">下载证书</div>
+            </div>
+        </div>
+    </div>
+</div>
+@*<img src="@(WebSiteConfig.cdnurl)content/newhome/image/authorization-credential.png" style="width:100%;"/>*@
+@*<img src="@(WebSiteConfig.cdnurl)content/newhome/image/authorization-nocontent.png" />*@
+
+<!--findAuthor JavaScript 内容-->
+@section script{
+    <script>
+        var clientWidth = null;
+        var fontSize22 = null;
+        var fontSize13 = null;
+        resizeCanvas()
+        function resizeCanvas() {
+            var widthRatio = 0.615;
+            var heightRatio = 0.706;
+            var fs27Ratio = 0.032;
+            var fs22Ratio = 0.026;
+            var fs13Ratio = 0.0155;
+            clientWidth = document.documentElement.clientWidth;
+            if (clientWidth > 1280) {
+                clientWidth = clientWidth;
+            } else {
+                clientWidth = 1280;
+            }
+            canvasWidth = clientWidth * widthRatio;
+            canvasHeight = canvasWidth * heightRatio;
+            canvasFs27 = canvasHeight * fs27Ratio;
+            canvasFs22 = canvasHeight * fs22Ratio;
+            canvasFs13 = canvasHeight * fs13Ratio;
+            $("canvas").attr('width', canvasWidth + 'px');
+            $("canvas").attr('height', canvasHeight + 'px');
+        }
+
+        var appAuthor = new Vue({
+            el: '#appAuthor',
+            data: {
+                authorCode: '',//授权编号
+                formData: [],
+                isResult: false,
+                dataMsg: ""
+            },
+            methods: {
+                findAuthorImg: function () {
+                    appAuthor.formData = [];
+                    appAuthor.dataMsg = "";
+                    var loadingFind = layer.load(2);
+                    //var that =this
+                    $.ajax({
+                        type: "Post",
+                        url: "/common/FindAgentareaData",
+                        data:
+                            {
+                                authorCode: appAuthor.authorCode,
+                            },
+                        success: function (data) {
+                            layer.close(loadingFind);
+                            if (data.isok) {
+                                layer.msg(data.Msg);
+                                appAuthor.isResult = false;
+                                appAuthor.formData = data.dataObj;
+
+
+                                //等待vue同步画面完成再进行canvas渲染
+                                setTimeout(function () {
+                                    //循环渲染
+                                    $(appAuthor.formData).each(function (index, item) {
+                                        appAuthor.perspCanvas(index);
+                                    });
+                                }, 500);
+
+                            }
+                            else {
+                                // layer.msg(data.Msg);
+                                if (data.code == 1) {
+                                    appAuthor.isResult = true;
+                                } else if (data.code == 2) {
+                                    appAuthor.isResult = true;
+                                    appAuthor.dataMsg = data.Msg;
+                                }
+                            }
+                        },
+                        error: function (data) {
+                            layer.close(loadingFind);
+                            layer.msg("当前查询人数过多,请稍候再试!");
+                        }
+                    });
+                },
+                //渲染证书
+                perspCanvas: function (canvasIndx) {
+                    var c = document.getElementById("credential_" + canvasIndx);
+                    var ctx = c.getContext("2d");
+
+                    var img = new Image()
+                    //img.src = "@(WebSiteConfig.cdnurl)content/images/company_authorBook20180418.png";
+                    img.src = "/content/images/company_authorBook20180418.png";
+                    img.width = canvasWidth;
+                    img.height = canvasHeight;
+                    img.setAttribute("crossOrigin", 'Anonymous');
+                    img.onload = function () {
+                        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                        ctx.font = canvasFs22 + "px 黑体 ";
+                        ctx.fillStyle = '#2c2d34';
+                        ctx.textAlign = "center";
+                        ctx.fillText(appAuthor.formData[canvasIndx].companyName, canvasWidth * 0.5, canvasHeight * 0.522);   //公司名
+
+                        ctx.font = canvasFs27 + "px 黑体 ";
+                        ctx.fillText("为 " + appAuthor.formData[canvasIndx].agentAreaName + " 代理、销售广州点赞科技有限公司产品", canvasWidth * 0.5, canvasHeight * 0.574);//负责的区
+
+                        ctx.font = canvasFs22 + "px 黑体 ";
+                        ctx.fillText("授权编号:" + appAuthor.formData[canvasIndx].agentAuthCode, canvasWidth * 0.5, canvasHeight * 0.624); //时间戳加代理ID
+                        ctx.fillText("授权期:" + appAuthor.formData[canvasIndx].agentData, canvasWidth * 0.5, canvasHeight * 0.659);//起止日期 (开始代理时间+一年)
+
+                        ctx.font = canvasFs13 + "px 黑体 ";
+                        ctx.fillText(appAuthor.formData[canvasIndx].agentStartData, canvasWidth * 0.332, canvasHeight * 0.842); //创建日期
+                    }
+                },
+                downloadCredential: function (canvasIndx) {
+                    // 图片导出为 png 格式
+                    var type = 'png';
+                    var imgData = $("#credential_" + canvasIndx)[0].toDataURL(type);
+                    var _fixType = function (type) {
+                        type = type.toLowerCase().replace(/jpg/i, 'jpeg');
+                        var r = type.match(/png|jpeg|bmp|gif/)[0];
+                        return 'image/' + r;
+                    };
+
+                    // 加工image data，替换mime type
+                    imgData = imgData.replace(_fixType(type), 'image/octet-stream');
+
+                    //保存方法
+                    var saveFile = function (data, filename) {
+                        var save_link = document.createElementNS('http://www.w3.org/1999/xhtml', 'a');
+                        save_link.href = data;
+                        save_link.download = filename;
+                        var event = document.createEvent('MouseEvents');
+                        event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+                        save_link.dispatchEvent(event);
+                    };
+
+                    // 下载后的文件名
+                    var filename = 'author_' + (new Date()).getTime() + '.' + type;
+                    saveFile(imgData, filename);
+                },
+
+            }
+        });
+    </script>
+}

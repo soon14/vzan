@@ -1,0 +1,79 @@
+﻿@model Dictionary<string,string>
+@{
+    ViewBag.Title = "QrcodeList";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+    int aId = Utility.IO.Context.GetRequestInt("aId", 0);
+    int storeId = Utility.IO.Context.GetRequestInt("storeId", 0);
+}
+@section styles{
+    <style type="text/css">
+        .tb_main { margin-top: 10px; }
+        .tb_list { float: left; width: 200px; height: 260px; border: 1px solid #f1f1f1; margin-right: 20px; margin-top: 10px; }
+        .tb_list .tb_title_l { height: 30px; line-height: 30px; background: #5a98de; color: #fff; text-align: center; }
+        .tb_list .state { height: 100px; width: 100px; display: table-cell; text-align: center; vertical-align: middle; border-radius: 50%; text-align: center; font-size: 16px; }
+    </style>
+
+}
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    系统管理
+    <span class="c-gray en">&gt;</span>
+    二维码管理
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+
+    <div class="cl pd-5 bg-1 bk-gray mt-10">
+        <span class="l">
+            注意：二维码需在小程序通过审核后才会生效，如中间图标与小程序码不同步时，可点击“同步图标” <a class="btn btn-primary radius" href="#" onclick="refresh_qrcode()"> 刷新二维码</a>
+        </span>
+    </div>
+    <div class="tb_main">
+        @foreach (KeyValuePair<string, string> item in Model)
+        {
+            <div class="tb_list">
+                <p class="tb_title_l" style="margin-bottom: 0px;background: #ff0000;">@item.Key</p>
+                <div>
+                    <img src="@item.Value" width="200" 　 />
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts{
+    <script type="text/javascript">
+        //刷新二维码
+        function refresh_qrcode() {
+            var l_index = layer.msg('数据提交中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "POST",
+                url: "/DishAdmin/Main/QrcodeList",
+                data: { aId:@aId,storeId:@storeId, act: "refresh" },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(l_index);
+                    if (data.code == 1) {
+                        layer.msg(data.msg);
+                        setTimeout(function(){ window.location.reload();},1000);
+                    } else {
+                        layer.alert(data.msg, { icon: 0 });
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(l_index);
+                    layer.alert('系统错误，请重试', { icon: 5 });
+                }
+            });
+        }
+    </script>
+    <!--/请在上方写此页面业务相关的脚本-->
+
+}

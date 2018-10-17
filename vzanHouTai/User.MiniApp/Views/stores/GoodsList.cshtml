@@ -1,0 +1,308 @@
+﻿@using Entity.MiniApp.Conf;
+@using Entity.MiniApp.Stores
+@using Entity.MiniApp
+@model  List<StoreGoods>
+@{
+    ViewBag.Title = "商品列表";
+    ViewBag.PageType = 6;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted {
+        margin-top: 20px;
+        color: red;
+    }
+    .sweet-alert.showSweetAlert h2 {
+        font-size: 20px;
+    }
+</style>
+
+<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="form-inline form-group">
+            &nbsp;商品名称:
+            <input id="goodsName" type="text" class="form-control" value="@ViewBag.goodsName" />
+            &nbsp;商品类型:
+            <select id="goodsType" class="form-control width150">
+                <option value="0" @(ViewBag.goodsType == 0 ? "selected" : "")>全部</option>
+                @foreach (var item in ViewBag.goodsTypes)
+                {
+                    <option value="@(item.Id)" @(ViewBag.goodsType == item.Id ? "selected" : "")>@item.Name</option>
+                }
+            </select>
+            &nbsp;上下架状态:
+            <select id="isSell" class="form-control width150">
+                <option value="-999" @(ViewBag.isSell == -999 ? "selected" : "")>全部</option>
+                <option value="1" @(ViewBag.isSell == 1 ? "selected" : "")>上架</option>
+                <option value="0" @(ViewBag.isSell == 0 ? "selected" : "")>下架</option>
+            </select>
+            <input id="search" type="button" class="btn btn-primary" value="搜索" />
+        </div>
+        <a href="/stores/GoodsAddOrEdit?appId=@ViewBag.appId" class="btn btn-success" id="btnBatch_Pass">
+            <span class="glyphicon glyphicon-ok"></span>
+            添加商品
+        </a>
+        <a class="btn btn-success excportGoods" data-type="1">
+            导出选中商品
+        </a>
+        <a class="btn btn-success btnBatch_Sell" data-type="1">
+            批量上架
+        </a>
+        <a class="btn btn-danger btnBatch_Sell" data-type="0">
+            批量下架
+        </a>
+        <a href="javascript:;" class="btn btn-info SaveSort">
+            保存排序
+        </a>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th><input type="checkbox" class="checkbox-ickeck selectAll" id="ckbAll"><label for="ckbAll">全选</label></th>
+        <th>商品名称</th>
+        <th>是否多规格</th>
+        <th>价格</th>
+        <th>商品真实销量</th>
+        <th>剩余库存</th>
+        <th>总库存</th>
+        <th>商品类型</th>
+        <th>排序</th>
+        <th>发布时间</th>
+        <th>更新时间</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="3%"><input type="checkbox" data-id="@item.Id" id="ckbitem@(item.Id)" class="checkbox-ickeck checkId" value="@(item.Id)"><label for="ckbitem@(item.Id)">@(i++)</label> </td>
+                <td width="8%">@(item.GoodsName)</td>
+                <td width="8%">@(!string.IsNullOrEmpty(item.AttrDetail) ? "是" : "否")</td>
+                <td width="13%">@((item.Price * 0.01).ToString("0.00"))</td>
+                <td width="8%">@(item.salesCount_real)</td>
+                <td width="8%">@(item.Stock)</td>
+                <td width="8%">@(item.Inventory)</td>
+                <td width="8%">@(item.TypeStr)</td>
+                <td width="8%"><input type="text" class="form-control" value="@item.Sort" name="sortVal" dataid="@item.Id" style="width:100px;" title="整数,数字越大越靠前" /></td>
+                <td width="8%">@(item.CreateDate.ToString("yyyy-MM-dd HH:mm"))</td>
+                <td width="8%">@(item.UpdateDate.ToString("yyyy-MM-dd HH:mm"))</td>
+                <td width="4%">@(item.State == (int)ActiveState.通过 ? (item.IsSell == 1 ? "上架" : "下架") : (Enum.GetName(typeof(ActiveState), item.State)))</td>
+                <td width="12%">
+                    @if (item.IsSell == 1)
+                    {
+                        <a href="javascript:editIsSell(@item.Id,@item.StoreId,0);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                            下架商品
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/stores/GoodsAddOrEdit?appId=@(ViewBag.appId)&gid=@item.Id" class="btn  btn-primary btn-xs" style="margin-top:5px;">编辑</a>
+                        <a href="javascript:editIsSell(@item.Id,@item.StoreId,1);" class="btn btn-success btn-xs" style="margin-top:5px;">
+                            上架商品
+                        </a>
+                    }
+                    <a href="javascript:Delete(@item.Id,@(ViewBag.appId));" class="btn btn-danger btn-xs temp-btn-delete" style="margin-top:5px;">
+                        <span class="glyphicon glyphicon-remove"></span>
+                        删除
+                    </a>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+<script>
+    $(".btnBatch_Sell").on("click",function()
+    {
+        var type = $(this).data("type");
+        var titleText = "";
+        if(type == 1)
+        {
+            titleText = "上架";
+        }
+        else
+        {
+            titleText = "下架";
+        }
+
+        if(!confirm("确定批量"+ titleText + "这些商品吗?"))
+        {
+            return;
+        }
+
+        var goodIds = "";
+        $("#bcontent .checkId").each(function(i,x)
+        {
+            if($(x).is(':checked')) 
+            {
+                goodIds += $(x).data("id") + ",";
+            }
+        });
+        if(goodIds.length <= 0)
+        {
+            alert("未选择商品.");
+            return ;
+        }
+        var goodIdsSub = goodIds.substring(0,goodIds.length - 1);
+        $.ajax({
+            type: "post",
+            url: "/stores/BatchIsSellFoodGoods",
+            data: { type: type, storeGoodsIds: goodIdsSub },
+            success: function (data) {
+                alert(data.Msg);
+                if(data.Success)
+                {
+                    window.location.reload();
+                }
+            }
+        });
+
+    });
+    $(".excportGoods").on("click",function()
+    {
+        var type = $(this).data("type");
+        if(!confirm("确定导出选中的商品吗?"))
+        {
+            return;
+        }
+
+        var goodIds = "";
+        $("#bcontent .checkId").each(function(i,x)
+        {
+            if($(x).is(':checked')) 
+            {
+                goodIds += $(x).data("id") + ",";
+            }
+        });
+        if(goodIds.length <= 0)
+        {
+            alert("未选择商品.");
+            return ;
+        }
+        var goodIdsSub = goodIds.substring(0,goodIds.length - 1);
+        window.location.href = "/stores/GoodsList?appId=" + @ViewBag.appId + "&goodIdStr=" + goodIdsSub + "&export=true";
+
+    });
+    
+    $(function () {
+        $("#ckbAll").click(function () {
+            if (this.checked) {
+                $("#bcontent :checkbox").prop("checked", true);
+            } else {
+                $("#bcontent :checkbox").prop("checked", false);
+            }
+        });
+
+    });
+    // #region 搜索
+    $('#search').click(function () {
+        var goodsName = $('#goodsName').val();
+        var goodsType = $('#goodsType').val();
+        var isSell = $('#isSell').val();
+        
+        location.href = "/stores/GoodsList?appId=@ViewBag.appId&goodsName=" + goodsName
+            + "&goodsType=" + goodsType
+            + "&isSell=" + isSell;
+    });
+
+    function Delete(id, appid)
+    {
+        if (confirm("你确定要删除么?")) {
+            $.ajax({
+                type: "post",
+                url: "/stores/DeleteGoods",
+                data: { type: -1, id: id, appId: appid },
+                success: function (data) {
+                    if (data.Success)
+                        alert(data.Msg);
+                    else
+                        alert(data.Msg);
+
+
+                    window.location.reload();
+                }
+            })
+        }
+    }
+    //上下架商品
+    function editIsSell(id, storeid, type) {
+        var Title = "";
+        if (type == 1) {
+            Title = "上架";
+        }
+        else {
+            Title = "下架";
+        }
+        $.ajax({
+            type: "post",
+            url: "/stores/IsSellStoreGoods",
+            data: { type: type, id: id, appid: @(ViewBag.appId), storeid: storeid },
+            success: function (data) {
+                if (data.Success)
+                    alert(Title + "成功");
+                else
+                    alert(Title + "失败");
+                window.location.reload();
+            }
+        })
+    }
+</script>
+
+<script>
+    $(function(){
+        //保存排序
+        $(".SaveSort").click(function () {
+            var arr = new Array();
+            var isvalid = true;
+            $.each($('input[name="sortVal"]'), function (i, v) {
+                var sort = $(v).val();
+                if (!/^-?[0-9]\d*$/.test(sort)) {
+                    layer.msg("请输入0~9999999之间的数字");
+                    isvalid = false;
+                    return false;
+                }
+                if (sort < 0 || sort > 999999999) {
+                    layer.msg("请输入0~9999999之间的数字");
+                    isvalid = false;
+                    return false;
+                }
+                var obj = {
+                    Id:$(v).attr("dataid"),
+                    Sort: sort
+                }
+                arr.push(obj);
+            });
+
+
+            if (isvalid) {
+                if (arr.length <= 0) {
+                    layer.msg("没有数据");
+                    return;
+                }
+                var layerIndex = layer.load(2);
+                $.post("/stores/SaveGoodsSort", { list: arr, appId:@ViewBag.appId }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        layer.msg(data.msg, { anim: 0, time: 1000 }, function () {
+                            window.location.reload();
+                        });
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            }
+        })
+
+    });
+</script>

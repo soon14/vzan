@@ -1,0 +1,314 @@
+﻿@model EntGoodsOrder
+@{
+    //物流发货组件
+    ViewBag.Title = "物流发货";
+    Layout = "";
+}
+
+<head>
+    <link rel="stylesheet" href="/Content/assets/global/plugins/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="@WebSiteConfig.MiniappZyUrl/layui/css/layui.css?v=2" />
+    <script src="@WebSiteConfig.MiniappZyUrl/js/jquery.min.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layer/layer.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/js/vue.js"></script>
+    <script src="@WebSiteConfig.MiniappZyUrl/layui/layui.js"></script>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <div class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">商家配送<span class="layui-badge-dot" style="position: relative; top: -3px; left: 3px;"></span></label>
+                <div class="layui-input-block" style="padding:1rem;display:table-cell">
+                    <input type="checkbox" lay-filter="selfDelivery" lay-skin="switch" lay-text="是|否">
+                </div>
+            </div>
+            <div v-show="!selfDelivery">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物流公司<span class="layui-badge-dot" style="position: relative; top: -3px; left: 3px;"></span></label>
+                    <div class="layui-input-block">
+                        <select name="company" id="company" lay-filter="company" lay-search v-model="selectCompany" ref="selectCompany">
+                            <option v-for="company in deliveryCompanys" v-bind:value="company.Id">{{company.Title}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物流单号<span class="layui-badge-dot" style="position: relative; top: -3px; left: 3px;"></span></label>
+                    <div class="layui-input-block">
+                        <input v-model="deliveryNo" type="text" placeholder="请输入物流单号" class="form-control width300">
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">收货人<span class="layui-badge-dot" style="position: relative; top: -3px; left: 3px;"></span></label>
+                <div class="layui-input-block">
+                    <input v-model="contactName" value="@Model.AccepterName" id="contactName" name="address" placeholder="请输入收货人" class="form-control width300" />
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">联系方式<span class="layui-badge-dot" style="position: relative; top: -3px; left: 3px;"></span></label>
+                <div class="layui-input-block">
+                    <input v-model="contactTel" value="@Model.AccepterTelePhone" id="contactTel" name="address" placeholder="请输入联系方式" class="form-control width300">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">收货地址<span class="layui-badge-dot" style="position: relative; top: -3px; left: 3px;"></span></label>
+                <div class="layui-input-block">
+                    <textarea v-model="address" id="address" name="address" placeholder="请输入收货地址" class="layui-textarea">@Model.Address</textarea>
+                </div>
+            </div>
+
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+                    <textarea v-model="mark" name="desc" placeholder="选填" class="layui-textarea"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button @@click="update" class="layui-btn" lay-submit lay-filter="formDemo">立即提交</button>
+                    <button @@click="reset" type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal bs-example-modal-m" ref="companyLayer" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-m">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4>选择物流公司</h4>
+                    </div>
+                    <div class="modal-body text-center" style="height:300px;overflow-y:scroll;">
+                        <table class="layui-table" lay-even lay-skin="nob">
+                            <colgroup>
+                                <col width="150">
+                                <col width="200">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th style="width:10%"></th>
+                                    <th>名称</th>
+                                    <th>选中</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="company in deliveryCompanys">
+                                    <th></th>
+                                    <th>{{company.Title}}</th>
+                                    <th>
+                                        <div class="layui-form" style="padding:0">
+                                            @*<input type="checkbox" name="selectCompany" v-bind:value="company.Id" lay-skin="primary">*@
+                                            <input type="radio" name="company" v-model="selectCompany" v-bind:value="company.Id">
+                                        </div>
+                                    </th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button @@click="showCompanyLayer(false)" type="button" class="btn btn-default" data-dismiss="modal" id="closefabuinfo">关闭</button>
+                        <button @@click="update" type="button" class="btn btn-primary" data-dismiss="modal" id="closefabuinfo">确认</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+    $(function () {
+        var _layer=parent.layer;
+        function getUrlParam(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
+            var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+            if (r != null) return unescape(r[2]);
+            return null; //返回参数值
+        }
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                appId: getUrlParam("appid"),
+                newState: getUrlParam("newState"),
+                oldState: getUrlParam("oldState"),
+                isAjaxing: false,
+                selfDelivery: false,
+                deliveryCompanys: [],
+                selector:{},
+                orderId: getUrlParam("orderId"),
+                contactName: $('#contactName').val(),
+                contactTel: $('#contactTel').val(),
+                address: $('#address').val(),
+                selectCompany: '',
+                deliveryNo: '',
+                mark: ''
+            },
+            computed: {
+            },
+            methods: {
+                getDeliveryCompanys: function () {
+                    var thisVue = this;
+                    $.get('/Tools/GetDeliveryCompany', {
+                        appId: thisVue.appId
+                    }).then(function (result) {
+                        if (!result.isok) {
+                            layer.msg(result.Msg);
+                            return;
+                        }
+                        thisVue.deliveryCompanys = result.dataObj;
+                    });
+                },
+                renderLayUI: function () {
+                    var thisVue = this;
+                    layui.use(['form', 'element'], function () {
+                        var form = layui.form;
+                        form.on('select(company)', function (data) {
+                            thisVue.selectCompany = data.value;
+                            thisVue.selector = data;
+                        });
+                        form.on('switch(selfDelivery)', function (data) {
+                            thisVue.selfDelivery = data.elem.checked;
+                        });
+                    });
+                },
+                showCompanyLayer: function (display) {
+                    display ? $(this.$refs.companyLayer).fadeIn() : $(this.$refs.companyLayer).fadeOut();
+                },
+                checkInput: function () {
+                    var thisVue = this;
+                    if (!thisVue.contactName) {
+                        layer.msg('请填写收货人');
+                        return false;
+                    }
+                    if (!thisVue.contactTel) {
+                        layer.msg('请填写联系方式');
+                        return false;
+                    }
+                    if (!thisVue.address) {
+                        layer.msg('请填写收货地址');
+                        return false;
+                    }
+                    if (thisVue.selfDelivery) {
+                        return true;
+                    }
+                    if (!thisVue.selectCompany) {
+                        layer.msg('请选择物流公司');
+                        return false;
+                    }
+                    if (!thisVue.deliveryNo) {
+                        layer.msg('请填写物流单号');
+                        return false;
+                    }
+                    return true;
+                },
+                update: function () {
+                    var thisVue = this;
+                    if (!thisVue.checkInput()) {
+                        return;
+                    }
+                    if (thisVue.isAjaxing) {
+                        return;
+                    }
+                    thisVue.isAjaxing = true;
+                    var layIndex = layer.load(1);
+                    var selectDelvery = thisVue.deliveryCompanys.find(Company => Company.Id === Number(thisVue.selectCompany));
+                    selectDelvery = !!selectDelvery ? selectDelvery : {};
+                    var deliveryInfo = {
+                        ContactName: thisVue.contactName, ContactTel: thisVue.contactTel, CompanyCode: selectDelvery.Code, CompanyTitle: selectDelvery.Title, DeliveryNo: thisVue.deliveryNo, Address: thisVue.address,
+                        selfDelivery: thisVue.selfDelivery, Remark: thisVue.mark
+                    };
+                    var posturl = "/EnterprisePro/UpdteOrderState";
+                    switch(@ViewBag.OrderType)
+                    {
+                        case 54:posturl = "/PlatChild/Order/UpdteOrderState";break;
+                        case 56:posturl = "/Qiye/Order/UpdteOrderState";break;
+                    }
+                    if(@(ViewBag.DeliveryOrderType)>0){
+                        switch(@(ViewBag.DeliveryOrderType))
+                        {
+                            case @((int)DeliveryOrderType.专业版砍价发货):
+                              posturl="/tools/UpdateGiveGoods?appId="+thisVue.appId+"&buid="+Number(thisVue.orderId)+"&SendGoodsName="+deliveryInfo.CompanyTitle+"&WayBillNo="+deliveryInfo.DeliveryNo;
+                            break;
+                        }
+                    }
+                    $.post(posturl, {
+                        orderId: Number(thisVue.orderId),
+                        state: Number(thisVue.newState),
+                        oldState: Number(thisVue.oldState),
+                        attachData: JSON.stringify(deliveryInfo),
+                        aid:thisVue.appId,
+
+                    }).then(function (result) {
+                        switch(@ViewBag.OrderType)
+                        {
+                            case 54:
+                            case 56:
+                                if (!result.isok) {
+                                    layer.msg(result.Msg);
+                                        layer.close(layIndex);
+                                        thisVue.isAjaxing = false;
+                                        return;
+                                }
+                                else{
+                                    layer.msg('发货成功');
+                                    window.setTimeout(function () {
+                                        $(parent.window.document.getElementsByClassName("J_iframe")[0]).context.contentDocument.location.reload();
+                                        _layer.closeAll();
+                                    }, 2000);
+                                    return;
+                                }
+                            default:
+                                if("code" in result){
+                                    layer.msg(result.msg);
+                                    window.parent.setTimeout(function () {
+                                        window.parent.location.href = window.parent.location.href.replace('#', '');
+                                        window.parent.layer.closeAll();
+                                    }, 1000);
+                                    return;
+                                }else{
+                                    layer.msg('发货成功');
+                                    window.parent.setTimeout(function () {
+                                        window.parent.location.href = window.parent.location.href.replace('#', '');
+                                        window.parent.layer.closeAll();
+                                    }, 1000);
+                                    return;
+                                }
+                        }
+                    });
+                },
+                reset: function () {
+                    var thisVue = this;
+                    thisVue.contactName = '';
+                    thisVue.contactTel = '';
+                    thisVue.address = '';
+                    thisVue.deliveryNo = '';
+                    thisVue.selectCompany = '';
+                    thisVue.mark = '';
+                    setTimeout(function () { $('.layui-select-title').find('input').val(''); }, 1);
+                }
+            },
+            created: function () {
+                var thisApp = this;
+                thisApp.getDeliveryCompanys();
+            },
+            updated: function () {
+                app.$nextTick(function () {
+                    app.renderLayUI();
+                })
+            }
+        })
+    });
+
+</script>
+
+<style>
+    .layui-form-switch { width: 57px; margin-top: 0px; }
+
+    .layui-form { padding: 3rem; }
+
+    .layui-form-label { width: auto; }
+
+    .companyBtn { padding-left: 0; color: rgb(63, 164, 237); cursor: pointer; }
+
+    .layui-form-radio span { display: none !important; }
+</style>

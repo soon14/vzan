@@ -1,0 +1,411 @@
+﻿@using Entity.MiniApp.Footbath
+@{
+    ViewBag.Title = "排班表";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.PageType = 25;//25是小程序足浴版，用于母版页的左侧菜单区分
+}
+@model SwitchModel
+<style>
+    .btn-primary, .btn-primary:active, .btn-primary:focus { background-color: #2196f3; border-color: #2196f3; }
+    .btn-primary:hover, .btn-primary:active:hover { background-color: #337ab7; border-color: #337ab7; }
+    .tr { width: 100px; }
+    .OpenTimeDiv .form-control { width: 120px; }
+    .layui-table th, .layui-table td { text-align: center; }
+    .layui-table { max-width: 1200px; }
+
+    /*班次颜色*/
+    .morning { background: #1E9FFF; color: #fff; padding: 3px 9px; border-radius: 4px; margin: 2px auto; font-size: 12px; display: block; width: 50px; }
+    .noon { background: #009688; color: #fff; padding: 3px 9px; border-radius: 4px; margin: 2px auto; font-size: 12px; display: block; width: 50px; }
+    .evening { background: #393D49; color: #fff; padding: 3px 9px; border-radius: 4px; margin: 2px auto; font-size: 12px; display: block; width: 50px; }
+    .unknow { background: #c2c2c2; color: #fff; padding: 3px 9px; border-radius: 4px; margin: 2px auto; font-size: 12px; display: block; width: 54px; }
+</style>
+<div id="app" v-cloak>
+    <table>
+        <tr>
+            <td class="tr">早班时间：</td>
+            <td>
+                <div class="OpenTimeDiv" style="margin-bottom:5px">
+                    <input type="text" readonly="readonly" class="form-control" id="morningTime" value="" />
+                </div>
+            </td>
+            <td class="tr">中班时间：</td>
+            <td>
+                <div class="OpenTimeDiv" style="margin-bottom:5px">
+                    <input type="text" readonly="readonly" class="form-control" id="noonTime" value="" />
+                </div>
+            </td>
+            <td class="tr">晚班时间：</td>
+            <td>
+                <div class="OpenTimeDiv" style="margin-bottom:5px">
+                    <input type="text" readonly="readonly" class="form-control" id="eveningTime" value="" />
+                </div>
+            </td>
+            <td class="tr">
+                <button type="button" class="btn btn-primary" v-on:click="saveWorkTime()">保存</button>
+            </td>
+        </tr>
+    </table>
+    <table style="margin-top:30px;">
+        <tr>
+            <td class="tr">技师工号：</td>
+            <td>
+                <input type="text" class="form-control" style="width:120px;" v-model="searchData.jobNumber" />
+            </td>
+            <td class="tr">单双周：</td>
+            <td>
+                <select class="form-control" v-model="searchData.daytype">
+                    <option value="-1">全部</option>
+                    <option value="0">单周</option>
+                    <option value="1">双周</option>
+                </select>
+            </td>
+            <td class="tr">工作状态：</td>
+            <td>
+                <select class="form-control" v-model="searchData.workType">
+                    <option value="-1">全部</option>
+                    <option value="0">空闲</option>
+                    <option value="1">上钟</option>
+                    @*<option value="2">将下钟</option>*@
+                    <option value="3">休息中</option>
+                </select>
+            </td>
+            <td class="tr">
+                <button type="button" class="btn btn-primary" v-on:click="searchList()">查询</button>
+            </td>
+        </tr>
+    </table>
+    <div style="margin-top: 10px; margin-left: 10px;">
+        本周:@((bool)ViewBag.week?"单周":"双周")
+    </div>
+    <table class="layui-table" lay-skin="line">
+        <thead>
+            <tr>
+                <th width="100">工号</th>
+                <th width="80">单双周</th>
+                <th>周一</th>
+                <th>周二</th>
+                <th>周三</th>
+                <th>周四</th>
+                <th>周五</th>
+                <th>周六</th>
+                <th>周日</th>
+                <th width="100">操作</th>
+            </tr>
+        </thead>
+        <tr v-for="(rotaInfo,index) in rotaList">
+            <td>{{rotaInfo.tname}}</td>
+            <td>{{rotaInfo.dayType==0?"单周":"双周"}}</td>
+            <!--周一-->
+            <td>
+
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="monday" v-model="rotaData.mondayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="monday" v-model="rotaData.mondayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="monday" v-model="rotaData.mondayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="!rotaInfo.mondayState.morning && !rotaInfo.mondayState.noon && !rotaInfo.mondayState.evening" class="unknow">未排班</span>
+                    <span v-if="rotaInfo.mondayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.mondayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.mondayState.evening" class="evening">晚班</span>
+                </div>
+            </td>
+            <!--周二-->
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="tuesday" v-model="rotaData.tuesdayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="tuesday" v-model="rotaData.tuesdayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="tuesday" v-model="rotaData.tuesdayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="!rotaInfo.tuesdayState.morning && !rotaInfo.tuesdayState.noon&&!rotaInfo.tuesdayState.evening"  class="unknow">未排班</span>
+                    <span v-if="rotaInfo.tuesdayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.tuesdayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.tuesdayState.evening" class="evening">晚班</span>
+                </div>
+            </td>
+            <!--周三-->
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="wensday" v-model="rotaData.wensdayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="wensday" v-model="rotaData.wensdayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="wensday" v-model="rotaData.wensdayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="!rotaInfo.wensdayState.morning&&!rotaInfo.wensdayState.noon&&!rotaInfo.wensdayState.evening" class="unknow">未排班</span>
+                    <span v-if="rotaInfo.wensdayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.wensdayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.wensdayState.evening" class="evening">晚班</span>
+                </div>
+            </td>
+            <!--周四-->
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="thursday" v-model="rotaData.thursdayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="thursday" v-model="rotaData.thursdayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="thursday" v-model="rotaData.thursdayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="!rotaInfo.thursdayState.morning&&!rotaInfo.thursdayState.noon&&!rotaInfo.thursdayState.evening" class="unknow">未排班</span>
+                    <span v-if="rotaInfo.thursdayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.thursdayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.thursdayState.evening" class="evening">晚班</span>
+                </div>
+            </td>
+            <!--周五-->
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="friday" v-model="rotaData.fridayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="friday" v-model="rotaData.fridayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="friday" v-model="rotaData.fridayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="!rotaInfo.fridayState.morning&&!rotaInfo.fridayState.noon&&!rotaInfo.fridayState.evening" class="unknow">未排班</span>
+                    <span v-if="rotaInfo.fridayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.fridayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.fridayState.evening" class="evening">晚班</span>
+                </div>
+            </td>
+            <!--周六-->
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="saturday" v-model="rotaData.saturdayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="saturday" v-model="rotaData.saturdayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="saturday" v-model="rotaData.saturdayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="rotaInfo.saturdayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.saturdayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.saturdayState.evening" class="evening">晚班</span>
+                    <span v-if="!rotaInfo.saturdayState.morning&&!rotaInfo.saturdayState.noon&&!rotaInfo.saturdayState.evening" class="unknow">未排班</span>
+
+                </div>
+            </td>
+            <!--周日-->
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <label><input type="checkbox" name="sunday" v-model="rotaData.sundayState.morning" />早班</label><br />
+                    <label><input type="checkbox" name="sunday" v-model="rotaData.sundayState.noon" />中班</label><br />
+                    <label><input type="checkbox" name="sunday" v-model="rotaData.sundayState.evening" />晚班</label>
+                </div>
+                <div v-else>
+                    <span v-if="!rotaInfo.sundayState.morning&&!rotaInfo.sundayState.noon&&!rotaInfo.sundayState.evening" class="unknow">未排班</span>
+                    <span v-if="rotaInfo.sundayState.morning" class="morning">早班</span>
+                    <span v-if="rotaInfo.sundayState.noon" class="noon">中班</span>
+                    <span v-if="rotaInfo.sundayState.evening" class="evening">晚班</span>
+                </div>
+            </td>
+            <td>
+                <div v-if="isEdit&&selectIndex==index">
+                    <a href="javascript:;" class="editbtn" v-on:click="SaveState()">保存</a>
+                    <a href="javascript:;" class="editbtn" v-on:click="EidtState(index,false)">取消</a>
+                </div>
+                <a href="javascript:;" class="editbtn" v-on:click="EidtState(index,true)" v-else>修改</a>
+            </td>
+        </tr>
+        <tr v-if="recordCount<=0">
+            <td colspan="12">还没有技师</td>
+        </tr>
+    </table>
+    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="recordCount>searchData.pageSize"></div>
+</div>
+
+<script>
+    var form, laydate;
+    var defData = {
+        appId:@ViewBag.appId,
+        pageIndex: 1,
+        pageSize: 10,
+        jobNumber: '',
+        daytype: -1,
+        workType: -1,
+    }
+    var app = new Vue({
+        el: "#app",
+        data: {
+            appid:@ViewBag.appId,
+            rotaList:[],
+            workTime:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            recordCount: 0,
+            selectIndex: 0,
+            isEdit:false,
+            searchData: {
+                appId:@ViewBag.appId,
+                pageIndex: 1,
+                pageSize: 10,
+                jobNumber: '',
+                daytype: -1,
+                workType:-1,
+            },
+            rotaData: {
+                mondayState: {
+                    morning: true,
+                    noon: false,
+                    evening: false
+                },
+                tuesdayState: {
+                    morning: false,
+                    noon: false,
+                    evening: false
+                },
+                wensdayState: {
+                    morning: false,
+                    noon: false,
+                    evening: false
+                },
+                thursdayState: {
+                    morning: false,
+                    noon: false,
+                    evening: false
+                },
+                fridayState: {
+                    morning: false,
+                    noon: false,
+                    evening: false
+                },
+                saturdayState: {
+                    morning: false,
+                    noon: false,
+                    evening: false
+                },
+                sundayState: {
+                    morning: false,
+                    noon: false,
+                    evening: false
+                }
+
+            }
+        },
+        methods: {
+            //初始化日期控件
+            InitLayer: function () {
+                layui.use('laydate', function () {
+                    //时间选择器
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#morningTime', //指定元素
+                        type: 'time',
+                        theme: 'grid',
+                        format: 'HH:mm',
+                        value: app.workTime.morningShift,
+                        range: true,
+                        done: function (value, date, endDate) {
+                            console.log(value);
+                            app.workTime.morningShift = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#noonTime', //指定元素
+                        type: 'time',
+                        theme: 'grid',
+                        format: 'HH:mm',
+                        value: app.workTime.noonShift,
+                        range: true,
+                        done: function (value, date, endDate) {
+                            console.log(value);
+                            app.workTime.noonShift = value;
+                        }
+                    });
+                    laydate.render({
+                        elem: '#eveningTime', //指定元素
+                        type: 'time',
+                        theme: 'grid',
+                        format: 'HH:mm',
+                        value: app.workTime.eveningShift,
+                        range: true,
+                        done: function (value, date, endDate) {
+                            console.log(value);
+                            app.workTime.eveningShift = value;
+                        }
+                    });
+                });
+            },
+            //保存值班时间
+            saveWorkTime: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/saveWorkTime?appId=" + this.appid, this.workTime, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg)
+                })
+            },
+            //获取列表数据
+            GetList: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/GetRotaList", this.searchData, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        app.rotaList = data.list;
+                        app.recordCount = data.recordCount;
+                        app.resetPage();
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            //分页器
+            resetPage: function () {
+                layui.use(['laypage', 'element'], function () {
+                    element = layui.element;
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.searchData.pageIndex //当前页
+                        , limit: app.searchData.pageSize
+                        , jump: function (obj, first) {
+                            app.searchData.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.searchData.pageIndex = obj.curr;
+                                app.GetList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                    laypage.render({
+                        elem: 'service-pages'
+                        , count: app.recordCount //数据总数，从服务端得到
+                        , curr: app.searchData.pageIndex //当前页
+                        , limit: app.searchData.pageSize
+                        , jump: function (obj, first) {
+                            app.searchData.pageIndex = obj.curr;
+                            //首次执行
+                            if (!first) {
+                                app.GetServiceList();
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            EidtState: function (index,state) {
+                $.extend(true, this.rotaData, this.rotaList[index]);
+                this.isEdit = state;
+                this.selectIndex = index;
+            },
+            SaveState: function () {
+                var layerIndex = layer.load(2);
+                $.post("/footbath/SaveRotaInfo", this.rotaData, function (data) {
+                    layer.close(layerIndex);
+                    //layer.msg(data.msg)
+                    if (data.isok) {
+                        $.extend(true, app.rotaList[app.selectIndex], app.rotaData);
+                        app.isEdit = false;
+                    }
+                })
+            },
+            searchList: function () {
+                this.searchData.pageIndex = 1;
+                this.GetList();
+            }
+
+        },
+        created: function(){
+            this.InitLayer();
+            this.GetList();
+        }
+    })
+</script>
+

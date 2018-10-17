@@ -1,0 +1,906 @@
+﻿
+@model ViewModel<EntGoodType>
+@{
+    string dirName = "enterprise";
+    if (Model.PageType == 22)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.Title = "产品分类";
+    ViewBag.PageType = Model.PageType;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int productTypeSwtich = ViewBag.productTypeSwtich;
+}
+
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        @{
+            if (Model.PageType == 22)
+            {
+                <div class="alert alert-warning alert-dismissible" role="alert">
+
+                    <p style="outline: none;display:inline;">分类配置：当前为@(Model.SecondTypeSwitch > 0 ? "二" : "一")级分类模式</p>
+                    <div id="u256" class="ax_default icon" style="cursor: pointer;display:inline;margin-left:10px;" v-on:click="showTip()">
+                        <img id="u256_img" class="img " src="~/Content/u256.png" tabindex="0" style="outline: none;">
+                    </div>
+                    @{
+                        if (Model.SecondTypeSwitch == 0)
+                        {
+                            <p style="cursor:pointer;display:inline;float:right;" v-on:click="openSecondType()"><span class="btn btn-danger btn-xs">启用二级分类模式</span></p>
+                        }
+                    }
+
+
+                </div>
+
+                <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+                    <ul class="layui-tab-title">
+                        <li v-bind:class="[@Model.TypeIndex==0?errorClassTab:activeClassTab]" v-on:click="TabType(-1)">小类管理</li>
+                        @{
+                            if (Model.SecondTypeSwitch > 0)
+                            {
+                                <li v-bind:class="[@Model.TypeIndex==0?activeClassTab:errorClassTab]" v-on:click="TabType(0)">大类管理</li>
+                            }
+                        }
+
+
+                    </ul>
+                    <div class="layui-tab-content">
+                        <div v-bind:class="[@Model.TypeIndex==0?errorClassContent:activeClassContent]">
+                            <div class="mt10">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th width="150" align="center">ID</th>
+                                            <th>分类图片</th>
+                                            <th>分类名称</th>
+                                            @{
+                                                if (Model.SecondTypeSwitch > 0)
+                                                {
+                                            <th>所属大类</th>
+                                                }
+                                            }
+
+                                            <th width="200">排序</th>
+                                            <th width="200">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(item,index) in list">
+                                            <td align="center">{{item.id}}</td>
+                                            <td class="centertext">
+                                                <div class="msgTypeImg">
+                                                    <img v-bind:src="item.Img" alt="请先上传图片" width="50" height="50" />
+                                                </div>
+                                            </td>
+                                          
+                                            <td>{{item.name}}</td>
+                                            @{
+                                                if (Model.SecondTypeSwitch > 0)
+                                                {
+                                            <td>{{item.parentName}}</td>
+                                                }
+                                            }
+
+                                            <td v-on:click.stop="showeditsort(index,0)">
+                                                <div v-show="!item.sel">{{item.sort}}</div>
+                                                <div v-show="item.sel">
+                                                    <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.editsort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" />
+                                                    <a v-on:click="savesort(index)" class="btn btn-primary btn-xs">保存</a>
+                                                    <a v-on:click.stop="showeditsort(index,-1)" class="btn btn-danger btn-xs">关闭</a>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <a v-on:click="del(index)" class="btn btn-danger btn-xs"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                                                <a v-on:click="edit(index)" class="btn btn-primary  btn-xs"> 编辑 </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+
+                                </table>
+                            </div>
+
+                        </div>
+                        @{
+                            if (Model.SecondTypeSwitch > 0)
+                            {
+                        <div v-bind:class="[@Model.TypeIndex==0?activeClassContent:errorClassContent]">
+                            <div class="mt10">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th  width="150" align="center">ID</th>
+                                            <th>分类名称</th>
+                                            <th width="200">排序</th>
+                                            <th width="200">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(item,index) in list">
+                                            <td align="center">{{item.id}}</td>
+                                            <td>{{item.name}}</td>
+                                           
+                                            <td v-on:click.stop="showeditsort(index,0)">
+                                                <div v-show="!item.sel">{{item.sort}}</div>
+                                                <div v-show="item.sel">
+                                                    <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.editsort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" />
+                                                    <a v-on:click="savesort(index)" class="btn btn-primary btn-xs">保存</a>
+                                                    <a v-on:click.stop="showeditsort(index,-1)" class="btn btn-danger btn-xs">关闭</a>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <a v-on:click="del(index)" class="btn btn-danger btn-xs"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                                                <a v-on:click="edit(index)" class="btn btn-primary  btn-xs"> 编辑 </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+
+                                </table>
+                            </div>
+                        </div>
+
+                            }
+                        }
+
+                    </div>
+                </div>
+                            }
+                            else
+                            {
+
+                                <div class="alert alert-warning alert-dismissible" role="alert">
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <p>提示：</p>
+                                    <p>1、分类名称不能超过5个字，且不能重复</p>
+                                    <p>2、分类总数不能超过50个</p>
+                                    <p>3、产品分类若已关联了至少一个产品，则该分类不可删除</p>
+                                </div>
+                                <div class="mt10">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th width="100" align="center">ID</th>
+                                                <th>分类名称</th>
+                                                <th width="200">排序</th>
+                                                <th width="200">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item,index) in list">
+                                                <td align="center">{{item.id}}</td>
+                                                <td>{{item.name}}</td>
+                                                <td v-on:click.stop="showeditsort(index,0)">
+                                                    <div v-show="!item.sel">{{item.sort}}</div>
+                                                    <div v-show="item.sel">
+                                                        <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.editsort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" />
+                                                        <a v-on:click="savesort(index)" class="btn btn-primary btn-xs">保存</a>
+                                                        <a v-on:click.stop="showeditsort(index,-1)" class="btn btn-danger btn-xs">关闭</a>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <a v-on:click="del(index)" class="btn btn-danger btn-xs"> 删除 </a>&nbsp;&nbsp;&nbsp;
+                                                    <a v-on:click="edit(index)" class="btn btn-primary  btn-xs"> 编辑 </a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+
+                                    </table>
+                                </div>
+
+
+                            }
+        }
+
+
+
+        <div>
+            @{
+                if (Model.PageType == 22 && productTypeSwtich == 1)
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" disabled="disabled" title="请升级更高版本">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增分类
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" v-on:click="addNew">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        新增分类
+                    </button>
+                }
+            }
+
+            <button class="btn btn-success" v-on:click="savesort(-1)">
+                批量改排序
+            </button>
+        </div>
+    </div>
+
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        产品分类
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        @{
+                            if (Model.PageType == 22 && Model.TypeIndex == -1 && Model.SecondTypeSwitch > 0)
+                            {
+                        <tr>
+                            <td><span>所属大类：</span>
+                                <select style="display:inline-block;width:auto;" class="form-control" v-model="edititem.parentId">
+                                    <option value="-2">请选择</option>
+                                    @{
+
+                                        foreach (EntGoodType item in Model.FirstDataList)
+                                        {
+                                            <option value="@item.id">@item.name</option>
+                                        }
+                                    }
+
+                                </select>
+
+                            </td>
+                            
+                        </tr>
+
+   
+                                                }
+                        }
+
+                        <tr>
+                            <td><span>分类名称：</span><input maxlength="10" placeholder="分类名称" id="nameVal" v-model="edititem.name" type="text" class="form-control" style="display:inline-block!important;width:auto;"></td>
+                         
+                        </tr>
+
+                        @{
+                            if (Model.PageType == 22 && Model.TypeIndex == -1)
+                            {
+                                <tr>
+                                    <td>
+                                        <div style="margin-top:5px;">
+                                            <span>分类图片(建议150px*150px)：<span style="color:red;">*</span></span><img v-if="edititem.Img==''" style="margin-left:5px;width:55px;height:55px;" src="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180308/97259ef92d7c45c3af657077e734f186.png" /><img v-bind:src="edititem.Img" v-else style="width:55px;height:55px;margin-left:5px;" />
+                                            <a href="#" class="btn btn-info ml10" v-on:click="UploadImg()">上传图片</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+
+
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="save()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- #endregion -->
+
+
+</div>
+<script>
+
+    layui.use('element', function () {
+        var $ = layui.jquery
+        , element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+    });
+
+    var item = {
+        id:0,
+        name: "",
+        aid:@Utility.IO.Context.GetRequestInt("appId",0),
+        state:1,
+        parentId:@Model.TypeIndex,
+        isIniti:0,
+        Img:""
+    };
+    var pg = JSON.parse(@Html.Raw(JsonConvert.SerializeObject(Model.pageSetting)));
+    var app = new Vue({
+        el: "#app",
+        data: {
+            activeClassTab: 'tab_element layui-this',
+            errorClassTab: 'tab_element',
+            activeClassContent: 'layui-tab-item layui-show',
+            errorClassContent: 'layui-tab-item',
+            edititem:JSON.parse(JSON.stringify(item)),
+            editid:0,
+            list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+            pages:pg,
+            curMaterialPath:""
+        }, watch:{
+            curMaterialPath:function(){
+                var that=this;
+                that.edititem.Img=that.curMaterialPath;
+            }
+        },
+        coumputed:{
+            totalcount:function(){
+                return this.list.length;
+            }
+        },
+        mounted: function () {
+            console.log("mounted");
+        },
+        methods: {
+            UploadImg: function () {
+                var that=this;
+                var framSrc="/tools/UpLoadImgFrm?Id=@appid&appId=@appid&multi_selection=0&maxImgSize=1&objKey=curMaterialPath&objType=1&remainCount=1&imgWidth=150&imgHeight=150";
+                $("#uploadFrame").attr("src",framSrc);
+                $("#addModal_UploadImg").modal('show');
+
+            },
+            showTip:function(){
+                layer.open({
+                    content: '分类说明：<br>1、分类名称不能超过5个字，且不能重复；<br>2、分类总数不能超过50个；<br>3、产品分类若已关联了至少一个产品，则该分类不可删除；<br>4、启动二级分类模式后，不可退回一级分类模式；<br>5、刚启动二级分类时，原已录入的分类自动成为小类，并默认绑定到第一个大类名下，管理员需尽快编辑绑定到正确的大类名下；<br>6、二级大类总数不能超过20个；<br>7、加一个开启二级分类之后，大类若已关联至少一个小类，则该大类不可删除；'
+                   ,btn: ['返回']
+
+                });
+            },
+            TabType:function(typeIndex){
+                window.location.href="/enterprisepro/ptype?appId=@appid&typeIndex="+typeIndex;
+            },
+            openSecondType:function(){
+                var that=this;
+                layer.open({
+                    content: '注意：开通二级分类模式后，将不能再撤回到一级分类模式，请确认。'
+                    ,btn: ['确认', '取消']
+                    ,yes: function(index, layero){
+                        that.edititem.name="热门推荐";
+                        that.edititem.isIniti=-1;
+                        that.edititem.parentId=0;
+                        that.edititem.id=0;
+                        that.edititem.Img="http://vzan-img.oss-cn-hangzhou.aliyuncs.com/upload/img/20180308/97259ef92d7c45c3af657077e734f186.png";
+                        that.save();
+                    }
+                    ,btn2: function(index, layero){
+
+                        // layer.msg("点击取消");
+                    }
+
+                });
+            },
+
+            addNew: function () {
+                var that=this;
+                that.edititem=item;//新增初始化
+                if(that.list.length>=100&&@Model.TypeIndex==-1&&@Model.PageType == 22){
+                    layer.alert("无法新增分类！您已添加了100个产品分类，已达到上限，请编辑已有的分类或删除部分分类后再进行新增。");
+                    return;
+                }
+                if(that.list.length>=30&&@Model.TypeIndex==0){
+                    layer.alert("无法新增一级分类！您已添加了30个一级分类，已达到上限，请编辑已有的分类或删除部分分类后再进行新增。");
+                    return;
+                }
+                if(@Model.TypeIndex==-1&&@Model.SecondTypeSwitch > 0&&@Model.PageType == 22){
+                    that.edititem.parentId=-2;
+                }
+                that.curMaterialPath="";
+                that.edititem.name="";
+                $('#addModal').modal('show');
+                that.editid = 0;
+            },
+            save: function () {
+                var that=this;
+                if(that.edititem.parentId==-2&&@Model.PageType == 22){
+                    layer.msg("请先选择所属分类",{time:1000});
+                    return;
+                }
+                //TODO 上线测试完后再恢复
+                if(@Model.PageType == 22&&that.edititem.parentId>0&&(that.edititem.Img==undefined||that.edititem.Img=="")){
+                    layer.msg("请上传类别图片",{time:1000});
+                    return;
+                }
+
+                var _typename=$.trim(that.edititem.name);
+                if(_typename.length==0||_typename.length>5){
+                    layer.msg("分类名称不能为空，且不能超过5个字",{time:1000});
+                    return;
+                }
+
+                $.post("/@(dirName)/ptype", $.extend(that.edititem,{appId:item.aid}),function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+                            $('#addModal').modal('hide');
+                            if(that.edititem.isIniti!=0&&that.edititem.isIniti!=undefined&&@Model.PageType == 22){
+                                //同步归类小程序编辑页里的产品列表类别归属为默认分类
+                                var index;
+                                var isUpdatePage=0;
+                                if(that.pages!=null&&that.pages.length>0){
+                                    for(var i=0;i<that.pages.length;i++){
+                                        if(that.pages[i].coms!=null&&that.pages[i].coms.length>0){
+                                            index= that.pages[i].coms.findIndex(x=>x.type=="goodlist");//一个页面只有一个产品列表组件
+                                            if(index>-1){
+                                                that.pages[i].coms[index].goodCat=[];
+                                                that.pages[i].coms[index].goodCat.push(data.msg);
+                                                isUpdatePage=1;
+                                            }
+
+                                            console.log(index);
+
+                                            for(var k=0;k<that.pages[i].coms.length;k++){
+                                                if(that.pages[i].coms[k].type=="img"&&that.pages[i].coms[k].urltype==4)
+                                                {
+                                                    //图片组件里的跳转到分类  一张图片一个跳转
+
+
+                                                    that.pages[i].coms[k].itemstype=[{id:data.msg.id,name:data.msg.name}];
+                                                    isUpdatePage=1;
+
+                                                }
+
+                                                if(that.pages[i].coms[k].type=="imgnav")
+                                                {
+                                                    //图片导航里的跳转到分类
+                                                    if(that.pages[i].coms[k].navlist!=null&&that.pages[i].coms[k].navlist.length>0){
+                                                        for(var j=0;j<that.pages[i].coms[k].navlist.length;j++){
+                                                            if(that.pages[i].coms[k].navlist[j].urltype==4)
+                                                            {
+                                                                //图片组件里的跳转到分类
+
+                                                                that.pages[i].coms[k].navlist[j].itemstype=[{id:data.msg.id,name:data.msg.name}];
+                                                                isUpdatePage=1;
+                                                            }
+
+
+                                                        }
+
+                                                    }
+
+
+                                                }
+
+
+                                                if(that.pages[i].coms[k].type=="slider")
+                                                {
+                                                    //轮播图里的跳转到分类
+                                                    if(that.pages[i].coms[k].items!=null&&that.pages[i].coms[k].items.length>0){
+                                                        for(var j=0;j<that.pages[i].coms[k].items.length;j++){
+                                                            if(that.pages[i].coms[k].items[j].urltype==4)
+                                                            {
+                                                                //轮播图组件里的跳转到分类
+
+                                                                that.pages[i].coms[k].items[j].itemstype=[{id:data.msg.id,name:data.msg.name}];
+                                                                isUpdatePage=1;
+                                                            }
+
+
+                                                        }
+
+                                                    }
+
+
+                                                }
+
+
+                                                if(that.pages[i].coms[k].type=="magicCube")
+                                                {
+                                                    //图片魔方组件里的跳转到分类
+                                                    if(that.pages[i].coms[k].items!=null&&that.pages[i].coms[k].items.length>0){
+                                                        for(var j=0;j<that.pages[i].coms[k].items.length;j++){
+                                                            if(that.pages[i].coms[k].items[j].urltype==4)
+                                                            {
+                                                                //图片魔方组件里的跳转到分类
+
+                                                                that.pages[i].coms[k].items[j].itemstype=[{id:data.msg.id,name:data.msg.name}];
+                                                                isUpdatePage=1;
+                                                            }
+
+
+                                                        }
+
+                                                    }
+
+
+                                                }
+
+
+                                                if(that.pages[i].coms[k].type=="bottomnav")
+                                                {
+                                                    //底部导航里的跳转到分类
+                                                    if(that.pages[i].coms[k].navlist!=null&&that.pages[i].coms[k].navlist.length>0){
+                                                        for(var j=0;j<that.pages[i].coms[k].navlist.length;j++){
+                                                            if(that.pages[i].coms[k].navlist[j].urltype==4)
+                                                            {
+                                                                //底部导航组件里的跳转到分类
+
+                                                                that.pages[i].coms[k].navlist[j].itemstype=[{id:data.msg.id,name:data.msg.name}];
+                                                                isUpdatePage=1;
+                                                            }
+
+
+                                                        }
+
+                                                    }
+
+
+                                                }
+
+
+
+
+                                            }
+
+
+
+
+
+
+
+                                        }
+                                    }
+
+                                    if(isUpdatePage>0){
+                                        $.post("/MiappEnterprise/pageset", { appId:item.aid,act: "save", pages: JSON.stringify(that.pages)}, null, "json")
+                                           .then(function (data) {
+                                               console.log("归类成功");
+                                           })
+                                            .fail(function (data) {
+                                                console.log("归类失败"+data.msg);
+                                            });
+
+                                    }
+
+
+                                }
+
+                            }
+
+                            if(that.pages!=null&&that.pages.length>0&&@Model.PageType == 22){
+                                var goodListIndex,curChangTypeIndex;
+                                var isUpdatePage=0;
+                                //当分类修改后同步小程序编辑页里的产品列表类别
+                                for(var i=0;i<that.pages.length;i++){
+                                    if(that.pages[i].coms!=null&&that.pages[i].coms.length>0){
+                                        goodListIndex= that.pages[i].coms.findIndex(x=>x.type=="goodlist");//一个页面只有一个产品列表组件
+                                        if(goodListIndex>-1){
+
+                                            curChangTypeIndex=that.pages[i].coms[goodListIndex].goodCat.findIndex(x=>x.id==data.msg.id);//寻找当前修改的类别从pagesetting里
+                                            if(curChangTypeIndex>-1){
+                                                //表示找到了需要修改的 再进行更新
+                                                that.pages[i].coms[goodListIndex].goodCat[curChangTypeIndex]=data.msg;
+                                                isUpdatePage=1;
+                                            }
+
+
+                                        }
+
+                                        console.log(index);
+
+                                        for(var k=0;k<that.pages[i].coms.length;k++){
+                                            if(that.pages[i].coms[k].type=="img"&&that.pages[i].coms[k].urltype==4)
+                                            {
+                                                //图片组件里的跳转到分类  一张图片一个跳转
+
+
+                                                that.pages[i].coms[k].itemstype=[{id:data.msg.id,name:data.msg.name}];
+                                                isUpdatePage=1;
+
+                                            }
+
+                                            if(that.pages[i].coms[k].type=="imgnav")
+                                            {
+                                                //图片导航里的跳转到分类
+                                                if(that.pages[i].coms[k].navlist!=null&&that.pages[i].coms[k].navlist.length>0){
+                                                    for(var j=0;j<that.pages[i].coms[k].navlist.length;j++){
+                                                        if(that.pages[i].coms[k].navlist[j].urltype==4&&that.pages[i].coms[k].navlist[j].itemstype!=null)
+                                                        {
+                                                            //图片组件里的跳转到分类
+
+                                                            curChangTypeIndex=that.pages[i].coms[k].navlist[j].itemstype.findIndex(x=>x.id==data.msg.id);//寻找当前修改的类别从pagesetting里
+                                                            if(curChangTypeIndex>-1){
+                                                                //表示找到了需要修改的 再进行更新
+                                                                that.pages[i].coms[k].navlist[j].itemstype[curChangTypeIndex]={id:data.msg.id,name:data.msg.name};
+                                                                isUpdatePage=1;
+                                                            }
+
+                                                        }
+
+
+                                                    }
+
+                                                }
+
+
+                                            }
+
+
+                                            if(that.pages[i].coms[k].type=="slider")
+                                            {
+                                                //轮播图里的跳转到分类
+                                                if(that.pages[i].coms[k].items!=null&&that.pages[i].coms[k].items.length>0){
+                                                    for(var j=0;j<that.pages[i].coms[k].items.length;j++){
+                                                        if(that.pages[i].coms[k].items[j].urltype==4)
+                                                        {
+                                                            //轮播图组件里的跳转到分类
+
+                                                            curChangTypeIndex=that.pages[i].coms[k].items[j].itemstype.findIndex(x=>x.id==data.msg.id);//寻找当前修改的类别从pagesetting里
+                                                            if(curChangTypeIndex>-1){
+                                                                //表示找到了需要修改的 再进行更新
+                                                                that.pages[i].coms[k].items[j].itemstype[curChangTypeIndex]={id:data.msg.id,name:data.msg.name};
+                                                                isUpdatePage=1;
+                                                            }
+                                                        }
+
+
+                                                    }
+
+                                                }
+
+
+                                            }
+
+
+                                            if(that.pages[i].coms[k].type=="magicCube")
+                                            {
+                                                //图片魔方组件里的跳转到分类
+                                                if(that.pages[i].coms[k].items!=null&&that.pages[i].coms[k].items.length>0){
+                                                    for(var j=0;j<that.pages[i].coms[k].items.length;j++){
+                                                        if(that.pages[i].coms[k].items[j].urltype==4)
+                                                        {
+                                                            //图片魔方组件里的跳转到分类
+
+                                                            curChangTypeIndex=that.pages[i].coms[k].items[j].itemstype.findIndex(x=>x.id==data.msg.id);//寻找当前修改的类别从pagesetting里
+                                                            if(curChangTypeIndex>-1){
+                                                                //表示找到了需要修改的 再进行更新
+                                                                that.pages[i].coms[k].items[j].itemstype[curChangTypeIndex]={id:data.msg.id,name:data.msg.name};
+                                                                isUpdatePage=1;
+                                                            }
+                                                        }
+
+
+                                                    }
+
+                                                }
+
+
+                                            }
+
+
+                                            if(that.pages[i].coms[k].type=="bottomnav")
+                                            {
+                                                //底部导航里的跳转到分类
+                                                if(that.pages[i].coms[k].navlist!=null&&that.pages[i].coms[k].navlist.length>0){
+                                                    for(var j=0;j<that.pages[i].coms[k].navlist.length;j++){
+                                                        if(that.pages[i].coms[k].navlist[j].urltype==4&&that.pages[i].coms[k].navlist[j].itemstype!=null)
+                                                        {
+                                                            //底部导航组件里的跳转到分类
+
+                                                            curChangTypeIndex=that.pages[i].coms[k].navlist[j].itemstype.findIndex(x=>x.id==data.msg.id);//寻找当前修改的类别从pagesetting里
+                                                            if(curChangTypeIndex>-1){
+                                                                //表示找到了需要修改的 再进行更新
+                                                                that.pages[i].coms[k].navlist[j].itemstype[curChangTypeIndex]={id:data.msg.id,name:data.msg.name};
+                                                                isUpdatePage=1;
+                                                            }
+
+                                                        }
+
+
+                                                    }
+
+                                                }
+
+
+                                            }
+
+
+
+                                        }
+
+
+
+
+                                    }
+                                }
+
+                                if(isUpdatePage>0){
+                                    $.post("/MiappEnterprise/pageset", { appId:item.aid,act: "save", pages: JSON.stringify(that.pages)}, null, "json")
+                                       .then(function (data) {
+                                           console.log("同步更新分类成功");
+                                       })
+                                        .fail(function (data) {
+                                            console.log("同步更新分类失败"+data.msg);
+                                        });
+
+                                }
+
+
+
+                            }
+
+
+
+
+
+                            layer.msg("保存成功",{time:1000});
+                            setTimeout(function(){
+                                window.location.reload();
+                            },1000);
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            //保存排序
+            savesort: function (index) {
+                var that=this;
+                var aid = @Utility.IO.Context.GetRequestInt("appId", 0);
+                var data = [];
+                var iserro = false;
+                if(index<0)
+                {//批量排序
+                    app.list.forEach(function(value,index){
+                        if(value.editsort.length<=0)
+                        {
+                            iserro = true;
+                            return;
+                        }
+                        if(value.sel && value.editsort!=value.sort)
+                        {
+                            data[data.length]={id:value.id,sort:value.editsort};
+                        }
+                    });
+                }
+                else{
+                    //单个排序
+                    if(app.list[index].editsort.length<=0)
+                    {
+                        iserro = true;
+                    }
+                    data[data.length]={id:app.list[index].id,sort:app.list[index].editsort};
+                }
+
+                if(iserro)
+                {
+                    layer.msg("请输入排序值",{time:1000});
+                    return;
+                }
+
+                if(data.length<=0)
+                {
+                    layer.msg("保存成功",{time:1000},function(){
+                        window.location.reload();
+                    });
+
+                    return;
+                }
+                var changTypeSort=data;
+                var datajson = JSON.stringify(data);
+
+                $.post("/@(dirName)/updatesort", {appId:aid,datajson:datajson,type:1},function(data){
+                    if(typeof data=="object"){
+                        if(data.isok){
+
+                            if(that.pages!=null&&that.pages.length>0&&@Model.PageType == 22){
+                                var goodListIndex,curChangTypeIndex;
+                                var isUpdatePage=0;
+                                //当分类修改后同步小程序编辑页里的产品列表类别
+                                for(var i=0;i<that.pages.length;i++){
+                                    if(that.pages[i].coms!=null&&that.pages[i].coms.length>0){
+                                        goodListIndex= that.pages[i].coms.findIndex(x=>x.type=="goodlist");//一个页面只有一个产品列表组件
+                                        if(goodListIndex>-1){
+
+                                            for(var j=0;j<changTypeSort.length;j++){
+
+                                                curChangTypeIndex=that.pages[i].coms[goodListIndex].goodCat.findIndex(x=>x.id==changTypeSort[j].id);//寻找当前修改的类别从pagesetting里
+                                                if(curChangTypeIndex>-1){
+                                                    //表示找到了需要修改的 再进行更新
+                                                    that.pages[i].coms[goodListIndex].goodCat[curChangTypeIndex].sort=parseInt(changTypeSort[j].sort);
+                                                    isUpdatePage=1;
+                                                }
+
+                                            }
+
+
+
+
+                                        }
+
+                                        console.log(index);
+                                    }
+                                }
+
+                                if(isUpdatePage>0){
+                                    $.post("/MiappEnterprise/pageset", { appId:item.aid,act: "save", pages: JSON.stringify(that.pages)}, null, "json")
+                                       .then(function (data) {
+                                           console.log("同步更新分类成功");
+                                       })
+                                        .fail(function (data) {
+                                            console.log("同步更新分类失败"+data.msg);
+                                        });
+
+                                }
+
+
+
+                            }
+
+
+
+
+                            layer.msg("保存成功",{time:1000},function(){
+                                window.location.reload();
+                            });
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    }
+                    else{
+                        layer.msg(data.msg,{time:1000});
+                    }
+                });
+            },
+            //显示排序编辑
+            showeditsort: function (index,state) {
+                app.list[index].sel = state>=0;
+            },
+            edit:function(index){
+                $('#addModal').modal('show');
+                var that=this;
+                that.curMaterialPath="";
+                that.edititem=JSON.parse(JSON.stringify(this.list[index]));
+            },
+            del:function(index){
+                var that=this;
+                layer.open({
+                    title: "删除确认",
+                    content: "确定要删除该分类么？",
+                    btn: ["确定", "取消"],
+                    yes: function () {
+                        $.post("/@(dirName)/ptype",{act:"del",id:that.list[index].id,appId:item.aid})
+                        .then(function(data){
+                            console.log(data);
+                            if(typeof data=="object"){
+                                if(data.isok){
+                                    layer.msg("删除成功",{time:1000});
+                                    that.list.splice(index,1);
+                                }
+                                else{
+                                    layer.alert(data.msg);
+                                }
+                            }
+                            else{
+                                layer.alert(data);
+                            }
+                        });
+
+                    }
+                })
+            }
+        }
+    });
+</script>

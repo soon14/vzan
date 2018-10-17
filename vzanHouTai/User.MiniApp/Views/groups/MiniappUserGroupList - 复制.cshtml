@@ -1,0 +1,74 @@
+﻿@using Entity.MiniSNS.VZANCity;
+@model  List<Entity.MiniSNS.MiniappGroup.MiniappGroupUser>
+@{
+    ViewBag.Title = "拼团购买记录";
+    Layout = "~/Views/Shared/_CityInfoLayout.cshtml";
+}
+
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">        
+        <th>序号</th>
+        <th>团号</th>
+        <th>购买人</th>
+        <th>手机</th>
+        <th>购买时间</th>  
+        <th>购买数量</th>    
+        <th>核销人</th>
+        <th>核销时间</th>
+        <th>使用状态</th>
+        <th>拼团状态</th>
+    </tr>
+    <tbody id="bcontent">
+        @{ int i = 1; }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td width="3%"><label>@(i++)</label> </td>
+                <td width="10%">@(item.IsGroup > 0 ? item.Id.ToString() : "单买商品")</td>
+                <td width="10%">@(item.NickName)</td>
+                <td width="10%">@(item.QrCodeUrl)</td>
+                <td width="10%">@(item.CreateDate.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                <td width="10%">@(item.BuyNum)</td>
+                <td width="10%">@(item.ValidUserNickName)</td>
+                <td width="10%">@(item.ValidShowTime)</td>
+                <td width="10%">
+                    @if (item.PState == 2 || item.PState == 3)
+                    {
+                        @(Enum.GetName(typeof(C_Enums.MiniappCouponState), item.State))
+                    }
+                    else if (item.PState == 1 && item.EndDate < DateTime.Now)
+                    {
+                        if (item.State == -2)
+                        {
+                            <span>已退款</span>
+                        }
+                        else
+                        {
+                            <span>未退款</span>
+                        }
+                    }
+                    else if (item.PState == 4)
+                    {
+                        <span>已使用</span>
+                    }
+                </td>
+                <td width="15%">
+                    @if (item.PState == 4)
+                    { <span>已核销</span> }
+                    else if (item.PState == 3)
+                    { <span>单买商品</span> }
+                    else if (item.PState == 2)
+                    {<span>拼团成功</span> }
+                    else if (item.PState == 1 && item.EndDate > DateTime.Now)
+                    {<span>正在进行，未成团</span> }
+                    else
+                    {<span>未成功，等待用户退款</span> }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>

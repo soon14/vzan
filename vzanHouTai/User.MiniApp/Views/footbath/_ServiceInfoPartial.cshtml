@@ -1,0 +1,101 @@
+﻿<!--服务项目编辑界面-->
+<button type="button" class="layui-btn layui-btn-primary selected" v-on:click="SaveServiceInfo()">保存</button>
+<button type="button" class="layui-btn layui-btn-primary btn-reset" v-on:click="Cancel()">取消</button>
+<table>
+    <tr>
+        <td class="tr"><span>*</span>项目名称：</td>
+        <td><input type="text" class="form-control" placeholder="必填，30字以内" v-model="serviceInfo.name" /></td>
+    </tr>
+    <tr>
+        <td class="tr"><span>*</span>项目分类：</td>
+        <td>
+            <button type="button" v-on:click="ChooseType(index)" :class="['layui-btn layui-btn-primary servicetype',{'selected':serviceType.sel}]" v-for="(serviceType,index) in serviceTypeList">{{serviceType.name}}</button>
+            <a v-if="serviceTypeList.length<20" href="javascript:;" v-on:click="AddServiceType" style="line-height: 35px;">+添加分类</a>
+        </td>
+    </tr>
+    <tr>
+        <td class="tr"><span>*</span>价格：</td>
+        <td>
+            <div class="input-group">
+                <span class="input-group-addon">￥</span>
+                <input type="text" class="form-control" placeholder="0~999999999之间的数字，最多两位小数" v-model="serviceInfo.price" style="width:311px" />
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td class="tr"><span>*</span>服务时长：</td>
+        <td>
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="0~999之间的数字" v-model="serviceInfo.ServiceTime" style="width:297px" onkeyup="if(this.value.length==1){this.value=this.value.replace(/[^1-9]/g,'')}else{this.value=this.value.replace(/\D/g,'')}" onafterpaste="if(this.value.length==1){this.value=this.value.replace(/[^1-9]/g,'')}else{this.value=this.value.replace(/\D/g,'')}" maxlength="3" />
+                <span class="input-group-addon">分钟</span>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td class="tr"><span>*</span>项目主图：</td>
+        <td>
+            <div class="ImgUrl" id="img1">
+                <button v-on:click="$refs.uploadImg.pickImg('img1')" v-show="componentData.uploadData.img1.imgList.length<=0">上传图片</button>
+               <div style="float:left;position:relative;margin:10px 0 10px 22px;" v-for="(imgInfo,index) in componentData.uploadData.img1.imgList">
+                    <img :src="imgInfo.filepath" style="width:120px;border: 1px solid #ccc;" />
+                    <a href="javascript:;" class="del-btn" v-on:click="componentData.uploadData.img1.imgList.splice(index,1)">x</a>
+              </div>
+                <div class="layui-progress" lay-filter="demo" lay-showPercent="true" style="display:none;">
+                    <div class="layui-progress-bar layui-bg-blue" lay-percent="10%"></div>
+                </div>
+                <upload-component ref="uploadImg" v-bind="componentData"></upload-component><!--上传组件-->
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td class="tr">已订人数：</td>
+        <td>
+            <input type="text" class="form-control" placeholder="0~999之间的数字" v-model="serviceInfo.stock" />
+        </td>
+    </tr>
+    <tr>
+        <td></td>
+        <td><label>若不填，则从0开始按该项目实际预订人数累计；填写后，则在填写数字基础上按实际预订人数累计。</label></td>
+    </tr>
+    <tr>
+        <td class="tr">服务流程：</td>
+        <td><textarea class="form-control" placeholder="不超过100字" style="max-height:100px;min-height:100px;max-width:350px;min-width:350px;" v-model="serviceInfo.specificationkeys"></textarea></td>
+    </tr>
+    <tr>
+        <td class="tr">服务介绍：</td>
+        <td><div id="editor" style="width:350px;height:360px;"></div></td>
+    </tr>
+</table>
+
+
+<!--#region 新增编辑-->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="AddGoodModal_label">分类管理</h4>
+            </div>
+            <div class="modal-body">
+                <table>
+                    <tr>
+                        <td align="right">分类名称：</td>
+                        <td align="left"><input type="text" class="form-control" placeholder="不超过8字" v-model="typedata.name" v-on:keyup.enter="SaveType()" /></td>
+                    </tr>
+                    <tr>
+                        <td align="right">排序：</td>
+                        <td align="left">
+                            <input type="text" class="form-control" placeholder="1~99之间" v-model="typedata.sort" v-on:keyup.enter="SaveType()" />
+                        </td>
+                    </tr>
+                </table>
+                <div class="btnbox">
+                    <button type="button" class="layui-btn layui-btn-normal" v-on:click="SaveType()">保存</button>
+                    <button type="button" class="layui-btn layui-btn-primary " data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--#endregion-->

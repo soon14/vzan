@@ -1,0 +1,175 @@
+﻿@using Entity.MiniApp.Tools
+@model  List<BargainUser>
+@{
+    ViewBag.Title = "砍价管理";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+   
+}
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<style>
+    .lead.text-muted { margin-top: 20px; color: red; }
+    .sweet-alert.showSweetAlert h2 { font-size: 20px; }
+    .OutOrder{cursor:pointer;}
+</style>
+<div class="panel panel-default">
+    <div class="panel-body">
+        【@ViewBag.Bargain.BName】参与记录
+        <a href="#" class="btn btn-success" id="btnBatch_Pass" onclick="exportdata()">
+            <span class="glyphicon glyphicon-circle-arrow-down"></span>
+            导出记录
+        </a>
+    </div>
+</div>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<table class="table table-condensed table-bordered table-hover fontSize12 fontFamilyYahei">
+
+    <tr class="text-center">
+        <th>序号</th>
+        <th>购买人</th>
+        <th>参与时间</th>
+        <th>购买时间</th>
+        <th>过期时间</th>
+        <th>当前价格</th>
+        <th>留言备注</th>
+        <th>状态</th>
+        <th>操作</th>
+    </tr>
+    <tbody id="bcontent">
+      
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><label>@item.Id</label> </td>
+                <td>@(item.Name)</td>
+                <td>@(item.CreateDate.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                <td>@(item.BuyTime == Convert.ToDateTime("3000-01-01 01:01:01") ? string.Empty: item.BuyTime.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                <td>@(item.EndDate)</td>
+                <td>@((float.Parse(item.CurrentPrice.ToString()) / 100))</td>
+                <td>@item.Remark</td>
+                <td>@*-1 已经关闭,0未付款，1已购买,2退款中,3退款成功,4退款失败,5 继续支付(已经生成订单Id)*@
+                    @if (item.State == 1)
+                    {
+                        <span class="label label-success">已付款</span>                        
+                    }
+                    else if (item.State == 5)
+                    {
+                        <span class="label label-success">等待付款(已下单)</span>
+                    }
+                    else if (item.State == 2)
+                    {
+                        <span class="label label-success">退款中</span>
+                    }
+                    else if (item.State == 3)
+                    {
+                        <span class="label label-success">退款成功</span>
+                    }
+                    else if (item.State == 3)
+                    {
+                        <span class="label label-success">退款失败</span>
+                    }
+                    else if (item.State == -1)
+                    {
+                      
+                        <span class="label label-success">已关闭(过期或售罄)</span>
+                    }
+                    else if (item.State == 7)
+                    {
+                        <span class="label label-info">待发货</span>      
+                    }
+                    else if (item.State == 6)
+                    {
+                        <span class="label label-info " >等待确认收货</span>
+                       
+                    }
+                    else if (item.State == 8)
+                    {
+
+                        <span class="label label-success">交易成功</span>
+                    }
+                    else
+                    {
+                        <span class="label label-danger">未付款</span>
+                    }
+
+               
+                </td>
+                <td><a href="/tools/BargainRecordList?appId=@ViewBag.appId&PageType=@ViewBag.PageType&buid=@item.Id" class="btn btn-primary btn-xs">
+    <span class="glyphicon glyphicon-list"></span>
+    帮砍记录
+</a>
+                    @if (item.State == 1)
+                    {                  
+                        <span class="label label-info OutOrder" data-id="@item.Id">退款</span>
+                    }
+                    else if (item.State == 7)
+                    {
+                        <span class="label label-info GiveGoods" data-id="@item.Id"><a href="/tools/GiveGoods?appId=@ViewBag.appId&PageType=@ViewBag.PageType&buid=@item.Id">发货</a></span>
+                        <span class="label label-info OutOrder" data-id="@item.Id">退款</span>
+                    }
+                    else if (item.State == 6)
+                    {
+                        <span class="label label-info GiveGoods" data-id="@item.Id"><a href="/tools/GiveGoods?appId=@ViewBag.appId&PageType=@ViewBag.PageType&buid=@item.Id">查看发货信息</a></span>
+                        <span class="label label-info OutOrder" data-id="@item.Id">退款</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+
+</table>
+<ul class="page" style="height: 0; line-height: 0; padding-top: 12px;">
+    共@(ViewBag.TotalCount)条记录&nbsp; @MvcPager.Pager(Html, "pageIndex", ViewBag.pageSize, ViewBag.TotalCount)
+</ul>
+<script>
+    function exportdata() {
+        if($("#bcontent tr").length<=0){
+            layer.msg('暂无数据!');
+            return;
+        }
+        window.location.href = "/tools/BargainUserList?appId=@ViewBag.appId&PageType=@ViewBag.PageType&bid=@ViewBag.Bargain.Id&export=true";
+    } 
+
+    $(function () {
+        $(".OutOrder").click(function () {
+
+            var buid=parseInt($(this).data("id"));
+            if(buid>0){
+              var outOrderLayer=  layer.confirm('确认进行退款？', {
+                    btn: ['确定','取消'] //按钮
+                }, function(){
+                          $.ajax({
+                              type: "POST",
+                              url: "/tools/outOrder",
+                              data: { buid: buid, AppId:@ViewBag.appId},
+                              success: function (data) {
+                                  layer.close(outOrderLayer);
+                                  if (data && data.isok) {
+                                      AppTools.Alert(data.msg);
+
+                                      window.setTimeout(function () {                         
+                                          window.location.reload();
+                                      }, 2000);
+
+                                  } else {
+                                      AppTools.Alert(data.msg);
+                                  }
+                              },
+                              error: function () {
+                                  AppTools.Alert("通讯异常");
+                              }
+                          });
+                });
+
+
+         
+            }
+          
+        });
+
+    });
+
+</script>
+

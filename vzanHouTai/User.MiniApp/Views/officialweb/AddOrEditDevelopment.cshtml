@@ -1,0 +1,233 @@
+﻿@using User.MiniApp.comment
+@using Entity.MiniApp.Conf
+@model Development
+@{
+    //行业版同城配置
+    ViewBag.Title = "发展历程";
+    ViewBag.PageType = 1;//1是行业版同城，用于母版页的左侧菜单区分
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+
+
+<style>
+    .edui-modal {
+        margin-top: 150px;
+    }
+
+    .twxq-new-kuang {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-right: 10px;
+        background: #fff;
+    }
+
+    .twxq-edit-zhanshi {
+        border: 2px dashed #fc7d7d;
+        padding: 10px;
+        min-height: 108px;
+        position: relative;
+    }
+
+    .spgl-bianji-bt {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: inline-block;
+        background-color: rgba(0,0,0,0.3);
+        color: #fff;
+        padding: 0 5px;
+        margin-left: 1px;
+        font-size: 12px;
+    }
+
+    .bz {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .spxqq-f p:first-child {
+        font-size: 17px;
+    }
+
+    .spxqq-f {
+        text-align: center;
+        margin-top: 17px;
+        line-height: 25px;
+    }
+
+    #label_1 {
+        color: white;
+        display: none;
+    }
+
+    .checkKey {
+        background-color: coral;
+        color: white !important;
+        border-color: transparent;
+    }
+
+    .noCheckKey {
+        background-color: white;
+        border-color: black;
+        color: black;
+    }
+</style>
+@Html.HiddenFor(m => m.Id)
+
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            <tr>
+                <td><p class="model_right_t_font">年份</p></td>
+                <td>
+                    <select id="year_s"  class="form-control width400">
+                        @for (var i = 1950; i <= DateTime.Now.Year; i++)
+                        {
+                            <option value=@i @(Model.Year == i.ToString()?"selected":"")>@i</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><p class="model_right_t_font">月份</p></td>
+                <td>
+                    <select id="month_s"  class="form-control width400">
+                        @for (var i = 1; i <= 12; i++)
+                        {
+                            <option value=@i @(Model.Month == i.ToString()?"selected":"")>@i</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>简介</td>
+                <td>@Html.TextAreaFor(m => m.Content, new { @class = "form-control width400", rows = "4" })</td>
+            </tr>
+            <!--隐藏值-->
+            <input type="hidden" id="appId" value="@ViewBag.appId" />
+            <input type="hidden" id="Level" value="@ViewBag.Level" />
+            <input type="hidden" id="keyid" value="@Model.Id" />
+        </table>
+    </form>
+</div>
+
+<div class="col-md-offset-2">
+    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+    <input type="button" class="btn btn-default width100" onclick="self.location=document.referrer;" value="返回" />
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+@section script{
+    <script>
+        $(function () {
+            // #region 保存
+            $('#saveBtn').click(function () {
+                if ($("#year_s").val() == '')
+                {
+                    AppTools.Alert("请选择年份");
+                    return;
+                }
+                if ($("#month_s").val() == '') {
+                    AppTools.Alert("请选择月份");
+                    return;
+                }
+                if ($('#Content').val().length < 1) {
+                    $('#Content').focus().select();
+                    AppTools.Alert("请输入简介 (必填)");
+                    return;
+                }
+
+                saveStore();
+            });
+
+            function saveStore() {
+                var id = $('#Id').val();
+                var appId = $('#appId').val();
+                var Level = $("#Level").val();
+                var year_s = $("#year_s").val();
+                var month_s = $("#month_s").val();
+                var keyid = $("#keyid").val();
+                var Content = $("#Content").val();
+
+                $('#saveBtn').attr('disabled', "true");
+                $('#loadModal').modal('show');
+                $.post('/officialweb/AddOrEditDevelopmentData',
+                    {
+                        Id: id,
+                        appId: appId,
+                        Level: Level,
+                        Content: Content,
+                        Year: year_s,
+                        Month: month_s,
+                        State: 1
+                    },
+                    function (data) {
+                        window.location.href = "/officialweb/ModelData?Id=@ViewBag.rappId&storename=@ViewBag.Title&Level=6";
+                    });
+            }
+            // #endregion
+        });
+    </script>
+}

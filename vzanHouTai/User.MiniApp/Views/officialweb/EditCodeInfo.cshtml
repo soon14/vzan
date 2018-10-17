@@ -1,0 +1,287 @@
+﻿@using User.MiniApp.comment
+@model User.MiniApp.Model.XcxPostInfoViewModel
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "编辑上传信息";
+    ViewBag.PageType = 1;
+}
+
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+
+<style>
+    .edui-modal {
+        margin-top: 150px;
+    }
+
+    .twxq-new-kuang {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-right: 10px;
+        background: #fff;
+    }
+
+    .twxq-edit-zhanshi {
+        border: 2px dashed #fc7d7d;
+        padding: 10px;
+        min-height: 108px;
+        position: relative;
+    }
+
+    .spgl-bianji-bt {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: inline-block;
+        background-color: rgba(0,0,0,0.3);
+        color: #fff;
+        padding: 0 5px;
+        margin-left: 1px;
+        font-size: 12px;
+    }
+
+    .bz {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .spxqq-f p:first-child {
+        font-size: 17px;
+    }
+
+    .spxqq-f {
+        text-align: center;
+        margin-top: 17px;
+        line-height: 25px;
+    }
+
+    #label_1 {
+        color: white;
+        display: none;
+    }
+
+    .checkKey {
+        background-color: coral;
+        color: white !important;
+        border-color: transparent;
+    }
+
+    .noCheckKey {
+        background-color: white;
+        border-color: black;
+        color: black;
+    }
+</style>
+@Html.HiddenFor(m => m.tid)
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<div class="row">
+    <form id="dataForm">
+        <table class="table table-condensed table-hover cancel-table-td-border ">
+            <tr>
+                <td>小程序账号</td>
+                <td>
+                    @Html.DropDownList("xuser", (List<SelectListItem>)ViewBag.XUserList, new { @class = "form-control width300" })
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div class="col-md-offset-2">
+    <input type="button" class="btn btn-primary width100" id="saveBtn" value="保存" />
+    <input type="button" class="btn btn-default width100" onclick="self.location=document.referrer;" value="返回" />
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="loadvoiceModal" tabindex="-1" role="dialog" aria-labelledby="loadvoiceModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在上传 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal bs-example-modal-sm" id="tipsModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+    <input type="hidden" value="" id="tipsModalHidden" />
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body text-center">
+                确定删除这张图片吗 ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="tipsModalComfirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<link href="@(WebSiteConfig.cdnurl)js/umditor_common/themes/default/css/umeditor.min.css" rel="stylesheet" />
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.config.js"></script>
+<script src="@(WebSiteConfig.cdnurl)js/umditor_common/umeditor.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+@section script{
+    <script>
+        function removeCallback(file) {
+            if (file && file.id) {
+                if (confirm("删除后不可恢复，确认删除吗？")) {
+                    // 删除Logo
+                    $.get('/StoreManage/DeleteLogo?id=' + file.id + '&cloumnString=LogoUrl',
+                        function (data) {
+                            if (!data.Success) {
+                                AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                                return e.ee;
+                            }
+                        });
+                }
+
+            }
+        }
+        function removeCallbackAnnouncement(file) {
+            if (file && file.id) {
+                if (confirm("删除后不可恢复，确认删除吗？"))
+                    // 删除二维码
+                    $.get('/StoreManage/DeleteLogo?id=' + file.id + '&cloumnString=Announcement',
+                        function (data) {
+                            if (!data.Success) {
+                                AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                                return e.ee;
+                            }
+                        });
+            }
+
+        }
+        function removeAttachmentFunction(file) {
+            if (file && file.id) {
+                if (confirm("删除后不可恢复，确认删除吗？")) {
+                    // 删除Logo
+                    $.get('/StoreManage/DeleteImg?id=' + file.id,
+                        function (data) {
+                            if (!data.Success) {
+                                AppTools.Alert("网络不好 , 删除失败 , 请稍后重试 !");
+                                return e.ee;
+                            }
+                        });
+                }
+            }
+        }
+
+        $(function () {
+            $("a").on('click', function () {
+                if ($(this).attr("Class").indexOf("checkKey") > -1) {
+                    $(this).removeClass("checkKey");
+                    $(this).addClass("noCheckKey");
+                } else if ($(this).attr("Class").indexOf("noCheckKey") > -1) {
+                    $(this).removeClass("noCheckKey");
+                    $(this).addClass("checkKey");
+                }
+
+            })
+
+            if ($('#ddStoreTypeDetail option').length === 0) {
+                $('#ddStoreTypeDetail').hide();
+            }
+
+            // #region 保存
+            $('#saveBtn').click(function () {
+
+                if ($('#xuser').val() == '') {
+                    AppTools.Alert("请选择小程序账号");
+                    return;
+                }
+
+                var xuserid = $('#xuser').val();
+                var xusername = $('#xuser option:selected').text();
+
+
+                var imgArray = [];
+                saveStore(imgArray.join());
+            });
+
+            function saveStore(imgUrlString) {
+                var tid = $('#tid').val();
+                var appsr = $('#appsr').val();
+                var xuserid = $('#xuser').val();
+                var xusername = $('#xuser option:selected').text();
+                $.get('/officialweb/CheckMiappSuccess?userId=' + xuserid,
+                   function (data) {
+                       if (data.isok == 1) {
+                           var msg = "确认要覆盖线上已发布的小程序？"
+                           savecode(xuserid, tid, appsr, msg);
+                       }
+                       else {
+                           var msg = "确定上传代码到小程序" + xusername + "？";
+                           savecode(xuserid, tid, appsr, msg);
+                       }
+                   });
+
+            }
+
+            function savecode(xuserid, tid, appsr, msg) {
+                layer.open({
+                    title: '上传代码',
+                    btn: ["确定", "取消"],
+                    content: msg,
+                    yes: function () {
+                        $('#loadModal').modal('show');
+                        $.post('/officialweb/UploadCode',
+                        {
+                            userid: xuserid,
+                            tid: tid,
+                            rid: @(ViewBag.rappId),
+                        },
+                        function (data) {
+                            alert(data.msg);
+                            if (data.isok == 1) {
+                                window.location.href = "/officialweb/XcxManageIndex?Id=@ViewBag.rappId";
+                            }
+                            else {
+                                layer.closeAll();
+                                $('#loadModal').modal('hide');
+                            }
+                        });
+                    },
+                    no: function () {
+                        layer.closeAll();
+                        $('#loadModal').modal('hide');
+                    },
+
+                });
+            }
+            // #endregion
+
+
+        });
+    </script>
+}

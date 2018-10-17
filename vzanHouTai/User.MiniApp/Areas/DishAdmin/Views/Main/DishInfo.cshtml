@@ -1,0 +1,1029 @@
+﻿
+@using BLL.MiniApp.Dish
+@{
+    ViewBag.Title = "DishInfo";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+@model DishStore
+@section styles{
+    <link rel="stylesheet" type="text/css" href="~/Areas/DishAdmin/lib/TimePicker/timePicker.css" />
+    <style>
+        .nr_con:nth-child(n+1) { margin-top: 10px; }
+        .table-1120 .table_input { border: 1px solid #ccc; border-radius: 2px; display: inline-block; margin-right: 10px; }
+        .table-1120 .table_input_no { border: 0px; }
+        .table-1120 span { padding: 0 10px; }
+        .table-1120 input { border: none; border-left: 1px solid #ccc; border-right: 1px solid #ccc; }
+        .table-1120 input:hover { border-color: #ccc; }
+        .menu-title { margin-top: 1% !important; }
+        .menu-title9 { margin-top: 5% !important; }
+    </style>
+}
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span> 系统管理
+    <span class="c-gray en">&gt;</span> 门店信息
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        <input type="hidden" name="aid" value="@Model.aid" />
+        <input type="hidden" name="storeId" value="@Model.id" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>基本设置</span>
+                <span>高级设置</span>
+                <span>店内设置</span>
+                <span>外卖设置</span>
+                @*<span>跳转设置</span>*@
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        门店名称：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_name" placeholder="控制在25个字、50个字节以内" value="@Model.dish_name" class="input-text">
+                    </div>
+                </div>
+                @*<div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            <span class="c-red">*</span>
+                            所属分类：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <select name="dish_cate_id" class="select">
+                                <option value="0">请选择</option>
+                                @foreach (var cate in cateList)
+                                {
+                                    <option value="@cate.id" @(cate.id == Model.dish_cate_id ? "selected" : "")>@cate.title</option>
+                                }
+                            </select>
+                        </div>
+                    </div>*@
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        门店状态：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_open_status" value="1" type="radio" @(Model.baseConfig.dish_open_status == 1 ? "checked" : "")>
+                            <label for="dish_open_status_switch-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_open_status" @(Model.baseConfig.dish_open_status == 0 ? "checked" : "")>
+                            <label for="dish_open_status_switch-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        前台显示：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_show_status" value="1" type="radio" @(Model.baseConfig.dish_show_status == 1 ? "checked" : "")>
+                            <label for="dish_open_status-1">显示</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_show_status" @(Model.baseConfig.dish_show_status == 0 ? "checked" : "")>
+                            <label for="dish_open_status-0">隐藏</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        门店LOGO：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="controls">
+                            <div class="controls uploadrow2" data-max="1" title="点击修改图片" rel="dish_logo">
+                                <input type="file" id="upload_picture_dish_logo">
+                                <input type="hidden" name="dish_logo" id="cover_id_dish_logo" value="@Model.dish_logo" />
+                                <div class="upload-img-box">
+                                    <div class="upload-pre-item2">
+                                        <img src="@Model.dish_logo" width="100" height="100">
+                                    </div>
+                                    <em class="edit_img_icon"> </em>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        门店公告：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_gonggao" placeholder="控制在50个字以内" value="@Model.baseConfig.dish_gonggao" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        预定公告：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_yuding_gonggao" placeholder="控制在50个字以内" value="@Model.baseConfig.dish_yuding_gonggao" class="input-text">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        所属区域：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_quyu" placeholder="请输入门店所在区域" value="@Model.baseConfig.dish_quyu" class="input-text" style="width: 500px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        商家地址：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_address" readonly="readonly" id="address" placeholder="门店详细地址" value="@Model.baseConfig.dish_address" class="input-text" style="width: 500px;">
+                        <div class="dish_m_tips">点击弹出地图坐标选择器，更换城市，输入门店地址，点击搜索，在地图上选择门店地址最后点确定</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        门店坐标：
+                    </label>
+                    @{
+                        string gps = Model.ws_lat + "," + Model.ws_lng;
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" value="@gps" name="gps" id="gps" readonly="readonly" class="input-text" style="width:200px;">
+                            <input type="hidden" value="@Model.ws_lat" name="ws_lat" id="dish_gps_lat" />
+                            <input type="hidden" value="@Model.ws_lng" name="ws_lng" id="dish_gps_lng" />
+                            @*<div class="dish_m_tips">拖拽或点击下面地图获取坐标(提示：坐标尽量精确，否则会影响外卖配送费用)</div>
+                                        <div class="controls">
+                                    <div id="map" style="height:400px;width:600px;border:1px solid #bcbcbc;margin-top:10px;">
+                                        <iframe name="mapframe" src="~/content/plugin/chooselocation/dishMap.html" frameborder="0" width="100%" height="100%"></iframe>
+                                    </div>
+                                </div>*@
+                        </div>
+                    }
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        人均消费：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_pingjunxiaofei" placeholder="0" value="@Model.baseConfig.dish_pingjunxiaofei" class="input-text" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        店内营业时间：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <table cellpadding="1" cellspacing="1" border="0" style="background:#222;width:300px;" class="table_box">
+                            @if (Model.baseConfig.open_time != null && Model.baseConfig.open_time.Count > 0)
+                            {
+                                int index = 0;
+                                foreach (var open_time in Model.baseConfig.open_time)
+                                {
+                                    <tr class="tr_list">
+                                        <td bgcolor="#FFFFFF"><input type='text' name="dish_open_btime[]" readonly value="@open_time.dish_open_btime" class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                        <td bgcolor="#FFFFFF">&nbsp;至&nbsp;<input name="dish_open_etime[]" readonly value="@open_time.dish_open_etime" type='text' class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                        @if (index == 0)
+                                        {
+                                            <td bgcolor="#FFFFFF">
+                                                <a href="javascript:void(0);" class="add_table">添加</a>
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td bgcolor='#FFFFFF'><a class='shanchu' onclick='del_table()'>删除</a></td>
+                                        }
+                                    </tr>
+                                    index++;
+                                }
+                            }
+                            else
+                            {
+                                <tr class="tr_list">
+                                    <td bgcolor="#FFFFFF"><input type='text' name="dish_open_btime[]" readonly value="09:00" class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                    <td bgcolor="#FFFFFF">&nbsp;至&nbsp;<input name="dish_open_etime[]" readonly value="20:00" type='text' class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                    <td bgcolor="#FFFFFF">
+                                        <a href="javascript:void(0);" class="add_table">添加</a>
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div><div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        外卖营业时间：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <table cellpadding="1" cellspacing="1" border="0" style="background:#222;width:300px;" class="wx_table_box">
+                            @if (Model.baseConfig.wm_time != null && Model.baseConfig.wm_time.Count > 0)
+                            {
+                                foreach (var wm_time in Model.baseConfig.wm_time)
+                                {
+                                    <tr class="wm_tr_list">
+                                        <td bgcolor="#FFFFFF"><input type='text' name="dish_open_wm_btime[]" readonly value="@wm_time.dish_open_wm_btime" class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                        <td bgcolor="#FFFFFF">&nbsp;至&nbsp;<input name="dish_open_wm_etime[]" readonly value="@wm_time.dish_open_wm_etime" type='text' class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                        <td bgcolor="#FFFFFF">
+                                            <a href="javascript:void(0);" class="wm_add_table">添加</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="wm_tr_list">
+                                    <td bgcolor="#FFFFFF"><input type='text' name="dish_open_wm_btime[]" readonly value="09:00" class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                    <td bgcolor="#FFFFFF">&nbsp;至&nbsp;<input name="dish_open_wm_etime[]" readonly value="20:00" type='text' class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                    <td bgcolor="#FFFFFF">
+                                        <a href="javascript:void(0);" class="wm_add_table">添加</a>
+                                    </td>
+                                </tr>
+                            }
+
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        门店实景：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="mult_imgs">
+                            <div class="upload-img-view" id='mutl_picture_dish_shijing'>
+                                @if (Model.baseConfig.dish_shijing != null && Model.baseConfig.dish_shijing.Count > 0)
+                                {
+                                    foreach (var img in Model.baseConfig.dish_shijing)
+                                    {
+                                        <div class="upload-pre-item22">
+                                            <img width="100" height="100" src="@img" />
+                                            <input type="hidden" name="dish_shijing[]" value="@img" />
+                                            <em>&nbsp;</em>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <div class="controls uploadrow2" id="cover_id_dish_shijing" data-max="9" title="点击上传图片" rel="dish_shijing">
+                                <input type="file" id="upload_picture_dish_shijing">
+                            </div>
+                        </div>
+                        <div class="dish_m_tips">最多可上传9张</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        资质证书：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <div class="mult_imgs">
+                            <div class="upload-img-view" id='mutl_picture_dish_zizhi'>
+                                @if (Model.baseConfig.dish_zizhi != null && Model.baseConfig.dish_zizhi.Count > 0)
+                                {
+                                    foreach (var img in Model.baseConfig.dish_zizhi)
+                                    {
+                                        <div class="upload-pre-item22">
+                                            <img width="100" height="100" src="@img" />
+                                            <input type="hidden" name="dish_zizhi[]" value="@img" />
+                                            <em>&nbsp;</em>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <div class="controls uploadrow2" id="cover_id_dish_zizhi" data-max="9" title="点击上传图片" rel="dish_zizhi">
+                                <input type="file" id="upload_picture_dish_zizhi">
+                            </div>
+                        </div>
+                        <div class="dish_m_tips">最多可上传9张</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        门店介绍：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <textarea name="dish_jieshao" class="textarea" placeholder="门店简介...最少输入10个字符">@Model.baseConfig.dish_jieshao</textarea>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        门店手机号码：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_con_mobile" placeholder="门店联系手机号码" value="@Model.dish_con_mobile" class="input-text" style="width: 200px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        门店电话：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_con_phone" placeholder="门店联系电话号码" value="@Model.dish_con_phone" class="input-text" style="width: 200px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        提供服务：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_fuwu" placeholder="如停车,WIFI,刷卡,包厢" value="@Model.baseConfig.dish_fuwu" class="input-text" style="width: 500px;">
+                    </div>
+                </div>
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2 menu-title">菜单样式：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal menuStyle">
+                        <div class="radio-box">
+                            <input name="menu_style" type="radio" value="0" @(Model.gaojiConfig.menu_style == 0 ? "checked" : "")>
+                            <label for="menu_style-1">样式1</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="1" name="menu_style" @(Model.gaojiConfig.menu_style == 1 ? "checked" : "")>
+                            <label for="menu_style-2">样式2</label>
+                        </div>
+                        <label style="font-weight:bold;">样式1可设置菜单文本</label>
+                        <img src="~/Areas/DishAdmin/images/menu_style1.jpg" class="menu_demo1" style="display:@(Model.gaojiConfig.menu_style == 0?"":"none"); width:284px" />
+                        <img src="~/Areas/DishAdmin/images/menu_style2.jpg" class="menu_demo2" style="display:@(Model.gaojiConfig.menu_style == 1?"":"none"); width:284px" />
+
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">支持预定：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_yuding" type="radio" value="1" @(Model.gaojiConfig.dish_is_yuding == 1 ? "checked" : "")>
+                            <label for="dish_is_yuding-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_yuding" @(Model.gaojiConfig.dish_is_yuding == 0 ? "checked" : "")>
+                            <label for="dish_is_yuding-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">支持店内：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_diannei" type="radio" value="1" @(Model.gaojiConfig.dish_is_diannei == 1 ? "checked" : "")>
+                            <label for="dish_is_diannei-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_diannei" @(Model.gaojiConfig.dish_is_diannei == 0 ? "checked" : "")>
+                            <label for="dish_is_diannei-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">支持自取：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_ziqu" type="radio" value="1" @(Model.gaojiConfig.dish_is_ziqu == 1 ? "checked" : "")>
+                            <label for="dish_is_ziqu-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_ziqu" @(Model.gaojiConfig.dish_is_ziqu == 0 ? "checked" : "")>
+                            <label for="dish_is_ziqu-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">支持外卖：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_waimai" type="radio" value="1" @(Model.gaojiConfig.dish_is_waimai == 1 ? "checked" : "")>
+                            <label for="dish_is_waimai-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_waimai" @(Model.gaojiConfig.dish_is_waimai == 0 ? "checked" : "")>
+                            <label for="dish_is_waimai-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">支持排队：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_paidui" type="radio" value="1" @(Model.gaojiConfig.dish_is_paidui == 1 ? "checked" : "")>
+                            <label for="dish_is_paidui-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_paidui" @(Model.gaojiConfig.dish_is_paidui == 0 ? "checked" : "")>
+                            <label for="dish_is_paidui-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="menuTitle" style="display:@(Model.gaojiConfig.menu_style == 0?"":"none")">
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            预订文本：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_yuding_text" placeholder="" value="@Model.gaojiConfig.dish_yuding_text" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            店内文本：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_diannei_text" placeholder="" value="@Model.gaojiConfig.dish_diannei_text" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            自取文本：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_ziqu_text" placeholder="" value="@Model.gaojiConfig.dish_ziqu_text" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            外卖文本：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_waimai_text" placeholder="" value="@Model.gaojiConfig.dish_waimai_text" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            排队文本：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_paidui_text" placeholder="" value="@Model.gaojiConfig.dish_paidui_text" class="input-text" style="width: 200px;">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        支付时间限制：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_pay_limit_time" placeholder="" value="@Model.gaojiConfig.dish_pay_limit_time" class="input-text" style="width: 100px;"> 分钟
+                        <div class="dish_m_tips">下单后在该时间内未支付，则订单自动取消。提示：该时间限制不能为5以下,建议为10分钟以上</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">首次下单短信验证：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_sms_check" type="radio" value="1" @(Model.gaojiConfig.dish_is_sms_check == 1 ? "checked" : "")>
+                            <label for="dish_is_sms_check-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_sms_check" @(Model.gaojiConfig.dish_is_sms_check == 0 ? "checked" : "")>
+                            <label for="dish_is_sms_check-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">是否支持开发票：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_fapiao" type="radio" value="1" @(Model.gaojiConfig.dish_is_fapiao == 1 ? "checked" : "")>
+                            <label for="dish_is_fapiao-1">支持</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_fapiao" @(Model.gaojiConfig.dish_is_fapiao == 0 ? "checked" : "")>
+                            <label for="dish_is_fapiao-2">不支持</label>
+                        </div>
+                    </div>
+                </div>
+                @*<div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">是否开启WebView功能：</label>
+                        <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                            <div class="radio-box">
+                                <input name="dish_is_webview_open" type="radio" value="1" @(Model.gaojiConfig.dish_is_webview_open == 1 ? "checked" : "")>
+                                <label for="dish_is_webview_open-1">开启</label>
+                            </div>
+                            <div class="radio-box">
+                                <input type="radio" value="0" name="dish_is_webview_open" @(Model.gaojiConfig.dish_is_webview_open == 0 ? "checked" : "")>
+                                <label for="dish_is_webview_open-2">关闭</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            webview标题：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_webview_text" placeholder="" value="@Model.gaojiConfig.dish_webview_text" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            webview地址：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_webview_url" placeholder="" value="@Model.gaojiConfig.dish_webview_url" class="input-text" style="width: 700px;">
+                            <div class="dish_m_tips">webview 指向网页的链接。需登录小程序管理后台配置域名白名单。</div>
+                        </div>
+                    </div>*@
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red">*</span>
+                        点餐备注：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <textarea name="dish_beizhu_info" class="textarea" placeholder="如不要辣，不要香菜，多个备注请以回车隔开">@Model.gaojiConfig.dish_beizhu_info</textarea>
+                        <div class="dish_m_tips">多个备注请以回车隔开</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">就餐方式：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_diannei_fangshi" type="radio" value="1" @(Model.dianneiConfig.dish_diannei_fangshi == 1 ? "checked" : "")>
+                            <label for="dish_diannei_fangshi-1">先付款后就餐</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="2" name="dish_diannei_fangshi" @(Model.dianneiConfig.dish_diannei_fangshi == 2 ? "checked" : "")>
+                            <label for="dish_diannei_fangshi-2">先就餐后付款</label>
+                        </div>
+                        <div class="dish_m_tips">方式2用户下单后需要后台确认订单是否有效</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">是否显示就餐提示：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_diannei_tips_show" type="radio" value="1" @(Model.dianneiConfig.dish_diannei_tips_show == 1 ? "checked" : "")>
+                            <label for="dish_diannei_tips_show-1">显示</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_diannei_tips_show" @(Model.dianneiConfig.dish_diannei_tips_show == 0 ? "checked" : "")>
+                            <label for="dish_diannei_tips_show-2">关闭</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        先付款后就餐提示：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_diannei_tips_one" placeholder="" value="@Model.dianneiConfig.dish_diannei_tips_one" class="input-text" style="width: 400px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        先就餐后付款提示：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_diannei_tips_two" placeholder="" value="@Model.dianneiConfig.dish_diannei_tips_two" class="input-text" style="width: 400px;">
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">扫码点餐：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_rcode_open" type="radio" value="1" @(Model.dianneiConfig.dish_is_rcode_open == 1 ? "checked" : "")>
+                            <label for="dish_is_sms_check-1">开启</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_rcode_open" @(Model.dianneiConfig.dish_is_rcode_open == 0 ? "checked" : "")>
+                            <label for="dish_is_sms_check-0">关闭</label>
+                        </div>
+                        <div class="dish_m_tips">开启店内只能通过扫描餐桌二维码进行点餐</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">是否支持更换桌号：</label>
+                    <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                        <div class="radio-box">
+                            <input name="dish_is_zhuohao_change" type="radio" value="1" @(Model.dianneiConfig.dish_is_zhuohao_change == 1 ? "checked" : "")>
+                            <label for="dish_is_zhuohao_change-1">支持</label>
+                        </div>
+                        <div class="radio-box">
+                            <input type="radio" value="0" name="dish_is_zhuohao_change" @(Model.dianneiConfig.dish_is_zhuohao_change == 0 ? "checked" : "")>
+                            <label for="dish_is_zhuohao_change-2">不支持</label>
+                        </div>
+                        <div class="dish_m_tips">店内下单时，用户是否可以更换桌号。(提示：当配置为不支持时，必须开启扫码点餐)</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        自取天数限制：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="dish_ziqu_day" placeholder="" value="@Model.dianneiConfig.dish_ziqu_day" class="input-text" style="width: 100px;"> 天
+                        <div class="dish_m_tips">自今天至第几天可进行自取</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        自取时间限制：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <table cellpadding="1" cellspacing="1" border="0" style="background:#222;width:300px;" class="zq_table_box">
+                            @if (Model.dianneiConfig.zq_time != null && Model.dianneiConfig.zq_time.Count > 0)
+                            {
+                                foreach (var item in Model.dianneiConfig.zq_time)
+                                {
+                                    <tr class="zq_tr_list">
+                                        <td bgcolor="#FFFFFF"><input type='text' name="dish_zq_btime[]" readonly value="@item.dish_zq_btime" class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                        <td bgcolor="#FFFFFF">&nbsp;至&nbsp;<input name="dish_zq_etime[]" readonly value="@item.dish_zq_etime" type='text' class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                        <td bgcolor="#FFFFFF">
+                                            <a href="javascript:void(0);" class="zq_add_table">添加</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="zq_tr_list">
+                                    <td bgcolor="#FFFFFF">
+                                        <input type='text' name="dish_zq_btime[]" readonly value=""
+                                               class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点
+                                    </td>
+                                    <td bgcolor="#FFFFFF">&nbsp;至&nbsp;<input name="dish_zq_etime[]" readonly value="" type='text' class="bind_select_time input-text" style="width: 100px;" placeholder='' />&nbsp;点</td>
+                                    <td bgcolor="#FFFFFF">
+                                        <a href="javascript:void(0);" class="zq_add_table">添加</a>
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="tabCon">
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red"></span>
+                        配送规则：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9 table-1120">
+                        @if (Model.takeoutConfig.ps_rule != null && Model.takeoutConfig.ps_rule.Count > 0)
+                        {
+                            foreach (var item in Model.takeoutConfig.ps_rule)
+                            {
+                                <div class="nr_con">
+                                    <div class="table_input"><span>从</span><input type="text" name="ps_time_b[]" readonly placeholder="" value="@item.ps_time_b" class="bind_select_time input-text" style="width: 80px"><span>点至</span><input type="text" name="ps_time_e[]" readonly placeholder="" value="@item.ps_time_e" class="bind_select_time input-text" style="width: 80px"><span>点</span></div>
+                                    <div class="table_input"><span>配送费</span><input type="text" name="ps_time_jiner[]" placeholder="0" value="@item.ps_time_jiner" class="input-text" style="width: 150px"><span>元</span></div>
+                                    <div class="table_input table_input_no"><button type="button" onclick="del_rc(this)" class="btn btn-default radius">删除</button></div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="nr_con">
+                                <div class="table_input"><span>从</span><input type="text" name="ps_time_b[]" readonly placeholder="" value="" class="bind_select_time input-text" style="width: 80px"><span>点至</span><input type="text" name="ps_time_e[]" readonly placeholder="" value="" class="bind_select_time input-text" style="width: 80px"><span>点</span></div>
+                                <div class="table_input"><span>配送费</span><input type="text" name="ps_time_jiner[]" placeholder="0" value="" class="input-text" style="width: 150px"><span>元</span></div>
+                                <div class="table_input table_input_no"><button type="button" onclick="del_rc(this)" class="btn btn-default radius">删除</button></div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        <span class="c-red"></span>
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <button type="button" onclick="add_rc()" class="btn btn-primary radius">添加新规则</button>
+                    </div>
+                </div>
+
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        外卖配送费用：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        【基础配送费<input type="text" name="waimai_peisong_jiner" placeholder="0" value="@Model.takeoutConfig.waimai_peisong_jiner" class="input-text" style="width: 100px;">元】 【基础公里数
+                        <input type="text" name="waimai_peisong_base_juli" placeholder="0" value="@Model.takeoutConfig.waimai_peisong_base_juli" class="input-text" style="width: 100px;">公里】 【超过每公里增加
+                        <input type="text" name="waimai_peisong_base_step" placeholder="0" value="@Model.takeoutConfig.waimai_peisong_base_step" class="input-text" style="width: 100px;">元】
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        外卖起送价格：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="waimai_limit_jiner" placeholder="0" value="@Model.takeoutConfig.waimai_limit_jiner " class="input-text" style="width: 500px;">
+                        <div class="dish_m_tips">低于该金额用户无法下单，商家拒绝配送</div>
+                    </div>
+                </div>
+                <div class="row cl">
+                    <label class="form-label col-xs-4 col-sm-2">
+                        配送半径：
+                    </label>
+                    <div class="formControls col-xs-8 col-sm-9">
+                        <input type="text" name="waimai_limit_juli" placeholder="0" value="@Model.takeoutConfig.waimai_limit_juli" class="input-text" style="width: 500px;">
+                        <div class="dish_m_tips">距离大于配送半径(公里)时是否允许下单，注意：手机定位精确性受天气、用户终端设备是否开启GPS以及硬件配置等影响很大，若此项设置不为0，可能会导致部分用户无法成功下单</div>
+                    </div>
+                </div>
+            </div>
+            @*<div class="tabCon">
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">是否开启小程序跳转：</label>
+                        <div class="formControls col-xs-8 col-sm-9 skin-minimal">
+                            <div class="radio-box">
+                                <input name="dish_is_open_tomini" type="radio" value="1" @(Model.tiaozhuanConfig.dish_is_open_tomini == 1 ? "checked" : "")>
+                                <label for="dish_is_open_tomini-1">开启</label>
+                            </div>
+                            <div class="radio-box">
+                                <input type="radio" value="0" name="dish_is_open_tomini" @(Model.tiaozhuanConfig.dish_is_open_tomini == 0 ? "checked" : "")>
+                                <label for="dish_is_open_tomini-2">关闭</label>
+                            </div>
+                            <div class="dish_m_tips">打开同一公众号下关联的另一个小程序，开启后店铺将跳转到目标小程序</div>
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            跳转文本提示：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_tomini_apptext" placeholder="" value="@Model.tiaozhuanConfig.dish_tomini_apptext" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            小程序appid：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_tomini_appid" placeholder="" value="@Model.tiaozhuanConfig.dish_tomini_appid" class="input-text" style="width: 200px;">
+                        </div>
+                    </div>
+                    <div class="row cl">
+                        <label class="form-label col-xs-4 col-sm-2">
+                            小程序页面路径：
+                        </label>
+                        <div class="formControls col-xs-8 col-sm-9">
+                            <input type="text" name="dish_tomini_appurl" placeholder="" value="@Model.tiaozhuanConfig.dish_tomini_appurl" class="input-text" style="width: 400px;">
+                            <div class="dish_m_tips">打开的页面路径，如果为空则打开首页</div>
+                        </div>
+                    </div>
+                </div>*@
+        </div>
+        <div class="row cl">
+            <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-2">
+                <button class="btn btn-primary radius" type="submit" id="submit_button"><i class="Hui-iconfont">&#xe632;</i> 保存</button>
+                <button class="btn btn-default radius" type="button">&nbsp;&nbsp;取消&nbsp;&nbsp;</button>
+            </div>
+        </div>
+    </form>
+
+
+    <!-- #region 上传图片弹窗 -->
+    <div class="modal bs-example-modal" id="addModal_UploadImg" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="border:0px;">
+                    <button type="button" class="close" data-dismiss="modal" id="closeUpload"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+
+                </div>
+                <div class="modal-body" style="min-height:500px;padding:0px;">
+                    <iframe id="uploadFrame" style="width:100%;min-height:500px;border:0px;" src=""></iframe>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="uploadImgs" name="uploadImgs" value="" />
+    <!-- #endregion -->
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg" role="document" style="width:1000px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe" src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="ChooseLocationOK()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #endregion -->
+</div>
+@section scripts{
+    <!--如果需要图片上传-->
+    <script src="~/Areas/DishAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+    <script src="~/Areas/DishAdmin/lib/dialog.js"></script>
+    <script src="~/Areas/DishAdmin/lib/admin_common.js"></script>
+
+    <script>
+        var UPLOAD_URL = "/tools/UpLoadImgFrm?storeId=@(Model.id)&appId=@(Model.aid)&multi_selection=0&frontMethod=1&maxImgSize=1&objType=1";
+        $(function () {
+            var UploadFileExts = "";
+            //初始化上传图片插件
+            initUploadImg();
+            if (UploadFileExts != "") {
+                initUploadFile(function () { }, UploadFileExts);
+            } else {
+                initUploadFile();
+            }
+        });
+    </script>
+
+
+    <script type="text/javascript">
+        $(function () {
+
+
+            $(".bind_select_time").hunterTimePicker();
+
+            $('.skin-minimal input').iCheck({
+                checkboxClass: 'icheckbox-blue',
+                radioClass: 'iradio-blue',
+                increaseArea: '20%'
+            });
+            $("#tab-system").Huitab("#tab-system .tabBar span", "#tab-system .tabCon", "current", "click", "0")
+
+            //表单验证
+            $("#form-article-add").validate({
+                rules: {
+                    dish_name: {
+                        required: true,
+                        minlength: 2
+                    },
+                    dish_jieshao: {
+                        required: true,
+                    },
+                    dish_fuwu: {
+                        required: true,
+                    },
+                    dish_address: {
+                        required: true
+                    },
+                    gps: {
+                        required: true
+                    },
+                    dish_yingye_btime: {
+                        required: true,
+                        min: 0,
+                        max: 24
+                    },
+                    dish_yingye_etime: {
+                        required: true,
+                        min: 0,
+                        max: 24
+                    },
+                    dish_con_mobile: {
+                        required: true
+                    },
+                    dish_pay_limit_time: {
+                        required: true,
+                        min: 5,
+                    }
+                },
+                onkeyup: false,
+                focusCleanup: false,
+                success: "valid",
+                submitHandler: function (form) { //表单提交句柄,为一回调函数，带一个参数：form
+
+                    var l_index = layer.msg('数据更新中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        url: "/dishadmin/main/saveDishInfo",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.alert(data.msg, {
+                                    icon: 0
+                                });
+                            } else {
+                                layer.alert(data.msg, {
+                                    icon: 1
+                                }, function (index) {
+                                    window.location.reload();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            //选择坐标地址
+            $('#gps').on('click', function () {
+                $("#ChooseLocationModal").modal("show");
+            });
+            $('#address').on('click', function () {
+                $("#ChooseLocationModal").modal("show");
+            });
+        });
+
+        $(function () {
+            $('.add_table').click(function (e) {
+                if ($(".tr_list").length >= 3) {
+                    alert('对不起，最多可设置三个');
+                    return false;
+                }
+                var $html = $("<tr class='tr_list'><td bgcolor='#FFFFFF'><input type='text' readonly name='dish_open_btime[]' class='bind_select_time input-text' style='width: 100px;'  placeholder=''/>&nbsp;点</td><td bgcolor='#FFFFFF'>&nbsp;至&nbsp;<input type='text' readonly name='dish_open_etime[]' class='bind_select_time input-text' style='width: 100px;' placeholder=''/>&nbsp;点</td><td bgcolor='#FFFFFF'><a class='shanchu' onclick=\'del_table()\'>删除</a></td></tr>");
+                $('.table_box').append($html);
+                $(".bind_select_time").hunterTimePicker();
+            });
+        })
+
+        function del_table() {
+            $(".table_box tr").eq($(this).index()).remove();
+        }
+
+        $(function () {
+            $('.wm_add_table').click(function (e) {
+                if ($(".wm_tr_list").length >= 3) {
+                    alert('对不起，最多可设置三个');
+                    return false;
+                }
+                var $html = $("<tr class='wm_tr_list'><td bgcolor='#FFFFFF'><input type='text' readonly name='dish_open_wm_btime[]' class='bind_select_time input-text' style='width: 100px;'  placeholder=''/>&nbsp;点</td><td bgcolor='#FFFFFF'>&nbsp;至&nbsp;<input type='text' readonly name='dish_open_wm_etime[]' class='bind_select_time input-text' style='width: 100px;' placeholder=''/>&nbsp;点</td><td bgcolor='#FFFFFF'><a class='shanchu' onclick=\'wm_del_table()\'>删除</a></td></tr>");
+                $('.wx_table_box').append($html);
+                $(".bind_select_time").hunterTimePicker();
+            });
+        })
+
+        function wm_del_table() {
+            $(".wx_table_box tr").eq($(this).index()).remove();
+        }
+
+        $(function () {
+            $('.zq_add_table').click(function (e) {
+                if ($(".zq_tr_list").length >= 3) {
+                    //alert('对不起，最多可设置三个');return false;
+                }
+                var $html = $("<tr class='zq_tr_list'><td bgcolor='#FFFFFF'><input type='text' readonly name='dish_zq_btime[]' class='bind_select_time input-text' style='width: 100px;'  placeholder=''/>&nbsp;点</td><td bgcolor='#FFFFFF'>&nbsp;至&nbsp;<input type='text' readonly name='dish_zq_etime[]' class='bind_select_time input-text' style='width: 100px;' placeholder=''/>&nbsp;点</td><td bgcolor='#FFFFFF'><a class='shanchu' onclick=\'zq_del_table()\'>删除</a></td></tr>");
+                $('.zq_table_box').append($html);
+                $(".bind_select_time").hunterTimePicker();
+            });
+        })
+
+        function zq_del_table() {
+            $(".zq_table_box tr").eq($(this).index()).remove();
+        }
+
+        function add_rc() {
+            if ($(".nr_con").length > 4) {
+                layer.alert("最多可设置5条配送规则", {
+                    icon: 0
+                });
+                return false;
+            }
+            var rc_html = '<div class="nr_con">\n' +
+                '\t\t\t\t\t\t\t<div class="table_input"><span>从</span><input type="text" name="ps_time_b[]" placeholder="" value="" readonly class="bind_select_time input-text" style="width: 80px"><span>点至</span><input type="text" name="ps_time_e[]" readonly placeholder="" value="" class="bind_select_time input-text" style="width: 80px"><span>点</span></div>\n' +
+                '\t\t\t\t\t\t\t<div class="table_input"><span>配送费</span><input type="text" name="ps_time_jiner[]" placeholder="0" value="" class="input-text" style="width: 150px"><span>元</span></div>\n' +
+                '\t\t\t\t\t\t\t<div class="table_input table_input_no"><button type="button" class="btn btn-default radius" onclick="del_rc(this)">删除</button></div>\n' +
+                '\t\t\t\t\t\t</div>';
+            $(".table-1120").append(rc_html);
+            $(".bind_select_time").hunterTimePicker();
+        }
+
+        function del_rc(e) {
+            $(e).parent().parent().remove();
+        }
+
+        var ChooseLocationOK = function () {
+            var _location = mapframe.window.document.getElementById("poi_cur").value;
+            var _addr_cur = mapframe.window.document.getElementById("addr_cur").value;
+            var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+            if (_location == "") {
+                layer.msg("您还未选择地理位置！");
+                return;
+            }
+            _location = _location.split(",");
+            $("#gps").val(_location);
+            $("#dish_gps_lat").val(_location[0]);
+            $("#dish_gps_lng").val(_location[1]);
+            $("#address").val(_addr_cur);
+            //$("#Address").text(_addr_cur);
+            //$("#checkMapStr").text("重新选择");
+            $("#ChooseLocationModal").modal("hide");
+        }
+        $(function () {
+            $(".menuStyle").find(".iCheck-helper").click(function () {
+                var val = $(this).parent().find("input[name='menu_style']").val();
+                if (val == 0) {
+                    $(".menu_demo1").show();
+                    $(".menu_demo2").hide();
+                    $(".menu-title").addClass("menu-title9");
+                    $(".menuTitle").show();
+                } else {
+                    $(".menu_demo1").hide();
+                    $(".menu_demo2").show();
+                    $(".menu-title").removeClass("menu-title9");
+                    $(".menuTitle").hide();
+                }
+            })
+        })
+    </script>
+}

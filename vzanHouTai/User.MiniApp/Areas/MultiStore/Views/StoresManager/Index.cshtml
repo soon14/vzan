@@ -1,0 +1,357 @@
+﻿@using Entity.MiniApp.Footbath
+@using Newtonsoft.Json
+@using User.MiniApp.Comment
+@model FootBath
+@{
+    ViewBag.PageType = 26;//26是小程序多门店版版，用于母版页的左侧菜单区分
+    ViewBag.Title = "门店信息";
+    int logoCount = 0;
+    if (ViewBag.Logo != null)
+    {
+        logoCount = ((List<object>)ViewBag.Logo).Count;
+    }
+}
+
+<style>
+    /*默认滚动条样式*/
+    .layui-laydate-content ::-webkit-scrollbar { width: 8px; height: 8px; }
+    .layui-laydate-content ::-webkit-scrollbar-track { border: 1px #d3d3d3 solid; box-shadow: 0px 0px 3px #dfdfdf inset; border-radius: 10px; background: #eee; }
+    .layui-laydate-content ::-webkit-scrollbar-thumb { border: 1px #808080 solid; border-radius: 10px; background: #999; }
+        .layui-laydate-content ::-webkit-scrollbar-thumb:hover { background: #7d7d7d; }
+
+    .row { width: 869px; }
+    .table td.title { text-align: right; width: 20%; }
+    .storename { width: 200px; }
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    input[type=checkbox] { margin: 0px; }
+    .business-hours label { margin-right: 10px; }
+    .btn-primary, .btn-primary:active, .btn-primary:focus { background-color: #2196f3; border-color: #2196f3; }
+        .btn-primary:hover, .btn-primary:active:hover { background-color: #337ab7; border-color: #337ab7; }
+</style>
+<input type="hidden" id="CName_Hidden" value="小程序" />
+<input type="hidden" id="listenMap" value="" onchange="getMap();" />
+<div id="app" v-cloak>
+    <form>
+        <div class="row">
+            <table class="table table-condensed cancel-table-td-border ">
+                @if (ViewBag.HaveRole)
+                {
+                    @*该门店的总店管理员才能有限权限*@
+
+                    <tr v-if="storeModel.HomeId>0">
+                        <td class="title">门店是否上架：</td>
+                        <td>
+                            <div class="layui-form">
+                                <input type="checkbox" name="switch" lay-skin="switch" lay-filter="switchState" lay-text="上架|下架" v-model="storeModel.State" @(ViewBag.SetStoreMaterialPages?"disabled=\"disabled\"":string.Empty)>
+                                <label class="forinputmassage color-red" for="DeliveryRange">*上架后顾客才能在该门店购物,并且店铺装修页面已经进行设置</label>
+
+                            </div>
+                        </td>
+                    </tr>
+                    <tr v-if="storeModel.HomeId>0">
+                        <td class="title">门店管理员账号：</td>
+                        <td>
+                            <div style="width:130px;height:130px;background-color:skyblue;">
+                                <input id="sessid" value="@Session["qrcodekey"]" hidden />
+                                <img src="/QrCode/GetQrCode?code=@Session["qrcodekey"]" alt="" style="width: 100%;height: 100%;" />
+                            </div>
+                            <label for="DeliveryRange" class="forinputmassage color-red">*使用需要绑定的管理员微信扫描二维码进行绑定</label>
+
+                        </td>
+                    </tr>
+
+                    <tr v-if="storeModel.HomeId>0">
+                        <td class="title">店铺管理员微信昵称:</td>
+                        <td>
+                            <input type="text" class="form-control storename" v-model="storeModel.ShopManagerName" readonly style="display:inline-block;"/>
+                            <input type="button" value="解除绑定" class="btn btn-primary width100" v-on:click="RemoveUserStoreManager()" style="margin-top:-5px;">
+                        </td>
+                    </tr>
+
+                }
+
+                <tr v-if="!isAuthorize">
+                    <td> </td>
+                    <td>
+                        <div>
+                            <a style="font-size: 18px;text-decoration:underline; " target="_blank" href="/config/MiniAppConfig?appId=@ViewBag.appId&type=25">您暂未对小程序授权 , 请到 [ 小程序模板 ] ]进行授权</a>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">店铺名称<label class="color-red">*</label></td>
+                    <td><input type="text" class="form-control storename" v-model="storeModel.StoreName" /></td>
+                </tr>
+
+                <tr>
+                    <td class="title"><p class="model_right_t_font">店铺Logo<label class="color-red">*</label></p></td>
+                    <td>
+                        <div class="LogoImgUrl">
+                            @Html.FileUploadFor("LogoImgUrl", maxFiles: 1, initImageList: (List<object>)ViewBag.Logo, controllerWidth: 150, removeCallback: "removeAttachmentFunction")
+                        </div>
+                        <label class="forinputmassage color-red">* 建议上传300*300px的图片</label>
+                    </td>
+                </tr>
+                @*<tr>
+                        <td class="centertext title"><p class="model_right_t_font">门店照片</p></td>
+                        <td>
+                            <div class="storeImgUrl">
+                                @Html.FileUploadFor("storeImgUrl", maxFiles: 10, initImageList: (List<object>)ViewBag.storePicList, controllerWidth: 560, removeCallback: "removeAttachmentFunction")
+                            </div>
+                            <label class="forinputmassage color-red">* 最多可上传10张门店照片，建议照片尺寸为750*500px</label>
+                        </td>
+                    </tr>*@
+                <tr>
+                    <td class="title">详细地址<label class="color-red">*</label></td>
+                    <td class="form-inline">
+                        <label id="Address">{{storeModel.Address}}</label>
+                        <a id="btnMap"><label id="checkMapStr" v-on:click="GetMap()">{{storeModel.Address.length>0?"重新选择" : "从地图选择"}}</label></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">24小时营业：</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="switch" lay-skin="switch" lay-filter="switchOpenAllDay" lay-text="开启|关闭" v-model="storeModel.switchModel.OpenAllDay">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">营业时间<label class="color-red">*</label></td>
+                    <td class="business-hours">
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Monday" />周一</label>
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Tuesday" />周二</label>
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Wensday" />周三</label>
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Thursday" />周四</label>
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Friday" />周五</label>
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Saturday" />周六</label>
+                        <label><input class="weekcheckbox" name="weekcheckbox" type="checkbox" v-model="storeModel.switchModel.Sunday" />周日</label>
+
+                    </td>
+                </tr>
+                <tr v-show="!storeModel.switchModel.OpenAllDay">
+                    <td class="title"><label class="color-red">*</label></td>
+
+                    <td id="openTimeTd">
+                        <div class="OpenTimeDiv" style="margin-bottom:5px">
+                            <input type="text" readonly="readonly" class="form-control storename" id="ShopTime" value="" />
+                        </div>
+                        <label class="forinputmassage color-red" for="DeliveryRange">营业时间外,外卖及点餐小程序均会显示商家休息中,顾客将无法下单</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">客服电话<label class="color-red">*</label></td>
+                    <td><input type="text" class="form-control storename" v-model="storeModel.TelePhone" /></td>
+                </tr>
+
+                <tr>
+                    <td class="title">店铺公告</td>
+                    <td><textarea class="form-control width400" rows="8" id="Notice" v-model="storeModel.Notice"></textarea></td>
+                </tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
+                <tr>
+                    <td colspan="2" style="text-align:center">
+                        <input type="button" class="btn btn-primary width100" v-on:click="SaveInfo()" value="保存" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </form>
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg" role="document" style="width:1000px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe" src="/content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocation()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*<script src="https://cdn.bootcss.com/vue/2.5.8/vue.min.js"></script>*@
+<script>
+    var form, laydate,wxLoginInterval;
+    var app = new Vue({
+        el: "#app",
+        data: {
+            LogoCount: @(logoCount),
+            seldays:[],
+            isAuthorize:1,
+            storeModel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            Logo: [],
+            storeImgs:[],
+        },
+        methods: {
+            GetMap: function () {
+                $("#ChooseLocationModal").modal("show");
+            },
+            ChooseLocation: function () {
+                var _location = mapframe.window.document.getElementById("poi_cur").value;
+                var _addr_cur = mapframe.window.document.getElementById("addr_cur").value;
+                var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+                if (_location == "") {
+                    layer.msg("您还未选择地理位置！");
+                    return;
+                }
+                _location = _location.split(",");
+                this.storeModel.Lng = parseFloat(_location[1]);
+                this.storeModel.Lat = parseFloat(_location[0]);
+                this.storeModel.Address = _addr_cur;
+                $("#checkMapStr").text("重新选择");
+                $("#ChooseLocationModal").modal("hide");
+            },
+            InitLayer: function () {
+                layui.use(['form','laydate'], function () {
+                    //开关按钮
+                    form = layui.form;
+                    form.on('switch(switchOpenAllDay)', function (data) {
+                        app.storeModel.switchModel.OpenAllDay = data.elem.checked;
+
+                    });
+                    form.on('switch(switchState)', function (data) {
+                        app.storeModel.State = data.elem.checked?1:0;
+
+                    });
+
+
+                    //时间选择器
+                    laydate = layui.laydate;
+                    laydate.render({
+                        elem: '#ShopTime', //指定元素
+                        type: 'time',
+                        theme: 'grid',
+                        value: app.storeModel.ShopTime,
+                        range: true,
+                        done: function (value, date, endDate) {
+                            app.storeModel.ShopTime = value;
+                        }
+                    });
+
+
+                });
+            },
+            SaveInfo: function () {
+                if(!this.ValidData())return;
+                var index = layer.load(1);
+                $.post("/MultiStore/StoresManager/SaveStoreMateria", { logo: app.Logo.join(), storeImgs: app.storeImgs.join(), info: app.storeModel,appId:app.storeModel.appId,storeId:app.storeModel.Id }, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                },"json")
+            },
+            ValidData: function () {
+                var result = false;
+                app.Logo=[];
+                $('input[name="LogoImgUrl"]').each(function (i, n) {
+                    app.Logo.push($(n).val());
+                });
+                if (app.Logo.length <= 0 && app.LogoCount <= 0) {
+                    layer.msg("请选择店铺logo");
+                    return result;
+                }
+                $('input[name="storeImgUrl"]').each(function (i, n) {
+                    app.storeImgs.push($(n).val());
+                });
+                if (app.storeImgs.length > 10) {
+                    layer.msg("门店照片不能超过10张");
+                    return result;
+                }
+                if ($.trim(app.storeModel.StoreName).length <= 0) {
+                    layer.msg("请输入店铺名称");
+                    return result;
+                }
+                if ($.trim(app.storeModel.Address).length <= 0) {
+                    layer.msg("请选择店铺地址");
+                    return result;
+                }
+                var ret = /^(\d{3,4}-)?\d{6,8}$/;
+                var ret2 = /^(((13[0-9]{1})|(15[0-9]{1})|(18[0-9]{1})|(17[0-9]{1}))+\d{8})$/;
+                if (!ret.test(app.storeModel.TelePhone)&&!ret2.test(app.storeModel.TelePhone)) {
+                    layer.msg("请填写正确的联系电话");
+                    return result;
+                }
+                app.seldays = $("input[name='weekcheckbox']:checked");
+                if (app.seldays.length <= 0) {
+                    layer.msg("请选择营业时间");
+                    return result;
+                }
+                if (!app.storeModel.switchModel.OpenAllDay && app.storeModel.ShopTime.length <= 0) {
+                    layer.msg("请选择具体营业时间");
+                    return result;
+                }
+                result = true;
+                return result;
+            },
+            wxBind() {
+                var key = $('#sessid').val();
+                $.ajax({
+                    type: "POST",
+                    url: "/MultiStore/UserLogin/StoreManagerBindWx",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    data: { wxkey: key },
+                    success: function (returnData) {
+                        if (returnData.success) {
+                            layer.msg(returnData.msg);
+                            clearInterval(wxLoginInterval);
+                            app.storeModel.ShopManager=returnData.ShopManager;
+                            app.storeModel.ShopManagerName=returnData.ShopManagerName;
+                        }
+                        
+                    }
+                });
+            },
+            RemoveUserStoreManager:function(){
+                $.ajax({
+                    type: "POST",
+                    url: "/MultiStore/UserLogin/RemoveUserStoreManagerRole",
+                    data: { appId: app.storeModel.appId,storeId:app.storeModel.Id },
+                    success: function (returnData) {
+                        if (returnData.success) {
+                            layer.msg(returnData.msg);
+                            setTimeout(function(){ window.location.reload();},1000)
+                        }
+                        
+                    }
+                });
+            }
+        },
+        created: function(){
+            //定时确认是否已经扫码登录
+            if(this.storeModel.ShopManagerName==""&&this.storeModel.HomeId!=0)
+                wxLoginInterval = setInterval(this.wxBind, 1000);
+            this.InitLayer();
+        }
+
+    });
+
+    function removeAttachmentFunction(file) {
+        if (file && file.id) {
+            // 删除Logo
+            $.get('/foods/DeleteImg?id=' + file.id,
+                function (data) {
+                    if (!data.Success) {
+                        layer.msg("网络不好 , 删除失败 , 请稍后重试 !");
+                        return e.ee;
+                    }
+                });
+        }
+    }
+
+</script>
+
+
+
+
+
+

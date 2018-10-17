@@ -1,0 +1,291 @@
+﻿
+@model ViewModel<EntSpecification>
+@{
+    ViewBag.Title = "产品规格";
+    //ViewBag.PageType = (int)TmpType.小程序多门店模板;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    int fid = Utility.IO.Context.GetRequestInt("fid",0);
+
+    string dirName = "enterprise";
+    string path = "/MultiStore/GoodsManager";
+    if (Model.PageType == 14)
+    {
+        dirName = "enterprisepro";
+    }
+    ViewBag.PageType = Model.PageType;
+    int specificationSwtich = ViewBag.specificationSwtich;
+}
+
+<div id="app" class="container-fluid" v-cloak>
+
+    <div>
+        @if (fid != 0)
+        {
+            <a href="specificationlist?appId=@(appid)"><i class="glyphicon glyphicon-chevron-left"></i> 返回规格列表</a>
+        }
+        
+        <div class="alert alert-warning alert-dismissible mt10" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <p>提示：</p>
+            <p>1、规格名称不能超过20个字，且不能重复</p>
+            <p>2、规格总数不能超过200个，每个规格下面的规格值数不能超过200个</p>
+            <p>3、产品规格/规格值若已关联了至少一个产品，则该规格/规格值不可删除</p>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th width="100">ID</th>
+                        <th>@(fid==0? "规格名称": "规格值名称")</th>
+                        <th width="200">排序</th>
+                        <th width="300">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in list">
+                        <td>{{index+1}}</td>
+                        <td>{{item.name}}</td>
+                        <td v-on:click.stop="showeditsort(index,0)">
+                            <div v-show="!item.sel">{{item.sort}}</div>
+                            <div v-show="item.sel">
+                                <input type="text" class="form-control" style="width:50px;display:inline-block;" v-model="item.editsort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" />
+                                <a v-on:click="savesort(index)" class="btn btn-primary btn-xs">保存</a>
+                                <a v-on:click.stop="showeditsort(index,-1)" class="btn btn-danger btn-xs">关闭</a>
+                            </div>
+                        </td>
+                        <td>
+                            <a v-on:click="del(index)" class="btn btn-danger btn-sm"><i class="glyphicon glyphicon-trash"></i> 删除 </a>&nbsp;&nbsp;&nbsp;
+                            @if (fid == 0)
+                            {
+                                <a class="btn btn-info btn-sm" v-bind:href="'specificationlist?appId=@(appid)&fid='+item.id"><i class="glyphicon glyphicon-eye-open"></i> 查看规格值</a>
+                            }
+                            <button v-on:click="edit(index)" class="btn btn-sm ml10"><i class="glyphicon glyphicon-pencil"></i> 编辑 </button>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+        <div>
+            @{
+                if (Model.PageType == 22 && specificationSwtich == 1)
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" title="请升级到更高版本" disabled="disabled">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        @if (fid == 0)
+                         {
+                            <text>新增规格</text>
+                        }
+                        else
+                        {
+                            <text>新增规格值</text>
+                        }
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" id="btnBatch_Pass" v-on:click="addNew">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        @if (fid == 0)
+                         {
+                            <text>新增规格</text>
+                        }
+                        else
+                        {
+                            <text>新增规格值</text>
+                        }
+                    </button>
+                }
+            }
+          
+
+            <button class="btn btn-success" v-on:click="savesort(-1)">
+                批量改排序
+            </button>
+        </div>
+    </div>
+
+
+    <div class="modal bs-example-modal" id="addModal" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        @(fid == 0 ? "规格名称" : "规格值")
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-add">
+                        <tr>
+                            <td><span>@(fid == 0 ? "规格名称" : "规格值")：</span></td>
+                            <td><input maxlength="20" placeholder="@(fid==0? "规格名称": "规格值")" id="nameVal" v-model="edititem.name" type="text" class="form-control"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align: center;">
+                    <button type="button" class="btn btn-primary" data-itemid="" id="btnAdd" v-on:click="save">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+        var item = {
+            id:0,
+            name: "",
+            imgurl:"",
+            parentid:@(Utility.IO.Context.GetRequestInt("fid",0)),
+            sort:99,
+            aid:@Utility.IO.Context.GetRequestInt("appId",0),
+            state:1,
+        };
+
+        var app = new Vue({
+            el: "#app",
+            data: {
+                edititem:JSON.parse(JSON.stringify(item)),
+                editid:0,
+                list:@Html.Raw(JsonConvert.SerializeObject(Model.DataList)),
+            },
+            coumputed:{
+                totalcount:function(){
+                    return this.list.length;
+                }
+            },
+            mounted: function () {
+                console.log("mounted");
+            },
+            methods: {
+                addNew: function () {
+                    if (this.list.length >= 200){
+                        layer.alert("无法新增规格！您已添加了200个产品规格，已达到上限，请编辑已有的分类或删除部分规格后再进行新增。");
+                        return;
+                    }
+                    $('#addModal').modal('show');
+                    this.editid = 0;
+                },
+                save: function () {
+                    var that=this;
+                    var _typename=$.trim(that.edititem.name);
+                    if(_typename.length==0||_typename.length>20){
+                        layer.msg("规格名称不能为空，且不能超过20个字",{time:1000});
+                        return;
+                    }
+                    $.post("/enterprisepro/specificationlist", $.extend(that.edititem,{appId:item.aid}),function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                $('#addModal').modal('hide');
+                                layer.msg("保存成功",{time:1000});
+
+                                window.location.reload();
+                            }
+                            else{
+                                layer.msg(data.msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    });
+                },
+                //保存排序
+                savesort: function (index) {
+                    var aid = @Utility.IO.Context.GetRequestInt("appId", 0);
+                    var data = [];
+                    var iserro = false;
+                    if(index<0)
+                    {
+                        app.list.forEach(function(value,index){
+                            if(value.editsort.length<=0)
+                            {
+                                iserro = true;
+                                return;
+                            }
+                            if(value.sel && value.editsort!=value.sort)
+                            {
+                                data[data.length]={id:value.id,sort:value.editsort};
+                            }
+                        });
+                    }
+                    else{
+                        if(app.list[index].editsort.length<=0)
+                        {
+                            iserro = true;
+                        }
+                        data[data.length]={id:app.list[index].id,sort:app.list[index].editsort};
+                    }
+
+                    if(iserro)
+                    {
+                        layer.msg("请输入排序值",{time:1000});
+                        return;
+                    }
+
+                    if(data.length<=0)
+                    {
+                        layer.msg("保存成功",{time:1000},function(){
+                            window.location.reload();
+                        });
+
+                        return;
+                    }
+
+                    var datajson = JSON.stringify(data);
+
+                    $.post("/@(dirName)/updatesort", {appId:aid,datajson:datajson,type:4},function(data){
+                        if(typeof data=="object"){
+                            if(data.isok){
+                                layer.msg("保存成功",{time:1000},function(){
+                                    window.location.reload();
+                                });
+                            }
+                            else{
+                                layer.msg(data.msg,{time:1000});
+                            }
+                        }
+                        else{
+                            layer.msg(data.msg,{time:1000});
+                        }
+                    });
+                },
+                //显示排序编辑
+                showeditsort: function (index,state) {
+                    app.list[index].sel = state>=0;
+                },
+                edit:function(index){
+                    $('#addModal').modal('show');
+                    this.edititem=JSON.parse(JSON.stringify(this.list[index]));
+                },
+                del:function(index){
+                    var that=this;
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该规格么？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/enterprisepro/specificationlist",{act:"del",id:that.list[index].id,appId:item.aid})
+                            .then(function(data){
+                                console.log(data);
+                                if(typeof data=="object"){
+                                    if(data.isok){
+                                        layer.msg("删除成功",{time:1000});
+                                        that.list.splice(index,1);
+                                    }
+                                    else{
+                                        layer.alert(data.msg);
+                                    }
+                                }
+                                else{
+                                    layer.alert(data);
+                                }
+                            });
+
+                        }
+                    })
+                }
+            }
+        });
+</script>

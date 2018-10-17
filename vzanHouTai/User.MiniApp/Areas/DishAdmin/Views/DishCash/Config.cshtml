@@ -1,0 +1,139 @@
+﻿
+@{
+    ViewBag.Title = "Config";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+}
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span>
+    财务管理
+    <span class="c-gray en">&gt;</span>
+    提现配置
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新"><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+<div class="page-container">
+    <form class="form form-horizontal" id="form-article-add" method="post">
+        @*<input type="hidden" name="aid" value="@Model.aid" />
+            <input type="hidden" name="storeId" value="@Model.id" />*@
+        <input type="hidden" name="act" value="save" />
+        <div id="tab-system" class="HuiTab">
+            <div class="tabBar cl">
+                <span>提现配置</span>
+            </div>
+            <div class="tabCon" style="display:block">
+                <div class="panel panel-default" style="margin-top:5px;">
+                    <div class="panel-header">微信账号配置</div>
+                    <div class="panel-body">
+                        <div class="row cl">
+                            <label class="form-label col-xs-4 col-sm-2">
+                                真实姓名：
+                            </label>
+                            <div class="formControls col-xs-8 col-sm-9">
+                                <input type="text" name="cash_true_name" placeholder="" value="" class="input-text" style="width:200px;">
+                                <div class="dish_m_tips">收款用户真实姓名，并且已微信支付实名认证</div>
+                            </div>
+                        </div>
+                        <div class="row cl">
+                            <label class="form-label col-xs-4 col-sm-2">
+                                提现帐户：
+                            </label>
+                            <div class="formControls col-xs-8 col-sm-9">
+                                <div class="common_add_list fl">
+                                    <div class="item">
+                                        <img id="c_wx_img" src="">
+                                        <input type="hidden" name="cash_user_openid" id="cash_user_openid" value="">
+                                        <span class="name" id="c_wx_name"></span>
+                                    </div>
+                                </div>
+                                <div style="clear: both;"></div>
+                                <div class="panel panel-default" style="margin-top:10px;">
+                                    <div class="panel-header">请在下方输入框内填写您的微信昵称，然后点击搜索(支持模糊搜索)，最终选择提现帐户</div>
+                                    <div class="panel-body">
+                                        <input type="text" name="cash_wx_name" id="cash_wx_name" placeholder="" value="" class="input-text" style="width:300px;">
+                                        <button class="btn btn-primary radius" type="button" onclick="search_user()"><i class="Hui-iconfont"></i> 搜索</button>
+                                        <div id="get_user_list_html" class="common_add_list fl" style="clear:both;width:100%;margin-top:5px;">
+                                            <div class="item" onClick="selectSingleUser('oDF4d0S_vCacmzvmWVQPNapZAx1E');">
+                                                <img src="https://wx.qlogo.cn/mmopen/vi_32/dXlnWgMdNChaEumFJAR6gr8rfNx3wVdDpRglAxVDYbfBdnxaDyJjfFLeofKS5yaI770u9KvjicVwckibb47fibL8Q/0" /><br />
+                                                <span>Dazhi</span>
+                                                <span class="name">Dazhi</span>
+                                            </div>
+                                            <div class="item" onClick="selectSingleUser('oDF4d0QSpJ8FVJNUVTQunodwOBYg');">
+                                                <img src="https://wx.qlogo.cn/mmopen/vi_32/u7efoKgkGLk3T68tmRvCEalPjOTEkyxWje1G9k70jlKute3KJ1tfhmaNlnvZnpDw25WXbBSyPD6ZceVQPEkarA/0" /><br />
+                                                <span>MAXIAOJIAN</span>
+                                                <span class="name">MAXIAOJIAN</span>
+                                            </div>
+                                            <div style="clear: both;"></div>
+                                        </div>
+                                        <div style="clear: both;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </form>
+</div>
+@section scripts{
+    <script type="text/javascript">
+        function search_user() {
+            var wx_name = $("#cash_wx_name").val();
+            if (wx_name == '') {
+                alert('请输入微信昵称');
+                return false;
+            }
+            var s_index = layer.msg('搜索帐户中', {
+                icon: 16,
+                shade: 0.5
+            });
+
+            $.ajax({
+                type: "GET",
+                url: "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_cash/getWxUserList.html",
+                data: { wx_name: wx_name, _: Date.now() },
+                dataType: "html",
+                success: function (data) {
+                    layer.close(s_index);
+                    if (data == '') {
+                        alert('对不起，未找到该帐户信息');
+                        return false;
+                    }
+                    $("#get_user_list_html").html(data);
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(s_index);
+                }
+            });
+        }
+
+        function selectSingleUser(openid) {
+            var ss_index = layer.msg('选择中', {
+                icon: 16,
+                shade: 0.5
+            });
+            $.ajax({
+                type: "GET",
+                url: "http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Dish_cash/getWxCashUserInfo.html",
+                data: { cash_openid: openid, _: Date.now() },
+                dataType: "json",
+                success: function (data) {
+                    layer.close(ss_index);
+                    if (data.code == 1) {
+                        $("#cash_user_openid").val(openid);
+                        $("#c_wx_img").attr("src", data.imgurl);
+                        $("#c_wx_name").html(data.nickname);
+                    } else {
+                        alert(data.msg);
+                        return false;
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    layer.close(ss_index);
+                }
+            });
+        }
+    </script>
+}
+
+

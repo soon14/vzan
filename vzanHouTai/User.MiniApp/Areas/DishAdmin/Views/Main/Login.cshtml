@@ -1,0 +1,126 @@
+﻿
+@{
+    ViewBag.Title = "智慧餐厅商家管理平台";
+    Layout = "~/Areas/DishAdmin/Views/Shared/_LayoutDishAdmin.cshtml";
+
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+@section styles{
+    <link href="~/Content/css/dzbase.css" rel="stylesheet" />
+    <link href="~/Areas/DishAdmin/css/base.css" rel="stylesheet" />
+    <link href="~/Areas/DishAdmin/css/animate.css" rel="stylesheet" />
+    <link href="~/Areas/DishAdmin/css/login.css" rel="stylesheet" />
+    <style>
+        .mainbody { width: 600px; height: 100%; margin: 0 auto; }
+        .Validform_error, input.error, select.error { background-color:transparent; border-color: #c66161; color: #c00; }
+    </style>
+}
+<body class="main food">
+    <div class="mainbody rel" id="app">
+
+        <div>
+            <form method="post" id="post-form">
+                <input type="hidden" name="act" value="login" />
+                <div class="float-mid">
+                    <div class="errow-tip animated zoomIn disn">用户名或密码错误</div>
+                    <h2 class="tit">智慧餐厅商家管理平台</h2>
+                    <ul>
+                        <li class="rel"><input type="text" name="login_username" placeholder="请输入平台用户名"></li>
+                        <li class="rel"><input type="password" name="login_userpass" placeholder="请输入密码"></li>
+                        @*<li>
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="rel"><input type="text" id="verify" class="user_name" name="verify" placeholder="请输入图形验证码" /></td>
+                                    <td style="text-align:right; vertical-align:bottom;width:170px;" align="right"><img class="verifyimg reloadverify" style="height: 40px;" alt="点击切换" src="http://wx.ixiaochengxu.cc/index.php?s=/addon/Duoguan_dish/Common/verify.html" style="cursor:pointer;"></td>
+                                    <td style="text-align:right; vertical-align:bottom;" align="right"><img class="verifyimg reloadverify"  alt="点击切换" src="/DishAdmin/main/GetAuthCodeImg" onclick="javascript: this.src = '/DishAdmin/main/GetAuthCodeImg?v=' + Math.random();" style="cursor:pointer;"></td>
+                                </tr>
+                            </table>
+                        </li>*@
+
+                        <li><button type="submit" id="submit_button">登录</button></li>
+                    </ul>
+                </div>
+            </form>
+            <span class="c1"></span>
+            <span class="c2"></span>
+            <span class="c3"></span>
+        </div>
+    </div>
+
+</body>
+
+
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+
+            //表单验证
+            $("#post-form").validate({
+                rules: {
+                    login_username: {
+                        required: true,
+                    },
+                    login_userpass: {
+                        required: true
+                    },
+                    verify: {
+                        required: true
+                    }
+                },
+                messages: {
+                    login_username: {
+                        required: "请输入用户名"
+                    },
+                    login_userpass: {
+                        required: "请输入密码"
+                    },
+                    verify: {
+                        required: "请输入验证码"
+                    }
+                },
+                onkeyup: false,
+                //focusCleanup: true,
+                success: "valid",
+                submitHandler: function (form) {
+                    var l_index = layer.msg('数据提交中', {
+                        icon: 16,
+                        shade: 0.5
+                    });
+                    $("#submit_button").attr("disabled", true);
+                    $(form).ajaxSubmit({
+                        dataType: "json",
+                        success: function (data) {
+                            $("#submit_button").attr("disabled", false);
+                            layer.close(l_index);
+                            if (data.code == 0) {
+                                layer.msg(data.msg, { time: 1000 });
+                            } else {
+
+                                var url = window.location.host;
+                                var domain = "";
+                                if (url.indexOf("www.") != -1) {
+                                    domain = url.replace("www.", ".");
+                                }
+                                else {
+                                    domain = "." + url;
+                                }
+
+                                $.cookie("dzDishAdmin", data.msg, {
+                                    expires: 7,
+                                    path: '/',
+                                    domain: domain
+                                });
+                                setTimeout(function () {
+                                    window.location = "/DishAdmin/main/index?aId=" + data.obj.aId + "&storeId=" + data.obj.storeId;
+                                }, 1000);
+                            }
+                        }
+                    });
+                }
+            });
+
+        });
+    </script>
+}

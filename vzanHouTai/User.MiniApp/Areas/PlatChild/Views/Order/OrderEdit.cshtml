@@ -1,0 +1,98 @@
+﻿@using Entity.MiniApp.PlatChild;
+@model PlatChildGoodsOrder
+@{
+    Layout = null;
+}
+<link rel="stylesheet" type="text/css" href="@(WebSiteConfig.cdnurl)content/layui/css/layui.css" />
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/layui/layui.js"></script>
+<script src="@(WebSiteConfig.SourceContent)/fcontent/plugin/vue.min.js"></script>
+<div class="layui-tab-item" id="app" v-cloak>
+    <div v-if="curEditOrder!=null" class="modal-body" style="text-align:center;">
+        <table class="layui-table" lay-skin="nob" style="margin:0px;">
+            <tr>
+                <td class="right"><span>订单编号:</span></td>
+                <td class="left">{{curEditOrder.OrderNum}}</td>
+            </tr>
+            <tr v-if="curEditOrder.State==@((int)PlatChildOrderState.待付款)">
+                <td class="right"><span>订单金额:</span></td>
+                <td class="left"><input type="text" v-model="curEditOrder.BuyPriceStr" class="layui-input" v-on:input="changePrice" style="display:inline-block;" /></td>
+            </tr>
+            <tr>
+                <td class="right"><span>提/收货人:</span></td>
+                <td class="left"><input type="text" v-model="curEditOrder.AccepterName" class="layui-input" style="display:inline-block;" /></td>
+            </tr>
+            <tr>
+                <td class="right"><span>提/收货人电话:</span></td>
+                <td class="left"><input type="text" v-model="curEditOrder.AccepterTelePhone" class="layui-input" style="display:inline-block;" /></td>
+            </tr>
+            <tr>
+                <td class="right"><span>提/收货地址:</span></td>
+                <td class="left"><textarea class="layui-textarea" v-model="curEditOrder.Address" style="display:inline-block;" maxlength="80"></textarea></td>
+            </tr>
+        </table>
+    </div>
+    <div v-else class="modal-body" style="text-align:center;">订单资料有误</div>
+    <div class="modal-footer" style="text-align: center;">
+        <button type="button" class="layui-btn layui-btn-normal layui-btn-xs" v-on:click="saveInfo()">确定</button>
+        <button type="button" class="layui-btn layui-btn-primary layui-btn-xs" v-on:click="close()">取消</button>
+    </div>
+</div>
+
+
+    <script>
+        var _layer= parent.layer;
+        var isright = true;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                isloading: false,
+                curEditOrder:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            },
+            methods: {
+                saveInfo: function () {
+                    if (app.curEditOrder.BuyPriceStr == '') {
+                        _layer.msg("请输入正确的金额");
+                        return;
+                    }
+
+                    app.curEditOrder.BuyPrice = app.curEditOrder.BuyPriceStr * 10000 / 100;
+                    $.ajax({
+                        type: "POST",
+                        url: "/PlatChild/Order/UpdateOrderMaterial",
+                        data: { aid: @ViewBag.appId, orderJson: JSON.stringify(app.curEditOrder) },
+                        success: function (data) {
+                            _layer.msg(data.Msg);
+                            if (data.isok) {
+                                window.setTimeout(function () {
+                                    $(parent.window.document.getElementsByClassName("J_iframe")[0]).context.contentDocument.location.reload();
+                                    //parent.window.document.iframe9.location.reload();//do something
+                                    _layer.closeAll();
+                                }, 2000);
+                            }
+                        },
+                        error: function () {
+                            _layer.msg("通讯异常");
+                        }
+                    });
+                },
+                close:function(){
+                    _layer.closeAll();
+                },
+                //验证金额
+                changePrice:function(e){
+                    var obj=$(e.target);
+                    if(!/^[0-9]{1,10}(\.\d{0,2})?$/.test(obj.val())){
+                        layer.msg("请输入正确的金额",{time:1000});
+                        obj.val("");
+                        return;
+                    }
+                },
+            },
+            created: function(){
+                $("#app").show();
+            }
+        })
+
+    </script>

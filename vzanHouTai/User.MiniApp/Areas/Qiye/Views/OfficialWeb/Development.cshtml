@@ -1,0 +1,218 @@
+﻿@{
+    ViewBag.Title = "企业智推版";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section styles{
+    <style>
+        .centertext {
+            vertical-align: inherit !important;
+            text-align: center;
+        }
+
+        .width200 {
+            width: 200px !important;
+            display: inline-block !important;
+        }
+
+        .width100 {
+            width: 100px !important;
+            display: inline-block !important;
+        }
+
+        .datetimebox {
+            float: none !important;
+        }
+    </style>
+    <link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet" />
+}
+<body class="backgroundcolorfff">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div id="app" v-cloak>
+            <table class="table table-bordered viplevel ml_19" style="text-align:center;">
+                <tr class="active">
+                    <th class="centertext">日期</th>
+                    <th class="centertext" style="width:70%;">内容</th>
+                    <th class="centertext" style="width:20%;">操作</th>
+                </tr>
+                <tr v-for="(item,index) in datalist">
+                    <td class="centertext">{{item.Year+""+item.Month}}</td>
+                    <td class="centertext">{{item.Content}}</td>
+                    <td class="centertext">
+                        <a href="javascript:;" class="btn btn-primary ml10" v-on:click="editedata(index)">编辑</a>
+                        <a href="javascript:;" class="btn btn-default ml10" v-on:click="deldata(item.Id)">删除</a>
+                    </td>
+                </tr>
+                <tr v-if="datalist==null || datalist.length==0">
+                    <td colspan="8" style="text-align:center;">暂无数据</td>
+                </tr>
+            </table>
+            <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-if="recordCount>0"></div>
+            <div>
+                <a href="javascript:;" class="btn btn-primary ml11" v-on:click="editedata(-1)">添加</a>
+            </div>
+            <div id="editedata" hidden>
+                <div>
+                    <div style="margin: 10px;">
+                        <span>年份：</span>
+                        <select id="tempyear" class="form-control" style="width:200px !important; display:inline-block;">
+                            @for (var i = 1950; i <= DateTime.Now.Year; i++)
+                            {
+                                <option value=@i>@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div style="margin: 10px;">
+                        <span>月份：</span>
+                        <select id="tempmonth" class="form-control" style="width:200px !important; display:inline-block;">
+                            @for (var i = 1; i <= 12; i++)
+                            {
+                                <option value=@i>@i</option>
+                            }
+                        </select>
+                    </div>
+                    <div style="margin: 10px;">
+                        <span style="float:left;">简介：</span>
+                        <textarea id="tempcontent" class="form-control" style="height:80px;width:200px;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js"></script>
+    <script>
+        var _layer = parent.layer;
+        var app = new Vue({
+            el: "#app",
+            data: {
+                recordCount: 0,
+                datalist: [],
+                tempinfo:"",
+                postdata: {
+                    aid:@ViewBag.appId,
+                    pageIndex: 1,
+                    pageSize: 10,
+                },
+                currentdata:{
+                    //Id:0,
+                    //Year:1950,
+                    //Month:1,
+                    //Content:'',
+                },
+                isloading: false,
+                currenteditid:0,
+                playerindex:0,
+                type:0,
+                index:0,
+            },
+            methods: {
+                getdatalist: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Qiye/OfficialWeb/GetDevelopmentDataList", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.recordCount = data.dataObj.count;
+                        app.datalist = data.dataObj.data;
+                        app.resetPage();
+                    })
+                },
+                resetPage: function (/*issearch*/) {
+                    layui.use('laypage', function () {
+                        var laypage = layui.laypage;
+                        laypage.render({
+                            elem: 'pages'
+                            , count: app.recordCount //数据总数，从服务端得到
+                            , curr: app.postdata.pageIndex //当前页
+                            , limit: app.postdata.pageSize
+                            , jump: function (obj, first) {
+                                console.log(obj.limit); //得到每页显示的条数
+                                app.postdata.pageIndex = obj.curr;
+
+                                //首次执行
+                                if (!first) {
+                                    app.getdatalist();
+                                }
+                            }
+                            , theme: '#3eb94e'
+                            , layout: ['prev', 'page', 'next', 'skip']
+                        });
+                    })
+                },
+                editedata:function(index)
+                {
+                    if(index!=-1)
+                    {
+                        app.currentdata =app.datalist[index];
+                    }
+                    else{
+                        app.currentdata ={Year:1950,Month:1,Content:''};
+                    }
+                   
+                    _layer.open({
+                        type: 1,
+                        zIndex: 999999,
+                        title: "编辑",    
+                        shade: 0.3,
+                        area: ['300px', '300px'], //宽高
+                        content: $("#editedata").html().replace(/temp/g, ''),
+                        btn: ["保存", "取消"],
+                        yes: function () {
+                            var year = window.parent.document.getElementById("year").value;
+                            var month = window.parent.document.getElementById("month").value;
+                            var content = window.parent.document.getElementById("content").value;
+                            $.post("/Qiye/OfficialWeb/SaveDevelopmentData",{aid:'@ViewBag.appId',id:app.currentdata.Id,year:year,month:month,content:content},function(data){
+                                if(data.isok)
+                                {
+                                    _layer.closeAll();
+                                    _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                        window.location.reload();
+                                    });
+                                }
+                                else{
+                                    _layer.msg(data.Msg);
+                                }
+                            });
+                        },
+                        success:function(e)
+                        {
+                            $(e).find("#year option[value='"+app.currentdata.Year+"']")[0].selected=true
+                            $(e).find("#month option[value='"+app.currentdata.Month+"']")[0].selected=true
+                            $(e).find("#content").val(app.currentdata.Content);
+                        },
+                    });
+                },
+                deldata:function(id){
+                    _layer.confirm("确定删除该数据？", {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        $.post("/Qiye/OfficialWeb/DelDevelopmentData", {aid:@ViewBag.appId,id:id}, function (data) {
+                            if (data.isok) {
+                                _layer.msg(data.Msg, { anim: 0, time: 1000 }, function () {
+                                    window.location.reload();
+                                });
+                            }
+                            else {
+                                _layer.msg(data.Msg);
+                            }
+                            _layer.closeAll();
+                        })
+                    }, function () {
+                    });
+                },
+            },
+            created: function(){
+                this.getdatalist();
+                $("#app").show();
+            }
+        })
+    </script>
+}

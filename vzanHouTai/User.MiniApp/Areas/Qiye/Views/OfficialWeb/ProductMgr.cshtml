@@ -1,0 +1,378 @@
+﻿@using Entity.MiniApp.Qiye
+@using BLL.MiniApp.Qiye
+@model ViewModel<QiyeGoods>
+@{
+    ViewBag.Title = "产品列表";
+    Layout = "~/Areas/Qiye/Views/Shared/_LayoutAdmin.cshtml";
+    int appid = Utility.IO.Context.GetRequestInt("aid", 0);
+    if (appid <= 0)
+    {
+        appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    }
+
+    string ptypesWhere = string.Format("aid={0} and state=0 and parentId<>0", appid);
+
+    List<QiyeGoodsCategory> ptypes =  QiyeGoodsCategoryBLL.SingleModel.GetList(ptypesWhere, 100, 1, "*", "SortNumber desc,id asc");
+
+    List<QiyeGoodsLabel> plabels =  QiyeGoodsLabelBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid), 100, 1, "*", "id asc");
+}
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .nowrap { white-space: nowrap; }
+    .mt10 { margin-top: 20px; }
+</style>
+
+<div id="app" class="container-fluid" style="margin-top:20px;">
+
+    <div>
+
+        <div class="search ">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label for="plist-pname">产品名称：</label>
+                    <input type="text" name="search" class="form-control" id="plist-pname" value="@(Utility.IO.Context.GetRequest("search",""))" />
+                </div>
+                <div class="form-group ml10">
+                    <label>产品标签：</label>
+                    <select class="form-control" id="plist-plabels">
+                        <option value="">全部</option>
+                        @if (plabels != null && plabels.Count > 0)
+                        {
+                            foreach (QiyeGoodsLabel item in plabels)
+                            {
+                                <option value="@(item.Id)" @(Utility.IO.Context.GetRequestInt("plabels", 0) == item.Id ? "selected" : "")>@(item.Name)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group ml10">
+                    <label>产品分类：</label>
+                    <select class="form-control" id="plist-ptype">
+                        <option value="">全部</option>
+                        @if (ptypes != null && ptypes.Count > 0)
+                        {
+                            foreach (QiyeGoodsCategory item in ptypes)
+                            {
+                                <option value="@(item.Id)" @(Utility.IO.Context.GetRequestInt("ptype", 0) == item.Id ? "selected" : "")>@(item.Name)</option>
+                            }
+                        }
+                    </select>
+
+                </div>
+                <div class="form-group ml10">
+                    <label>状态：</label>
+                    <select class="form-control" id="plist-tag">
+                        <option value="">全部</option>
+                        <option value="1" @(Utility.IO.Context.GetRequestInt("ptag", -1) == 1 ? "selected" : "")>已上架</option>
+                        <option value="0" @(Utility.IO.Context.GetRequestInt("ptag", -1) == 0 ? "selected" : "")>已下架</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary ml10" id="searchbtn">搜索</button>
+                <a href="/Qiye/OfficialWeb/ProductMgr?aid=@appid" class="btn btn-default ml10" id="searchReset">重置</a>
+            </div>
+        </div>
+        <div class="mt10">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th class="centertext nowrap"></th>
+                        <th class="centertext nowrap">产品名称</th>
+                        <th class="centertext nowrap">产品类型</th>
+                        <th class="centertext nowrap">产品分类</th>
+                        <th class="centertext nowrap">产品标签</th>
+                        <th class="centertext nowrap">原价(元)</th>
+                        <th class="centertext nowrap">单买价(元)</th>
+                        <th class="centertext nowrap">库存</th>
+                        <th class="centertext nowrap">销量(实际+虚拟)</th>
+                        <th class="centertext nowrap">单位</th>
+                        <th class="centertext nowrap">最后更新时间</th>
+                        <th class="centertext nowrap">状态</th>
+                        <th class="centertext nowrap" width="150">排序</th>
+                        <th class="centertext nowrap">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.DataList)
+                    {
+                        <tr>
+                            <td align="center">
+                                <input type="checkbox" class="item_sel" value="@(item.Id)" />
+                            </td>
+                            <td class="centertext">
+                                <a href="/Qiye/OfficialWeb/ProductEdit?aid=@appid&id=@item.Id" title="@item.Name">@item.Name</a>
+                            </td>
+                            <td class="centertext">@item.GoodTypeStr</td>
+                            <td class="centertext">@item.CategorysStr</td>
+                            <td class="centertext">@item.PlabelStr</td>
+                            <td class="centertext">@(item.OriginalPrice.ToString("#0.00"))</td>
+                            <td class="centertext">@(item.Price.ToString("#0.00"))</td>
+                            <td class="centertext">@(item.StockLimit ? item.Stock.ToString() : "不限库存")</td>
+                            <td class="centertext">@(item.SalesCount+item.VirtualSalesCount)</td>
+                            <td class="centertext">@item.Unit</td>
+                            <td class="nowrap">@(item.Updatetime)</td>
+                            <td class="centertext">
+                                @{
+                                    if (item.Tag == 1)
+                                    {
+                                        <span class="label label-success">在售中</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="label label-danger ">已下架</span>
+                                    }
+                                }
+
+                            </td>
+                            <td class="showorclose centertext" data-state="0">
+                                <div>@item.Sort</div>
+                                <div style="display:none;">
+                                    <input type="text" class="form-control" name="sort_@item.Id" style="width:50px;display:inline-block;margin-bottom:5px;" value="@item.Sort" onkeyup="value=value.replace(/[^\d]/g,'') " maxlength="2" data-sort="@item.Sort" data-id="@item.Id" />
+                                    <br /><a href="javascript:;" class="btn btn-primary ml10 savesort" data-id="@item.Id">保存</a>
+                                    <a href="javascript:;" data-state="1" class="btn btn-default ml10 showorclose">关闭</a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="nobr">
+                                    <input type="button" class='btn btn-sm @(item.Tag==1?"btn-default":"btn-primary") changeGoodTag ml10' value="@(item.Tag==1?"下架":"上架")" data-pid="@(item.Id)" data-tag="@(item.Tag)" />
+                                    <a class="copygood btn btn-primary ml10" data-id="@(item.Id)"><i class="glyphicon glyphicon-file"></i>复制</a>
+
+                                    <a class="delp btn btn-default ml10" data-id="@(item.Id)"><i class="glyphicon glyphicon-trash ml10"></i>删除</a>
+                                    <a href="/Qiye/OfficialWeb/ProductEdit?aid=@appid&id=@item.Id" class="btn btn-primary ml10"><i class="glyphicon glyphicon-pencil"></i>编辑</a>
+                                </div>
+                            </td>
+                        </tr>
+                                    }
+                </tbody>
+            </table>
+            <div class="page">
+                @MvcPager.Pager(Html, "pageIndex", Model.PageSize, Model.TotalCount)
+            </div>
+        </div>
+        <div class="d-flex d-flex-center">
+            <a href="/Qiye/OfficialWeb/ProductEdit?aid=@appid" class="btn btn-primary ml10" id="btnBatch_Pass">
+                <span class="glyphicon glyphicon-plus"></span>
+                新增产品
+            </a>
+            &nbsp;&nbsp;
+            <input type="button" class="btn btn-primary ml10 batch-action" actin="1" value="批量上架" />
+            &nbsp;&nbsp;
+            <input type="button" class="btn btn-primary ml10 batch-action" actin="0" value="批量下架" />
+            &nbsp;&nbsp;
+            <button class="btn btn-primary ml10 savesort" data-id="0">
+                批量改排序
+            </button>
+            &nbsp;&nbsp;
+            <input type="button" class="btn btn-default ml10 batch-action" actin="-1" value="批量删除" /> &nbsp;<span style="color:orange">(批量删除操作只会对选中的已下架的商品生效)</span>
+        </div>
+    </div>
+    <script>
+        var aid=@appid;
+        $(function () {
+            $(document)
+                .on("click", ".copygood", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "复制确认",
+                        content: "确定要复制该产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/Qiye/OfficialWeb/SaveProduct", { act: "copy", id: pid, aid: aid })
+                            .then(function (data) {
+
+                                    if (data.isok) {
+                                        layer.msg(data.Msg,{time:1000});
+                                       setTimeout(function(){ window.location.reload();},2000);
+                                    }
+                                    else {
+                                        layer.alert(data.Msg);
+                                    }
+
+                            });
+
+                        }
+                    })
+                })
+                .on("click", ".delp", function () {
+                    var that = $(this);
+                    var pid = that.data("id");
+                    layer.open({
+                        title: "删除确认",
+                        content: "确定要删除该产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            $.post("/Qiye/OfficialWeb/SaveProduct", { act: "del", id: pid, aid: aid })
+                            .then(function (data) {
+
+                                    if (data.isok) {
+                                        layer.msg(data.Msg,{time:1000});
+                                        setTimeout(function(){ window.location.reload();},2000);
+
+                                    }
+                                    else {
+                                        layer.alert(data.Msg);
+                                    }
+
+                            });
+
+                        }
+                    })
+                })
+                .on("click", "#searchbtn", function () {
+                    var skey = $("#plist-pname").val();
+                    var plabels = $("#plist-plabels").find("option:selected").val() || "";
+                    var ptype = $("#plist-ptype").find("option:selected").val() || "";
+                    var ptag = $("#plist-tag").find("option:selected").val() || "";
+
+                    window.location.href = "/Qiye/OfficialWeb/ProductMgr?aid=" + aid + "&search=" + skey + "&plabels=" + plabels + "&ptype=" + ptype + "&ptag=" + ptag;
+                })
+                .on("click",".changeGoodTag",function(){
+                    var tag=$(this).data("tag");
+                    var pid=$(this).data("pid");
+                    tag=(tag==0?1:0);
+                    $.post("/Qiye/OfficialWeb/SaveProduct", { act: "tag", id: pid, aid: aid,tag:tag })
+                            .then(function (data) {
+                                if (data.isok) {
+                                    layer.msg(data.Msg,{time:1000});
+                                    setTimeout(function(){ window.location.reload();},2000);
+
+                                }
+                                else {
+                                    layer.alert(data.msg);
+                                }
+                            });
+                })
+                .on("click", ".batch-action", function () {
+                    var selitems = $(".item_sel:checked");
+                    var actval = $(this).attr("actin");
+                    var actionName;
+                    switch(actval)
+                    {
+                        case "1" :
+                            actionName = "批量上架" ;
+                            break;
+                        case "0" :
+                            actionName = "批量下架" ;
+                            break;
+                        case "-1" :
+                            actionName = "批量删除" ;
+                            break;
+                    }
+                    if (selitems.length <= 0) {
+                        layer.msg("请选择要" + actionName + "的产品", { time: 1000 });
+                        return;
+                    }
+                    layer.open({
+                        title: "操作确认",
+                        content: "确定要" + actionName + "产品吗？",
+                        btn: ["确定", "取消"],
+                        yes: function () {
+                            var ids = [];
+                            $.each(selitems, function (i, obj) {
+                                ids.push($(obj).val());
+                            })
+
+                            $.post("/Qiye/OfficialWeb/SaveProduct", { act: "batch", actval: actval, ids: ids.join(","), aid: aid })
+                                .then(function (data) {
+
+                                        if (data.isok) {
+                                            layer.msg(actionName+"成功", { time: 1000 });
+                                            setTimeout(function(){window.location.reload();},1000);
+                                        }
+                                        else {
+                                            layer.alert(data.Msg);
+                                        }
+
+
+                                });
+
+                        }
+                    })
+
+                })
+             .on("click",".showorclose",function(even){
+                 var state = $(this).attr("data-state");
+                 if(state==0)
+                 {
+                     var div1 = $(this)[0].children[0]
+                     var div2 = $(this)[0].children[1]
+                     $(div1).hide();
+                     $(div2).show();
+                 }
+                 else{
+                     var div1 = $(this.offsetParent)[0].children[0]
+                     var div2 = $(this.offsetParent)[0].children[1]
+
+                     $(div2).hide();
+                     $(div1).show();
+                 }
+
+                 //js阻止事件冒泡
+                 even.cancelBubble = true;
+                 even.stopPropagation();
+             })
+             .on("click",".savesort",function(even){
+                 var itemid = $(this).attr("data-id");
+
+                 var data = [];
+                 if(itemid<=0)
+                 {
+                     var inputlist = $("input[name^='sort_']");
+                     if(inputlist!=undefined && inputlist.length>0)
+                     {
+                         for (var i = 0; i < inputlist.length; i++) {
+                             var value = inputlist[i];
+                             if($(value).val().length<=0)
+                             {
+                                 layer.msg("请输入排序值",{time:1000});
+                                 return;
+                             }
+                             if($(value).val().length>0 && $(value).attr("data-sort") != $(value).val())
+                             {
+                                 data[data.length]={id:$(value).attr("data-id"),sort:$(value).val()};
+                             }
+                         }
+                     }
+                 }
+                 else{
+                     var inputitemval = $("input[name='sort_"+itemid+"']").val();
+                     if(inputitemval.length<=0)
+                     {
+                         layer.msg("请输入排序值",{time:1000});
+                         return;
+                     }
+                     data[data.length]={id:itemid,sort:inputitemval};
+                 }
+
+                 if(data.length<=0)
+                 {
+                     layer.msg("保存成功",{time:1000},function(){
+                         window.location.reload();
+                     });
+
+                     return;
+                 }
+
+                 var datajson = JSON.stringify(data);
+
+                 $.post("/Qiye/OfficialWeb/UpdateProductSort", {appId:aid,datajson:datajson},function(data){
+
+                         if(data.isok){
+                             layer.msg("保存成功",{time:1000},function(){
+                                 window.location.reload();
+                             });
+                         }
+                         else{
+                             layer.msg(data.msg,{time:1000});
+                         }
+
+                 });
+
+                 //js阻止事件冒泡
+                 even.cancelBubble = true;
+                 even.stopPropagation();
+             })
+            ;
+        });
+    </script>
+</div>

@@ -1,0 +1,84 @@
+﻿
+@{
+    ViewBag.Title = "TxSetting";
+    Layout = "~/Areas/Pin/Views/Shared/_LayoutMain.cshtml";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+@model PinPlatform
+@section styles{
+    <style>
+        .layui-form input[type=checkbox] { display: inline-block !important; }
+    </style>
+}
+<body class="gray-bg">
+    <div class="wrapper wrapper-content animated fadeInUp">
+        <div class="ibox-title">
+            <h3 style="float:left;">提现配置</h3>
+            <div class="clearfix"></div>
+        </div>
+        <div class="ibox-content xcx-list layui-form">
+            <label>最低提现金额：</label>
+            <input type="text" class="form-control" style="width: 70px;display: inline;" id="minTxMoney" value="@Model.minTxMoneyStr" />元
+            <span style="color:#808080;margin-left:20px;">设置后，商家申请提现金额不能低于该数值，否则无法提交申请</span>
+
+            <div style="margin:20px 0">
+                <label>最快处理时间：</label>
+                <input type="text" class="form-control" style="width:70px;display: inline;" value="@Model.dealDays" id="dealDays" />天内
+                <span style="color:#808080;margin-left:20px;">该值仅用于商家后台申请提现时，作提示之用，系统不会作实际限制</span>
+            </div>
+            <div style="margin:20px 0;">
+                <h3>提现费率</h3>
+            </div>
+            <div style="margin:20px 0">
+                <label>平台交易手续费：</label>
+                <input type="text" class="form-control" style="width:70px;display: inline;" value="@(Model.serviceFee*0.1)" id="serviceFee" />%
+                <span style="color:#808080;margin-left:20px;">入驻商家平台交易提现时，系统会按设定比例扣除手续费，再向客户转账提现</span>
+            </div>
+            <div style="margin:20px 0">
+                <label>店内扫码手续费：</label>
+                <input type="text" class="form-control" style="width:70px;display: inline;" value="@(Model.qrcodeServiceFee*0.1)" id="qrcodeServiceFee" />%
+                <span style="color:#808080;margin-left:20px;">入驻商家店内扫码交易提现时，系统会按设定比例扣除手续费，再向客户转账提现</span>
+            </div>
+
+            <div style="margin:20px 0">
+                <label>代理收益手续费：</label>
+                <input type="text" class="form-control" style="width:70px;display: inline;" value="@(Model.agentServiceFee*0.1)" id="agentServiceFee" />%
+                <span style="color:#808080;margin-left:20px;">入驻代理提现时，系统会按设定比例扣除手续费，再向客户转账提现</span>
+            </div>
+
+            @*<div style="margin:20px 0">
+            <label>支持提现方式：</label>
+            <input type="checkbox" name="toWx" @(Model.toWx == 1 ? "checked" : "") id="toWx" />
+            <label for="toWx">提现到申请入驻的微信账号</label>
+            <span style="color:#808080;margin-left:20px;">（点击处理后，系统会在微信商家账户中转账到对方微信钱包。请确认您商户号有提现功能）</span>
+            <div style=" margin-left: 102px; margin-top: 10px;">
+                <input type="checkbox" name="toBank" @(Model.toBank == 1 ? "checked" : "") id="toBank" />
+                <label for="toBank">提现银行卡</label>
+                <span style="color:#808080;margin-left:20px;">（需平台财务人员手动转账处理）</span>
+            </div>
+        </div>*@
+            <div style="padding-left: 200px;">
+                <button class="btn btn-primary radius" type="button" id="submit_button"> 保存</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+@section scripts{
+    <script>
+        $(function () {
+            $("#submit_button").click(function () {
+                var minTxMoney = $("#minTxMoney").val()*100;
+                var dealDays = $("#dealDays").val();
+                var serviceFee = $("#serviceFee").val() * 10;
+                var qrcodeServiceFee = $("#qrcodeServiceFee").val() * 10;
+                var agentServiceFee = $("#agentServiceFee").val() * 10;
+                var toWx = $("#toWx").is(':checked') ? 1 : 0;
+                var toBank = $("#toBank").is(':checked') ? 1 : 0;
+                $.post("/pin/config/SaveTxSetting", { aid:@aid, minTxMoney, dealDays, serviceFee, toWx, toBank, qrcodeServiceFee, agentServiceFee}, function (data) {
+                    layer.msg(data.msg);
+                })
+            })
+        })
+    </script>
+}

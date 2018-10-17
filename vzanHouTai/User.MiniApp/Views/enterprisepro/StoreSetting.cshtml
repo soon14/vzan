@@ -1,0 +1,941 @@
+﻿@model Store
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = "店铺配置";
+    ViewBag.PageType = 22;
+    int productQrcodeSwitch = ViewBag.productQrcodeSwitch;
+    int switchReceiving = ViewBag.switchReceiving;
+    int switchSearch = ViewBag.switchSearch;
+    int switchReserveShopping = ViewBag.switchReserveShopping;
+    int appid = Utility.IO.Context.GetRequestInt("appId", 0);
+    List<EntGoodType>
+    ptypes =  EntGoodTypeBLL.SingleModel.GetList(string.Format("aid={0} and state=1", appid), 50, 1, "*", "id asc");
+    List<PickPlace> placeList = (List<PickPlace>)ViewData["placeList"];
+}
+
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-daterangepicker/daterangepicker.min.css" rel="stylesheet" type="text/css" />
+<link href="@(WebSiteConfig.cdnurl)content/assets/global/plugins/bootstrap-colorpicker/bootstrap-clockpicker.min.css" rel="stylesheet" />
+
+<style>
+    /*标签页下划线*/
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #0094ff !important; }
+    .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #0094ff !important; }
+    /*基础配置-开关*/
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #2196f3; background-color: #2196f3; }
+    .layui-form tr td { padding: 10px 5px; }
+    /*保存按钮*/
+    .layui-btn-normal { background: #0094ff; }
+    /*店铺信息*/
+    .row table { margin-top: 10px; }
+    .row table td { padding: 5px 0; }
+    .storename { width: 200px }
+    .title { text-align: right; width: 109px; }
+    .LogoImgUrl, #photoUrl { border: dashed 1px; margin: 18px 0 0 0; border-radius: 5px; border-color: #2196f3; text-align: center; background: #e4e4e4; padding: 0 5px; width: 216px; }
+    #photoUrl { width: 580px; }
+    #logo { margin: 0 auto; width: 100px; }
+    /*店铺信息-删除按钮*/
+    .del-btn { position: absolute; top: -9px; right: -8px; color: #fff; background: rgba(0, 0, 0, 0.56); width: 18px; border-radius: 13px; text-align: center; line-height: 18px; }
+    .price { width: 229px; }
+    .alert-info { padding: 5px 10px; margin: 5px; }
+    #place-box { width: 100%; }
+    #place-box li { width: 23%;min-height:105px; padding: 10px 20px 15px 20px; border: 1px solid #888; margin: 15px; display: inline-block; box-shadow: 3px 4px 5px #ccc; border-radius: 3px; float: left; }
+    #place-box li:hover { box-shadow: 5px 4px 3px #888888; cursor: pointer; }
+    #place-box li a { float: right; margin: 0 5px; }
+</style>
+
+<div id="app" v-cloak class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+    <ul class="layui-tab-title">
+        <li class="tab_element" lay-id="tab_element_1">基础配置</li>
+        <li class="tab_element layui-this" lay-id="tab_element_2">到店</li>
+        @*
+            <li class="tab_element" lay-id="tab_element_3">外卖配置</li>*@
+    </ul>
+    <div class="layui-tab-content">
+        <!--#region 基础配置-->
+        <div class="layui-tab-item">
+            <table class="layui-form">
+                <tr>
+                    <td class="title">一物一码分享：</td>
+                    <td>
+                        <div style="display:inline-block;">
+                            @{
+                                if (ViewBag.PageType == 22 && productQrcodeSwitch == 1)
+                                {
+                                    <div class="layui-form" title="请升级到更高版本">
+                                        <input type="checkbox" name="productQrcodeSwitch" lay-filter="productQrcodeSwitch" lay-skin="switch" lay-text="开启|关闭" disabled="disabled">
+                                    </div>
+
+                                }
+                                else
+                                {
+                                    <div class="layui-form">
+                                        <input type="checkbox" name="productQrcodeSwitch" lay-filter="productQrcodeSwitch" lay-skin="switch" lay-text="开启|关闭" v-model=" storeModel.funJoinModel.productQrcodeSwitch">
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <label class="forinputmassage color-red">* 开启则会在商品详情页出现分享按钮</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">开启货到付款：</td>
+                    <td>
+                        <div style="display:inline-block;">
+                            @{
+                                if (ViewBag.PageType == 22 && productQrcodeSwitch == 1)
+                                {
+                                    <div class="layui-form" title="请升级到更高版本">
+                                        <input type="checkbox" name="productCashDelivery" lay-filter="productCashDelivery" lay-skin="switch" lay-text="开启|关闭" disabled="disabled">
+                                    </div>
+
+                                }
+                                else
+                                {
+                                    <div class="layui-form">
+                                        <input type="checkbox" name="productCashDelivery" lay-filter="productCashDelivery" lay-skin="switch" lay-text="开启|关闭" v-model="storeModel.funJoinModel.CashOnDelivery">
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <label class="forinputmassage color-red">* 开启货到付款后，系统无法保证货到付款和订单收款到账。商家线下自行收款，可能会出现资金风险，请确保已有“物流代收货款服务”或“商家自配送服务”后谨慎设置。</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">开启快递配送：</td>
+                    <td>
+                        <div style="display:inline-block;">
+                            <div class="layui-form">
+                                <input type="checkbox" name="openExpress" lay-filter="openExpress" lay-skin="switch" lay-text="开启|关闭" v-model="storeModel.funJoinModel.openExpress">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                @*<tr v-show="storeModel.funJoinModel.openInvite||storeModel.funJoinModel.openToStoreConsume">
+            <td class="title"><span style="color:red;">*</span>店铺地址：</td>
+            <td class="form-inline">
+                <label id="Address" hidden>{{storeModel.Address}}</label>
+                <a id="btnMap" hidden><label id="checkMapStr" v-on:click="GetMap()">{{storeModel.Address != null && storeModel.Address.length>0?"重新选择" : "从地图选择"}}</label></a>
+                <input type="text" placeholder="请输入店铺地址" v-model="storeModel.Address" class="form-control" style="width:500px;" />
+            </td>
+        </tr>*@
+                <tr>
+                    <td class="title">退货地址：</td>
+                    <td class="form-inline">
+                        <label id="returnAddress" hidden>{{storeModel.funJoinModel.returnAddress}}</label>
+                        <input type="text" placeholder="请输入退货地址" v-model="storeModel.funJoinModel.returnAddress" class="form-control" style="width:500px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">热门搜索：</td>
+                    <td valign="top">
+
+                        @{
+                            if (ViewBag.PageType == 22 && switchSearch == 1)
+                            {
+                                <div class="layui-form" title="请升级到更高版本">
+                                    <input type="checkbox" name="switchSearchKeyword" lay-filter="openSearchKeyword" disabled="disabled" class="prohibited" lay-skin="switch" lay-text="开启|关闭" v-model="storeModel.funJoinModel.openSearchKeyword">
+                                </div>
+
+                            }
+                            else
+                            {
+                                <div class="layui-form">
+                                    <input type="checkbox" name="switchSearchKeyword" lay-filter="openSearchKeyword" lay-skin="switch" lay-text="开启|关闭" v-model="storeModel.funJoinModel.openSearchKeyword">
+                                </div>
+                            }
+                        }
+                    </td>
+                </tr>
+
+                <tr v-if="storeModel.funJoinModel.openSearchKeyword">
+                    <td class="title">关键词：</td>
+                    <td valign="top" colspan="2">
+                        <div class="f fw">
+                            <div class="alert alert-info" v-for="(item,index) in storeModel.funJoinModel.searchKeyword">
+                                <button type="button" class="close" v-on:click="removeKeyword(index)">×</button>
+                                {{item}}
+                            </div>
+                        </div>
+                        <div class="form-inline">
+                            <input type="text" class="form-control" v-model="newKeyword" v-on:keyup.enter="addKeyword" /><input type="button" value="添加" class="btn btn-primary ml10" v-on:click="addKeyword" />
+                            <span class="text-warning">最多可添加20个关键词</span>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="text-align: right;" width="20%">新订单提示音<label style="color: red">*</label></td>
+                    <td>
+                        <input class="OpenNewOrderPrompt" name="OpenNewOrderPrompt" type="radio" value="1" v-bind:checked="storeModel.OpenNewOrderPrompt" lay-ignore v-on:click="openneworderbtn()" /> 开启
+                        <input class="OpenNewOrderPrompt" name="OpenNewOrderPrompt" type="radio" value="0" v-bind:checked="!storeModel.OpenNewOrderPrompt" lay-ignore v-on:click="openneworderbtn()" /> 关闭
+                        &nbsp;&nbsp;&nbsp;
+                        <label class="forinputmassage" for="AutoAcceptOrderRadio" style="color: red">* 开启后，只要进入该小程序后台,有新订单就会有提示音</label>
+                        <div id="OpenNewOrderPromptBox" v-bind:style="{display:storeModel.OpenNewOrderPrompt?'':'none'}">
+                            <input class="VoiceType" name="VoiceType" type="radio" value="0" v-bind:checked="storeModel.VoiceType==0" lay-ignore v-on:click="voicebtn()" /> 系统提示音
+                            <input class="VoiceType" name="VoiceType" type="radio" value="1" v-bind:checked="storeModel.VoiceType==1" lay-ignore v-on:click="voicebtn()" /> 自定义提示音
+                            <div id="voicebox" v-bind:style="{display:storeModel.VoiceType==1?'':'none'}">
+                                @RenderPage("~/Views/Shared/_UploadVoice.cshtml")
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="title">快速买单：</td>
+                    <td valign="top">
+                        <a :href="storeModel.funJoinModel.StorePayQrcode" download="支付码">点击下载支付码</a>
+                        <span class="glyphicon glyphicon-refresh" style="cursor:pointer;" v-on:click="GetStorePayQrcode()"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title"></td>
+                    <td>
+                        <img :src="storeModel.funJoinModel.StorePayQrcode" alt="@ViewBag.StorePayQrcodeAlt" style="width:200px;height:200px;" />
+                    </td>
+                </tr>
+
+            </table>
+            <div style="margin-top:35px">
+                <button v-on:click="SaveBase()" class="layui-btn layui-btn-normal">保存</button>
+            </div>
+        </div>
+        <!--#endregion-->
+        <!--#region 店铺信息-->
+        <div class="layui-tab-item layui-show">
+            <table class="layui-form">
+                <tr>
+                    <td class="title">开启到店自提：</td>
+                    <td>
+
+                        @{
+                            if (ViewBag.PageType == 22 && switchReceiving == 1)
+                            {
+                                <div class="layui-form" title="请升级到更高版本">
+                                    <input type="checkbox" name="switchReceiving" lay-filter="openInvite" title="请升级到更高版本" disabled="disabled" lay-skin="switch" lay-text="开启|关闭">
+                                </div>
+
+                            }
+                            else
+                            {
+                                <div class="layui-form">
+                                    <input type="checkbox" name="switchReceiving" lay-filter="openInvite" lay-skin="switch" lay-text="开启|关闭" v-model="storeModel.funJoinModel.openInvite">
+                                </div>
+                            }
+                        }
+                    </td>
+                    <td>
+                        <label class="forinputmassage color-red">* 开启到店自提功能,为客户提供到门店取货的选择</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="title">开启到店消费：</td>
+                    <td>
+
+                        @{
+                            if (ViewBag.PageType == 22 && switchReceiving == 1)
+                            {
+                                <div class="layui-form" title="请升级到更高版本">
+                                    <input type="checkbox" name="switchReceiving" lay-filter="openToStoreConsume" title="请升级到更高版本" disabled="disabled" lay-skin="switch" lay-text="开启|关闭">
+                                </div>
+
+                            }
+                            else
+                            {
+                                <div class="layui-form">
+                                    <input type="checkbox" name="switchReceiving" lay-filter="openToStoreConsume" lay-skin="switch" lay-text="开启|关闭" v-model="storeModel.funJoinModel.openToStoreConsume">
+                                </div>
+                            }
+                        }
+                    </td>
+                    <td>
+                        <label class="forinputmassage color-red">* 开启到店消费功能,为客户提供到消费门店地址的选择</label>
+                    </td>
+                </tr>
+
+            </table>
+            <div>
+                <ul id="place-box" class="clearfix">
+
+                    <li v-for="(item,index) in placeList">
+                        <div>
+                            <a href="javascript:;" v-on:click="DeletePlaceInfo(index)">删除</a>
+                            <a href="javascript:;" v-on:click="EditPlace(index)">编辑</a>
+                            <div class="clearfix"></div>
+                        </div>
+                        <p style="color: #2196F3;">店铺名称：{{item.name}}</p>
+                        <p>店铺地址：{{item.address}}</p>
+                    </li>
+                    <li v-on:click="addNewPlace()" style="line-height: 77px;">
+                        <p style="color: #2196F3;text-align: center;">+新增支持到店取货的店铺地址</p>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+    <!--#region 添加自取门店-->
+    <div class="modal fade" id="EditPickPlace" tabindex="-1" role="dialog" aria-labelledby="EditPickPlace_label">
+        <div class="modal-dialog modal-lg" role="document" style="width:350px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="EditPickPlace_label">自取门店设置</h4>
+                </div>
+                <div class="modal-body">
+                    <table>
+                        <tr>
+                            <td>店铺名称：</td>
+                            <td><input type="text" class="form-control" v-model="placeInfo.name" /></td>
+                        </tr>
+                        <tr>
+                            <td>地址：</td>
+                            <td><label id="Address">{{placeInfo.address}}</label> <a id="btnMap"><label id="checkMapStr" v-on:click="GetMap()">{{placeInfo.address.length>0?"重新选择" : "从地图选择"}}</label></a></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="SavePlaceInfo()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- #region 选择地图位置弹窗 -->
+    <div class="modal fade" id="ChooseLocationModal" tabindex="-1" role="dialog" aria-labelledby="ChooseLocationModal_label">
+        <div class="modal-dialog modal-lg" role="document" style="width:1000px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="ChooseLocationModal_label">选择地图位置</h4>
+                </div>
+                <div class="modal-body">
+                    <iframe name="mapframe" src="/Content/plugin/chooselocation/index.html" frameborder="0" width="100%" height="610"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="ChooseLocation()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- #region 添加产品分类弹窗 -->
+
+    <div class="modal bs-example-modal-m" ref="goodTypeLayer" tabindex="-1" role="dialog" aria-labelledby="tipsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-m">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4>商品分类</h4>
+                </div>
+                <div class="modal-body text-center" style="height:300px;overflow-y:scroll;">
+                    <table class="layui-table" lay-even lay-skin="nob">
+                        <colgroup>
+                            <col width="150">
+                            <col width="200">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>名称</th>
+                                <th>是否选中</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="type in goodType">
+                                <td>{{type.id}}</td>
+                                <td>{{type.name}}</td>
+                                <td>
+                                    <div class="layui-form">
+                                        <input type="checkbox" v-model="selectedTypeTemp" lay-filter="goodType" lay-skin="primary" v-bind:value="type.id">
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button @@click="selectGoodType(false)" type="button" class="btn btn-default" data-dismiss="modal" id="closefabuinfo">关闭</button>
+                    <button @@click="saveGoodType" type="button" class="btn btn-primary" data-dismiss="modal" id="closefabuinfo">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)content/aliosslib/lib/plupload-2.1.2/js/plupload.full.min.js"></script>
+<script src="@(WebSiteConfig.cdnurl)content/plugin/uploadImg.js"></script>
+<script>
+                //数据初始化
+                var form, element;
+                /**/
+                var storeModel =@Html.Raw(JsonConvert.SerializeObject(Model));
+                /**/
+                if (storeModel.goodsCatList == null) storeModel.goodsCatList = [];
+                /**/
+                var goodtypelist =@Html.Raw(JsonConvert.SerializeObject(ptypes));
+                var placeList =@Html.Raw(JsonConvert.SerializeObject(placeList));
+                if (placeList == null) placeList = [];
+                /**/
+                var selectedType = storeModel.funJoinModel.reserveClass == null ? [] : storeModel.funJoinModel.reserveClass.split(',');
+                var logo = [];
+                if (storeModel != null && storeModel.logo != null && storeModel.logo != '') {
+                    logo.push({ filepath: storeModel.logo });
+                }
+                var pictures = [];
+                if (storeModel != null && storeModel.pictures != null && storeModel.pictures != '') {
+                    var arr = storeModel.pictures.split(',');
+                    $.each(arr, function (i, v) {
+                        pictures.push({ filepath: this });
+                    })
+                }
+                var def_placeInfo = {
+                    aid: Number('@appid'),
+                    Id: 0,
+                    name: '',
+                    address: '',
+                    lat: 0.00,
+                    lng: 0.00,
+                }
+                var app = new Vue({
+                    el: "#app",
+                    data: {
+                        placeInfo: {
+                            aid: Number('@appid'),
+                            Id:0,
+                            name: '',
+                            address: '',
+                            lat: 0.00,
+                            lng:0.00,
+                        },
+                        placeList: placeList,
+                        storeModel: storeModel,
+                        newKeyword: "",
+                        //传入组件数据
+                        componentData: {
+                            uploadData: {
+                                //传入图片对象
+                                logo: {
+                                    imgList: logo,//图片路径
+                                    progress: 'logo-progress',//进度条过滤器
+                                    maxfile: 1,
+                                },
+                                photoUrl: {
+                                    imgList: pictures,//图片路径
+                                    progress: 'photo-progress',//进度条过滤器
+                                    maxfile: 10,
+                                }
+                            }
+                        },
+                        selectedType: selectedType,
+                        selectedTypeTemp: [],
+                        goodType: [],
+                        goodtypelist: goodtypelist,
+                        pickallgoodcat: false,
+                        /**/
+                        appId: Number('@appid'),
+                /**/
+                layForm: {}
+            },
+            components: {
+                // <upload-component> 将只在父组件模板中可用
+                'upload-component': uploadChild
+            },
+            methods: {
+                GetStorePayQrcode:function(){
+                    var that = this;
+                    $.post("/enterprisepro/GetStorePayQrcode", { appId: that.storeModel.appId}, function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+                            setTimeout(function(){ window.location.reload();},1000)
+                        }
+
+                    });
+                },
+                InitLayer: function () {
+                    var that = this;
+
+                    var shoptime = '';
+                    if (that.storeModel.funJoinModel.StartTime != null && that.storeModel.funJoinModel.EndTime != null && that.storeModel.funJoinModel.StartTime.length > 0 && that.storeModel.funJoinModel.EndTime.length > 0) {
+                        shoptime = that.storeModel.funJoinModel.StartTime + ' - ' + that.storeModel.funJoinModel.EndTime
+                    }
+                    layui.use(['form', 'element', 'laydate'], function () {
+                        element = layui.element;
+                        //开关按钮
+                        form = layui.form;
+                        that.layForm = form;
+                        form.on('switch(openInvite)', function (data) {
+                            if (data.elem.checked && (that.placeList == null || that.placeList.length <= 0)) {
+                                data.elem.checked = false;
+                                form.render();
+                                layer.msg("请设置自取门店");
+                                return;
+                            }
+                            that.storeModel.funJoinModel.openInvite = data.elem.checked;
+                            if(data.elem.checked){
+                                that.storeModel.funJoinModel.openToStoreConsume =!data.elem.checked;
+                            }
+                            var layerIndex = layer.load(2);
+                            $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeModel.appId, storeModel: that.storeModel, action: 'saveopenInvite' }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.Msg);
+                            });
+                        });
+                        form.on('switch(openToStoreConsume)', function (data) {
+                            if (data.elem.checked && (that.placeList == null || that.placeList.length <= 0)) {
+                                data.elem.checked = false;
+                                form.render();
+                                layer.msg("请设置到店消费门店");
+                                return;
+                            }
+                            that.storeModel.funJoinModel.openToStoreConsume = data.elem.checked;
+                            if(data.elem.checked){
+                                that.storeModel.funJoinModel.openInvite =!data.elem.checked;
+                            }
+                            var layerIndex = layer.load(2);
+                            $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeModel.appId, storeModel: that.storeModel, action: 'savestoreConsume' }, function (data) {
+                                layer.close(layerIndex);
+                                layer.msg(data.Msg);
+                            });
+                        });
+                        form.on('switch(openSearchKeyword)', function (data) {
+                            that.storeModel.funJoinModel.openSearchKeyword = data.elem.checked;
+                        });
+                        form.on('switch(takeoutSwitch)', function (data) {
+                            that.storeModel.funJoinModel.takeoutSwitch = data.elem.checked;
+                        });
+                        form.on('switch(setIndexSwitch)', function (data) {
+                            that.storeModel.funJoinModel.setIndexSwitch = data.elem.checked;
+                        });
+
+                        form.on('switch(productQrcodeSwitch)', function (data) {
+                            that.storeModel.funJoinModel.productQrcodeSwitch = data.elem.checked;
+                        });
+                        form.on('switch(productCashDelivery)', function (data) {
+                            that.storeModel.funJoinModel.CashOnDelivery = data.elem.checked;
+                        });
+                        form.on('switch(reserveSwitch)', function (data) {
+                            that.storeModel.funJoinModel.reserveSwitch = data.elem.checked;
+                        });
+                        form.on('switch(openExpress)', function (data) {
+                            that.storeModel.funJoinModel.openExpress = data.elem.checked;
+                        });
+                        //商品分类勾选
+                        form.on('checkbox(goodType)', function (data) {
+                            if (data.elem.checked) {
+                                that.selectedTypeTemp.push(data.value);
+                            }
+                            else {
+                                that.selectedTypeTemp.splice(that.selectedTypeTemp.indexOf(data.value), 1);
+                            }
+                        });
+                        //时间选择器
+                        laydate = layui.laydate;
+                        laydate.render({
+                            elem: '#ShopTime', //指定元素
+                            type: 'time',
+                            theme: 'grid',
+                            format: 'HH:mm',
+                            value: shoptime,
+                            range: true,
+                            done: function (value, date, endDate) {
+                                //console.log(value, date, endDate);
+                                //app.storeModel.ShopTime = value;
+                                that.storeModel.funJoinModel.StartTime = value.split(' - ')[0];
+                                that.storeModel.funJoinModel.EndTime = value.split(' - ')[1];
+                            }
+                        });
+                    });
+
+                },
+                //保存基础配置
+                SaveBase: function () {
+                    var that = this;
+                    //start 来新订单提示音
+                    var OpenNewOrderPrompt = $('input[name="OpenNewOrderPrompt"]:checked').val() == "1";
+                    var VoiceType = $('input[name="VoiceType"]:checked').val();
+                    //音乐
+                    var voicepath = $("#voiceid").attr("data-path");
+                    if (VoiceType == 1 && voicepath.length <= 0) {
+                        /**/
+                        voicepath = '@ViewBag.Attachmentvoicepath';
+                /**/
+                if (voicepath.length <= 0) {
+                    return AppTools.Alert("请上传音频文件!");
+                }
+            }
+            that.storeModel.VoiceUrl = voicepath;
+            that.storeModel.OpenNewOrderPrompt = OpenNewOrderPrompt;
+            that.storeModel.VoiceType = VoiceType;
+            //end
+            var layerIndex = layer.load(2);
+            $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeModel.appId, storeModel: that.storeModel, action: 'savebase' }, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.Msg);
+            });
+        },
+        //保存门店信息
+        SaveStore: function () {
+            var that = this;
+            if (that.componentData.uploadData.logo.imgList.length <= 0) {
+                layer.msg("请添加门店logo")
+                return;
+            }
+            that.storeModel.logo = that.componentData.uploadData.logo.imgList[0].filepath;
+
+            var picArr = [];
+            $.each(that.componentData.uploadData.photoUrl.imgList, function (i, v) {
+                picArr.push(this.filepath);
+            })
+            that.storeModel.pictures = '';
+            if (picArr.length > 0) {
+                that.storeModel.pictures = picArr.join(',');
+            }
+            var layerIndex = layer.load(2);
+
+            $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeModel.appId, storeModel: that.storeModel, action: 'savestore' }, function (data) {
+                layer.close(layerIndex);
+                if (data.isok) {
+                    that.storeModel = data.dataObj;
+                }
+                layer.msg(data.Msg);
+            });
+        },
+        GetMap: function () {
+            $("#ChooseLocationModal").modal("show");
+        },
+        ChooseLocation: function () {
+            var that = this;
+            var _location = mapframe.window.document.getElementById("poi_cur").value;
+            var _addr_cur = mapframe.window.document.getElementById("addr_cur").value;
+            var _zoom = mapframe.window.document.getElementById("zoomlevel").innerHTML;
+            if (_location == "") {
+                layer.msg("您还未选择地理位置！");
+                return;
+            }
+            _location = _location.split(",");
+            //that.storeModel.Lng = parseFloat(_location[1]);
+            //that.storeModel.Lat = parseFloat(_location[0]);
+            //that.storeModel.funJoinModel.takeoutAddress = _addr_cur;
+            that.placeInfo.lat = parseFloat(_location[0]);
+            that.placeInfo.lng = parseFloat(_location[1]);
+            that.placeInfo.address = _addr_cur;
+            $("#checkMapStr").text("重新选择");
+            $("#ChooseLocationModal").modal("hide");
+        },
+        SaveInfo: function () {
+            if (!this.ValidData()) return;
+
+            //达达配送
+            //if (app.storeModel.funJoinModel.openDadaDistribution) {
+            //    app.storeModel.funJoinModel.StartTime = $("#StartTime").val();
+            //    app.storeModel.funJoinModel.EndTime = $("#EndTime").val();
+            //    if (app.storeModel.funJoinModel.StartTime == null || app.storeModel.funJoinModel.StartTime.length == 0) {
+            //        layer.msg("请选择开始时间");
+            //        return;
+            //    }
+            //    if (app.storeModel.funJoinModel.EndTime == null || app.storeModel.funJoinModel.EndTime.length == 0) {
+            //        layer.msg("请选择结束时间");
+            //        return;
+            //    }
+
+            //    if (app.dataweeks.length == 0) {
+            //        layer.msg("请选择营业日期");
+            //        return;
+            //    }
+            //    app.storeModel.funJoinModel.Weeks = app.dataweeks.join(",");
+            //}
+
+            $.post("/enterprisepro/SaveStoreSetting", { appId: app.storeModel.appId, storeModel: app.storeModel }, function (data) {
+                layer.msg(data.msg);
+            }, "json")
+        },
+        ValidData: function () {
+            var result = false;
+            //若开启到店自取,则判定地址必填
+            if (app.storeModel.funJoinModel.openInvite) {
+                if (this.placeList.length <= 0) {//$.trim(app.storeModel.Address).length <= 0
+                    layer.msg("请选择店铺地址位置!");
+                    return result;
+                }
+            }
+        },
+        TurnToStoreInfo: function () {
+            element.tabChange('docDemoTabBrief', 'tab_element_2');
+        },
+        //保存外卖配置
+        SaveTakeout: function () {
+            var that = this;
+            var test = /^[1-9]\d*$/;
+            if (!test.test(that.storeModel.funJoinModel.DeliveryRange)) {
+                layer.msg("配送范围只能输入大于0的整数");
+                return;
+            }
+            test = /^[1-9]\d*|0$/;
+            that.storeModel.funJoinModel.OutSide = parseFloat(that.storeModel.funJoinModel.OutSideStr) * 100;
+            if (that.storeModel.funJoinModel.OutSide < 0) {
+                layer.msg("起送价错误");
+                return;
+            }
+            that.storeModel.funJoinModel.ShippingFee = parseFloat(that.storeModel.funJoinModel.ShippingFeeStr) * 100;
+            if (that.storeModel.funJoinModel.ShippingFee < 0) {
+                layer.msg("配送费错误");
+                return;
+            }
+            that.storeModel.funJoinModel.PackinFee = parseFloat(that.storeModel.funJoinModel.PackinFeeStr) * 100;
+            if (that.storeModel.funJoinModel.PackinFee < 0) {
+                layer.msg("餐盒费错误");
+                return;
+            }
+            var layerIndex = layer.load(2);
+            var catIdArr = [];
+            if (that.storeModel.goodsCatList != null && that.storeModel.goodsCatList.length > 0) {
+                $.each(that.storeModel.goodsCatList, function (i, v) {
+                    catIdArr.push(v.id);
+                })
+                that.storeModel.funJoinModel.goodsCatIds = catIdArr.join(',');
+            }
+            $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeModel.appId, storeModel: that.storeModel, action: 'savetakeout' }, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.Msg);
+            });
+        },
+        addKeyword: function () {
+            if (app.storeModel.funJoinModel.openSearchKeyword) {
+                if (app.storeModel.funJoinModel.searchKeyword.includes(this.newKeyword)) {
+                    layer.msg("请勿添加重复关键词!");
+                    return;
+                }
+                if (app.storeModel.funJoinModel.searchKeyword.length > 20) {
+                    layer.msg("最多添加20个关键词!");
+                    return;
+                }
+
+                app.storeModel.funJoinModel.searchKeyword.push(this.newKeyword);
+                this.newKeyword = "";
+            }
+        },
+        removeKeyword: function (index) {
+            app.storeModel.funJoinModel.searchKeyword.splice(index, 1);
+        },
+        goodTypeChecker: function () {
+            var thisVue = this;
+            layui.use(['form', 'element'], function () {
+                element = layui.element;
+                form = layui.form;
+                //商品分类勾选
+                form.on('checkbox(goodType)', function (data) {
+                    if (data.elem.checked) {
+                        thisVue.selectedTypeTemp.push(data.value);
+                    }
+                    else {
+                        thisVue.selectedTypeTemp.splice(thisVue.selectedTypeTemp.indexOf(data.value), 1);
+                    }
+                });
+            });
+        },
+        selectGoodType: function (show) {
+            if (show) {
+                $(this.$refs.goodTypeLayer).fadeIn();
+            }
+            else {
+                $(this.$refs.goodTypeLayer).fadeOut();
+            }
+        },
+        getGoodType: function () {
+            var thisVue = this;
+            $.post('/enterprisepro/GetGoodsType', {
+                appId: thisVue.appId
+            }).then(function (result) {
+                if (!result.isok) { layer.msg(result.Msg); return; }
+                thisVue.goodType = result.dataObj.list;
+            });
+        },
+        saveGoodType: function () {
+            var thisVue = this;
+            thisVue.selectGoodType(false);
+            thisVue.selectedType = thisVue.selectedTypeTemp.join(',').split(',');
+        },
+        remove: function (typeId) {
+            this.selectedType.splice(this.selectedType.indexOf(typeId), 1);
+            this.selectedTypeTemp.splice(this.selectedTypeTemp.indexOf(typeId), 1);
+        },
+        //来新订单提示音
+        openneworderbtn: function () {
+            var OpenNewOrderPrompt = $('input[name="OpenNewOrderPrompt"]:checked').val() == "1";
+            if (OpenNewOrderPrompt) {
+                $("#OpenNewOrderPromptBox").show();
+            }
+            else {
+                $("#OpenNewOrderPromptBox").hide();
+            }
+        },
+        voicebtn: function () {
+            var VoiceType = $('input[name="VoiceType"]:checked').val();
+            if (VoiceType == 1) {
+                $("#voicebox").show();
+            }
+            else {
+                $("#voicebox").hide();
+            }
+        },
+        //添加编辑自取地点
+        addNewPlace: function () {
+            var that = this;
+            $.extend(that.placeInfo,def_placeInfo, true);
+            $("#EditPickPlace").modal("show");
+        },
+        EditPlace: function (index) {
+            var that = this;
+            $.extend(that.placeInfo, that.placeList[index], true);
+            $("#EditPickPlace").modal("show");
+        },
+        //保存自取地点信息
+        SavePlaceInfo:function() {
+            var that = this;
+            that.placeInfo.name = $.trim(that.placeInfo.name);
+            if (that.placeInfo.name.length <= 0) {
+                layer.msg("请填写店铺名称");
+                return;
+            }
+            if (that.placeInfo.address.length <= 0) {
+                layer.msg("请选择店铺地址");
+                return;
+            }
+            var layerIndex = layer.load(2);
+            $.post("/enterprisepro/SavePlaceInfo", that.placeInfo, function (data) {
+                layer.close(layerIndex);
+                layer.msg(data.Msg);
+                if (data.isok) {
+                    $("#EditPickPlace").modal("hide");
+                    that.placeList = data.dataObj;
+                }
+            })
+        },
+        DeletePlaceInfo: function (index) {
+            var that = this;
+            layer.confirm("确定删除此信息吗？", function () {
+                var layerIndex = layer.load(2);
+                $.post("/enterprisepro/updatePickPlaceState", { act: "del", aid: that.appId, id: that.placeList[index].Id }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.Msg);
+                    if (data.isok) {
+                        that.placeList.splice(index,1);
+                    }
+                })
+            })
+        }
+        //ShowAddGoodCatModal: function () {
+        //    $("#AddGoodCatModals").modal("show");
+        //    var that = this;
+        //    that.goodtypelist.forEach(function (item) {
+        //        item.sel = false;
+        //    });
+
+        //    if (that.storeModel.goodsCatList.length > 0 && that.goodtypelist.length > 0) {
+
+        //        for (var i = 0; i < that.goodtypelist.length; i++) {
+        //            for (var j = 0; j < that.storeModel.goodsCatList.length; j++) {
+        //                if (that.goodtypelist[i].id == that.storeModel.goodsCatList[j].id) {
+        //                    that.goodtypelist[i].sel = true;
+        //                }
+        //            }
+        //        }
+        //    }
+        //},
+        //选择全部产品分类
+        //PickAllGoodCat: function () {
+        //    var that = this;
+        //    for (var i = 0; i < that.goodtypelist.length; i++) {
+        //        that.goodtypelist[i].sel = that.pickallgoodcat;
+        //    }
+        //},
+        //PickGoodCatOK: function () {
+        //    var that = this;
+        //    that.storeModel.goodsCatList = [];
+        //    for (var i = 0; i < that.goodtypelist.length; i++) {
+        //        that.goodtypelist[i].sel && that.storeModel.goodsCatList.push(that.goodtypelist[i]);
+        //    }
+
+        //    $("#AddGoodCatModals").modal("hide");
+        //},
+        ////删除选择的产品分类
+        //RemoveGoodCatItem: function (index) {
+        //    var that = this;
+        //    that.storeModel.goodsCatList.splice(index, 1);
+        //},
+
+    },
+    created: function () {
+        this.InitLayer();
+        this.getGoodType();
+        this.selectedTypeTemp = this.selectedType.join(',').split(',');
+        if (!this.storeModel.funJoinModel.openInvite) {
+            this.storeModel.funJoinModel.reserveSwitch = false;
+        }
+    },
+    updated: function () {
+        var thisVue = this;
+        thisVue.$nextTick(function () {
+            if (thisVue.layForm.render) {
+                setTimeout(function () { thisVue.layForm.render('checkbox') }, 100);
+            }
+        })
+    },
+    watch: {
+        selectedType: function (newValue) {
+            app.storeModel.funJoinModel.reserveClass = newValue.join(',');
+        },
+        goodType: function () {
+            this.goodTypeChecker();
+        }
+    }
+});
+
+/**/
+@*$(function(){
+        //营业时间
+        //openTimeTd
+        $("#StartTime").clockpicker({
+            placement: 'bottom',
+            align: 'left',
+            autoclose: true,
+            @*afterDone: function() {
+                var StartTimeHours = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var EndTimeHours = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var StartTimeMinu = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                var EndTimeMinu = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                if(EndTimeHours<StartTimeHours){
+                    AppTools.Alert("开始时间不能大于结束时间");
+                    $("#EndShopTime_"+currDateTimeIndex).val("@Model.EndShopTime");
+                }
+            }*
+        });
+        $("#EndTime").clockpicker({
+            placement: 'bottom',
+            align: 'left',
+            autoclose: true,
+            @*afterDone: function() {
+                var StartTimeHours = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var EndTimeHours = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[0]);
+                var StartTimeMinu = parseInt($("#StartShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                var EndTimeMinu = parseInt($("#EndShopTime_"+currDateTimeIndex).val().split(":")[1]);
+                if(EndTimeHours<StartTimeHours){
+                    AppTools.Alert("结束时间不能小于开始时间");
+                    $("#EndShopTime_"+currDateTimeIndex).val("@Model.EndShopTime");
+                }
+            }*
+        });
+    })
+            },*@
+/**/
+</script>

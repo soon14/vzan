@@ -1,0 +1,394 @@
+﻿
+@{
+    ViewBag.Title = "功能管理";
+    ViewBag.PageType = 22;
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int IMSwtich = ViewBag.IMSwtich;//私信功能开关
+}
+@model Store
+<style>
+    .layui-form-switch { margin-top: 0px; height: 24px; width: 53px; }
+    .layui-form-onswitch { border-color: #1aad19; background-color: #1aad19; }
+    input[type=checkbox] { margin: 0px; }
+    #app table.imswitch { margin: 51px 0px 10px 51px; }
+    .fk-box table { margin: 10px 0px 10px 51px; }
+    .btn-primary, .btn-primary:active, .btn-primary:focus { background-color: #1aad19; border-color: #1aad19; }
+    .btn-primary:hover, .btn-primary:active:hover { background-color: #34a123; border-color: #34a123; }
+    .frm_input_box { display: inline-block; position: relative; height: 36px; line-height: 30px; vertical-align: middle; width: 268px; font-size: 14px; padding-left: 15px; border: 1px solid #e7e7eb; box-shadow: none; -moz-box-shadow: none; -webkit-box-shadow: none; border-radius: 2px; -moz-border-radius: 2px; -webkit-border-radius: 2px; background-color: #fff; }
+    .frm_input_box input { border: none; line-height: 34px; width: 198px; }
+    .frm_input_box a { text-decoration: none; color: #777; margin-top: 3px; }
+    .setting-box { margin-left: 88px; }
+
+    iframe { border: 0px; }
+    .layui-tab-brief > .layui-tab-title .layui-this { color: #0094ff !important; }
+    .layui-tab-brief > .layui-tab-more li.layui-this:after, .layui-tab-brief > .layui-tab-title .layui-this:after { border-color: #0094ff !important; }
+    .table-striped > tbody > tr:nth-of-type(odd) { background-color: #F0F8FF; }
+
+    .switch-table tr td{line-height:50px; }
+</style>
+
+
+<div class="layui-tab layui-tab-brief" lay-filter="settingTab">
+    <ul class="layui-tab-title">
+        <li lay-id="basicFunction">基础功能</li>
+        @*<li lay-id="reserveShopping">预约购物</li>*@
+        @*<li lay-id="sortShopping">排队购物</li>*@
+        <li lay-id="storeCode">店铺二维码</li>
+        <li lay-id="me">我的</li>
+    </ul>
+    <div class="layui-tab-content" id="app" v-cloak>
+        <!--#region 基础配置-->
+        <div class="layui-form layui-tab-item">
+            <table class="imswitch">
+                <tr>
+                    <td class="title">客服私信：</td>
+                    <td>
+                        @{
+                            if (ViewBag.PageType == 22 && IMSwtich == 1)
+                            {
+                                <div class="layui-form" title="请升级到更高版本">
+                                    <input type="checkbox" name="imSwitch" lay-filter="imSwitch" lay-skin="switch" lay-text="开启|关闭" disabled="disabled">
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="layui-form">
+                                    <input type="checkbox" name="imSwitch" lay-filter="imSwitch" lay-skin="switch" lay-text="开启|关闭" v-model=" storeInfo.funJoinModel.imSwitch">
+                                </div>
+                            }
+                        }
+                       
+                    </td>
+                    <td>
+                        <div class="setting-box layui-form" v-show="storeInfo.funJoinModel.imSwitch">
+                            启用自动问候语：
+                            <input type="checkbox" name="helloSwitch" lay-filter="helloSwitch" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.sayHello">
+                            <input type="text" placeholder="输入问候语" v-model="storeInfo.funJoinModel.helloWords" class="layui-input" style="width:192px; display:inline;" />
+                        </div>
+                    </td>
+                    <td style="width: 100px;text-align: right;">
+                        @{
+                            if (ViewBag.PageType == 22 && IMSwtich == 1)
+                            {
+                                <input type="button" title="请升级到更高版本" class="btn btn-primary width100 selected" value="保存" disabled="disabled" />
+
+                            }
+                            else
+                            {
+                                <input type="button" class="btn btn-primary width100 selected" v-on:click="SaveInfo()" value="保存" />
+
+                            }
+                        }
+
+                    </td>
+                </tr>
+            </table>
+
+            <div class="fk-box" v-if="storeInfo.funJoinModel.imSwitch">
+                <div v-if="kfInfo!=null" style="width:100px; text-align:center;margin-left: 50px;">
+                    <img v-bind:src="kfInfo.HeadImgUrl" width="100" style="margin-top: 15px; border-radius:5px;" />
+                    <input type="button" class="btn width100" value="取消客服" style="font-size:12px;margin-top: 5px;" v-on:click="CancelKf()" />
+
+                </div>
+                <table v-else>
+                    <tr>
+                        <td>添加客服:</td>
+                        <td>
+                            <span class="frm_input_box" id="js_search_panel">
+                                <input type="text" placeholder="输入会员昵称" class="frm_input js_search_input" v-model="search.nickName" @@keyup.enter="searchInfo()" />
+                                <a href="javascript:;" v-if="search.nickName.length>0" v-on:click="clearSearch()"><i class="layui-icon">&#x1006;</i></a>
+                                <a href="javascript:;" v-on:click="searchInfo()"><i class="layui-icon" style="font-size: 22px;float:right; margin-top:3px; margin-right:9px;">&#xe615;</i></a>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr v-if="search.tips.length>0">
+                        <td colspan="2" style="color:#e15f63;">{{search.tips}}</td>
+                    </tr>
+                    <tr v-else-if="search.userInfo!=null">
+                        <td colspan="2">
+                            <div style="width:100px; text-align:center;">
+                                <img v-bind:src="search.userInfo.HeadImgUrl" width="100" style="margin-top: 15px; border-radius:5px;" />
+                                <input type="button" class="btn btn-primary width100" value="设为客服" style="font-size:12px;margin-top: 5px;" v-on:click="SetKf()" />
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <!--#endregion-->
+        
+        <!--#region 预约购物-->
+        @*<div class="layui-tab-item"></div>*@
+        <!--#endregion-->
+        <!--#region 排队购物-->
+        @*<div class="layui-tab-item" id="sortQueueManager_div">
+            <iframe id='#sortQueueManager' name='sortQueueManager' style='width:100%;height:800px;background-color:white;' src='/common/SortQueueManager?appId=@(Model.appId)&pageType=22#tab_page=basicFunction'></iframe>
+        </div>*@
+        <!--#endregion-->
+        <!--#region 店铺二维码-->
+        <div class="layui-tab-item">
+            <iframe id='#storeCode' name='storeCode' style='width:106%;height:800px;background-color:white;' src='/enterprisepro/ScanCode?appId=@(Model.appId)'></iframe>
+        </div>
+        <!--#endregion-->
+
+        <div class="layui-tab-item">
+            <br />
+            <div class="text-info">
+                可设置显示或隐藏小程序“我的”页中的功能模块
+            </div>
+            <br />
+            <table border="0" class="switch-table">
+                @*<tr>
+            <td width="150">1，普通订单状态栏</td>
+            <td>
+                <div class="layui-form">
+                    <input type="checkbox" name="isopen_orderbar" lay-filter="isopen_orderbar" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_orderbar">
+                </div>
+            </td>
+        </tr>*@
+                <tr>
+                    <td>1，拼团</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_pintuan" lay-filter="isopen_pintuan" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_pintuan">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2，团购</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_tuangou" lay-filter="isopen_tuangou" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_tuangou">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>3，分销</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_fenxiao" lay-filter="isopen_fenxiao" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_fenxiao">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>4，客服</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_kefu" lay-filter="isopen_kefu" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_kefu">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>5，我的预约单</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_yuyue" lay-filter="isopen_yuyue" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_yuyue">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>6，购物车</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_car" lay-filter="isopen_car" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_car">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>7，砍价</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_kanjia" lay-filter="isopen_kanjia" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_kanjia">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>8，拿号排队</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_paidui" lay-filter="isopen_paidui" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_paidui">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>9，积分中心</td>
+                    <td>
+                        <div class="layui-form">
+                            <input type="checkbox" name="isopen_jifen" lay-filter="isopen_jifen" lay-skin="switch" lay-text="开启|关闭" v-model="storeInfo.funJoinModel.isopen_jifen">
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <input type="button" class="btn btn-primary width100 selected" v-on:click="SaveMy()" value="保存" />
+        </div>
+    </div>
+</div>
+<script>
+    var element,layid;
+    var storeInfo=@Html.Raw(JsonConvert.SerializeObject(Model));
+
+    var app = new Vue({
+        el: '#app',
+        data: {
+            search: {
+                nickName: '',
+                isfirst:true,
+                userInfo: null,
+                tips:''
+            },
+            storeInfo: storeInfo,
+            kfInfo: storeInfo.kfInfo,
+        },
+        methods: {
+            InitLayer: function () {
+                var that = this;
+                layui.use(['form','element'], function () {
+                    var form = layui.form;
+                    form.on('switch(imSwitch)', function (data) {
+                        that.storeInfo.funJoinModel.imSwitch= data.elem.checked;
+                    });
+                    form.on('switch(helloSwitch)', function (data) {
+                        that.storeInfo.funJoinModel.sayHello = data.elem.checked;
+                    });
+
+                    form.on('switch(isopen_orderbar)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_orderbar = data.elem.checked;
+                    });
+                    form.on('switch(isopen_pintuan)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_pintuan = data.elem.checked;
+                    });
+                    form.on('switch(isopen_tuangou)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_tuangou = data.elem.checked;
+                    });
+                    form.on('switch(isopen_fenxiao)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_fenxiao = data.elem.checked;
+                    });
+                    form.on('switch(isopen_kefu)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_kefu = data.elem.checked;
+                    });
+                    form.on('switch(isopen_yuyue)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_yuyue = data.elem.checked;
+                    });
+                    form.on('switch(isopen_car)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_car = data.elem.checked;
+                    }); 
+
+                    form.on('switch(isopen_kanjia)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_kanjia = data.elem.checked;
+                    });
+
+                    form.on('switch(isopen_paidui)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_paidui = data.elem.checked;
+                    });
+
+                    form.on('switch(isopen_jifen)', function (data) {
+                        that.storeInfo.funJoinModel.isopen_jifen = data.elem.checked;
+                    });
+                    element = layui.element;
+
+                    //获取hash来切换选项卡，假设当前地址的hash为lay-id对应的值
+                    layid = location.hash.replace(/^#settingTab=/, '');
+                    //找不到路径则默认打开的标签页
+                    if(layid == undefined || layid == '')
+                    {
+                        layid = 'basicFunction';
+                        location.hash = 'settingTab='+ layid;
+                    }
+                    element.tabChange('settingTab', layid);
+
+                    //监听Tab切换，以改变地址hash值
+                    element.on('tab(settingTab)', function(){
+                        layid = this.getAttribute('lay-id');
+                        location.hash = 'settingTab='+ layid;
+                    });
+                });
+            },
+            SaveInfo: function () {
+                var that = this;
+                if (that.kfInfo == null && that.storeInfo.funJoinModel.imSwitch) {
+                    layer.msg("请添加客户人员");
+                    return;
+                }
+                var layerIndex = layer.load(2);
+                $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeInfo.appId, storeModel: that.storeInfo,action:'savebase' }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.Msg);
+                })
+            },
+            SaveMy: function () {
+                var that = this;
+                var layerIndex = layer.load(2);
+                $.post("/enterprisepro/SaveStoreSetting", { appId: that.storeInfo.appId, storeModel: that.storeInfo, action: 'my' }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.Msg);
+                })
+            },
+            clearSearch: function () {
+                var that = this;
+                that.search.nickName = '';
+            },
+            searchInfo: function () {
+                var that = this;
+                if (that.search.nickName.length <= 0) {
+                    layer.msg("请输入会员昵称");
+                    return;
+                }
+                that.search.tips = '';
+                var layerIndex = layer.load(2);
+                $.post("/enterprisepro/SearchUserInfo", { appId: that.storeInfo.appId, nickName: that.search.nickName }, function (data) {
+                    layer.close(layerIndex);
+                    if (data.isok) {
+                        if (data.data == null) {
+                            that.search.tips = "搜索不到该会员。请输入正确的昵称";
+                        } else {
+                            that.search.userInfo = data.data;
+                        }
+                    } else {
+                        layer.msg(data.msg);
+                    }
+                })
+            },
+            SetKf: function () {
+                var that = this;
+                layer.prompt({ title: '登录手机号码设置', value: that.search.userInfo.TelePhone }, function (phone, index) {
+                    if (phone.length <= 0) {
+                        layer.msg("请输入客服登录手机号")
+                        return;
+                    } else if (phone.length != 11) {
+                        layer.msg("请输入正确的手机号吗")
+                        return;
+                    }
+                    layer.close(index);
+                    var layerIndex = layer.load(2);
+                    $.post("/common/EditUserType", { appId: that.storeInfo.appId, userType: 1, userId: that.search.userInfo.Id, phone: phone }, function (data) {
+                        layer.close(layerIndex);
+                        layer.msg(data.msg);
+                        if (data.isok) {
+                            that.kfInfo = that.search.userInfo;
+                        }
+                    })
+                });
+                
+            },
+            CancelKf: function () {
+                var that = this;
+                var layerIndex = layer.load(2);
+                $.post("/common/EditUserType", { appId: that.storeInfo.appId, userType: 0, userId: that.kfInfo.Id }, function (data) {
+                    layer.close(layerIndex);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+                        that.kfInfo =null;
+                    }
+                })
+            },
+        },
+        mounted: function(){
+            var that= this;
+            that.InitLayer();
+
+            //部署完页面后再去加载这个子页,避免影响页面打开效率
+            //$("#sortQueueManager_div").html("<iframe id='#sortQueueManager' name='sortQueueManager' style='width:100%;height:800px;background-color:white;' src='/common/SortQueueManager?appId=@(Model.appId)&pageType=22#tab_page=basicFunction'></iframe>");
+        }
+    })
+</script>

@@ -1,0 +1,546 @@
+﻿@model List<ExchangeRule>
+@{
+
+    ViewBag.Title = "积分规则";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int integralSwtich = ViewBag.integralSwtich;
+
+}
+
+<link href="@(WebSiteConfig.cdnurl)content/colorpicker/spectrum.css" rel="stylesheet" />
+<style>
+    .ml_19 { margin-left: 19px; }
+
+    .viplevel { width: 60%; min-width: 800px; margin-top: 20px; }
+
+        .viplevel th, .viplevel td { text-align: center; }
+
+    .modal-body ul li { padding: 6px; }
+
+    .modal-body label { margin-left: 10px; }
+
+    .modal-body span { float: left; padding-top: 6px; }
+
+    .actionbtn { margin-top: 10px; float: left; margin-left: 10px; }
+
+    .rel { position: relative; }
+
+    .set_good_selimgs { width: 82%; margin: 0 auto; }
+
+    .set_good_selimgs_item { margin-top: 10px; margin-right: 30px; width: 50px; height: 50px; display: inline-block; }
+
+        .set_good_selimgs_item img { /*width: 70px;
+            height: 70px;*/ border: 1px solid #ddd; background-color: #fff; }
+
+    .close-modal.small { top: -8px; right: -25px; width: 18px; height: 18px; font-size: 14px; line-height: 16px; border-radius: 9px; }
+
+    .close-modal { position: absolute; z-index: 2; top: -9px; right: -9px; width: 20px; height: 20px; font-size: 16px; line-height: 18px; color: #fff; text-align: center; cursor: pointer; background: rgba(153,153,153,0.6); border-radius: 10px; }
+
+    .ruleinput { width: 75px; float: left; }
+    .close-modal.small select.ruleinput { width: 110px; }
+
+    .rulespan { float: left; padding: 10px 6px 0 6px; }
+
+    .ruleul { margin-left: 31px; margin-bottom: 12px; }
+
+        .ruleul li { height: 40px; }
+
+            .ruleul li a { float: left; margin: 9px; color: #ff6a00; }
+
+    .btn-Info { background: #5e97fa; color: #fff; }
+
+        .btn-Info:hover { color: #fff; background: #3272e2; }
+
+    .centertext { vertical-align: inherit !important; text-align: center; }
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+</style>
+<link rel="stylesheet" type="text/css" href="//j.vzan.cc/miniapp/layui/css/layui.css?v=1" />
+<div id="app" v-cloak>
+    <p style="font-size:16px; font-weight:bold; color:#5691fc">|自定义积分规则</p>
+    <table class="table table-bordered viplevel ml_19">
+        <tr class="active">
+            <th>奖励条件</th>
+            <th>单笔奖励积分</th>
+            <th>规则更新时间</th>
+            <th>操作</th>
+        </tr>
+        <tr v-for="(rule,index) in rulelist">
+
+            <td v-if="rule.ruleType==1">
+                每购买金额{{rule.priceStr}}元,{{rule.goodCount}}个商品参加
+            </td>
+            <td v-else-if="rule.ruleType==0">每购买金额{{rule.priceStr}}元,全部商品参加</td>
+            <td v-else-if="rule.ruleType==2">每储值充钱满{{rule.priceStr}}元</td>
+            <td>{{rule.integral}}</td>
+            <td>{{rule.UpdateDateStr}}</td>
+            <td>
+                <a href="javascript:;" style="color:red" v-on:click="delRule(rule.appId,rule.Id)">删除</a>
+                <a href="javascript:;" style="color:#4a86e8;" v-on:click="addedit(index)">编辑</a>
+            </td>
+        </tr>
+    </table>
+    @{
+        if (ViewBag.PageType == 22 && integralSwtich == 1)
+        {
+            <div class="ml_19" title="请升级到更高版本">
+                <a href="javascript:;" v-if="rulelist.length<10" disabled="disabled">+新增规则</a>
+            </div>
+        }
+        else
+        {
+            <div class="ml_19">
+                <a href="javascript:;" v-on:click="addedit()" v-if="rulelist.length<10">+新增规则</a>
+            </div>
+        }
+    }
+
+    <p style="color:#ff6a00; padding:20px 0 0 20px;">
+        温馨提示:<br />如果消费符合多个积分规则，会重复送积分。
+    </p>
+
+    <!--添加会员级别-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        编辑规则
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <div>
+                            <span>奖励分值:&nbsp;&nbsp;</span><input type="text" class="form-control" style="width:120px;" v-model="ruleInfo.integral" />
+                        </div>
+                        <div style="margin-top:10px;">
+                            <div>奖励条件:</div>
+                            <div style="margin-left:55px;">
+                                <div>
+                                    <span>每购买/储值金额(元)&nbsp;&nbsp;</span><input type="text" class="form-control" style="width:120px;" v-model="ruleInfo.priceStr" />
+                                </div>
+                                <div style="margin-left:-10px;margin-top:10px;">
+                                    <label><input type="radio" value="0" name="ruletype" v-model="ruleInfo.ruleType" />全场商品</label>
+                                    <label><input type="radio" value="1" name="ruletype" v-model="ruleInfo.ruleType" />部分商品</label>
+                                    <label><input type="radio" value="2" name="ruletype" v-model="ruleInfo.ruleType" />储值</label>
+                                </div>
+
+                            </div>
+                            <div v-if="ruleInfo.ruleType==1">
+
+
+                                <div class="set_good_selimgs">
+                                    <div class="set_good_selimgs_item rel" v-for="(selgood_item,selgood_index) in ruleInfo.goodslist">
+                                        <img v-bind:src="utils.resizeimg(selgood_item.ImgUrl,100,100)" width="70" height="70" />
+                                        <a class="close-modal js-delete-goods small" data-id="" title="删除" v-on:click="ruleInfo.goodslist.splice(selgood_index,1)">×</a>
+                                    </div>
+                                </div>
+                                <div class="mt10">
+                                    <a href="javascript:;" class="actionbtn " v-on:click="getgoodslist()">＋添加产品</a>
+                                    <div style="clear:both;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div stle=" clear:both;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        关闭
+                    </button>
+                    <button type="button" class="btn btn-primary" v-on:click="saveInfo()">
+                        保存
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!--/.modal-->
+    <!--添加打折商品-->
+    <div class="modal fade" id="AddGoodModal" tabindex="-1" role="dialog" aria-labelledby="AddGoodModal_label" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="AddGoodModal_label">选择产品</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-condensed table-striped">
+                        <thead>
+                            <tr>
+                                <th width="40">ID</th>
+                                <th width="70">产品图片</th>
+                                <th>产品名称</th>
+                                <th width="100">创建时间</th>
+                                <th width="100">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(good_item,good_index) in goodslistdata.list">
+                                <td align="center">{{good_item.Id}}</td>
+                                <td align="center"><img v-bind:src="utils.resizeimg(good_item.ImgUrl,100,100)" width="50" /></td>
+                                <td>
+                                    <div style="word-break:break-all;">
+                                        {{good_item.GoodsName}}
+                                    </div>
+                                </td>
+                                <td>{{good_item.showtime}}</td>
+                                <td align="center" valign="middle">
+                                    <input type="button" class="btn btn-default" v-bind:class="{'btn-primary':good_item.sel}"
+                                           v-bind:value="good_item.sel?'取消':'选取'"
+                                           v-on:click="good_item.sel=!good_item.sel" />
+
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="pages" style="text-align: center;margin-top: 0.5rem;" v-show="goodslistdata.recordCount>0"></div>
+                    <br />
+                    <div class="nodata" v-if="goodslistdata.recordCount<=0">
+                        暂无数据，请先添加 <a href="/enterprisepro/p?appId=@(ViewBag.appId)">点击添加产品</a>
+                    </div>
+                    @*<vue-pager ref="goodpager" name="goods"></vue-pager>*@
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" v-on:click="PickGoodOK()">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div style="margin-top:100px;">
+        <p style="font-size:16px; font-weight:bold; color:#5691fc">|签到积分设置</p>
+        <div style="padding:10px;">
+            <div style="margin-top:5px;">
+                <label>签到开关:</label>
+                <label><input type="radio" name="OpenState" value="1" v-model="exchangePlayCardConfig.State"/>开启</label>
+                <label><input type="radio" name="OpenState" value="0" v-model="exchangePlayCardConfig.State"/>关闭</label>
+            </div>
+            <div style="margin-top:5px;">
+                <label>首页弹窗开关:</label>
+                <label><input type="radio" name="ShowPage"value="1" v-model="exchangePlayCardConfig.ShowPage"/>开启</label>
+                <label><input type="radio" name="ShowPage"value="0" v-model="exchangePlayCardConfig.ShowPage"/>关闭</label>
+                <span>（首页弹窗过多会影响用户体验及加载速度，不建议设置）</span>
+            </div>
+            <div style="margin-top:5px;">
+                <label>每日签到送:</label><input class="form-control" style="width:120px;display:inline-block;" type="text" name="DayGivePoints" v-model="exchangePlayCardConfig.DayGivePoints"/>积分
+            </div>
+            <div style="margin-top:5px;">
+                <label>连续签到:</label><input class="form-control" style="width:120px;display:inline-block;" type="text" name="ConnectDay" v-model="exchangePlayCardConfig.ConnectDay"/>天,额外多送<input class="form-control" style="width:120px;display:inline-block;" type="text" name="ConnectDayGivePoints" v-model="exchangePlayCardConfig.ConnectDayGivePoints"/>积分（连续签到天数建议不超过7天）
+            </div>
+          
+        </div>
+
+        <button type="button" class="btn btn-primary" v-on:click="SavePlayCardGivePoints()">保存设置</button>
+    </div>
+
+
+    <div style="margin-top:100px;">
+        <p style="font-size:16px; font-weight:bold; color:#5691fc">|签到记录</p>
+        <div style="padding:10px;">
+            <table class="table table-bordered viplevel ml_19">
+                <tr class="active">
+                    <th class="centertext nowrap">会员头像</th>
+                    <th class="centertext nowrap">会员名称</th>
+                    <th class="centertext nowrap">累计签到次数</th>
+                    <th class="centertext nowrap">签到获得总积分</th>
+                </tr>
+                <tr v-for="(item,index) in userPointsdata.list">
+
+                    <td class="centertext nowrap">
+                        <img :src="item.HeaderImg" alt="头像" style="width:50px;height:50px;" />         
+                    </td>
+                    <td class="centertext nowrap">{{item.Name}}</td>
+                    <td class="centertext nowrap">{{item.PlayCardNum}}</td>
+                    <td class="centertext nowrap">{{item.TotalPoints}}</td>
+                </tr>
+            </table>
+            <div id="pagesUserPoints" style="text-align: center;margin-top: 0.5rem;" v-show="userPointsdata.recordCount>0"></div>
+        </div>
+
+    </div>
+
+
+</div>
+<script>
+    var ruleData= {
+        ruleType: 0,
+        goodslist: [],
+        goodids: "",
+        appId:@ViewBag.appId,
+        price:0,
+        priceStr:0,
+        integral:0,
+        Id:0
+    };
+    var app = new Vue({
+        el: "#app",
+        data: {
+            ruleInfo: JSON.parse(JSON.stringify(ruleData)),
+            rulelist:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            editIndex: 0,
+            isloading: false,
+            goodslistdata: {
+                recordCount: 0,
+                list: [],
+                postdata: {
+                    appId:@Html.Raw(ViewBag.appId),
+                    PageType:@Html.Raw(ViewBag.PageType),
+                    pageIndex: 1,
+                    pageSize: 8
+
+                }
+            },
+            exchangePlayCardConfig:@Html.Raw(JsonConvert.SerializeObject(ViewBag.ExchangePlayCardConfig)),
+            userPointsdata:{
+                list:[],
+                recordCount: 0,
+                postdata: {
+                    appId:@Html.Raw(ViewBag.appId),
+                    pageIndex: 1,
+                    pageSize: 10
+
+                }
+            }
+        },
+        methods: {
+            GetUserPointsList:function(){
+                var that=this;
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1)
+                $.post("/common/GetUserInfoPoints", that.userPointsdata.postdata, function (data) {
+                    layer.close(index);
+                    that.userPointsdata.recordCount = data.dataObj.recordCount;
+                   
+                    that.userPointsdata.list = data.dataObj.list;
+                    that.resetUserPointsPage();
+                })
+            },
+            resetUserPointsPage:function(){
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pagesUserPoints'
+                        , count: app.userPointsdata.recordCount //数据总数，从服务端得到
+                        , curr: app.userPointsdata.postdata.pageIndex //当前页
+                        , limit: app.userPointsdata.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            //console.log(app.recordCount);
+                            app.userPointsdata.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.GetUserPointsList();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            SavePlayCardGivePoints:function(){
+                var that=this;
+                if (!/^\+?[1-9][0-9]*$/.test(that.exchangePlayCardConfig.ConnectDay)) {
+                    layer.msg("签到天数必须为整数");
+                    return ;
+                }
+                if (!/^\+?[1-9][0-9]*$/.test(that.exchangePlayCardConfig.ConnectDayGivePoints)||!/^\+?[1-9][0-9]*$/.test(that.exchangePlayCardConfig.DayGivePoints)) {
+                    layer.msg("积分必须为整数");
+                    return ;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/common/SaveExchangePlayCardConfig',
+                    data: {model:that.exchangePlayCardConfig,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        if(data&&data.isok){
+                            layer.msg(data.Msg,{time:1000});
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                        else{
+                            layer.msg(data.Msg,{time:1000});
+                        }
+
+                    },
+                    error: function (rdata) {
+                        layer.msg("与服务器通讯错误",{time:1000});
+                    }
+                });
+
+
+            },
+            //添加编辑窗口
+            addedit: function (index) {
+                this.editIndex = index;
+                if (typeof (index) != "undefined") {//编辑
+
+                    this.ruleInfo = JSON.parse(JSON.stringify(this.rulelist[index]));
+
+                } else {
+                    this.ruleInfo = JSON.parse(JSON.stringify(ruleData));
+                }
+                $('#myModal').modal('show')
+            },
+            //获取商品列表
+            getgoodslist: function () {
+                if (this.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1)
+                $.post("/common/GoodsList", this.goodslistdata.postdata, function (data) {
+                    layer.close(index);
+                    app.goodslistdata.recordCount = data.recordCount;
+                    //for(var i=0;i<data.list.length;i++){
+                    //    for(var k=0;k<app.ruleInfo.goodslist.length;k++){
+                    //        if(data.list[i].Id==app.ruleInfo.goodslist[k].Id){
+                    //            data.list[i].sel=true;
+                    //            break;
+                    //        }
+                    //    }
+                    //}
+                    app.goodslistdata.list = data.list;
+                    app.resetgoodsPage();
+                })
+                $('#AddGoodModal').modal('show');
+            },
+            //商品列表分页跳转
+            resetgoodsPage: function () {
+                layui.use('laypage', function () {
+                    var laypage = layui.laypage;
+                    laypage.render({
+                        elem: 'pages'
+                        , count: app.goodslistdata.recordCount //数据总数，从服务端得到
+                        , curr: app.goodslistdata.postdata.pageIndex //当前页
+                        , limit: app.goodslistdata.postdata.pageSize
+                        , jump: function (obj, first) {
+                            //obj包含了当前分页的所有参数，比如：
+                            //console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                            //console.log(obj.limit); //得到每页显示的条数
+                            //console.log(app.recordCount);
+                            app.goodslistdata.postdata.pageIndex = obj.curr;
+
+                            //首次执行
+                            if (!first) {
+                                app.getgoodslist();
+                                //console.log("first");//do something
+
+                            }
+                        }
+                        , theme: '#1E9FFF'
+                        , layout: ['prev', 'page', 'next', 'skip']
+                    });
+                })
+            },
+            //选取赠送积分商品完成
+            PickGoodOK: function () {
+                var sellist = this.goodslistdata.list.filter(function (_item) {
+                    return _item.sel;
+                });
+                if (sellist.length <= 0) {
+                    layer.msg("请选择商品");
+                    return;
+                }
+                if (this.ruleInfo.goodslist == null) {
+                    this.ruleInfo.goodslist = [];
+                }
+                this.ruleInfo.goodslist = this.ruleInfo.goodslist.concat(sellist);
+                $('#AddGoodModal').modal('hide');
+            },
+            delRule:function(appId,ruleId){
+
+                //删除
+                var index = layer.load(1);
+
+                $.post("/common/DelExchangeRule", {appId:appId,Id:ruleId}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                })
+            },
+            //保存规则
+            saveInfo: function () {
+
+                var  goodidArry = [];
+
+                if (this.ruleInfo.goodslist == null) {
+                    this.ruleInfo.goodslist = [];
+                }
+                this.ruleInfo.goodslist.forEach(function (o, i) {
+
+                    goodidArry.push(o.Id);
+                });
+
+                if (this.ruleInfo.ruleType == 1 && goodidArry.length <= 0) {
+                    layer.msg("请选择消费赠积分商品");
+                    return;
+                }
+                this.ruleInfo.goodids = goodidArry.join(",");
+
+                if (!/^\+?[1-9][0-9]*$/.test(app.ruleInfo.integral)) {
+                    layer.msg("积分必须为整数");
+                    return ;
+                }
+
+                var price=app.ruleInfo.priceStr;
+
+
+                if (!/^[0-9]{1,6}(\.\d{0,2})?$/.test(price)) {
+                    layer.msg("金额必须为数字，且最多为2位小数,最大为6位整数！");
+                    return;
+                } else {
+                    var price_save = price * 1000000 / 10000;
+                    if (0 == price_save || parseInt(price_save) < 1) {
+                        layer.msg("金额不能低于1分钱！");
+                        return;
+                    }
+
+                }
+
+
+                var index = layer.load(1);
+                app.ruleInfo.price=app.ruleInfo.priceStr * 1000000 / 10000;
+                $.post("/common/SaveExchangeRule", {exchangeRule:app.ruleInfo}, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                    if (data.isok) {
+
+                        window.setTimeout(function(){
+                            window.location.reload();
+                        },2000);
+                    }
+                })
+            }
+        },
+        created: function () {
+            var that=this;
+            this.utils = utils;
+            that.GetUserPointsList();
+        }
+    });
+</script>
+

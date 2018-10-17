@@ -1,0 +1,514 @@
+﻿@using Entity.MiniApp.Tools
+@using User.MiniApp.comment
+@model Groups
+@{
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "团购编辑" : "发布团购";
+}
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_002.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_004.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_002.css" rel="stylesheet" type="text/css">
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll.css" rel="stylesheet" type="text/css">
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_003.js" type="text/javascript"></script>
+<script src="@(WebSiteConfig.cdnurl)content/active/date/js/mobiscroll_005.js" type="text/javascript"></script>
+<link href="@(WebSiteConfig.cdnurl)content/active/date/css/mobiscroll_003.css" rel="stylesheet" type="text/css">
+<link href="~/Areas/DishAdmin/css/dish_module.css" rel="stylesheet" type="text/css">
+
+@Html.HiddenFor(m => m.Id, new { name = "Id" })
+@Html.HiddenFor(m => m.StoreId, new { name = "StoreId" })
+@Html.HiddenFor(m => m.ImgUrl, new { name = "ImgUrl" })
+@Html.HiddenFor(m => m.ImageCount, new { name = "ImageCount" })
+<div>
+    <table class="table table-condensed table-hover cancel-table-td-border ">
+        <tr>
+            <td style="text-align: right;">轮播图片：</td>
+            <td class="CarouselList">
+
+                <div class="mult_imgs">
+                    <div class="upload-img-view" id='mutl_picture_dish_shijing'>
+                        @if (ViewBag.CarouselList != null && ViewBag.CarouselList.Count > 0)
+                        {
+                            foreach (C_Attachment img in ViewBag.CarouselList)
+                            {
+                                <div class="upload-pre-item22">
+                                    <img width="100" height="100" src="@img.filepath" />
+                                    <em data-id="@img.id">&nbsp;</em>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <div class="controls uploadrow2" id="cover_id_dish_shijing" data-max="5" title="点击上传图片" rel="dish_shijing">
+                        <input type="file" id="upload_picture_dish_shijing">
+                    </div>
+                </div>
+
+
+
+
+
+
+
+                @*@Html.FileUploadFor("CarouselList", maxFiles: 9, controllerWidth: 360, initImageList: (List<object>)ViewBag.CarouselList, removeCallback: "removeFun", awm: 1)
+                <label class="forinputmassage">点击灰色区域选择上传图片，最好尺寸（750*750px）</label>*@
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;" width="30%">团购名称：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.GroupName, new { @class = "form-control width400", palcehlder = "1-40字", maxlength = "40", style = "width:300px;" })
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">团购价：<label style="color: red">*</label></td>
+            <td>
+                <input name="DiscountPrice" id="DiscountPrice" maxlength="10" placeholder="团购价" value="@(Model.DiscountPrice == 0 ? "" : (Model.DiscountPrice*0.01).ToString())" class="form-control width400 inputdecimal" @(Model.Id > 0 ? "readonly" : "") />
+            </td>
+        </tr>
+
+        <tr>
+            <td style="text-align: right;">单买价：<label style="color: red">*</label></td>
+            <td>
+                <input name="UnitPrice" id="UnitPrice" maxlength="10" placeholder="单买价" value="@(Model.UnitPrice == 0 ? "" : (Model.UnitPrice*0.01).ToString())" class="form-control width400 inputdecimal" @(Model.Id > 0 ? "readonly" : "")  />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">原价：<label style="color: red">*</label></td>
+            <td>
+
+                <input name="OriginalPrice" id="OriginalPrice" maxlength="10" placeholder="原价"  value="@(Model.OriginalPrice == 0 ? "" : (Model.OriginalPrice*0.01).ToString())" class="form-control width400 inputdecimal" />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">团长减价：<label style="color: red">*</label></td>
+            <td>
+                <input name="HeadDeduct" id="HeadDeduct" maxlength="10" placeholder="团长减价" value="@(Model.HeadDeduct*0.01)" class="form-control width400 limitinput inputdecimal " @(Model.Id > 0 ? "readonly" : "") />
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">开始时间：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.ShowTimeS, new { @class = "form-control width400", placeholder = "2016-11-24 12:30", maxlength = "20", readOnly = "readOnly", style = "background-color:white;" })
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">结束时间：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.ShowTime, new { @class = "form-control width400", placeholder = "2016-11-24 12:30", maxlength = "20", readOnly = "readOnly", style = "background-color:white;" })
+            </td>
+        </tr>
+        <tr style="display:none;">
+            <td style="text-align: right;">使用截止时间：<label style="color: red">*</label></td>
+            <td>
+                @Html.TextBoxFor(m => m.ShowUseTimeEnd, new { @class = "form-control width400", placeholder = "2016-11-24 12:30", maxlength = "20", readOnly = "readOnly", style = "background-color:white;" })
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">团购描述：</td>
+            <td>
+                @*@Html.TextAreaFor(m => m.Description, new { @class = "form-control width400", style = "height:150px;" })*@
+                <textarea id="editor" style="width:610px; height: 240px;" name="editor"></textarea>
+                @*<label class="forinputmassage" style="color:red;">后台编辑过的团购，微信端再编辑团购会把文本中的样式和图片去掉</label>*@
+            </td>
+        </tr>
+        <tr style="display:none;">
+            <td style="text-align: right;">详情图片：</td>
+            <td class="DescImgList">
+                @Html.FileUploadFor("DescImgList", maxFiles: 9, controllerWidth: 360, initImageList: (List<object>)ViewBag.DescImgList, removeCallback: "removeFun", awm: 1)
+                <label class="forinputmassage">点击灰色区域选择上传图片</label>
+            </td>
+        </tr>
+        <tr style="display:none;">
+            <td style="text-align: right;">上传视频：</td>
+            <td>
+                @RenderPage("~/Views/Shared/_UploadVideo.cshtml")
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">生成数量：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" maxlength="3" placeholder="生成数量" id="CreateNum" onkeyup="value = value.replace(/[^\d]/g, '')" onafterpaste="this.value=this.value.replace(/D/g, '')" value="@(Model.Id > 0 ? Model.CreateNum : 20)" class="form-control width400">
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">虚拟销量：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" maxlength="3" placeholder="虚拟销量" id="virtualSalesCount" onkeyup="value = value.replace(/[^\d]/g, '')" onafterpaste="this.value=this.value.replace(/D/g, '')" value="@(Model.virtualSalesCount)" class="form-control width400">
+                <span style="color:orange;">(设定虚拟销量后,用户端看到的销量为 虚拟销量 + 真实销量)</span>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">成团人数：<label style="color: red">*</label></td>
+            <td>
+                <input type="text" maxlength="2" placeholder="成团人数" id="GroupSize" onkeyup="value = value.replace(/[^\d]/g, '')" onafterpaste="this.value=this.value.replace(/D/g, '')" value="@(Model.Id > 0 ? Model.GroupSize : 2)" class="form-control width400">
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">每用户限购：<label style="color: red">*</label></td>
+            <td>
+                <select class="form-control width400" id="LimitNum">
+                    <option value="0">不限</option>
+                    @for (var i = 1; i <= 20; i++)
+                    {
+                        <option value="@i" @(Model.LimitNum == i ? "selected" : "")>@i</option>
+                    }
+                </select>
+
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: right;">立即开始：<label style="color: red">*</label></td>
+            <td>
+                <input type="checkbox" class = "form-control" style="width:20px !important;" checked id="IsConcern" name="IsConcern"/>
+                @*@Html.CheckBoxFor(m => m.IsConcern, new { @class = "form-control width30" })*@
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center">
+                <input type="button" class="btn btn-primary width100" id="btnSave" value="保存" />
+                <input type="button" class="btn btn-default width100" onclick="self.location = document.referrer;" value="返回" />
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal bs-example-modal-sm" id="loadModal" tabindex="-1" role="dialog" aria-labelledby="loadModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>提示</span>
+            </div>
+            <div class="modal-body text-center">
+                正在保存 . . .
+            </div>
+            <div class="modal-footer">
+                @*<button type="button" class="btn btn-primary" id="loadModalComfirm">确定</button>*@
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.config.js"></script>
+<script src="/js/ueditor1_4_3_3-utf8-net/utf8-net/ueditor.all.min.js"></script>
+<script type="text/javascript" src="@(WebSiteConfig.cdnurl)js/Base64.js"></script>
+<script type="text/html" id="js_article_content">@Html.Raw(Model.Description)</script>
+<script>
+    $(function () {
+        // #region 日期选择控件
+        var currYear = (new Date()).getFullYear();
+        var opt = {};
+        opt.date = { preset: 'date' };
+        opt.datetime = { preset: 'datetime' };
+        opt.time = { preset: 'time' };
+        opt.default = {
+            theme: 'android-ics light',
+            display: 'modal',
+            mode: 'scroller',
+            dateFormat: 'yyyy-mm-dd',
+            minDate: new Date(),
+            //maxDate: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+            lang: 'zh',
+            showNow: true,
+            nowText: "今天",
+            startYear: currYear - 10,
+            endYear: currYear + 10
+        };
+        opt.default_time = {
+            theme: 'android-ics light',
+            display: 'modal',
+            mode: 'scroller',
+            timeFormat: "HH:ii",
+            lang: 'zh',
+        };
+        var optDateTime = $.extend(opt['datetime'], opt['default']);
+        var optTime = $.extend(opt['time'], opt['default_time']);
+        var optDate = $.extend(opt['date'], opt['default']);
+        $("#ShowTimeS").mobiscrolls(optDateTime).datetime(optDateTime);
+        $("#ShowTime").mobiscrolls(optDateTime).datetime(optDateTime);
+        $("#ShowUseTimeEnd").mobiscrolls(optDateTime).datetime(optDateTime);
+        // #endregion
+
+
+        //#region 在线富文本编辑器
+        //编辑器
+        comeditor = UE.getEditor('editor',{
+            toolbars: [
+                ['source','|' ,'undo', 'redo' ,'|','bold',' italic',' underline','strikethrough','|','forecolor','backcolor', '|','justifyleft','justifycenter','justifyright','justifyjustify'],
+                ['simpleupload','insertimage','paragraph','fontsize',' |','insertorderedlist','insertunorderedlist','horizontal','autotypeset', 'pasteplain']
+            ],
+            imageUrl: "/Upload/Image?cityid=" + @ViewBag.appId,
+            autoHeight: true
+        });
+        comeditor.ready(function () {
+            if ($("#js_article_content").html() != "") {
+                comeditor.setContent($("#js_article_content").html());
+            }
+           
+        });
+        //#endregion
+
+        // #region 保存
+        $('#btnSave').on('click', function () {
+            //var carouselAlert = false;
+            //if ($('.CarouselList .dz-image-preview').length > 0) {
+            //    $('.CarouselList .dz-image-preview').each(function(i,n) {
+            //        if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+            //            carouselAlert = true;
+            //        }
+            //    });
+            //    //$('#ImgUrl').val($('.CarouselList .dz-image-preview:eq(0)').find('img').attr("src"));
+            //    $('#ImageCount').val($('.CarouselList .dz-image-preview').length);
+            //}
+            //if (carouselAlert) {
+            //    return layer.msg('轮播图上传失败 ! ').html();
+            //}
+            if ( $('.upload-pre-item22').find("img").length ===0) {
+                return layer.msg('至少上传一张轮播图 ! ');
+            }
+            var GroupName = $('#GroupName').val();
+            if (GroupName.length === 0) return layer.msg("请填写团购名称");
+            if (GroupName.length > 40) {
+                return layer.msg("团购名称最多40个字！");
+            }
+
+            var DiscountPrice = 0;
+            var bmoney = $('#DiscountPrice').val();
+            if (bmoney.length === 0) return layer.msg("请填写团购价格");
+            if (bmoney!="") {
+                if (!/^[0-9]{1,10}(\.\d{0,2})?$/.test(bmoney)) {
+                    layer.msg("团购价格必须为数字，且最多为2位小数,最大为4位整数！");
+                    return false;
+                } else {
+                    var price_save = (bmoney * 100).toFixed();
+                    if (price_save < 1) {
+                        layer.msg("团购价格不能低于1分钱！");
+                        return false;
+                    } else
+                        DiscountPrice = price_save;
+                }
+
+            }
+
+            var UnitPrice = 0;
+            var cmoney = $('#UnitPrice').val();
+            if (cmoney.length === 0) return layer.msg("请填写单买价");
+            if (!/^[0-9]{1,10}(\.\d{0,2})?$/.test(cmoney)) {
+                layer.msg("单买价必须为数字，且最多为2位小数,最大为4位整数！");
+                return false;
+            } else {
+                var price_save = (cmoney * 100).toFixed();
+                if (price_save < 1) {
+                    layer.msg("单买价不能低于1分钱！");
+                    return false;
+                } else
+                    UnitPrice = price_save;
+            }
+            if (parseInt(cmoney * 100) <= parseInt(bmoney * 100)) {
+                layer.msg("单买价必须大于团购价格！");
+                return false;
+            }
+
+            var OriginalPrice = 0;
+            var omoney = $('#OriginalPrice').val();
+            if (omoney.length === 0) return layer.msg("请填写原价");
+            if (!/^[0-9]{1,10}(\.\d{0,2})?$/.test(omoney)) {
+                layer.msg("原价必须为数字，且最多为2位小数,最大为4位整数！");
+                return false;
+            } else {
+                var price_save = (omoney * 100).toFixed();
+                if (price_save < 1) {
+                    layer.msg("原价不能低于1分钱！");
+                    return false;
+                } else
+                    OriginalPrice = price_save;
+            }
+            if (parseInt(omoney * 100) <= parseInt(cmoney * 100)) {
+                layer.msg("原价必须大于单买价！");
+                return false;
+            }
+
+            var HeadDeduct = 0;
+            var hmoney = $('#HeadDeduct').val();
+            if (!/^[0-9]{1,10}(\.\d{0,2})?$/.test(omoney)) {
+                layer.msg("原价必须为数字，且最多为2位小数,最大为4位整数！");
+                return false;
+            } else {
+                var price_save = (hmoney * 100).toFixed();
+                HeadDeduct = price_save;
+            }
+            if (parseInt(bmoney * 100) <= parseInt(hmoney * 100)) {
+                layer.msg("团长减价必须小于团购价！");
+                return false;
+            }
+            //是否立即开始
+            var IsConcern = $('#IsConcern')[0].checked;
+            var ValidDateStart = $('#ShowTimeS').val();
+            var ValidDateEnd = $('#ShowTime').val();
+            var UserDateEnd=$("#ShowUseTimeEnd").val();
+            if(@(Model.Id) == 0){
+                if (new Date(ValidDateStart) < new Date() && !IsConcern) {
+                    layer.msg('开始时间要大于当前时间！');
+                    return false;
+                }
+            }
+            if (new Date(ValidDateEnd) < new Date(ValidDateStart)) {
+                layer.msg('结束时间要大于开始时间！');
+                return false;
+            }
+            var SDate=IsConcern?new Date():new Date(ValidDateStart);
+            var artDate= SDate.setDate(SDate.getDate()+2);
+            if (new Date(ValidDateEnd) < artDate) {
+                layer.msg('活动时间要大于48小时！');
+                return false;
+            }
+            //if (new Date(UserDateEnd) <  new Date(ValidDateEnd)) {
+            //    AppTools.Alert('使用截止时间要大于结束时间！');
+            //    return false;
+            //}
+            var imgListAlert = false;
+            if ($('.DescImgList .dz-image-preview').length > 0) {
+                $('.DescImgList .dz-image-preview').each(function (i, n) {
+                    if ($(n).find('span[data-dz-errormessage=""]').html() !== '') {
+                        imgListAlert = true;
+                    }
+                });
+            }
+            if (imgListAlert) {
+                return layer.msg('详情图上传失败 ! ').html();
+            }
+
+            var CreateNum = $('#CreateNum').val();
+            if (0 == CreateNum || CreateNum.length == 0 || CreateNum=="") {
+                layer.msg('请输入生成数量！');
+                return false;
+            }
+            var virtualSalesCount  =  $('#virtualSalesCount').val();
+            //if (0 == virtualSalesCount || virtualSalesCount.length == 0 || virtualSalesCount=="") {
+            //    virtualSalesCount = 0;
+            //    return false;
+            //}
+            if (CreateNum < 1 || CreateNum > 999) {
+                layer.msg('生成数量必须在1-999！');
+                return false;
+            }
+
+            var GroupSize = $('#GroupSize').val();
+            if (0 == GroupSize || GroupSize.length == 0 || GroupSize == "") {
+                layer.msg('请输入成团人数！');
+                return false;
+            }
+            if (GroupSize < 2 || GroupSize > 99) {
+                layer.msg('成团人数必须在2-99！');
+                return false;
+            }
+
+            var Description =comeditor.getContent();// ue.getContent();
+            //Base64加密
+            var b = new Base64();
+            Description = b.encode(Description);
+            var LimitNum = $('#LimitNum').val();
+
+            //轮播图
+            var ImgList = '';
+            $('input[name="dish_shijing[]"]').each(function (i, n) {
+                ImgList += '|' + $(n).val();
+            });
+
+            //编辑图
+            var DescImgList = '';
+            $('input[name="DescImgList"]').each(function (i, n) {
+                DescImgList += '|' + $(n).val();
+            });
+
+            var Id = $('#Id').val();
+            var StoreId = $("#StoreId").val();
+            var ImgUrl = $("#ImgUrl").val();
+            var ImageCount = $("#ImageCount").val();
+
+            //视频
+            var videopath = $("#videopath").val();
+            var oldvid = $("#oldvedio").val();
+            
+            $.post('/groups/addorupdategroup',
+                {
+                    Id: Id,
+                    ImgUrl: ImgUrl,
+                    ImageCount: ImageCount,
+                    GroupName: GroupName,
+                    DiscountPrice: parseInt(DiscountPrice),
+                    UnitPrice: parseInt(UnitPrice),
+                    OriginalPrice: parseInt(OriginalPrice),
+                    HeadDeduct: parseInt(HeadDeduct),
+                    ValidDateStart: ValidDateStart,
+                    ValidDateEnd: ValidDateEnd,
+                    IsConcern:IsConcern,
+                    UserDateEnd:UserDateEnd,
+                    CreateNum: CreateNum,
+                    GroupSize: GroupSize,
+                    Description: Description,
+                    StoreId: StoreId,
+                    LimitNum: LimitNum,
+                    ImgList: ImgList,
+                    DescImgList: DescImgList,
+                    isEncryption: true,
+                    oldhvid:oldvid,
+                    videopath:videopath,
+                    virtualSalesCount:virtualSalesCount,
+                    appId:'@ViewBag.appId'
+                },
+                function (result) {
+                    if (result.code > 0) {
+                        layer.msg('保存成功');
+                        $('#loadModal .modal-body').html(result.msg);
+                        window.location.href = "/groups/MiniappStoreGroupsManager?appId=@ViewBag.appId&PageType=@(Utility.IO.Context.GetRequestInt("PageType",0))";
+                    } else {
+                        layer.msg(result.msg);
+                    }
+                });
+        });
+        // #endregion
+    });
+    // #region 删除图片
+    function removeFun(file) {
+        if (file) {
+            $.post('/stores/DeleteImg', { id: file.id }, function (result) {
+                if (!result.Success) {
+                    layer.msg(result.Msg);
+                }
+            });
+        }
+    }
+    // #endregion
+
+    $(".inputdecimal").keyup(function(){
+
+        var reg = /^\d+\.?(\d{1,2})?$/;
+        while (!reg.test($(this).val()) && $(this).val() != "") {
+            $(this).val(checkStr($(this).val()));
+        }
+    });
+
+    //检查是否符合金额格式:只能输入数字且最多保留小数点后两位
+    function checkStr(str) {
+        str = str.substring(0,str.length-1);
+        return str;
+    }
+</script>
+    <!--如果需要图片上传-->
+<script src="~/Areas/DishAdmin/lib/jquery.dragsort-0.5.2.min.js"></script>
+<script src="~/Areas/DishAdmin/lib/dialog.js"></script>
+<script src="~/Areas/DishAdmin/lib/admin_common.js"></script>
+
+<script>
+  
+    var UPLOAD_URL = "/tools/UpLoadImgFrm?Id=@ViewBag.appId&appId=@ViewBag.appId&multi_selection=0&frontMethod=1&maxImgSize=1&objType=1&imgWidth=750&imgHeight=750";
+        $(function () {
+            var UploadFileExts = "";
+            //初始化上传图片插件
+            initUploadImg();
+            if (UploadFileExts != "") {
+                initUploadFile(function () { }, UploadFileExts);
+            } else {
+                initUploadFile();
+            }
+        });
+</script>

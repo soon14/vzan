@@ -1,0 +1,325 @@
+﻿@{
+    ViewBag.Title = "小未管理平台";
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+
+}
+@using Entity.MiniApp.Plat
+@model PlatOtherConfig
+<style>
+    .centertext { vertical-align: inherit !important; text-align: center; }
+
+    .flex-v { -webkit-box-orient: vertical; -webkit-box-direction: vertical; -ms-flex-direction: column; flex-direction: column; -webkit-flex-direction: column; }
+    .d-flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
+    .d-flex-center { align-items: center; -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; }
+    .fw { -webkit-flex-wrap: wrap; -webkit-box-lines: multiple; -moz-flex-wrap: wrap; flex-wrap: wrap; }
+
+    .set-form-content { position: relative; padding: 20px; border: 1px solid #f2f2f2; margin-bottom: 0; }
+    .form-title { font-size: 14px; background: #f8f8f8; padding: 10px; font-weight: bold; }
+
+    .form-control { width: 35%; display: inline-block; }
+    .layui-laypage span { background-color: #ffffff; }
+    /*.add { color: #337ab7; }*/
+
+    .Item { width: 450px; height: 300px; border: 1px solid #d5d5de; line-height: 26px; margin-left: 20px; margin-top: 20px; }
+    .Title { height: 20% }
+    .BottomDiv { height: 20%; }
+    .Txt { height: 100%; border-bottom: 1px solid #d5d5de; border-top: 1px solid #d5d5de; }
+    .info-pane { display: none; width: 400px; padding: 15px; margin-bottom: 15px; }
+    .ui-message-warning { color: #333; background: #f8f8f8; border-color: #fc6; }
+    #remarkTip:hover #remarkTip_info-pane { display: inline-block; }
+    #gdTip:hover #gdTip_info-pane { display: inline-block; }
+    #ptTip:hover #ptTip_info-pane { display: inline-block; }
+</style>
+<div style="margin:20px;">
+    <div id="app_Conf" v-cloak>
+        <div class="d-flex d-flex-center fw" style="width:1000px;">
+
+            <div class="d-flex flex-v Item">
+                <div class="Title form-title">
+                    平台公告(限50字)
+                </div>
+                <div class="Txt d-flex">
+                    <textarea name="platRemark" class="form-control" maxlength="50" v-model="platRemarkModel.ADImg" style="width:100%;height:100%;resize:none;border:none;"></textarea>
+                </div>
+                <div class="BottomDiv d-flex d-flex-center">
+                    <div style="width:80%;">
+                        <div id="remarkTip" class="ax_default icon" style="cursor: pointer; display: inline; margin-left: 10px;">
+                            <img src="/Content/u256.png" tabindex="0" class="img " style="outline: none;">
+                            <div class="info-pane ui-message-warning" style="position:absolute;margin-top:-50px;" id="remarkTip_info-pane">
+                                <p>注意：设置了开启就需要填写公告内容,弹窗才会生效</p>
+                            </div>
+                        </div>
+                        <label>公告弹窗：</label>
+                        <label><input type="radio" name="RemarkOpenFrm" value="1" v-model="platRemarkModel.ObjId" />关闭</label>
+                        <label><input type="radio" name="RemarkOpenFrm" value="0" v-model="platRemarkModel.ObjId" />开启</label>
+
+
+                    </div>
+                    <div style="width:20%;"><a href="#" class="btn btn-primary ml10" v-on:click="SavePlatRemark(0)">保存</a></div>
+
+                </div>
+            </div>
+
+            <div class="d-flex flex-v Item">
+                <div class="Title form-title">流量广告嵌入管理</div>
+                <div class="Txt d-flex flex-v">
+                    <div v-for="(item,index) in qianRuGuangGaoList">
+                        <div style="padding:5px;" class="d-flex flex-v">
+                            <span>{{item.Name}}</span>
+                            <input type="text" v-model="item.ADImg" class="d-flex form-control" placeholder="请输入广告的unit-id" style="width:100%;display:inline-block!important" />
+                        </div>
+                    </div>
+                </div>
+                <div class="BottomDiv d-flex d-flex-center">
+
+                    <div style="width:80%;">
+                        <div id="gdTip" class="ax_default icon" style="cursor: pointer; display: inline; margin-left: 10px;">
+                            <img src="/Content/u256.png" tabindex="0" class="img " style="outline: none;">
+                            <div class="info-pane ui-message-warning" style="position:absolute;margin-top:-50px;" id="gdTip_info-pane">
+                                <p>提示1：8月13号前发布的小程序需重新发布一次才会起效；</p>
+                                <p>提示2：开发者首次提交广告组件审核，线上版本的广告功能会暂时关闭，微信官方在完成广告组件合规性审核之后才会显示。由于小程序审核与广告审核是分开的，所以会出现体验版可见广告，但小程序审核通过后的正式版广告却没有显示的情况出现，请耐心等待官方审核。</p>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width:20%;">
+                        <a href="#" class="btn btn-primary ml10" v-on:click="saveLiuliangGuangGao()">保存</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-v Item">
+                <div class="Title form-title">平台数据设置</div>
+                <div class="Txt d-flex flex-v">
+                    <div>
+                        <div style="padding:5px;" class="d-flex d-flex-center">
+                            <div style="width:40%">
+                                <span>实际发帖量:</span><br />
+                                <span style="font-weight:bold;font-size:x-large">{{platOtherConfigModel.PlatMsgCount}}</span>
+                            </div>
+                            <div>
+                                <span>虚拟发帖量:</span>
+                                <input type="text" class="d-flex form-control" style="display:block!important;width:100%;" v-model="platOtherConfigModel.VirtualPlatMsgCount" />
+                            </div>
+
+                        </div>
+                        <div style="padding:5px;" class="d-flex d-flex-center">
+                            <div style="width:40%">
+                                <span>实际访问量:</span><br />
+                                <span style="font-weight:bold;font-size:x-large">{{platOtherConfigModel.PV}}</span>
+                            </div>
+                            <div>
+                                <span>虚拟访问量:</span>
+                                <input type="text" class="d-flex form-control" style="display:block!important;width:100%;" v-model="platOtherConfigModel.VirtualPV" />
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="BottomDiv d-flex d-flex-center">
+
+                    <div style="width:80%;">
+                        <div id="ptTip" class="ax_default icon" style="cursor: pointer; display: inline; margin-left: 10px;">
+                            <img src="/Content/u256.png" tabindex="0" class="img " style="outline: none;">
+                            <div class="info-pane ui-message-warning" style="position:absolute;margin-top:-50px;" id="ptTip_info-pane">
+                                <p>提示：首页显示为实际值+虚拟值之和</p>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width:20%;">
+                        <a href="#" class="btn btn-primary ml10" v-on:click="SavePlatRemark(1)">保存</a>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="d-flex flex-v Item">
+                <div class="Title form-title">公众号关注设置</div>
+                <div class="Txt d-flex flex-v">
+                    <div style="margin:5%">
+
+                        <div>
+                            <label>首页展示:</label>
+                            <label><input type="radio" name="IndexOfficialAccount" value="1" v-model="PlatOfficialAccount.ADImgType" />关闭</label>
+                            <label><input type="radio" name="IndexOfficialAccount" value="0" v-model="PlatOfficialAccount.ADImgType" />开启</label>
+                        </div>
+                        <div style="margin-top:50px;">
+                            <label>名片页展示:</label>
+                            <label><input type="radio" name="PlatMyCardOfficialAccount" value="1" v-model="PlatOfficialAccount.ObjId" />关闭</label>
+                            <label><input type="radio" name="PlatMyCardOfficialAccount" value="0" v-model="PlatOfficialAccount.ObjId" />开启</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="BottomDiv d-flex d-flex-center">
+
+                    <div style="width:80%;">
+                        <div id="ptTip" class="ax_default icon" style="cursor: pointer; display: inline; margin-left: 10px;">
+                            <img src="/Content/u256.png" tabindex="0" class="img " style="outline: none;">
+                            <div class="info-pane ui-message-warning" style="position:absolute;margin-top:-50px;" id="ptTip_info-pane">
+                                <p>提示：管理员需要先到微信小程序管理后台配置关联公众号,再选择开启,组件才会在小程序端显示.</p>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width:20%;">
+                        <a href="#" class="btn btn-primary ml10" v-on:click="SavePlatRemark(2)">保存</a>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+</div>
+
+<script>
+
+    var mask;
+
+    var ids;
+    var chk_value =[];
+
+    var app = new Vue({
+        el: "#app_Conf",
+        data: {
+            isloading: false,
+            recordCount: 0,
+            postdata: {
+                aid:@ViewBag.appId,
+            },
+            qianRuGuangGaoList:[{Id:0,ADImgType:0,Name:"首页",ADImg:"",ConfigType:4,Aid:@ViewBag.appId},
+            {Id:0,ADImgType:1,Name:"分类信息页",ADImg:"",ConfigType:4,Aid:@ViewBag.appId},
+            {Id:0,ADImgType:2,Name:"我的页面底部",ADImg:"",ConfigType:4,Aid:@ViewBag.appId}],
+            curADImgPath:"",
+            platRemarkModel:@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PlatRemark)),
+            platOtherConfigModel:@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model)),
+            PlatOfficialAccount:@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.PlatOfficialAccount)),
+        },
+        watch:{
+
+        },
+        methods: {
+
+            SavePlatRemark:function(type){
+                var that=this;
+                var ps={type:type,id:that.platRemarkModel.Id,platRemark:that.platRemarkModel.ADImg,objId:that.platRemarkModel.ObjId,appId:@ViewBag.appId};
+                if(type==1){
+                    ps={type:type,id:that.platOtherConfigModel.PlatConfigId,VirtualPV:that.platOtherConfigModel.VirtualPV,objId:that.platOtherConfigModel.VirtualPlatMsgCount,appId:@ViewBag.appId};
+                }
+                if(type==2){
+                    //表示关注公众号
+                    ps={type:type,id:that.PlatOfficialAccount.Id,ADImgType:that.PlatOfficialAccount.ADImgType,objId:that.PlatOfficialAccount.ObjId,appId:@ViewBag.appId};
+                }
+
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Config/SavePlatRemark',
+                    data: ps,
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            },
+
+            //获取分类列表
+            getPlatConfigList: function (configType) {
+                var that=this;
+
+                if (that.isloading) {
+                    layer.msg("正在努力加载中");
+                    return;
+                }
+                var index = layer.load(1);
+                $.post("/Plat/Config/GetSettingList", {appId:@ViewBag.appId,configType:configType}, function (data) {
+                    layer.close(index);
+                    switch(configType){
+                        case 4://流量广告
+                            if(data.dataObj.list!=null && data.dataObj.list.length>0)
+                            {
+                                that.qianRuGuangGaoList = that.qianRuGuangGaoList.filter(function(item){
+                                    for (var i = 0; i < data.dataObj.list.length; i++) {
+                                        var tempModel = data.dataObj.list[i];
+                                        if(item.ADImgType === tempModel.ADImgType)
+                                        {
+                                            item.Id=tempModel.Id;
+                                            item.ADImg=tempModel.ADImg;
+                                            return true;
+                                        }
+                                    }
+                                });
+                            }
+                            break;
+                    }
+                })
+            },
+
+            //保存
+            saveInfo: function () {
+                var that=this;
+
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Config/SaveConfig',
+                    data: {platConfig:that.platConfigInfo,appId:@ViewBag.appId},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+
+            },
+            saveLiuliangGuangGao: function () {
+                var that=this;
+
+
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/Plat/Config/SaveQianRuGuangGaoConfig',
+                    data: {appId:@ViewBag.appId,list:that.qianRuGuangGaoList},
+                    dataType: 'json',
+                    success: function (data) {
+                        layer.msg(data.Msg);
+                        if (data.isok) {
+                            window.setTimeout(function(){
+                                window.location.reload();
+                            },2000);
+                        }
+                    },
+                    error: function (data) {
+                        layer.msg('与服务器通讯错误');
+                    }
+                });
+            }
+        },created:function(){
+            var that=this;
+            that.getPlatConfigList(4);
+        }
+    });
+</script>

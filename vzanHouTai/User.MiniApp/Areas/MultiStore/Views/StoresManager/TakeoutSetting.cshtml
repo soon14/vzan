@@ -1,0 +1,222 @@
+﻿
+@{
+    ViewBag.PageType = 26;
+    ViewBag.Title = "配送方式";
+    Layout = "~/Views/Shared/_MiniappLayout.cshtml";
+    int storeId = Utility.IO.Context.GetRequestInt("storeId", 0);
+}
+<style>
+    .layui-form-switch { width: 55px; height: 25px; }
+    .c1 { height: 50px; margin-top: 20px; }
+</style>
+<div id="app" v-cloak class="layui-tab layui-tab-brief">
+    <ul class="layui-tab-title">
+        <li class="tab_element layui-this">到店自取</li>
+        <li class="tab_element">同城配送</li>
+        <li class="tab_element" v-if="storeModel.HomeId==0">快递配送</li>
+
+    </ul>
+    <div class="layui-tab-content">
+
+        <div class="layui-tab-item layui-show layui-form">
+
+            <label class="layui-form-label" style="width:100px;">到店自取:</label>
+            <input type="checkbox" name="switch" lay-skin="switch" lay-filter="switchSelfTake" lay-text="开启|关闭" v-model="storeModel.takeOutWayModel.selfTake.IsOpen">
+            @*<div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;"><label class="color-red">*</label>自取范围:</label>
+                <div class="layui-input-inline">
+                    半径
+                    <div style="display:inline-block;">
+                        <input v-model="storeModel.takeOutWayModel.selfTake.TakeRange" type="text" class="layui-input">
+                    </div>
+                    公里内
+                </div>
+
+            </div>*@
+        </div>
+        <div class="layui-tab-item ">
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;">同城配送:</label>
+                <input type="checkbox" name="switch" lay-skin="switch" lay-filter="switchCityServiceOpen" lay-text="开启|关闭" v-model="storeModel.takeOutWayModel.cityService.IsOpen">
+            </div>
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;"><label class="color-red">*</label>自动接单:</label>
+                <input type="checkbox" name="switch" lay-skin="switch" lay-filter="switchAutoReceiveOrder" lay-text="开启|关闭" v-model="storeModel.takeOutWayModel.cityService.AutoReceiveOrder">
+            </div>
+            <!-- 营业时间段这里来自店铺信息配置-->
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:110px;">配送时间段:</label>
+                <input type="radio" checked="checked" title="与店铺的营业时间保持一致" /><br />
+                <span v-if="storeModel.switchModel.OpenAllDay">24小时营业</span>
+
+                <span v-if="storeModel.switchModel.Monday">周一、</span>
+                <span v-if="storeModel.switchModel.Tuesday">周二、</span>
+                <span v-if="storeModel.switchModel.Wensday">周三、</span>
+                <span v-if="storeModel.switchModel.Thursday">周四、</span>
+                <span v-if="storeModel.switchModel.Friday">周五、</span>
+                <span v-if="storeModel.switchModel.Saturday">周六、</span>
+                <span v-if="storeModel.switchModel.Sunday">周日</span>
+                <span v-if="!storeModel.switchModel.OpenAllDay">{{storeModel.ShopTime}}</span>
+                <a href="/MultiStore/StoresManager/index?appId=@ViewBag.appId&storeId=@storeId">修改营业时间</a>
+            </div>
+
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;"><label class="color-red">*</label>配送范围:</label>
+                <div class="layui-input-inline">
+                    半径
+                    <div style="display:inline-block;">
+                        <input v-model="storeModel.takeOutWayModel.cityService.TakeRange" type="text" class="layui-input">
+                    </div>
+                    公里内
+                </div>
+
+            </div>
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;"><label class="color-red">*</label>起送价:</label>
+                <div class="layui-input-inline">
+
+                    <input v-model="storeModel.takeOutWayModel.cityService.TakeStartPrice" type="text" placeholder="0-9999之间的数字" class="layui-input">
+                </div>
+                元
+
+            </div>
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;"><label class="color-red">*</label>配送费:</label>
+                <div class="layui-input-inline">
+
+                    <input v-model="storeModel.takeOutWayModel.cityService.TakeFright" type="text" placeholder="0-9999之间的数字" class="layui-input">
+                </div>
+                元
+
+            </div>
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:104px;">单笔订单满:</label>
+                <div class="layui-input-inline">
+
+                    <div style="display:inline-block;">
+                        <input v-model="storeModel.takeOutWayModel.cityService.FreeFrightCost" type="text" class="layui-input">
+                    </div>
+                    元时免配送费
+                </div>
+
+            </div>
+
+
+        </div>
+        <div class="layui-tab-item" v-if="storeModel.HomeId==0">
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;">快递配送:</label>
+                <input type="checkbox" name="switch" lay-skin="switch" lay-filter="switchExpressOpen" lay-text="开启|关闭" v-model="storeModel.takeOutWayModel.GetExpressdelivery.IsOpen">
+            </div>
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:100px;"><label class="color-red">*</label>统一运费:</label>
+                <div class="layui-input-inline">
+
+                    <input v-model="storeModel.takeOutWayModel.GetExpressdelivery.TakeFright" type="text" placeholder="0-9999之间的数字" class="layui-input">
+                </div>
+                元
+
+            </div>
+            <div class="c1 layui-form">
+                <label class="layui-form-label" style="width:104px;">单笔订单满:</label>
+                <div class="layui-input-inline">
+
+                    <div style="display:inline-block;">
+                        <input v-model="storeModel.takeOutWayModel.GetExpressdelivery.FreeFrightCost" type="text" class="layui-input">
+                    </div>
+                    元时包邮
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <input type="button" class="btn btn-primary width100" v-on:click="SaveInfo()" value="保存" />
+</div>
+
+
+
+
+
+</div>
+
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            storeModel:@Html.Raw(JsonConvert.SerializeObject(Model)),
+            isAuthorize:1
+        },
+        methods: {
+            SaveInfo:function(){
+                if(!this.ValidData())return;
+                var index = layer.load(1);
+                $.post("/MultiStore/StoresManager/SaveTakeoutSetting", { takeOut: app.storeModel,storeId:app.storeModel.Id,appId:app.storeModel.appId }, function (data) {
+                    layer.close(index);
+                    layer.msg(data.msg);
+                },"json")
+            },
+            ValidData: function () {
+                var result = false;
+
+                var ret = /^\d+\.?\d*$/;
+
+                if (!ret.test(app.storeModel.takeOutWayModel.cityService.TakeRange)) {
+                    layer.msg("请填写正确的配送范围");
+                    return result;
+                }
+                if (!ret.test(app.storeModel.takeOutWayModel.selfTake.TakeRange)) {
+                    layer.msg("请填写正确的自取送范围");
+                    return result;
+                }
+                if (!ret.test(app.storeModel.takeOutWayModel.cityService.TakeStartPrice)) {
+                    layer.msg("请填写正确的起送价");
+                    return result;
+                }
+
+                if (!ret.test(app.storeModel.takeOutWayModel.cityService.TakeFright)) {
+                    layer.msg("请填写正确的配送费");
+                    return result;
+                }
+                if (!ret.test(app.storeModel.takeOutWayModel.cityService.FreeFrightCost)||!ret.test(app.storeModel.takeOutWayModel.GetExpressdelivery.FreeFrightCost)) {
+                    layer.msg("请填写正确的免运费金额");
+                    return result;
+                }
+
+                if (!ret.test(app.storeModel.takeOutWayModel.GetExpressdelivery.TakeFright)) {
+                    layer.msg("请填写正确的统一运费");
+                    return result;
+                }
+
+
+                result = true;
+                return result;
+            }
+
+        },beforeCreate:function(){
+            layui.use(['form','element'], function () {
+
+                //开关按钮
+                var  form = layui.form;
+                var  element = layui.element; //Tab的切换功能，切换事件监听等，需要依赖element模块
+                form.on('switch(switchSelfTake)', function (data) {
+                    app.storeModel.takeOutWayModel.selfTake.IsOpen = data.elem.checked;
+                });
+
+                form.on('switch(switchCityServiceOpen)', function (data) {
+                    app.storeModel.takeOutWayModel.cityService.IsOpen = data.elem.checked;
+                });
+
+                form.on('switch(switchAutoReceiveOrder)', function (data) {
+                    app.storeModel.takeOutWayModel.cityService.AutoReceiveOrder = data.elem.checked;
+                });
+
+                form.on('switch(switchExpressOpen)', function (data) {
+                    app.storeModel.takeOutWayModel.GetExpressdelivery.IsOpen = data.elem.checked;
+                });
+
+            });
+        }
+
+    });
+</script>

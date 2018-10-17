@@ -1,0 +1,200 @@
+﻿@{
+    Layout = "~/Areas/Plat/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "运营情况";
+    int aid = Utility.IO.Context.GetRequestInt("aid", 0);
+}
+
+@section styles{
+
+    <style>
+        a:hover { color: #99CC00; /*鼠标经过的颜色变化*/ }
+        .headclass {width: 50px;height: 50px;border-radius: 50px;display: inline-block;}
+
+        .flexclass {flex-direction: column;display: flex;width: 49%;}
+
+        .flexbox {flex-direction: row;display: flex;}
+
+        .flexmargin > div {margin: 5px 0;}
+
+        .shenglueclass {overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
+        .gaikuang td {border:none !important;text-align:center;}
+
+        .fanwengliang td {border:none !important;text-align:center;}
+        .pv_title_class{font-weight:bold;font-size:35px;}
+        .goto{display: inline-block;width: 70px;border: 1px solid rgb(26, 173, 25);color: rgb(26, 173, 25);border-radius: 10px;}
+        .trbackgroundcolor{border-bottom: 1px solid #eaeaea;}
+    </style>
+}
+
+<body class="backgroundcolorfff">
+    <div class="animated fadeInUp">
+
+        <div style="height:100%;" class="form-horizontal set-form-content">
+
+            <div id="vbox" style="width:100%; height:auto; ">
+                <table class="table">
+                    <tr class="trbackgroundcolor">
+                        <td style="border-top:none;">
+                            <div class="flexbox" style="background-color: #fff;padding: 10px;">
+                                <div class="flexclass flexmargin">
+                                    <div style="font-size:20px;font-weight:bold;">您好，欢迎来到小未平台！</div>
+                                    <div>上次访问：{{reportdata.visitetime}}</div>
+                                </div>
+                                <div class="flexclass flexmargin" style="text-align: right;">
+                                    <div class="shenglueclass">总访问量</div>
+                                    <div class="shenglueclass pv_title_class">{{reportdata.sumpv}}</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="trbackgroundcolor">
+                        <td style="border-top:none;">
+                            <h1 style="font-size:20px;margin-bottom:10px;"><span style="font-weight:bold;">|</span><span style="font-weight: bold;"> 平台概况</span></h1>
+                            <table class="table gaikuang" style="margin-top: 5px;margin-bottom:0px;">
+                               
+                                <tr>
+                                    <td>
+                                        <p style="margin-top:5px;">入驻店铺</p>
+                                    <span class="pv_title_class">{{reportdata.storecount}}</span>
+                                        <p style="margin-top:5px;"><a href="/Plat/Store/Index?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">会员人数</p>
+                                    <span class="pv_title_class">{{reportdata.usercount}}</span>
+                                        <p style="margin-top:5px;"><a href="/Plat/MyCard/Index?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">发贴总数</p>
+                                    <span class="pv_title_class">{{reportdata.msgcount}}</span>
+                                        <p style="margin-top:5px;"><a href="/Plat/Msg/Index?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">优选商品</p>
+                                    <span class="pv_title_class">{{reportdata.goodscount}}</span>
+                                        <p style="margin-top:5px;"><a href="/Plat/Store/GoodsDB?aid=@aid" class="goto">查看</a></p>
+                                    </td>
+                                </tr>
+                           
+                            </table>
+                        </td>
+                    </tr>
+                    <tr class="trbackgroundcolor">
+                        <td style="border-top:none;">
+                            <h1 style="font-size:20px;margin-bottom:10px;"><span style="font-weight:bold;">|</span><span style="font-weight: bold;"> 访问量（PV）</span></h1>
+                            <table class="table fanwengliang" style="margin-top: 5px;">
+                               
+                                <tr>
+                                    <td style="display:none;">
+                                        <p style="margin-top:5px;">当天</p>
+                                    <span class="pv_title_class">{{reportdata.todaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">昨天</p>
+                                        <span class="pv_title_class">{{reportdata.yeastodaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">近7天</p>
+                                    <span class="pv_title_class">{{reportdata.sevendaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">近30天</p>
+                                        <span class="pv_title_class">{{reportdata.thirthdaypv}}</span>
+                                    </td>
+                                    <td>
+                                        <p style="margin-top:5px;">总累计</p>
+                                    <span class="pv_title_class">{{reportdata.sumpv}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="rel graphics-panel">
+                                            <canvas id="bar" style="width:98%;height:400px;"></canvas>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</body>
+
+@section scripts{
+    <script src="@(WebSiteConfig.cdnurl)js/Chart.min.js"></script>
+    <script>
+        var app = new Vue({
+            el: "#vbox",
+            data: {
+                recordCount: 0,
+                reportdata: [],
+                labels:[],
+                datas:[],
+                postdata: {
+                    aid:@aid,
+                },
+                isloading: false,
+            },
+            methods: {
+                getdata: function () {
+                    if (this.isloading) {
+                        layer.msg("努力加载ing...")
+                        return;
+                    }
+                    this.isloading = true;
+                    var index = layer.load(1);
+                    $.post("/Plat/Survey/GetData", this.postdata, function (data) {
+                        layer.close(index);
+                        app.isloading = false;
+                        app.reportdata = data.dataObj;
+                        app.daysale(app.reportdata.labels,app.reportdata.datas);
+                    })
+                },
+                //chart bar图表插件
+                daysale:function(labels, data) {
+                    var chartData = {
+                        // x轴显示的label
+                        //labels:['1月', '2月', '3月', '4月', '5月','6月', '7月', '8月', '9月', '10月', '11月'],
+                        labels: labels,
+                        datasets: [
+                {
+                    fillColor: 'rgba(0,0,0,0)',// 填充色
+                    strokeColor: "rgb(26, 173, 25)",
+                    pointColor: "rgb(26, 173, 25)",
+                    //data:[60.01, 70.02, 80.1, 56.05, 40.9,60.54, 70.64, 80.25, 56, 40, 40], // 数据
+                    data: data,
+                    label: '—— 近30天访问趋势统计 ——' // 图例
+                }
+                        ]
+                    };
+                    // 柱状图选项设置
+                    var configs = {
+                        barShowStroke: true, // 是否显示线
+                        barStrokeWidth: 2,   // 线宽
+                        barValueSpacing: 5,// 柱状块与x值所形成的线之间的距离
+                        barDatasetSpacing: 1,// 在同一x值内的柱状块之间的间距
+                        scaleGridLineWidth: 1, // 网格线的线宽
+                        showTooltips: true, // 是否显示提示
+                        scaleBeginAtZero: false, // y轴标记是否从0开始
+                    };
+
+                    // 开始绘制柱状图
+                    var ctx = document.getElementById('bar').getContext('2d');
+                    var bar = new Chart(ctx).Line(chartData, configs);
+                    var legend = document.getElementById('legend');
+                },
+            },
+            created: function(){
+                this.getdata();
+                $("#app").show();
+            }
+        })
+    </script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.categories.min.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.stack.js"></script>
+    <script src="@(WebSiteConfig.cdnurl)content/plugin/jquery.flot.barnumbers.js"></script>
+}
